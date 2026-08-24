@@ -1,0 +1,123 @@
+<?php
+
+namespace Modules\Product\Http\Controllers;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\View\View;
+use Modules\Product\Http\Requests\StoreProductRequest;
+use Modules\Product\Http\Requests\UpdateProductRequest;
+use Modules\Product\Models\Brand;
+use Modules\Product\Models\Category;
+use Modules\Product\Models\Product;
+use Modules\Product\Models\SubCategory;
+use Modules\Product\Models\Unit;
+
+class ProductController extends Controller
+{
+    public function index(): View
+    {
+        $products = Product::with(['category', 'subCategory', 'brand', 'units'])->latest()->paginate(10);
+
+        return view('product::products.index', compact('products'));
+    }
+
+    public function create(): View
+    {
+        return view('product::products.create', [
+            'product' => new Product(),
+            ...$this->formOptions(),
+        ]);
+    }
+
+    public function store(StoreProductRequest $request): RedirectResponse
+    {
+        $data = $request->safe()->except(['image', 'units']);
+        $data['is_vat'] = $request->boolean('is_vat');
+        $data['has_warranty'] = $request->boolean('has_warranty');
+        $data['has_expiry'] = $request->boolean('has_expiry');
+
+        if ($request->hasFile('image')) {
+            $data['image_url'] = Storage::disk('public')->url(
+                $request->file('image')->store('products', 'public')
+            );
+        }
+
+        DB::transaction(function () use ($data, $request) {
+            $product = Product::create($data);
+            $product->units()->sync($this->unitsPivotData($request->validated('units')));
+        });
+
+        return redirect()->route('products.index')->with('status', 'পণ্য সফলভাবে যোগ করা হয়েছে');
+    }
+
+    public function edit(Product $product): View
+    {
+        $product->load('units');
+
+        return view('product::products.edit', [
+            'product' => $product,
+            ...$this->formOptions(),
+        ]);
+    }
+
+    public function update(UpdateProductRequest $request, Product $product): RedirectResponse
+    {
+        $data = $request->safe()->except(['image', 'units']);
+        $data['is_vat'] = $request->boolean('is_vat');
+        $data['has_warranty'] = $request->boolean('has_warranty');
+        $data['has_expiry'] = $request->boolean('has_expiry');
+
+        if ($request->hasFile('image')) {
+            if ($product->image_url) {
+                Storage::disk('public')->delete(str_replace('/storage/', '', $product->image_url));
+            }
+
+            $data['image_url'] = Storage::disk('public')->url(
+                $request->file('image')->store('products', 'public')
+            );
+        }
+
+        DB::transaction(function () use ($product, $data, $request) {
+            $product->update($data);
+            $product->units()->sync($this->unitsPivotData($request->validated('units')));
+        });
+
+        return redirect()->route('products.index')->with('status', 'পণ্য হালনাগাদ করা হয়েছে');
+    }
+
+    public function destroy(Product $product): RedirectResponse
+    {
+        if ($product->image_url) {
+            Storage::disk('public')->delete(str_replace('/storage/', '', $product->image_url));
+        }
+
+        $product->delete();
+
+        return redirect()->route('products.index')->with('status', 'পণ্য মুছে ফেলা হয়েছে');
+    }
+
+    private function unitsPivotData(array $units): array
+    {
+        return collect($units)->mapWithKeys(fn (array $row) => [
+            $row['unit_id'] => [
+                'is_base' => (bool) ($row['is_base'] ?? false),
+                'conversion_factor' => $row['conversion_factor'],
+                'purchase_price' => $row['purchase_price'],
+                'sale_price' => $row['sale_price'],
+            ],
+        ])->toArray();
+    }
+
+    private function formOptions(): array
+    {
+        return [
+            'categories' => Category::with('subCategories')->orderBy('name')->get(),
+            'brands' => Brand::orderBy('name')->get(),
+            'units' => Unit::orderBy('name')->get(),
+            'subCategories' => SubCategory::orderBy('name')->get(),
+        ];
+    }
+}

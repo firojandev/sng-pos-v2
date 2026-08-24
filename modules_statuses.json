@@ -1,0 +1,8 @@
+{
+    "Core": true,
+    "Auth": true,
+    "User": true,
+    "Employee": true,
+    "Product": true,
+    "Shop": true
+}

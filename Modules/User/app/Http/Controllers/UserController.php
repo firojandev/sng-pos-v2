@@ -1,0 +1,87 @@
+<?php
+
+namespace Modules\User\Http\Controllers;
+
+use App\Http\Controllers\Controller;
+use App\Models\User;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\View\View;
+use Modules\User\Http\Requests\StoreUserRequest;
+use Modules\User\Http\Requests\UpdateUserRequest;
+
+class UserController extends Controller
+{
+    public function index(): View
+    {
+        $users = User::where('shop_id', auth()->user()->shop_id)->latest()->paginate(10);
+
+        return view('user::index', compact('users'));
+    }
+
+    public function create(): View
+    {
+        return view('user::create', ['user' => new User()]);
+    }
+
+    public function store(StoreUserRequest $request): RedirectResponse
+    {
+        User::create([
+            'shop_id' => auth()->user()->shop_id,
+            'name' => $request->validated('name'),
+            'email' => $request->validated('email'),
+            'password' => Hash::make($request->validated('password')),
+        ]);
+
+        return redirect()
+            ->route('users.index')
+            ->with('status', 'ইউজার সফলভাবে যোগ করা হয়েছে');
+    }
+
+    public function edit(User $user): View
+    {
+        $this->ensureSameShop($user);
+
+        return view('user::edit', compact('user'));
+    }
+
+    public function update(UpdateUserRequest $request, User $user): RedirectResponse
+    {
+        $this->ensureSameShop($user);
+
+        $user->name = $request->validated('name');
+        $user->email = $request->validated('email');
+
+        if ($request->filled('password')) {
+            $user->password = Hash::make($request->validated('password'));
+        }
+
+        $user->save();
+
+        return redirect()
+            ->route('users.index')
+            ->with('status', 'ইউজারের তথ্য হালনাগাদ করা হয়েছে');
+    }
+
+    public function destroy(User $user): RedirectResponse
+    {
+        $this->ensureSameShop($user);
+
+        if ($user->id === auth()->id()) {
+            return redirect()
+                ->route('users.index')
+                ->with('status', 'নিজের অ্যাকাউন্ট মুছে ফেলা যাবে না');
+        }
+
+        $user->delete();
+
+        return redirect()
+            ->route('users.index')
+            ->with('status', 'ইউজার মুছে ফেলা হয়েছে');
+    }
+
+    private function ensureSameShop(User $user): void
+    {
+        abort_unless($user->shop_id === auth()->user()->shop_id, 404);
+    }
+}

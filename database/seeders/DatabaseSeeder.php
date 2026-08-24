@@ -1,0 +1,60 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\User;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+use Modules\Core\Support\Features;
+use Modules\Shop\Models\Shop;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+
+class DatabaseSeeder extends Seeder
+{
+    use WithoutModelEvents;
+
+    /**
+     * Seed the application's database.
+     */
+    public function run(): void
+    {
+        foreach (Features::keys() as $key) {
+            Permission::firstOrCreate(['name' => $key, 'guard_name' => 'web']);
+        }
+
+        $superAdminRole = Role::firstOrCreate(['name' => 'Super Admin', 'guard_name' => 'web']);
+        $adminRole = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
+        $adminRole->syncPermissions(Permission::where('guard_name', 'web')->get());
+
+        $superAdmin = User::firstOrCreate(
+            ['email' => 'superadmin@masterpos.test'],
+            [
+                'name' => 'Super Admin',
+                'password' => bcrypt('password'),
+            ]
+        );
+        $superAdmin->syncRoles([$superAdminRole]);
+
+        $demoShop = Shop::firstOrCreate(
+            ['slug' => 'rahim-general-store'],
+            [
+                'name' => 'রহিম জেনারেল স্টোর',
+                'phone' => '+8801700000000',
+                'address' => 'মিরপুর-১০, ঢাকা-১২১৬',
+                'status' => 'active',
+                'enabled_features' => Features::keys(),
+            ]
+        );
+
+        $demoAdmin = User::updateOrCreate(
+            ['email' => 'admin@masterpos.test'],
+            [
+                'shop_id' => $demoShop->id,
+                'name' => 'Admin',
+                'password' => bcrypt('password'),
+            ]
+        );
+        $demoAdmin->syncRoles([$adminRole]);
+    }
+}
