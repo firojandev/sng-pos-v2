@@ -38,6 +38,9 @@ class ProductController extends Controller
         $data['is_vat'] = $request->boolean('is_vat');
         $data['has_warranty'] = $request->boolean('has_warranty');
         $data['has_expiry'] = $request->boolean('has_expiry');
+        $data['is_wholesale'] = $request->boolean('is_wholesale');
+        $data['has_discount'] = $request->boolean('has_discount');
+        $data['has_barcode'] = $request->boolean('has_barcode');
 
         if ($request->hasFile('image')) {
             $data['image_url'] = Storage::disk('public')->url(
@@ -69,6 +72,9 @@ class ProductController extends Controller
         $data['is_vat'] = $request->boolean('is_vat');
         $data['has_warranty'] = $request->boolean('has_warranty');
         $data['has_expiry'] = $request->boolean('has_expiry');
+        $data['is_wholesale'] = $request->boolean('is_wholesale');
+        $data['has_discount'] = $request->boolean('has_discount');
+        $data['has_barcode'] = $request->boolean('has_barcode');
 
         if ($request->hasFile('image')) {
             if ($product->image_url) {
@@ -105,8 +111,6 @@ class ProductController extends Controller
             $row['unit_id'] => [
                 'is_base' => (bool) ($row['is_base'] ?? false),
                 'conversion_factor' => $row['conversion_factor'],
-                'purchase_price' => $row['purchase_price'],
-                'sale_price' => $row['sale_price'],
             ],
         ])->toArray();
     }

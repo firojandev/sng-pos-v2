@@ -19,6 +19,9 @@ class UpdateProductRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'sku' => ['required', 'string', 'max:255', 'unique:products,sku,' . $productId],
+            'size' => ['nullable', 'string', 'max:100'],
+            'purchase_price' => ['required', 'numeric', 'min:0'],
+            'sale_price' => ['required', 'numeric', 'min:0'],
             'image' => ['nullable', 'image', 'max:2048'],
             'category_id' => ['required', 'exists:categories,id'],
             'sub_category_id' => ['nullable', 'exists:sub_categories,id'],
@@ -33,13 +36,19 @@ class UpdateProductRequest extends FormRequest
             'warranty_type' => ['nullable', 'in:day,month,year', 'required_if:has_warranty,1'],
             'has_expiry' => ['nullable', 'boolean'],
             'expiry_date' => ['nullable', 'date', 'required_if:has_expiry,1'],
+            'is_wholesale' => ['nullable', 'boolean'],
+            'wholesale_price' => ['nullable', 'numeric', 'min:0', 'required_if:is_wholesale,1'],
+            'wholesale_min_qty' => ['nullable', 'integer', 'min:1', 'required_if:is_wholesale,1'],
+            'has_discount' => ['nullable', 'boolean'],
+            'discount_type' => ['nullable', 'in:flat,percentage', 'required_if:has_discount,1'],
+            'discount_value' => ['nullable', 'numeric', 'min:0', 'required_if:has_discount,1'],
+            'has_barcode' => ['nullable', 'boolean'],
+            'barcode' => ['nullable', 'string', 'max:255', 'unique:products,barcode,' . $productId, 'required_if:has_barcode,1'],
 
             'units' => ['required', 'array', 'min:1'],
             'units.*.unit_id' => ['required', 'distinct', 'exists:units,id'],
             'units.*.is_base' => ['nullable', 'boolean'],
             'units.*.conversion_factor' => ['required', 'numeric', 'min:0.0001'],
-            'units.*.purchase_price' => ['required', 'numeric', 'min:0'],
-            'units.*.sale_price' => ['required', 'numeric', 'min:0'],
         ];
     }
 
@@ -51,6 +60,10 @@ class UpdateProductRequest extends FormRequest
 
             if ($baseCount !== 1) {
                 $validator->errors()->add('units', 'ঠিক একটি ইউনিটকে বেস ইউনিট হিসেবে নির্বাচন করতে হবে');
+            }
+
+            if ($this->input('discount_type') === 'percentage' && (float) $this->input('discount_value') > 100) {
+                $validator->errors()->add('discount_value', 'ছাড়ের হার ১০০% এর বেশি হতে পারবে না');
             }
         });
     }

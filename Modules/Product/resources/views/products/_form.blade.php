@@ -4,10 +4,8 @@
             'unit_id' => $u->id,
             'is_base' => (bool) $u->pivot->is_base,
             'conversion_factor' => (float) $u->pivot->conversion_factor,
-            'purchase_price' => (float) $u->pivot->purchase_price,
-            'sale_price' => (float) $u->pivot->sale_price,
         ])->values()->all()
-        : [['unit_id' => '', 'is_base' => true, 'conversion_factor' => 1, 'purchase_price' => 0, 'sale_price' => 0]]);
+        : [['unit_id' => '', 'is_base' => true, 'conversion_factor' => 1]]);
 
     $subCategoriesByCategory = $categories->mapWithKeys(
         fn ($category) => [$category->id => $category->subCategories->map(fn ($s) => ['id' => $s->id, 'name' => $s->name])->values()]
@@ -24,6 +22,29 @@
         <label class="bn">SKU</label><label class="en" style="display:none;">SKU</label>
         <input type="text" name="sku" value="{{ old('sku', $product->sku) }}" placeholder="যেমন SKU-1001" required>
         @error('sku') <div class="field-error">{{ $message }}</div> @enderror
+    </div>
+</div>
+
+<div class="field" style="margin-top:0;">
+    <label class="bn">সাইজ / পরিমাণ</label><label class="en" style="display:none;">Size / Volume</label>
+    <input type="text" name="size" value="{{ old('size', $product->size) }}" placeholder="যেমন 1L, 500g, 2kg">
+    <div class="helper" style="margin-top:4px;">
+        <span class="bn">একই পণ্যের ভিন্ন সাইজ (যেমন তেল ১L, ২L, ৫L) আলাদা আলাদা পণ্য হিসেবে যোগ করুন, কারণ প্রতিটির স্টক ও দাম আলাদা।</span>
+        <span class="en" style="display:none;">Different sizes of the same product (e.g. Oil 1L, 2L, 5L) should be added as separate products, since each has its own stock and price.</span>
+    </div>
+    @error('size') <div class="field-error">{{ $message }}</div> @enderror
+</div>
+
+<div class="field-row">
+    <div class="field" style="margin-top:0;">
+        <label class="bn">ক্রয় মূল্য</label><label class="en" style="display:none;">Purchase Price</label>
+        <input type="number" step="0.01" min="0" name="purchase_price" value="{{ old('purchase_price', $product->purchase_price ?? 0) }}" required>
+        @error('purchase_price') <div class="field-error">{{ $message }}</div> @enderror
+    </div>
+    <div class="field" style="margin-top:0;">
+        <label class="bn">বিক্রয় মূল্য</label><label class="en" style="display:none;">Sale Price</label>
+        <input type="number" step="0.01" min="0" name="sale_price" value="{{ old('sale_price', $product->sale_price ?? 0) }}" required>
+        @error('sale_price') <div class="field-error">{{ $message }}</div> @enderror
     </div>
 </div>
 
@@ -142,6 +163,67 @@
     @error('expiry_date') <div class="field-error">{{ $message }}</div> @enderror
 </div>
 
+@php $isWholesale = (bool) old('is_wholesale', $product->is_wholesale ?? false); @endphp
+<div class="field">
+    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+        <input type="checkbox" name="is_wholesale" value="1" id="is-wholesale-check" style="width:auto;" {{ $isWholesale ? 'checked' : '' }} onchange="toggleField('is-wholesale-check','wholesale-fields')">
+        <span class="bn">এই পণ্যে পাইকারি মূল্য প্রযোজ্য</span><span class="en">Wholesale price applicable on this product</span>
+    </label>
+</div>
+<div class="field-row" id="wholesale-fields" style="{{ $isWholesale ? '' : 'display:none;' }}">
+    <div class="field">
+        <label class="bn">পাইকারি মূল্য</label><label class="en" style="display:none;">Wholesale Price</label>
+        <input type="number" step="0.01" min="0" name="wholesale_price" value="{{ old('wholesale_price', $product->wholesale_price) }}">
+        @error('wholesale_price') <div class="field-error">{{ $message }}</div> @enderror
+    </div>
+    <div class="field">
+        <label class="bn">সর্বনিম্ন পরিমাণ</label><label class="en" style="display:none;">Minimum Quantity</label>
+        <input type="number" min="1" name="wholesale_min_qty" value="{{ old('wholesale_min_qty', $product->wholesale_min_qty) }}">
+        @error('wholesale_min_qty') <div class="field-error">{{ $message }}</div> @enderror
+    </div>
+</div>
+
+@php $hasDiscount = (bool) old('has_discount', $product->has_discount ?? false); @endphp
+<div class="field">
+    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+        <input type="checkbox" name="has_discount" value="1" id="has-discount-check" style="width:auto;" {{ $hasDiscount ? 'checked' : '' }} onchange="toggleField('has-discount-check','discount-fields')">
+        <span class="bn">এই পণ্যে ছাড় প্রযোজ্য</span><span class="en">Discount applicable on this product</span>
+    </label>
+</div>
+<div class="field-row" id="discount-fields" style="{{ $hasDiscount ? '' : 'display:none;' }}">
+    <div class="field">
+        <label class="bn">ছাড়ের ধরন</label><label class="en" style="display:none;">Discount Type</label>
+        <div class="seg">
+            <button type="button" class="seg-btn {{ old('discount_type', $product->discount_type ?? 'flat') === 'flat' ? 'active' : '' }}" data-target="discount-type-input" data-val="flat" onclick="selSegValue(this)">
+                <span class="bn">ফ্ল্যাট পরিমাণ</span><span class="en">Flat Amount</span>
+            </button>
+            <button type="button" class="seg-btn {{ old('discount_type', $product->discount_type ?? 'flat') === 'percentage' ? 'active' : '' }}" data-target="discount-type-input" data-val="percentage" onclick="selSegValue(this)">
+                <span class="bn">শতাংশ</span><span class="en">Percentage</span>
+            </button>
+        </div>
+        <input type="hidden" name="discount_type" id="discount-type-input" value="{{ old('discount_type', $product->discount_type ?? 'flat') }}">
+        @error('discount_type') <div class="field-error">{{ $message }}</div> @enderror
+    </div>
+    <div class="field">
+        <label class="bn">ছাড়ের পরিমাণ</label><label class="en" style="display:none;">Discount Value</label>
+        <input type="number" step="0.01" min="0" name="discount_value" value="{{ old('discount_value', $product->discount_value) }}">
+        @error('discount_value') <div class="field-error">{{ $message }}</div> @enderror
+    </div>
+</div>
+
+@php $hasBarcode = (bool) old('has_barcode', $product->has_barcode ?? false); @endphp
+<div class="field">
+    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+        <input type="checkbox" name="has_barcode" value="1" id="has-barcode-check" style="width:auto;" {{ $hasBarcode ? 'checked' : '' }} onchange="toggleField('has-barcode-check','barcode-field')">
+        <span class="bn">এই পণ্যের বারকোড আছে</span><span class="en">This product has a barcode</span>
+    </label>
+</div>
+<div class="field" id="barcode-field" style="{{ $hasBarcode ? '' : 'display:none;' }}">
+    <label class="bn">বারকোড</label><label class="en" style="display:none;">Barcode</label>
+    <input type="text" name="barcode" value="{{ old('barcode', $product->barcode) }}" placeholder="যেমন 8901030895555">
+    @error('barcode') <div class="field-error">{{ $message }}</div> @enderror
+</div>
+
 <div class="field">
     <label class="bn">ইউনিট</label><label class="en" style="display:none;">Units</label>
     <div class="helper" style="margin-top:0; margin-bottom:8px;">
@@ -157,8 +239,6 @@
                     <th style="width:60px;"><span class="bn">বেস</span><span class="en">Base</span></th>
                     <th><span class="bn">ইউনিট</span><span class="en">Unit</span></th>
                     <th><span class="bn">রূপান্তর হার</span><span class="en">Conversion Factor</span></th>
-                    <th><span class="bn">ক্রয় মূল্য</span><span class="en">Purchase Price</span></th>
-                    <th><span class="bn">বিক্রয় মূল্য</span><span class="en">Sale Price</span></th>
                     <th style="width:30px;"></th>
                 </tr>
             </thead>
@@ -209,7 +289,7 @@
     }
 
     function addUnitRow(row) {
-        row = row || { unit_id: '', is_base: false, conversion_factor: 1, purchase_price: 0, sale_price: 0 };
+        row = row || { unit_id: '', is_base: false, conversion_factor: 1 };
         var idx = unitRowIndex++;
         var tbody = document.getElementById('units-tbody');
         var tr = document.createElement('tr');
@@ -217,8 +297,6 @@
             '<td style="text-align:center;"><input type="radio" name="units_base_selector" style="width:auto;" ' + (row.is_base ? 'checked' : '') + ' onchange="setBaseRow(' + idx + ')"><input type="hidden" name="units[' + idx + '][is_base]" id="is-base-' + idx + '" value="' + (row.is_base ? 1 : 0) + '"></td>' +
             '<td><select name="units[' + idx + '][unit_id]" required>' + unitOptionsHtml(row.unit_id) + '</select></td>' +
             '<td><input type="number" step="0.0001" min="0.0001" name="units[' + idx + '][conversion_factor]" value="' + row.conversion_factor + '" required></td>' +
-            '<td><input type="number" step="0.01" min="0" name="units[' + idx + '][purchase_price]" value="' + row.purchase_price + '" required></td>' +
-            '<td><input type="number" step="0.01" min="0" name="units[' + idx + '][sale_price]" value="' + row.sale_price + '" required></td>' +
             '<td><button type="button" class="pos-rm" onclick="removeUnitRow(this)">&times;</button></td>';
         tbody.appendChild(tr);
     }
