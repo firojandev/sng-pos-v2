@@ -16,6 +16,17 @@ class Product extends Model
         'shop_id',
         'name',
         'sku',
+        'size',
+        'purchase_price',
+        'sale_price',
+        'is_wholesale',
+        'wholesale_price',
+        'wholesale_min_qty',
+        'has_discount',
+        'discount_type',
+        'discount_value',
+        'has_barcode',
+        'barcode',
         'image_url',
         'category_id',
         'sub_category_id',
@@ -36,7 +47,14 @@ class Product extends Model
         'is_vat' => 'boolean',
         'has_warranty' => 'boolean',
         'has_expiry' => 'boolean',
+        'is_wholesale' => 'boolean',
+        'has_discount' => 'boolean',
+        'has_barcode' => 'boolean',
         'vat_percentage' => 'decimal:2',
+        'purchase_price' => 'decimal:2',
+        'sale_price' => 'decimal:2',
+        'wholesale_price' => 'decimal:2',
+        'discount_value' => 'decimal:2',
         'expiry_date' => 'date',
     ];
 
@@ -58,7 +76,7 @@ class Product extends Model
     public function units(): BelongsToMany
     {
         return $this->belongsToMany(Unit::class, 'product_units')
-            ->withPivot(['is_base', 'conversion_factor', 'purchase_price', 'sale_price'])
+            ->withPivot(['is_base', 'conversion_factor'])
             ->withTimestamps();
     }
 

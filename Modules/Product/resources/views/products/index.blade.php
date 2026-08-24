@@ -41,7 +41,7 @@
                                         @else
                                             <div class="av" style="background:var(--teal-800);">{{ mb_substr($product->name, 0, 1) }}</div>
                                         @endif
-                                        <div class="cell-main">{{ $product->name }}</div>
+                                        <div class="cell-main">{{ $product->name }}{{ $product->size ? ' ('.$product->size.')' : '' }}</div>
                                     </div>
                                 </td>
                                 <td>{{ $product->sku }}</td>
