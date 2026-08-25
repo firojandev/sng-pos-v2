@@ -15,6 +15,14 @@ function toggleSidebar(open) {
     document.getElementById('overlay')?.classList.toggle('show', open);
 }
 
+/* ---------------- Generic modal ---------------- */
+function openModal(id) {
+    document.getElementById(id)?.classList.add('open');
+}
+function closeModal(id) {
+    document.getElementById(id)?.classList.remove('open');
+}
+
 /* ---------------- Language switch ---------------- */
 const placeholderMap = {
     'খুঁজুন...': 'Search...',
@@ -43,3 +51,5 @@ document.addEventListener('DOMContentLoaded', initLang);
 window.toast = toast;
 window.toggleSidebar = toggleSidebar;
 window.setLang = setLang;
+window.openModal = openModal;
+window.closeModal = closeModal;

@@ -9,5 +9,6 @@
     "Customer": true,
     "Supplier": true,
     "Sales": true,
-    "Purchase": true
+    "Purchase": true,
+    "Cashbox": true
 }

@@ -1,0 +1,30 @@
+{
+    "name": "nwidart/cashbox",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Cashbox\\": "app/",
+            "Modules\\Cashbox\\Database\\Factories\\": "database/factories/",
+            "Modules\\Cashbox\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\Cashbox\\Tests\\": "tests/"
+        }
+    }
+}

@@ -15,6 +15,8 @@ class Features
         return [
             'sales' => ['bn' => 'বিক্রয়', 'en' => 'Sales'],
             'purchase' => ['bn' => 'ক্রয়', 'en' => 'Purchase'],
+            'cashbox' => ['bn' => 'ক্যাশবক্স', 'en' => 'Cashbox'],
+            'quick-sale' => ['bn' => 'দ্রুত বেচা', 'en' => 'Quick Sale'],
             'stock' => ['bn' => 'স্টক', 'en' => 'Stock'],
             'products' => ['bn' => 'পণ্য ব্যবস্থাপনা', 'en' => 'Product Management'],
             'customers' => ['bn' => 'গ্রাহক', 'en' => 'Customers'],
