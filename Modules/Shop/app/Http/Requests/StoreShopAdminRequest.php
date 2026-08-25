@@ -18,7 +18,7 @@ class StoreShopAdminRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'role' => ['required', Rule::exists('roles', 'name')->where('guard_name', 'web')->whereNot('name', 'Super Admin')],
+            'role' => ['required', Rule::exists('roles', 'name')->where('guard_name', 'web')->whereNull('shop_id')->whereNot('name', 'Super Admin')],
         ];
     }
 }

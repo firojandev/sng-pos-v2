@@ -5,6 +5,8 @@
     subtitle-en="Manage system login accounts"
     active="users"
 >
+    <x-user::tabbar active="users" />
+
     <div class="panel" style="margin-top:0;">
         <div class="panel-body">
             <div class="section-row">
@@ -21,6 +23,7 @@
                         <tr>
                             <th class="bn">নাম</th><th class="en" style="display:none;">Name</th>
                             <th class="bn">ইমেইল</th><th class="en" style="display:none;">Email</th>
+                            <th class="bn">রোল</th><th class="en" style="display:none;">Role</th>
                             <th class="bn">যোগদানের তারিখ</th><th class="en" style="display:none;">Joined</th>
                             <th></th>
                         </tr>
@@ -35,6 +38,13 @@
                                     </div>
                                 </td>
                                 <td>{{ $user->email }}</td>
+                                <td>
+                                    @forelse ($user->roles as $role)
+                                        <span class="badge b-teal">{{ $role->name }}</span>
+                                    @empty
+                                        <span class="badge b-grey bn">রোল নেই</span><span class="badge b-grey en" style="display:none;">No role</span>
+                                    @endforelse
+                                </td>
                                 <td>{{ $user->created_at->format('d M, Y') }}</td>
                                 <td>
                                     <div class="row-actions">
@@ -52,7 +62,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="4"><div class="helper" style="margin-top:0;">কোনো ইউজার নেই</div></td></tr>
+                            <tr><td colspan="5"><div class="helper" style="margin-top:0;">কোনো ইউজার নেই</div></td></tr>
                         @endforelse
                     </tbody>
                 </table>
