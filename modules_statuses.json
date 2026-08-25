@@ -4,5 +4,10 @@
     "User": true,
     "Employee": true,
     "Product": true,
-    "Shop": true
+    "Shop": true,
+    "Finance": true,
+    "Customer": true,
+    "Supplier": true,
+    "Sales": true,
+    "Purchase": true
 }

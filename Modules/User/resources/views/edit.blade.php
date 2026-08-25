@@ -5,6 +5,8 @@
     subtitle-en="Update user account details"
     active="users"
 >
+    <x-user::tabbar active="users" />
+
     <div class="panel" style="margin-top:0; max-width:520px;">
         <div class="panel-head">
             <div class="panel-title bn">ইউজারের তথ্য</div>

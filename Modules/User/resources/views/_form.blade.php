@@ -1,4 +1,7 @@
-@php $isEdit = $user->exists; @endphp
+@php
+    $isEdit = $user->exists;
+    $currentRole = $isEdit ? $user->roles->first()?->name : null;
+@endphp
 
 <div class="field">
     <label class="bn">নাম</label><label class="en" style="display:none;">Name</label>
@@ -30,3 +33,18 @@
         <span class="en" style="display:none;">Leave password blank to keep the current password unchanged.</span>
     </div>
 @endif
+
+<div class="field">
+    <label class="bn">রোল</label><label class="en" style="display:none;">Role</label>
+    <select name="role" required>
+        <option value="">-- নির্বাচন করুন --</option>
+        @foreach ($roles as $role)
+            <option value="{{ $role->name }}" {{ old('role', $currentRole) === $role->name ? 'selected' : '' }}>{{ $role->name }}</option>
+        @endforeach
+    </select>
+    @error('role') <div class="field-error">{{ $message }}</div> @enderror
+    <div class="helper" style="margin-top:6px;">
+        <span class="bn">কোনো উপযুক্ত রোল না পেলে আগে "রোল ও পারমিশন" ট্যাব থেকে একটি রোল তৈরি করুন।</span>
+        <span class="en" style="display:none;">If no suitable role exists, create one first from the "Roles & Permissions" tab.</span>
+    </div>
+</div>
