@@ -28,7 +28,7 @@ class ShopController extends Controller
     {
         return view('shop::create', [
             'shop' => new Shop(),
-            'roles' => Role::where('name', '!=', 'Super Admin')->orderBy('name')->get(),
+            'roles' => Role::whereNull('shop_id')->where('name', '!=', 'Super Admin')->orderBy('name')->get(),
             'features' => Features::all(),
         ]);
     }
@@ -62,7 +62,7 @@ class ShopController extends Controller
     {
         return view('shop::edit', [
             'shop' => $shop,
-            'roles' => Role::where('name', '!=', 'Super Admin')->orderBy('name')->get(),
+            'roles' => Role::whereNull('shop_id')->where('name', '!=', 'Super Admin')->orderBy('name')->get(),
             'features' => Features::all(),
             'admins' => $shop->admins()->with('roles')->get(),
         ]);

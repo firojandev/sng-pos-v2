@@ -5,6 +5,8 @@
     subtitle-en="Create a new system login account"
     active="users"
 >
+    <x-user::tabbar active="users" />
+
     <div class="panel" style="margin-top:0; max-width:520px;">
         <div class="panel-head">
             <div class="panel-title bn">ইউজারের তথ্য</div>
