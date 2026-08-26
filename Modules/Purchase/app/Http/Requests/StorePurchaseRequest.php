@@ -37,7 +37,9 @@ class StorePurchaseRequest extends FormRequest
             'items.*.mfg_date' => ['nullable', 'date'],
             'items.*.expiry_date' => ['nullable', 'date', 'after_or_equal:items.*.mfg_date'],
             'items.*.quantity' => ['required', 'numeric', 'min:0.01'],
+            'items.*.unit_id' => ['nullable', 'exists:units,id'],
             'items.*.purchase_price' => ['required', 'numeric', 'min:0'],
+            'items.*.sale_price' => ['required', 'numeric', 'min:0'],
         ];
     }
 }

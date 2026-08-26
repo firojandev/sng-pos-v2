@@ -64,7 +64,7 @@ class PurchaseController extends Controller
     public function create(): View
     {
         $suppliers = Supplier::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone', 'address']);
-        $products = Product::where('status', 'active')->withSum('batches', 'quantity')->orderBy('name')->get();
+        $products = Product::where('status', 'active')->withSum('batches', 'quantity')->with('units')->orderBy('name')->get();
         $warehouses = Warehouse::where('status', 'active')->with('branch')->orderBy('name')->get();
         $employees = Employee::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);
 
@@ -115,7 +115,7 @@ class PurchaseController extends Controller
     public function edit(Purchase $purchase): View
     {
         $suppliers = Supplier::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone', 'address']);
-        $products = Product::where('status', 'active')->withSum('batches', 'quantity')->orderBy('name')->get();
+        $products = Product::where('status', 'active')->withSum('batches', 'quantity')->with('units')->orderBy('name')->get();
         $warehouses = Warehouse::where('status', 'active')->with('branch')->orderBy('name')->get();
         $employees = Employee::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);
         $purchase->load('items', 'payments');
@@ -243,6 +243,16 @@ class PurchaseController extends Controller
                     ->update(['has_barcode' => true, 'barcode' => $item['barcode']]);
             }
 
+            $conversionFactor = $this->unitConversionFactor((int) $item['product_id'], $item['unit_id'] ?? null);
+            $baseQuantity = (float) $item['quantity'] * $conversionFactor;
+            $basePurchasePrice = (float) $item['purchase_price'] / $conversionFactor;
+            $baseSalePrice = (float) $item['sale_price'] / $conversionFactor;
+
+            Product::where('id', $item['product_id'])->update([
+                'purchase_price' => $basePurchasePrice,
+                'sale_price' => $baseSalePrice,
+            ]);
+
             $batch = Batch::where('product_id', $item['product_id'])
                 ->where('batch_no', $batchNo)
                 ->where('warehouse_id', $purchase->warehouse_id)
@@ -252,7 +262,7 @@ class PurchaseController extends Controller
             $before = $batch ? (float) $batch->quantity : 0.0;
 
             if ($batch) {
-                $batch->quantity += $item['quantity'];
+                $batch->quantity += $baseQuantity;
                 if (! empty($item['mfg_date'])) {
                     $batch->mfg_date = $item['mfg_date'];
                 }
@@ -265,7 +275,7 @@ class PurchaseController extends Controller
                     'product_id' => $item['product_id'],
                     'warehouse_id' => $purchase->warehouse_id,
                     'batch_no' => $batchNo,
-                    'quantity' => $item['quantity'],
+                    'quantity' => $baseQuantity,
                     'mfg_date' => $item['mfg_date'] ?? null,
                     'expiry_date' => $item['expiry_date'] ?? null,
                 ]);
@@ -277,16 +287,16 @@ class PurchaseController extends Controller
                 'batch_no' => $batchNo,
                 'mfg_date' => $item['mfg_date'] ?? null,
                 'expiry_date' => $item['expiry_date'] ?? null,
-                'quantity' => $item['quantity'],
-                'purchase_price' => $item['purchase_price'],
-                'total' => $item['quantity'] * $item['purchase_price'],
+                'quantity' => $baseQuantity,
+                'purchase_price' => $basePurchasePrice,
+                'total' => $baseQuantity * $basePurchasePrice,
             ]);
 
             StockMovement::create([
                 'product_id' => $item['product_id'],
                 'batch_id' => $batch->id,
                 'type' => 'purchase',
-                'quantity_change' => $item['quantity'],
+                'quantity_change' => $baseQuantity,
                 'quantity_before' => $before,
                 'quantity_after' => (float) $batch->quantity,
                 'reference_type' => Purchase::class,
@@ -294,6 +304,24 @@ class PurchaseController extends Controller
                 'created_by' => Auth::id(),
             ]);
         }
+    }
+
+    /**
+     * How many base units one unit of the item's chosen unit converts to (e.g. a
+     * "Carton" unit with conversion_factor 12 means 1 Carton = 12 base Pieces).
+     * Falls back to 1 (i.e. treat the entered quantity/prices as already in the
+     * base unit) when no unit was chosen or it isn't actually linked to the product.
+     */
+    private function unitConversionFactor(int $productId, ?int $unitId): float
+    {
+        if (! $unitId) {
+            return 1.0;
+        }
+
+        $product = Product::with('units')->find($productId);
+        $factor = $product?->units->firstWhere('id', $unitId)?->pivot->conversion_factor;
+
+        return $factor ? (float) $factor : 1.0;
     }
 
     private function revertItems(Purchase $purchase): void

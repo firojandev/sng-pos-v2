@@ -1,12 +1,22 @@
 @php
     $productData = [];
     foreach ($products as $product) {
+        $baseUnit = $product->units->firstWhere('pivot.is_base', true) ?? $product->units->first();
+
         $productData[$product->id] = [
             'name' => $product->name,
             'sku' => $product->sku,
             'price' => (float) $product->purchase_price,
+            'salePrice' => (float) $product->sale_price,
             'stock' => (float) ($product->batches_sum_quantity ?? 0),
             'barcode' => $product->barcode,
+            'baseUnitId' => $baseUnit?->id,
+            'units' => $product->units->map(fn ($u) => [
+                'id' => $u->id,
+                'label' => $u->name.($u->short_code ? ' ('.$u->short_code.')' : ''),
+                'isBase' => (bool) $u->pivot->is_base,
+                'factor' => (float) $u->pivot->conversion_factor,
+            ])->values(),
         ];
     }
 
@@ -21,6 +31,8 @@
             'product_id' => (int) $item->product_id,
             'qty' => rtrim(rtrim(number_format($item->quantity, 2, '.', ''), '0'), '.'),
             'price' => rtrim(rtrim(number_format($item->purchase_price, 2, '.', ''), '0'), '.'),
+            'salePrice' => rtrim(rtrim(number_format($item->product->sale_price ?? 0, 2, '.', ''), '0'), '.'),
+            'unitId' => null,
             'batchNo' => $item->batch_no,
             'mfgDate' => optional($item->mfg_date)->format('Y-m-d'),
             'expiryDate' => optional($item->expiry_date)->format('Y-m-d'),
@@ -243,6 +255,8 @@
         productId: row.product_id,
         qty: parseFloat(row.qty) || 1,
         price: parseFloat(row.price) || 0,
+        salePrice: parseFloat(row.salePrice) || 0,
+        unitId: row.unitId || (productData[row.product_id]?.baseUnitId ?? ''),
         batchNo: row.batchNo || '',
         mfgDate: row.mfgDate || '',
         expiryDate: row.expiryDate || '',
@@ -255,6 +269,17 @@
 
     function fmt(n) {
         return (Math.round(n * 100) / 100).toFixed(2);
+    }
+
+    /**
+     * Conversion factor of a product's unit (how many base units 1 of this unit is
+     * worth), used to rescale the per-unit price whenever the cart line's unit
+     * changes -- e.g. switching "pcs" to a "box" of 4 should default the price to
+     * 4x, not silently keep the pcs price against a box quantity.
+     */
+    function unitFactor(p, unitId) {
+        const u = (p.units || []).find((x) => String(x.id) === String(unitId));
+        return u ? (u.factor || 1) : 1;
     }
 
     /* ---------------- Catalog (left pane) ---------------- */
@@ -297,7 +322,10 @@
         if (existing) {
             existing.qty += 1;
         } else {
-            cart.push({ productId: productId, qty: 1, price: p.price, batchNo: '', mfgDate: '', expiryDate: '', barcode: p.barcode || '' });
+            cart.push({
+                productId: productId, qty: 1, price: p.price, salePrice: p.salePrice || 0,
+                unitId: p.baseUnitId || '', batchNo: '', mfgDate: '', expiryDate: '', barcode: p.barcode || '',
+            });
         }
         renderAll();
     }
@@ -355,9 +383,13 @@
                         '<button type="button" class="ci-remove" title="Remove">&times;</button>' +
                     '</div>' +
                 '</div>' +
-                '<div class="ci-grid">' +
+                '<div class="ci-grid ci-grid-5">' +
+                    '<div><label class="bn">ক্রয় মূল্য</label><label class="en" style="display:none;">Purchase Price</label><input type="number" step="0.01" min="0" class="ci-price" value="' + item.price + '"></div>' +
+                    '<div><label class="bn">বিক্রয় মূল্য</label><label class="en" style="display:none;">Sale Price</label><input type="number" step="0.01" min="0" class="ci-sale-price" value="' + item.salePrice + '"></div>' +
                     '<div><label class="bn">পরিমাণ</label><label class="en" style="display:none;">Qty</label><input type="number" step="0.01" min="0.01" class="ci-qty" value="' + item.qty + '"></div>' +
-                    '<div><label class="bn">মূল্য</label><label class="en" style="display:none;">Price</label><input type="number" step="0.01" min="0" class="ci-price" value="' + item.price + '"></div>' +
+                    '<div><label class="bn">একক</label><label class="en" style="display:none;">Unit</label><select class="ci-unit-select">' +
+                        (p.units || []).map((u) => '<option value="' + u.id + '"' + (String(u.id) === String(item.unitId) ? ' selected' : '') + '>' + escapeHtml(u.label) + '</option>').join('') +
+                    '</select></div>' +
                     '<div><label class="bn">মোট</label><label class="en" style="display:none;">Total</label><input type="text" class="ci-total" value="' + fmt(item.qty * item.price) + '" readonly></div>' +
                 '</div>' +
                 '<div class="item-popover barcode-popover">' +
@@ -378,7 +410,9 @@
         cart.forEach((item, i) => {
             html += '<input type="hidden" name="items[' + i + '][product_id]" value="' + item.productId + '">';
             html += '<input type="hidden" name="items[' + i + '][quantity]" value="' + item.qty + '">';
+            html += '<input type="hidden" name="items[' + i + '][unit_id]" value="' + (item.unitId || '') + '">';
             html += '<input type="hidden" name="items[' + i + '][purchase_price]" value="' + item.price + '">';
+            html += '<input type="hidden" name="items[' + i + '][sale_price]" value="' + item.salePrice + '">';
             html += '<input type="hidden" name="items[' + i + '][batch_no]" value="' + escapeHtml(item.batchNo) + '">';
             html += '<input type="hidden" name="items[' + i + '][barcode]" value="' + escapeHtml(item.barcode) + '">';
             html += '<input type="hidden" name="items[' + i + '][mfg_date]" value="' + item.mfgDate + '">';
@@ -448,10 +482,24 @@
 
         if (e.target.classList.contains('ci-qty')) item.qty = parseFloat(e.target.value) || 0;
         if (e.target.classList.contains('ci-price')) item.price = parseFloat(e.target.value) || 0;
+        if (e.target.classList.contains('ci-sale-price')) item.salePrice = parseFloat(e.target.value) || 0;
         if (e.target.classList.contains('ci-barcode-input')) item.barcode = e.target.value;
         if (e.target.classList.contains('ci-batch-input')) item.batchNo = e.target.value;
         if (e.target.classList.contains('ci-mfg-input')) item.mfgDate = e.target.value;
         if (e.target.classList.contains('ci-expiry-input')) item.expiryDate = e.target.value;
+
+        if (e.target.classList.contains('ci-unit-select')) {
+            const p = productData[item.productId];
+            const factor = unitFactor(p, e.target.value);
+            item.unitId = e.target.value;
+            // Reset the per-unit prices to a sensible default for the newly chosen
+            // unit (base price x factor) so Total stays meaningful -- the shop admin
+            // can still adjust it afterwards for a negotiated wholesale price.
+            item.price = Math.round(p.price * factor * 100) / 100;
+            item.salePrice = Math.round(p.salePrice * factor * 100) / 100;
+            renderAll();
+            return;
+        }
 
         if (e.target.classList.contains('ci-qty') || e.target.classList.contains('ci-price')) {
             row.querySelector('.ci-total').value = fmt(item.qty * item.price);
@@ -530,7 +578,7 @@
         if (hasPayment) amountInput.value = fmt(amount);
 
         renderHiddenFields();
-        document.querySelector('form').submit();
+        document.getElementById('purchase-form').submit();
     });
 
     renderAll();

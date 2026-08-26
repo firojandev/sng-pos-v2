@@ -588,7 +588,7 @@
         if (hasPayment) amountInput.value = fmt(amount);
 
         renderHiddenFields();
-        document.querySelector('form').submit();
+        document.getElementById('sale-form').submit();
     });
 
     renderAll();

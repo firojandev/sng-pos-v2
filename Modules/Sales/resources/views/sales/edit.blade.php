@@ -6,7 +6,7 @@
     active="sales"
 >
     <div class="panel" style="margin-top:0; overflow:hidden;">
-        <form method="POST" action="{{ route('sales.update', $sale) }}">
+        <form method="POST" action="{{ route('sales.update', $sale) }}" id="sale-form">
             @csrf
             @method('PUT')
             @include('sales::sales._form')
