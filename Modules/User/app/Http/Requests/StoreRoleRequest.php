@@ -4,7 +4,7 @@ namespace Modules\User\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Modules\Core\Support\Features;
+use Modules\Core\Support\Permissions;
 
 class StoreRoleRequest extends FormRequest
 {
@@ -21,7 +21,7 @@ class StoreRoleRequest extends FormRequest
                 Rule::unique('roles', 'name')->where('guard_name', 'web')->where('shop_id', auth()->user()->shop_id),
             ],
             'permissions' => ['array'],
-            'permissions.*' => ['string', Rule::in(Features::keys())],
+            'permissions.*' => ['string', Rule::in(Permissions::all())],
         ];
     }
 }

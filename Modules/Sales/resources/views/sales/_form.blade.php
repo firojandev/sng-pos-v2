@@ -21,6 +21,15 @@
         ])->toArray()
         : [['product_id' => '', 'batch_id' => '', 'quantity' => '', 'unit_price' => '']]
     );
+
+    $paymentMethods = \Modules\Core\Support\PaymentMethods::all();
+    $initialPayments = old('payments', $sale->exists
+        ? $sale->payments->map(fn ($payment) => [
+            'method' => $payment->method,
+            'amount' => rtrim(rtrim(number_format($payment->amount, 2, '.', ''), '0'), '.'),
+        ])->toArray()
+        : []
+    );
 @endphp
 
 <script id="sale-products-data" type="application/json">{!! json_encode($productData) !!}</script>
@@ -43,6 +52,23 @@
             @endforeach
         </select>
     </div>
+
+    @if ($sale->exists)
+        <div class="fld">
+            <label class="bn">গুদাম</label><label class="en" style="display:none;">Warehouse</label>
+            <input type="text" value="{{ $sale->warehouse->name ?? '—' }}" disabled style="background:var(--paper);">
+        </div>
+    @else
+        <div class="fld">
+            <label class="bn">গুদাম</label><label class="en" style="display:none;">Warehouse</label>
+            <select onchange="window.location.href = '{{ route('sales.create') }}?warehouse_id=' + this.value;">
+                @foreach ($warehouses as $warehouse)
+                    <option value="{{ $warehouse->id }}" {{ (string) $warehouseId === (string) $warehouse->id ? 'selected' : '' }}>{{ $warehouse->name }} @if($warehouse->branch) ({{ $warehouse->branch->name }}) @endif</option>
+                @endforeach
+            </select>
+        </div>
+        <input type="hidden" name="warehouse_id" value="{{ $warehouseId }}">
+    @endif
 
     <div class="fld">
         <label class="bn">তারিখ</label><label class="en" style="display:none;">Date</label>
@@ -129,8 +155,24 @@
         </div>
 
         <div class="field">
-            <label class="bn">পরিশোধিত (৳)</label><label class="en" style="display:none;">Paid Amount (৳)</label>
-            <input type="number" step="0.01" min="0" name="paid_amount" id="paid-input" value="{{ old('paid_amount', $sale->paid_amount ?? 0) }}">
+            <label class="bn">পেমেন্ট</label><label class="en" style="display:none;">Payment</label>
+            <div id="payment-lines">
+                @foreach ($initialPayments as $i => $row)
+                    <div class="payment-line" data-index="{{ $i }}">
+                        <select name="payments[{{ $i }}][method]" class="payment-method-select">
+                            @foreach ($paymentMethods as $key => $label)
+                                <option value="{{ $key }}" {{ ($row['method'] ?? 'cash') === $key ? 'selected' : '' }}>{{ $label['bn'] }}</option>
+                            @endforeach
+                        </select>
+                        <input type="number" step="0.01" min="0.01" name="payments[{{ $i }}][amount]" class="payment-amount-input" value="{{ $row['amount'] ?? '' }}" placeholder="পরিমাণ">
+                        <button type="button" class="pos-rm remove-payment-btn" title="Remove">&times;</button>
+                    </div>
+                @endforeach
+            </div>
+            <button type="button" class="add-payment-btn" id="add-payment-btn">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                <span class="bn">পেমেন্ট যোগ করুন</span><span class="en">Add Payment</span>
+            </button>
         </div>
 
         <div class="sum-row">
@@ -155,6 +197,37 @@
     const container = document.getElementById('items-container');
     const addBtn = document.getElementById('add-item-btn');
     let rowCount = container.querySelectorAll('.item-row').length;
+
+    const paymentLines = document.getElementById('payment-lines');
+    const addPaymentBtn = document.getElementById('add-payment-btn');
+    const paymentMethodOptions = {!! json_encode(collect($paymentMethods)->map(fn ($label, $key) => '<option value="'.$key.'">'.$label['bn'].'</option>')->implode('')) !!};
+    let paymentCount = paymentLines.querySelectorAll('.payment-line').length;
+
+    function newPaymentLineHtml(index) {
+        return '<div class="payment-line" data-index="'+index+'">' +
+            '<select name="payments['+index+'][method]" class="payment-method-select">'+paymentMethodOptions+'</select>' +
+            '<input type="number" step="0.01" min="0.01" name="payments['+index+'][amount]" class="payment-amount-input" placeholder="পরিমাণ">' +
+            '<button type="button" class="pos-rm remove-payment-btn" title="Remove">&times;</button>' +
+        '</div>';
+    }
+
+    addPaymentBtn.addEventListener('click', () => {
+        paymentLines.insertAdjacentHTML('beforeend', newPaymentLineHtml(paymentCount));
+        paymentCount++;
+    });
+
+    paymentLines.addEventListener('click', (e) => {
+        if (e.target.closest('.remove-payment-btn')) {
+            e.target.closest('.payment-line').remove();
+            recalcGrand();
+        }
+    });
+
+    paymentLines.addEventListener('input', (e) => {
+        if (e.target.classList.contains('payment-amount-input')) {
+            recalcGrand();
+        }
+    });
 
     function escapeHtml(str) {
         return String(str).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -209,7 +282,10 @@
         });
         const discount = parseFloat(document.getElementById('discount-input')?.value) || 0;
         const total = Math.max(subtotal - discount, 0);
-        const paid = parseFloat(document.getElementById('paid-input')?.value) || 0;
+        let paid = 0;
+        paymentLines.querySelectorAll('.payment-amount-input').forEach((input) => {
+            paid += parseFloat(input.value) || 0;
+        });
         const due = Math.max(total - paid, 0);
         document.getElementById('subtotal-display').textContent = subtotal.toFixed(2);
         document.getElementById('total-display').textContent = total.toFixed(2);
@@ -253,7 +329,6 @@
     });
 
     document.getElementById('discount-input')?.addEventListener('input', recalcGrand);
-    document.getElementById('paid-input')?.addEventListener('input', recalcGrand);
 
     container.querySelectorAll('.item-row').forEach(recalcRow);
     recalcGrand();

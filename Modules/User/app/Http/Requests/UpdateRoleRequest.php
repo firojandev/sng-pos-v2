@@ -4,7 +4,7 @@ namespace Modules\User\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Modules\Core\Support\Features;
+use Modules\Core\Support\Permissions;
 
 class UpdateRoleRequest extends FormRequest
 {
@@ -24,7 +24,7 @@ class UpdateRoleRequest extends FormRequest
                     ->ignore($this->route('role')->id),
             ],
             'permissions' => ['array'],
-            'permissions.*' => ['string', Rule::in(Features::keys())],
+            'permissions.*' => ['string', Rule::in(Permissions::all())],
         ];
     }
 }

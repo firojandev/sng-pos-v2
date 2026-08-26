@@ -5,9 +5,11 @@ namespace Modules\User\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Modules\Shop\Support\PlanLimits;
 use Modules\User\Http\Requests\StoreUserRequest;
 use Modules\User\Http\Requests\UpdateUserRequest;
 use Spatie\Permission\Models\Role;
@@ -23,11 +25,18 @@ class UserController extends Controller
 
     public function create(): View
     {
-        return view('user::create', ['user' => new User(), 'roles' => $this->assignableRoles()]);
+        return view('user::create', ['user' => new User, 'roles' => $this->assignableRoles()]);
     }
 
     public function store(StoreUserRequest $request): RedirectResponse
     {
+        $shopId = auth()->user()->shop_id;
+        $currentCount = User::where('shop_id', $shopId)->count();
+
+        if ($message = PlanLimits::check($shopId, 'max_users', $currentCount)) {
+            return redirect()->route('users.index')->with('status', $message);
+        }
+
         $role = $this->resolveRole($request->validated('role'));
 
         $user = User::create([
@@ -93,7 +102,7 @@ class UserController extends Controller
      * Roles this shop admin is allowed to hand out: the global "Admin" role
      * plus any custom roles created for this shop.
      */
-    private function assignableRoles(): \Illuminate\Support\Collection
+    private function assignableRoles(): Collection
     {
         $shopId = auth()->user()->shop_id;
 

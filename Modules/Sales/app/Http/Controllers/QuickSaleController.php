@@ -13,6 +13,20 @@ use Modules\Sales\Models\Sale;
 
 class QuickSaleController extends Controller
 {
+    /**
+     * Map Quick Sale's free-text Bengali payment method labels to a normalized key.
+     *
+     * @return array<string, string>
+     */
+    private function paymentMethodKeys(): array
+    {
+        return [
+            'নগদ টাকা' => 'cash',
+            'মোবাইল ব্যাংকিং' => 'mobile_banking',
+            'ব্যাংক' => 'bank',
+        ];
+    }
+
     public function create(): View
     {
         return view('sales::quick-sale.create');
@@ -24,6 +38,7 @@ class QuickSaleController extends Controller
 
         $customer = $this->resolveCustomer($data);
         $amount = $data['amount'];
+        $paymentMethodLabel = $data['payment_method'] ?? 'নগদ টাকা';
 
         $sale = Sale::create([
             'customer_id' => $customer?->id,
@@ -35,11 +50,16 @@ class QuickSaleController extends Controller
             'due_amount' => 0,
             'profit' => $data['profit'] ?? null,
             'payment_status' => 'paid',
-            'payment_method' => $data['payment_method'] ?? 'নগদ টাকা',
+            'payment_method' => $paymentMethodLabel,
             'note' => $data['note'] ?? null,
         ]);
 
         $sale->update(['invoice_no' => 'SL-'.str_pad((string) $sale->id, 4, '0', STR_PAD_LEFT)]);
+
+        $sale->payments()->create([
+            'method' => $this->paymentMethodKeys()[$paymentMethodLabel] ?? 'cash',
+            'amount' => $amount,
+        ]);
 
         return redirect()->route('sales.index')->with('status', 'দ্রুত বেচা সফলভাবে যোগ করা হয়েছে');
     }

@@ -4,17 +4,75 @@ namespace Modules\Core\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Modules\Cashbox\Models\CashTransaction;
+use Modules\Customer\Models\Customer;
+use Modules\Finance\Models\Expense;
+use Modules\Product\Models\Batch;
+use Modules\Purchase\Models\Purchase;
+use Modules\Sales\Models\Sale;
+use Modules\Supplier\Models\Supplier;
 
 class PageController extends Controller
 {
-    public function dashboard(): View|RedirectResponse
+    public function dashboard(Request $request): View|RedirectResponse
     {
         if (auth()->user()->isSuperAdmin()) {
             return redirect()->route('shops.index');
         }
 
-        return view('core::dashboard');
+        $range = $request->query('range', 'today');
+        $range = in_array($range, ['today', 'week', 'month', 'year', 'all'], true) ? $range : 'today';
+
+        [$from, $to] = $this->rangeBounds($range);
+
+        $saleTotal = Sale::query()
+            ->when($from, fn ($q) => $q->whereDate('sale_date', '>=', $from))
+            ->when($to, fn ($q) => $q->whereDate('sale_date', '<=', $to))
+            ->sum('total');
+
+        $purchaseTotal = Purchase::query()
+            ->when($from, fn ($q) => $q->whereDate('purchase_date', '>=', $from))
+            ->when($to, fn ($q) => $q->whereDate('purchase_date', '<=', $to))
+            ->sum('total');
+
+        $expenseTotal = Expense::query()
+            ->when($from, fn ($q) => $q->whereDate('expense_date', '>=', $from))
+            ->when($to, fn ($q) => $q->whereDate('expense_date', '<=', $to))
+            ->sum('amount');
+
+        $balance = CashTransaction::selectRaw("SUM(CASE WHEN type = 'in' THEN amount ELSE -amount END) as balance")->value('balance') ?? 0;
+
+        $totalStockQty = Batch::sum('quantity');
+
+        $totalReceivable = (float) Customer::sum('opening_due') + (float) Sale::sum('due_amount');
+        $totalPayable = (float) Supplier::sum('opening_due') + (float) Purchase::sum('due_amount');
+
+        return view('core::dashboard', [
+            'range' => $range,
+            'balance' => $balance,
+            'saleTotal' => $saleTotal,
+            'purchaseTotal' => $purchaseTotal,
+            'expenseTotal' => $expenseTotal,
+            'totalStockQty' => $totalStockQty,
+            'totalReceivable' => $totalReceivable,
+            'totalPayable' => $totalPayable,
+        ]);
+    }
+
+    /**
+     * @return array{0: ?string, 1: ?string}
+     */
+    private function rangeBounds(string $range): array
+    {
+        return match ($range) {
+            'today' => [now()->toDateString(), now()->toDateString()],
+            'week' => [now()->startOfWeek()->toDateString(), now()->toDateString()],
+            'month' => [now()->startOfMonth()->toDateString(), now()->toDateString()],
+            'year' => [now()->startOfYear()->toDateString(), now()->toDateString()],
+            default => [null, null],
+        };
     }
 
     public function sales(): View

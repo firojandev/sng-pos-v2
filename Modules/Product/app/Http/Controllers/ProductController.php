@@ -14,6 +14,7 @@ use Modules\Product\Models\Category;
 use Modules\Product\Models\Product;
 use Modules\Product\Models\SubCategory;
 use Modules\Product\Models\Unit;
+use Modules\Shop\Support\PlanLimits;
 
 class ProductController extends Controller
 {
@@ -27,13 +28,19 @@ class ProductController extends Controller
     public function create(): View
     {
         return view('product::products.create', [
-            'product' => new Product(),
+            'product' => new Product,
             ...$this->formOptions(),
         ]);
     }
 
     public function store(StoreProductRequest $request): RedirectResponse
     {
+        $shopId = auth()->user()->shop_id;
+
+        if ($message = PlanLimits::check($shopId, 'max_products', Product::count())) {
+            return redirect()->route('products.index')->with('status', $message);
+        }
+
         $data = $request->safe()->except(['image', 'units']);
         $data['is_vat'] = $request->boolean('is_vat');
         $data['has_warranty'] = $request->boolean('has_warranty');

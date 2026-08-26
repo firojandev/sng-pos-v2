@@ -162,7 +162,14 @@
                     </div>
                     <div class="tx-row">
                         <span class="lbl bn">পরিশোধিত</span><span class="lbl en" style="display:none;">Paid</span>
-                        <span class="val">৳{{ number_format($purchase->paid_amount, 2) }}</span>
+                        <span class="val">
+                            ৳{{ number_format($purchase->paid_amount, 2) }}
+                            @if ($purchase->payments->isNotEmpty())
+                                <div style="font-size:11px; font-weight:400; color:var(--ink-600); margin-top:2px;">
+                                    {{ $purchase->payments->map(fn ($p) => $p->methodLabel()['bn'].' ৳'.number_format($p->amount, 2))->implode(', ') }}
+                                </div>
+                            @endif
+                        </span>
                     </div>
                     <div class="tx-row">
                         <span class="lbl bn">বাকি</span><span class="lbl en" style="display:none;">Due</span>
@@ -206,6 +213,9 @@
                             <span class="bn">মুছে ফেলুন</span><span class="en">Delete</span>
                         </button>
                     </form>
+                    <a href="{{ route('purchase-returns.create', $purchase) }}" class="btn btn-outline" style="flex:1; justify-content:center;">
+                        <span class="bn">ফেরত</span><span class="en">Return</span>
+                    </a>
                     <a href="{{ route('purchase.edit', $purchase) }}" class="btn btn-teal" style="flex:1; justify-content:center;">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg>
                         <span class="bn">কেনাকাটা এডিট</span><span class="en">Edit Purchase</span>

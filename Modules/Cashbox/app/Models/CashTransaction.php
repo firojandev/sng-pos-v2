@@ -6,11 +6,18 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Core\Concerns\BelongsToShop;
+use Modules\Core\Observers\AuditObserver;
 
 class CashTransaction extends Model
 {
-    use BelongsToShop;
+    use BelongsToShop, SoftDeletes;
+
+    protected static function booted(): void
+    {
+        static::observe(AuditObserver::class);
+    }
 
     protected $fillable = [
         'shop_id', 'type', 'source', 'sourceable_type', 'sourceable_id',
@@ -35,6 +42,8 @@ class CashTransaction extends Model
             'purchase' => ['bn' => 'কেনা', 'en' => 'Purchase'],
             'income' => ['bn' => 'আয়', 'en' => 'Income'],
             'expense' => ['bn' => 'ব্যয়', 'en' => 'Expense'],
+            'sale_return' => ['bn' => 'বিক্রয় ফেরত', 'en' => 'Sale Return'],
+            'purchase_return' => ['bn' => 'ক্রয় ফেরত', 'en' => 'Purchase Return'],
         ];
     }
 

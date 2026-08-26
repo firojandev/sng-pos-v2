@@ -4,11 +4,14 @@ namespace Modules\Sales\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Product\Models\Batch;
 use Modules\Product\Models\Product;
 
 class SaleItem extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = ['sale_id', 'product_id', 'batch_id', 'quantity', 'unit_price', 'total'];
 
     protected $casts = [

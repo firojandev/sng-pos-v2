@@ -78,6 +78,57 @@
 
     <div class="panel" style="max-width:640px;">
         <div class="panel-head">
+            <div class="panel-title bn">সাবস্ক্রিপশন</div>
+            <div class="panel-title en" style="display:none;">Subscription</div>
+        </div>
+        <div class="panel-body">
+            <form method="POST" action="{{ route('shops.subscription.update', $shop) }}">
+                @csrf
+                @method('PUT')
+
+                <div class="field-row">
+                    <div class="field" style="margin-top:0;">
+                        <label class="bn">প্ল্যান</label><label class="en" style="display:none;">Plan</label>
+                        <select name="plan_id" required>
+                            @foreach ($plans as $plan)
+                                <option value="{{ $plan->id }}" {{ (string) old('plan_id', $subscription->plan_id ?? '') === (string) $plan->id ? 'selected' : '' }}>{{ $plan->name }} (৳{{ number_format($plan->price, 0) }}/{{ $plan->billing_cycle === 'monthly' ? 'মাস' : 'বছর' }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="field" style="margin-top:0;">
+                        <label class="bn">অবস্থা</label><label class="en" style="display:none;">Status</label>
+                        <select name="status" required>
+                            @foreach (\Modules\Shop\Models\Subscription::statusLabels() as $key => $label)
+                                <option value="{{ $key }}" {{ old('status', $subscription->status ?? 'active') === $key ? 'selected' : '' }}>{{ $label['bn'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field-row">
+                    <div class="field">
+                        <label class="bn">ট্রায়াল শেষ</label><label class="en" style="display:none;">Trial Ends</label>
+                        <input type="date" name="trial_ends_at" value="{{ old('trial_ends_at', optional($subscription->trial_ends_at ?? null)->format('Y-m-d')) }}">
+                    </div>
+                    <div class="field">
+                        <label class="bn">বর্তমান মেয়াদ শুরু</label><label class="en" style="display:none;">Period Start</label>
+                        <input type="date" name="current_period_start" value="{{ old('current_period_start', optional($subscription->current_period_start ?? null)->format('Y-m-d')) }}">
+                    </div>
+                    <div class="field">
+                        <label class="bn">বর্তমান মেয়াদ শেষ</label><label class="en" style="display:none;">Period End</label>
+                        <input type="date" name="current_period_end" value="{{ old('current_period_end', optional($subscription->current_period_end ?? null)->format('Y-m-d')) }}">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-teal" style="margin-top:14px;">
+                    <span class="bn">সাবস্ক্রিপশন হালনাগাদ করুন</span><span class="en">Update Subscription</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="panel" style="max-width:640px;">
+        <div class="panel-head">
             <div class="panel-title bn">এডমিনগণ</div>
             <div class="panel-title en" style="display:none;">Admins</div>
         </div>
