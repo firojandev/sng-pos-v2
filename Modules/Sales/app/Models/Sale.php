@@ -22,14 +22,15 @@ class Sale extends Model
 
     protected $fillable = [
         'shop_id', 'warehouse_id', 'customer_id', 'invoice_no', 'sale_date',
-        'subtotal', 'discount', 'total', 'paid_amount', 'due_amount', 'profit',
-        'payment_status', 'payment_method', 'note',
+        'subtotal', 'discount', 'delivery_charge', 'total', 'paid_amount', 'due_amount', 'profit',
+        'payment_status', 'payment_method', 'note', 'employee_name', 'employee_phone',
     ];
 
     protected $casts = [
         'sale_date' => 'date',
         'subtotal' => 'decimal:2',
         'discount' => 'decimal:2',
+        'delivery_charge' => 'decimal:2',
         'total' => 'decimal:2',
         'paid_amount' => 'decimal:2',
         'due_amount' => 'decimal:2',

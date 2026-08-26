@@ -12,12 +12,13 @@ class SaleItem extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['sale_id', 'product_id', 'batch_id', 'quantity', 'unit_price', 'total'];
+    protected $fillable = ['sale_id', 'product_id', 'batch_id', 'quantity', 'unit_price', 'total', 'warranty_expires_at'];
 
     protected $casts = [
         'quantity' => 'decimal:2',
         'unit_price' => 'decimal:2',
         'total' => 'decimal:2',
+        'warranty_expires_at' => 'date',
     ];
 
     public function sale(): BelongsTo
