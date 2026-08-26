@@ -4,8 +4,9 @@
             'unit_id' => $u->id,
             'is_base' => (bool) $u->pivot->is_base,
             'conversion_factor' => (float) $u->pivot->conversion_factor,
+            'is_smaller_unit' => (bool) $u->pivot->is_smaller_unit,
         ])->values()->all()
-        : [['unit_id' => '', 'is_base' => true, 'conversion_factor' => 1]]);
+        : [['unit_id' => '', 'is_base' => true, 'conversion_factor' => 1, 'is_smaller_unit' => false]]);
 
     $subCategoriesByCategory = $categories->mapWithKeys(
         fn ($category) => [$category->id => $category->subCategories->map(fn ($s) => ['id' => $s->id, 'name' => $s->name])->values()]
@@ -227,8 +228,8 @@
 <div class="field">
     <label class="bn">ইউনিট</label><label class="en" style="display:none;">Units</label>
     <div class="helper" style="margin-top:0; margin-bottom:8px;">
-        <span class="bn">একটি পণ্যের একাধিক ইউনিট থাকতে পারে (যেমন পিস, কার্টুন)। ঠিক একটি ইউনিটকে বেস ইউনিট নির্বাচন করুন।</span>
-        <span class="en" style="display:none;">A product can have multiple units (e.g. Piece, Carton). Select exactly one as the base unit.</span>
+        <span class="bn">একটি পণ্যের একাধিক ইউনিট থাকতে পারে (যেমন পিস, কার্টুন)। ঠিক একটি ইউনিটকে বেস ইউনিট নির্বাচন করুন। যদি এই ইউনিট বেস ইউনিটের চেয়ে বড় হয় (যেমন কার্টুন = কয়েকটি পিস), তাহলে "১ ইউনিট = X বেস" নির্বাচন করে লিখুন এতে কতগুলো বেস ইউনিট আছে। যদি ছোট হয় (যেমন লিটার, যেখানে বেস ইউনিট ড্রাম), তাহলে "X ইউনিট = ১ বেস" নির্বাচন করে লিখুন ১টি বেস ইউনিটে এই ইউনিটের কতগুলো আছে।</span>
+        <span class="en" style="display:none;">A product can have multiple units (e.g. Piece, Carton). Select exactly one as the base unit. If this unit is bigger than the base (e.g. a Carton holding several Pieces), choose "1 unit = X base" and enter how many base units it holds. If it's smaller (e.g. Litre when the base unit is a Drum), choose "X unit = 1 base" and enter how many of this unit make up one base unit.</span>
     </div>
     @error('units') <div class="field-error">{{ $message }}</div> @enderror
 
@@ -238,6 +239,7 @@
                 <tr>
                     <th style="width:60px;"><span class="bn">বেস</span><span class="en">Base</span></th>
                     <th><span class="bn">ইউনিট</span><span class="en">Unit</span></th>
+                    <th><span class="bn">সম্পর্ক</span><span class="en">Relationship</span></th>
                     <th><span class="bn">রূপান্তর হার</span><span class="en">Conversion Factor</span></th>
                     <th style="width:30px;"></th>
                 </tr>
@@ -289,13 +291,17 @@
     }
 
     function addUnitRow(row) {
-        row = row || { unit_id: '', is_base: false, conversion_factor: 1 };
+        row = row || { unit_id: '', is_base: false, conversion_factor: 1, is_smaller_unit: false };
         var idx = unitRowIndex++;
         var tbody = document.getElementById('units-tbody');
         var tr = document.createElement('tr');
         tr.innerHTML =
             '<td style="text-align:center;"><input type="radio" name="units_base_selector" style="width:auto;" ' + (row.is_base ? 'checked' : '') + ' onchange="setBaseRow(' + idx + ')"><input type="hidden" name="units[' + idx + '][is_base]" id="is-base-' + idx + '" value="' + (row.is_base ? 1 : 0) + '"></td>' +
             '<td><select name="units[' + idx + '][unit_id]" required>' + unitOptionsHtml(row.unit_id) + '</select></td>' +
+            '<td><select name="units[' + idx + '][is_smaller_unit]">' +
+                '<option value="0"' + (! row.is_smaller_unit ? ' selected' : '') + '>১ ইউনিট = X বেস</option>' +
+                '<option value="1"' + (row.is_smaller_unit ? ' selected' : '') + '>X ইউনিট = ১ বেস</option>' +
+            '</select></td>' +
             '<td><input type="number" step="0.0001" min="0.0001" name="units[' + idx + '][conversion_factor]" value="' + row.conversion_factor + '" required></td>' +
             '<td><button type="button" class="pos-rm" onclick="removeUnitRow(this)">&times;</button></td>';
         tbody.appendChild(tr);

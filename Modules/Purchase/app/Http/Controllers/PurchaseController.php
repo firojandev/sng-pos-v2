@@ -319,9 +319,18 @@ class PurchaseController extends Controller
         }
 
         $product = Product::with('units')->find($productId);
-        $factor = $product?->units->firstWhere('id', $unitId)?->pivot->conversion_factor;
+        $unit = $product?->units->firstWhere('id', $unitId);
+        $factor = $unit ? (float) $unit->pivot->conversion_factor : 0.0;
 
-        return $factor ? (float) $factor : 1.0;
+        if ($factor <= 0) {
+            return 1.0;
+        }
+
+        // is_smaller_unit means the stored factor is "X of this unit = 1 base
+        // unit" (e.g. Litre when the base unit is a Drum: 1 Drum = 204 Litres),
+        // the inverse of the default "1 of this unit = X base units" (e.g. a
+        // Carton holding 12 base Pieces).
+        return $unit->pivot->is_smaller_unit ? 1 / $factor : $factor;
     }
 
     private function revertItems(Purchase $purchase): void

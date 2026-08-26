@@ -1,6 +1,8 @@
 @php
     $productData = [];
     foreach ($products as $product) {
+        $baseUnit = $product->units->firstWhere('pivot.is_base', true) ?? $product->units->first();
+
         $productData[$product->id] = [
             'name' => $product->name,
             'sku' => $product->sku,
@@ -10,6 +12,20 @@
             'hasWarranty' => (bool) $product->has_warranty,
             'warrantyDuration' => $product->warranty_duration,
             'warrantyType' => $product->warranty_type,
+            'baseUnitId' => $baseUnit?->id,
+            'units' => $product->units->map(function ($u) {
+                $raw = (float) $u->pivot->conversion_factor;
+
+                return [
+                    'id' => $u->id,
+                    'label' => $u->name.($u->short_code ? ' ('.$u->short_code.')' : ''),
+                    'isBase' => (bool) $u->pivot->is_base,
+                    // Effective factor: base units per 1 of this unit. Flipped for
+                    // is_smaller_unit units (e.g. Litre when base is a Drum), where
+                    // the stored value instead means "this many of this unit = 1 base".
+                    'factor' => $u->pivot->is_smaller_unit && $raw > 0 ? 1 / $raw : $raw,
+                ];
+            })->values(),
         ];
     }
 
@@ -23,7 +39,9 @@
         ? $sale->items->map(fn ($item) => [
             'product_id' => (int) $item->product_id,
             'qty' => rtrim(rtrim(number_format($item->quantity, 2, '.', ''), '0'), '.'),
+            'unitId' => $item->unit_id,
             'price' => rtrim(rtrim(number_format($item->unit_price, 2, '.', ''), '0'), '.'),
+            'discount' => rtrim(rtrim(number_format($item->discount, 2, '.', ''), '0'), '.'),
             'barcode' => $item->product->barcode ?? '',
             'warrantyExpiresAt' => optional($item->warranty_expires_at)->format('Y-m-d') ?? '',
         ])->values()->toArray()
@@ -256,7 +274,10 @@
     let cart = initialItems.map((row) => ({
         productId: row.product_id,
         qty: parseFloat(row.qty) || 1,
+        unitId: row.unitId || (productData[row.product_id]?.baseUnitId ?? ''),
         price: parseFloat(row.price) || 0,
+        discountRaw: parseFloat(row.discount) || 0,
+        discountType: 'flat',
         barcode: row.barcode || '',
         warrantyExpiresAt: row.warrantyExpiresAt || '',
     }));
@@ -267,6 +288,27 @@
 
     function fmt(n) {
         return (Math.round(n * 100) / 100).toFixed(2);
+    }
+
+    /**
+     * Conversion factor of a product's unit (how many base units 1 of this unit is
+     * worth), used to rescale the reference/selling price whenever the cart
+     * line's unit changes -- e.g. switching "pcs" to a "Box" of 4 should default
+     * the price to 4x, not silently keep the pcs price against a box quantity.
+     */
+    function unitFactor(p, unitId) {
+        const u = (p.units || []).find((x) => String(x.id) === String(unitId));
+        return u ? (u.factor || 1) : 1;
+    }
+
+    function lineDiscountAmount(item) {
+        const gross = item.qty * item.price;
+        const amount = item.discountType === 'percent' ? gross * (item.discountRaw / 100) : item.discountRaw;
+        return Math.min(Math.max(amount, 0), gross);
+    }
+
+    function lineAmount(item) {
+        return (item.qty * item.price) - lineDiscountAmount(item);
     }
 
     function addDuration(dateStr, amount, unit) {
@@ -330,7 +372,10 @@
             if (p.hasWarranty && p.warrantyDuration && p.warrantyType) {
                 warrantyExpiresAt = addDuration(document.getElementById('sale-date-input').value, p.warrantyDuration, p.warrantyType);
             }
-            cart.push({ productId: productId, qty: 1, price: p.price, barcode: p.barcode || '', warrantyExpiresAt: warrantyExpiresAt });
+            cart.push({
+                productId: productId, qty: 1, unitId: p.baseUnitId || '', price: p.price,
+                discountRaw: 0, discountType: 'flat', barcode: p.barcode || '', warrantyExpiresAt: warrantyExpiresAt,
+            });
         }
         renderAll();
     }
@@ -375,7 +420,9 @@
         }
 
         cartList.innerHTML = cart.map((item, i) => {
-            const p = productData[item.productId] || { name: 'Unknown' };
+            const p = productData[item.productId] || { name: 'Unknown', price: 0, units: [] };
+            const factor = unitFactor(p, item.unitId);
+            const referenceUnitPrice = p.price * factor;
             const hasBarcode = !!item.barcode;
             const hasWarranty = !!item.warrantyExpiresAt;
             const warrantyLabel = hasWarranty ? formatDisplayDate(item.warrantyExpiresAt) : '';
@@ -392,10 +439,20 @@
                         '<button type="button" class="ci-remove" title="Remove">&times;</button>' +
                     '</div>' +
                 '</div>' +
-                '<div class="ci-grid">' +
+                '<div class="ci-grid ci-grid-6">' +
                     '<div><label class="bn">পরিমাণ</label><label class="en" style="display:none;">Qty</label><input type="number" step="0.01" min="0.01" class="ci-qty" value="' + item.qty + '"></div>' +
-                    '<div><label class="bn">মূল্য</label><label class="en" style="display:none;">Price</label><input type="number" step="0.01" min="0" class="ci-price" value="' + item.price + '"></div>' +
-                    '<div><label class="bn">মোট</label><label class="en" style="display:none;">Total</label><input type="text" class="ci-total" value="' + fmt(item.qty * item.price) + '" readonly></div>' +
+                    '<div><label class="bn">একক</label><label class="en" style="display:none;">Unit</label><select class="ci-unit-select">' +
+                        (p.units || []).map((u) => '<option value="' + u.id + '"' + (String(u.id) === String(item.unitId) ? ' selected' : '') + '>' + escapeHtml(u.label) + '</option>').join('') +
+                    '</select></div>' +
+                    '<div><label class="bn">একক মূল্য</label><label class="en" style="display:none;">Unit Price</label><input type="text" class="ci-unit-price" value="' + fmt(referenceUnitPrice) + '" readonly></div>' +
+                    '<div><label class="bn">বিক্রয় মূল্য</label><label class="en" style="display:none;">Selling Price</label><input type="number" step="0.01" min="0" class="ci-price" value="' + item.price + '"></div>' +
+                    '<div><label class="bn">ছাড়</label><label class="en" style="display:none;">Discount</label>' +
+                        '<div class="disc-row ci-disc-row">' +
+                            '<input type="number" step="0.01" min="0" class="ci-discount-raw" value="' + item.discountRaw + '">' +
+                            '<select class="ci-discount-type"><option value="flat"' + (item.discountType === 'flat' ? ' selected' : '') + '>৳</option><option value="percent"' + (item.discountType === 'percent' ? ' selected' : '') + '>%</option></select>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div><label class="bn">মোট</label><label class="en" style="display:none;">Amount</label><input type="text" class="ci-total" value="' + fmt(lineAmount(item)) + '" readonly></div>' +
                 '</div>' +
                 '<div class="item-popover barcode-popover">' +
                     '<div class="fld"><label class="bn">বারকোড</label><label class="en" style="display:none;">Barcode</label><input type="text" class="ci-barcode-input" value="' + escapeHtml(item.barcode) + '" placeholder="বারকোড স্ক্যান/লিখুন"></div>' +
@@ -421,7 +478,9 @@
         cart.forEach((item, i) => {
             html += '<input type="hidden" name="items[' + i + '][product_id]" value="' + item.productId + '">';
             html += '<input type="hidden" name="items[' + i + '][quantity]" value="' + item.qty + '">';
+            html += '<input type="hidden" name="items[' + i + '][unit_id]" value="' + (item.unitId || '') + '">';
             html += '<input type="hidden" name="items[' + i + '][unit_price]" value="' + item.price + '">';
+            html += '<input type="hidden" name="items[' + i + '][discount]" value="' + fmt(lineDiscountAmount(item)) + '">';
             html += '<input type="hidden" name="items[' + i + '][barcode]" value="' + escapeHtml(item.barcode) + '">';
             html += '<input type="hidden" name="items[' + i + '][warranty_expires_at]" value="' + item.warrantyExpiresAt + '">';
         });
@@ -429,7 +488,7 @@
     }
 
     function subtotal() {
-        return cart.reduce((sum, item) => sum + item.qty * item.price, 0);
+        return cart.reduce((sum, item) => sum + lineAmount(item), 0);
     }
 
     function discountAmount() {
@@ -510,10 +569,27 @@
 
         if (e.target.classList.contains('ci-qty')) item.qty = parseFloat(e.target.value) || 0;
         if (e.target.classList.contains('ci-price')) item.price = parseFloat(e.target.value) || 0;
+        if (e.target.classList.contains('ci-discount-raw')) item.discountRaw = parseFloat(e.target.value) || 0;
+        if (e.target.classList.contains('ci-discount-type')) item.discountType = e.target.value;
         if (e.target.classList.contains('ci-barcode-input')) item.barcode = e.target.value;
 
-        if (e.target.classList.contains('ci-qty') || e.target.classList.contains('ci-price')) {
-            row.querySelector('.ci-total').value = fmt(item.qty * item.price);
+        if (e.target.classList.contains('ci-unit-select')) {
+            const p = productData[item.productId];
+            const factor = unitFactor(p, e.target.value);
+            item.unitId = e.target.value;
+            // Reset the selling price to a sensible default for the newly chosen
+            // unit (base sale price x factor) so Amount stays meaningful -- the
+            // shop admin can still adjust it afterwards for a wholesale price.
+            item.price = Math.round(p.price * factor * 100) / 100;
+            renderAll();
+            return;
+        }
+
+        if (
+            e.target.classList.contains('ci-qty') || e.target.classList.contains('ci-price')
+            || e.target.classList.contains('ci-discount-raw') || e.target.classList.contains('ci-discount-type')
+        ) {
+            row.querySelector('.ci-total').value = fmt(lineAmount(item));
         }
         renderHiddenFields();
         recalcGrand();

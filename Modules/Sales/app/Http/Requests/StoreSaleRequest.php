@@ -34,7 +34,9 @@ class StoreSaleRequest extends FormRequest
             'items.*.product_id' => ['required', 'exists:products,id'],
             'items.*.barcode' => ['nullable', 'string', 'max:64'],
             'items.*.quantity' => ['required', 'numeric', 'min:0.01'],
+            'items.*.unit_id' => ['nullable', 'exists:units,id'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
+            'items.*.discount' => ['nullable', 'numeric', 'min:0'],
             'items.*.warranty_expires_at' => ['nullable', 'date', 'after:sale_date'],
         ];
     }

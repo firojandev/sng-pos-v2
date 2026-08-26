@@ -11,12 +11,19 @@
             'stock' => (float) ($product->batches_sum_quantity ?? 0),
             'barcode' => $product->barcode,
             'baseUnitId' => $baseUnit?->id,
-            'units' => $product->units->map(fn ($u) => [
-                'id' => $u->id,
-                'label' => $u->name.($u->short_code ? ' ('.$u->short_code.')' : ''),
-                'isBase' => (bool) $u->pivot->is_base,
-                'factor' => (float) $u->pivot->conversion_factor,
-            ])->values(),
+            'units' => $product->units->map(function ($u) {
+                $raw = (float) $u->pivot->conversion_factor;
+
+                return [
+                    'id' => $u->id,
+                    'label' => $u->name.($u->short_code ? ' ('.$u->short_code.')' : ''),
+                    'isBase' => (bool) $u->pivot->is_base,
+                    // Effective factor: base units per 1 of this unit. Flipped for
+                    // is_smaller_unit units (e.g. Litre when base is a Drum), where
+                    // the stored value instead means "this many of this unit = 1 base".
+                    'factor' => $u->pivot->is_smaller_unit && $raw > 0 ? 1 / $raw : $raw,
+                ];
+            })->values(),
         ];
     }
 

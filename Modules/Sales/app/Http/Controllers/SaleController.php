@@ -70,6 +70,7 @@ class SaleController extends Controller
         $employees = Employee::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);
         $products = Product::where('status', 'active')
             ->withSum(['batches as batches_sum_quantity' => fn ($q) => $q->where('warehouse_id', $warehouseId)], 'quantity')
+            ->with('units')
             ->orderBy('name')->get();
 
         return view('sales::sales.create', [
@@ -125,6 +126,7 @@ class SaleController extends Controller
         $employees = Employee::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);
         $products = Product::where('status', 'active')
             ->withSum(['batches as batches_sum_quantity' => fn ($q) => $q->where('warehouse_id', $sale->warehouse_id)], 'quantity')
+            ->with('units')
             ->orderBy('name')->get();
         $sale->load('items', 'warehouse', 'payments');
 
@@ -183,7 +185,7 @@ class SaleController extends Controller
      */
     private function calculateTotals(array $items, array $data): array
     {
-        $subtotal = collect($items)->sum(fn ($item) => $item['quantity'] * $item['unit_price']);
+        $subtotal = collect($items)->sum(fn ($item) => $this->lineAmount($item));
         $discount = $data['discount'] ?? 0;
         $deliveryCharge = $data['delivery_charge'] ?? 0;
         $total = max($subtotal - $discount + $deliveryCharge, 0);
@@ -195,9 +197,21 @@ class SaleController extends Controller
     }
 
     /**
-     * Gross profit for the sale: line-item margin (sale price minus the product's
-     * purchase price) summed across items, less the invoice-level discount.
-     * Delivery charge is a pass-through cost, so it isn't counted as margin.
+     * A cart line's amount after its own per-item discount (qty x unit price,
+     * both expressed in whichever unit -- pcs, carton, box -- the item was sold
+     * in, minus the flat discount amount for that line).
+     */
+    private function lineAmount(array $item): float
+    {
+        return ($item['quantity'] * $item['unit_price']) - (float) ($item['discount'] ?? 0);
+    }
+
+    /**
+     * Gross profit for the sale: each line's amount (already net of its own
+     * per-item discount) minus the true cost of goods sold for that line --
+     * quantity converted to the product's base unit x its purchase price --
+     * summed across items, less the invoice-level discount. Delivery charge is
+     * a pass-through cost, so it isn't counted as margin.
      */
     private function calculateProfit(array $items, string|float $discount): float
     {
@@ -205,11 +219,40 @@ class SaleController extends Controller
 
         $grossProfit = collect($items)->sum(function ($item) use ($productCosts) {
             $cost = (float) ($productCosts[$item['product_id']] ?? 0);
+            $conversionFactor = $this->unitConversionFactor((int) $item['product_id'], $item['unit_id'] ?? null);
+            $baseQuantity = (float) $item['quantity'] * $conversionFactor;
 
-            return $item['quantity'] * ($item['unit_price'] - $cost);
+            return $this->lineAmount($item) - ($baseQuantity * $cost);
         });
 
         return round($grossProfit - (float) $discount, 2);
+    }
+
+    /**
+     * How many base units one unit of the item's chosen unit converts to (e.g. a
+     * "Box" unit with conversion_factor 4 means 1 Box = 4 base Pieces). Falls
+     * back to 1 (i.e. treat the entered quantity/price as already in the base
+     * unit) when no unit was chosen or it isn't actually linked to the product.
+     */
+    private function unitConversionFactor(int $productId, ?int $unitId): float
+    {
+        if (! $unitId) {
+            return 1.0;
+        }
+
+        $product = Product::with('units')->find($productId);
+        $unit = $product?->units->firstWhere('id', $unitId);
+        $factor = $unit ? (float) $unit->pivot->conversion_factor : 0.0;
+
+        if ($factor <= 0) {
+            return 1.0;
+        }
+
+        // is_smaller_unit means the stored factor is "X of this unit = 1 base
+        // unit" (e.g. Litre when the base unit is a Drum: 1 Drum = 204 Litres),
+        // the inverse of the default "1 of this unit = X base units" (e.g. a
+        // Box holding 4 base Pieces).
+        return $unit->pivot->is_smaller_unit ? 1 / $factor : $factor;
     }
 
     /**
@@ -268,7 +311,13 @@ class SaleController extends Controller
                 $this->applyBarcode((int) $item['product_id'], $item['barcode']);
             }
 
-            $remaining = (float) $item['quantity'];
+            $unitId = $item['unit_id'] ?? null;
+            $conversionFactor = $this->unitConversionFactor((int) $item['product_id'], $unitId);
+            $baseQuantity = (float) $item['quantity'] * $conversionFactor;
+            $baseUnitPrice = (float) $item['unit_price'] / $conversionFactor;
+            $lineDiscount = (float) ($item['discount'] ?? 0);
+
+            $remaining = $baseQuantity;
 
             $batches = Batch::where('product_id', $item['product_id'])
                 ->where('warehouse_id', $sale->warehouse_id)
@@ -291,12 +340,19 @@ class SaleController extends Controller
                 $before = (float) $batch->quantity;
                 $batch->decrement('quantity', $take);
 
+                // A single cart line can split across multiple batches; prorate its
+                // discount by each split's share of the line's total base quantity
+                // so the split rows' totals still sum to the intended line amount.
+                $discountShare = $baseQuantity > 0 ? $lineDiscount * ($take / $baseQuantity) : 0;
+
                 $sale->items()->create([
                     'product_id' => $item['product_id'],
                     'batch_id' => $batch->id,
+                    'unit_id' => $unitId,
                     'quantity' => $take,
-                    'unit_price' => $item['unit_price'],
-                    'total' => $take * $item['unit_price'],
+                    'unit_price' => round($baseUnitPrice, 4),
+                    'discount' => round($discountShare, 2),
+                    'total' => round(($take * $baseUnitPrice) - $discountShare, 2),
                     'warranty_expires_at' => $item['warranty_expires_at'] ?? null,
                 ]);
 

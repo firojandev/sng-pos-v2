@@ -118,6 +118,7 @@ class ProductController extends Controller
             $row['unit_id'] => [
                 'is_base' => (bool) ($row['is_base'] ?? false),
                 'conversion_factor' => $row['conversion_factor'],
+                'is_smaller_unit' => (bool) ($row['is_smaller_unit'] ?? false),
             ],
         ])->toArray();
     }
