@@ -5,6 +5,7 @@ use Modules\Sales\Http\Controllers\QuickSaleController;
 use Modules\Sales\Http\Controllers\SaleController;
 
 Route::middleware(['auth', 'permission:sales', 'feature:sales'])->group(function () {
+    Route::get('sales/ledger', [SaleController::class, 'ledger'])->name('sales.ledger');
     Route::resource('sales', SaleController::class)->except(['show']);
 });
 

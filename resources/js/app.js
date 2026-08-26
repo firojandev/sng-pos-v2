@@ -23,6 +23,15 @@ function closeModal(id) {
     document.getElementById(id)?.classList.remove('open');
 }
 
+/* ---------------- Print a section ---------------- */
+function printSection(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add('print-only');
+    window.print();
+    el.classList.remove('print-only');
+}
+
 /* ---------------- Language switch ---------------- */
 const placeholderMap = {
     'খুঁজুন...': 'Search...',
@@ -53,3 +62,4 @@ window.toggleSidebar = toggleSidebar;
 window.setLang = setLang;
 window.openModal = openModal;
 window.closeModal = closeModal;
+window.printSection = printSection;

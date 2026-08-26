@@ -4,6 +4,7 @@ namespace Modules\Purchase\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Modules\Product\Models\Batch;
@@ -22,13 +23,49 @@ class PurchaseController extends Controller
         return view('purchase::purchase.index', compact('purchases'));
     }
 
+    public function ledger(Request $request): View
+    {
+        $search = trim((string) $request->query('q', ''));
+        $status = $request->query('status', 'all');
+        $from = $request->query('from', now()->startOfMonth()->toDateString());
+        $to = $request->query('to', now()->endOfMonth()->toDateString());
+
+        $query = Purchase::with(['supplier', 'items.product'])
+            ->whereDate('purchase_date', '>=', $from)
+            ->whereDate('purchase_date', '<=', $to);
+
+        if ($search !== '') {
+            $query->whereHas('supplier', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        if (in_array($status, ['paid', 'partial', 'due'], true)) {
+            $query->where('payment_status', $status);
+        }
+
+        $totalAmount = (clone $query)->sum('total');
+
+        $purchases = $query->latest('purchase_date')->paginate(10)->withQueryString();
+
+        return view('purchase::purchase.ledger', [
+            'purchases' => $purchases,
+            'totalAmount' => $totalAmount,
+            'search' => $search,
+            'status' => $status,
+            'from' => $from,
+            'to' => $to,
+        ]);
+    }
+
     public function create(): View
     {
         $suppliers = Supplier::where('status', 'active')->orderBy('name')->get();
         $products = Product::where('status', 'active')->orderBy('name')->get();
 
         return view('purchase::purchase.create', [
-            'purchase' => new Purchase(),
+            'purchase' => new Purchase,
             'suppliers' => $suppliers,
             'products' => $products,
         ]);

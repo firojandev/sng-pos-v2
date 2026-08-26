@@ -1,11 +1,13 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\Core\Http\Controllers\DueLedgerController;
 use Modules\Core\Http\Controllers\PageController;
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/', [PageController::class, 'dashboard'])->name('dashboard');
     Route::get('/settings', [PageController::class, 'settings'])->name('settings.index');
+    Route::get('/due-ledger', [DueLedgerController::class, 'index'])->name('due-ledger.index');
 
     Route::middleware(['permission:sales', 'feature:sales'])
         ->get('/sales', [PageController::class, 'sales'])->name('sales.index');

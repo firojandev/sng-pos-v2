@@ -194,6 +194,31 @@ tbody tr:hover{background:var(--paper);}
 .modal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
 .modal-title{font-family:'Baloo Da 2',sans-serif; font-size:16px; font-weight:700;}
 
+/* Print isolation — toggle .print-only on the element to print, call window.print() */
+@media print{
+  body *{visibility:hidden;}
+  .print-only, .print-only *{visibility:visible;}
+  .print-only{position:fixed; inset:0; background:#fff; padding:24px; overflow:visible; z-index:999;}
+  .drawer-backdrop.print-only{display:flex !important; align-items:flex-start;}
+  .print-only .drawer{box-shadow:none; border-left:none; width:100%; max-width:640px; margin:0 auto;}
+}
+
+/* Total pill (Purchase / Sales history header) */
+.total-pill{background:var(--teal-100); color:var(--teal-800); border-radius:10px; padding:9px 14px; font-size:12.5px; font-weight:600; white-space:nowrap;}
+.total-pill b{font-family:'Manrope',sans-serif; font-weight:800; font-size:14px;}
+
+/* Transaction details drawer */
+.tx-section{background:var(--paper); border:1px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:14px;}
+.tx-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:7px 0;}
+.tx-row + .tx-row{border-top:1px solid var(--paper-line);}
+.tx-row .lbl{font-size:11.5px; color:var(--ink-600); font-weight:600;}
+.tx-row .val{font-weight:700; font-size:13px;}
+.tx-row.strong .lbl, .tx-row.strong .val{font-size:14px; font-weight:800; color:var(--teal-800);}
+.tx-item{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; flex-wrap:wrap;}
+.tx-item + .tx-item{border-top:1px solid var(--paper-line);}
+.tx-item .nm{font-weight:700; font-size:13px; display:flex; align-items:center; gap:8px;}
+.tx-item .meta{font-size:11.5px; color:var(--ink-600); display:flex; gap:14px;}
+
 /* ============ CASHBOX ============ */
 .cash-summary{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:16px;}
 .cash-card{border-radius:var(--radius); padding:18px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px;}

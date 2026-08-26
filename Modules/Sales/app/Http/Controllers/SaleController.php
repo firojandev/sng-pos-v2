@@ -4,6 +4,7 @@ namespace Modules\Sales\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -23,13 +24,49 @@ class SaleController extends Controller
         return view('sales::sales.index', compact('sales'));
     }
 
+    public function ledger(Request $request): View
+    {
+        $search = trim((string) $request->query('q', ''));
+        $status = $request->query('status', 'all');
+        $from = $request->query('from', now()->startOfMonth()->toDateString());
+        $to = $request->query('to', now()->endOfMonth()->toDateString());
+
+        $query = Sale::with(['customer', 'items.product', 'items.batch'])
+            ->whereDate('sale_date', '>=', $from)
+            ->whereDate('sale_date', '<=', $to);
+
+        if ($search !== '') {
+            $query->whereHas('customer', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        if (in_array($status, ['paid', 'partial', 'due'], true)) {
+            $query->where('payment_status', $status);
+        }
+
+        $totalAmount = (clone $query)->sum('total');
+
+        $sales = $query->latest('sale_date')->paginate(10)->withQueryString();
+
+        return view('sales::sales.ledger', [
+            'sales' => $sales,
+            'totalAmount' => $totalAmount,
+            'search' => $search,
+            'status' => $status,
+            'from' => $from,
+            'to' => $to,
+        ]);
+    }
+
     public function create(): View
     {
         $customers = Customer::where('status', 'active')->orderBy('name')->get();
         $products = Product::where('status', 'active')->with('batches')->orderBy('name')->get();
 
         return view('sales::sales.create', [
-            'sale' => new Sale(),
+            'sale' => new Sale,
             'customers' => $customers,
             'products' => $products,
         ]);

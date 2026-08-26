@@ -65,6 +65,30 @@ $navGroups = [
                 'en' => 'Quick Sale',
                 'icon' => '<circle cx="12" cy="12" r="9.2" stroke="currentColor" stroke-width="1.7"/><path d="M12 7.5v9M8.7 15.3c0 1.2 1.2 2.1 3.3 2.1s3.3-.9 3.3-2.1c0-3-6.6-1.2-6.6-4.1 0-1.2 1.2-2.1 3.3-2.1s3.3.9 3.3 2.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
             ],
+            [
+                'key' => 'purchase-ledger',
+                'permission' => 'purchase',
+                'route' => 'purchase.ledger',
+                'bn' => 'কেনার খাতা',
+                'en' => 'Purchase Ledger',
+                'icon' => '<path d="M4 4h16v16H4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 9h8M8 13h8M8 17h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+            ],
+            [
+                'key' => 'sales-ledger',
+                'permission' => 'sales',
+                'route' => 'sales.ledger',
+                'bn' => 'বেচার খাতা',
+                'en' => 'Sales Ledger',
+                'icon' => '<path d="M4 4h16v16H4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 9h8M8 13h8M8 17h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+            ],
+            [
+                'key' => 'due-ledger',
+                'permission' => 'customers',
+                'route' => 'due-ledger.index',
+                'bn' => 'বাকির খাতা',
+                'en' => 'Due Ledger',
+                'icon' => '<circle cx="12" cy="12" r="9.2" stroke="currentColor" stroke-width="1.7"/><path d="M12 7.5v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="16.5" r="1" fill="currentColor"/>',
+            ],
         ],
     ],
     [
@@ -183,7 +207,8 @@ $isNavItemVisible = function (array $item, bool $groupGated, $user) {
     if (! $gated) {
         return true;
     }
-    return $user && $user->shop && $user->shop->hasFeature($item['key']) && $user->can($item['key']);
+    $permissionKey = $item['permission'] ?? $item['key'];
+    return $user && $user->shop && $user->shop->hasFeature($permissionKey) && $user->can($permissionKey);
 };
 @endphp
 
