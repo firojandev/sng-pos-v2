@@ -6,7 +6,7 @@
     active="purchase"
 >
     <div class="panel" style="margin-top:0; overflow:hidden;">
-        <form method="POST" action="{{ route('purchase.update', $purchase) }}">
+        <form method="POST" action="{{ route('purchase.update', $purchase) }}" id="purchase-form">
             @csrf
             @method('PUT')
             @include('purchase::purchase._form')

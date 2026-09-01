@@ -4,11 +4,14 @@ namespace Modules\Purchase\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Product\Models\Batch;
 use Modules\Product\Models\Product;
 
 class PurchaseItem extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'purchase_id', 'product_id', 'batch_id', 'batch_no', 'mfg_date', 'expiry_date',
         'quantity', 'purchase_price', 'total',

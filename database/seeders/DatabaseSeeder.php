@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Modules\Core\Support\Features;
+use Modules\Core\Support\Permissions;
 use Modules\Shop\Models\Shop;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -19,8 +20,8 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        foreach (Features::keys() as $key) {
-            Permission::firstOrCreate(['name' => $key, 'guard_name' => 'web']);
+        foreach (Permissions::all() as $name) {
+            Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
         }
 
         $superAdminRole = Role::firstOrCreate(['name' => 'Super Admin', 'guard_name' => 'web']);
