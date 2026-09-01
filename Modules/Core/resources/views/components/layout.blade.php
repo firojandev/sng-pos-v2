@@ -11,19 +11,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $title }} &middot; মাস্টারপস</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="theme-color" content="#0F172A">
+    <title>{{ $title ? $title . ' · ' : '' }}মাস্টারপস</title>
 
     <script>
         (function () {
             try {
                 var t = localStorage.getItem('theme');
-                if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+                if (t === 'light' || t === 'dark') {
+                    document.documentElement.setAttribute('data-theme', t);
+                }
+                if (localStorage.getItem('sidebar-collapsed') === '1' && window.innerWidth > 1024) {
+                    document.documentElement.classList.add('sidebar-collapsed-init');
+                }
             } catch (e) {}
         })();
     </script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -37,9 +45,9 @@
     <div class="main">
         <x-core::topbar :title="$title" :title-en="$titleEn" :subtitle="$subtitle" :subtitle-en="$subtitleEn" />
 
-        <div class="content">
+        <main class="content">
             {{ $slot }}
-        </div>
+        </main>
 
         <x-core::footer />
     </div>
@@ -49,8 +57,24 @@
 
 @if (session('status'))
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        $(function () {
             toast(@json(session('status')), @json(session('status')));
+        });
+    </script>
+@endif
+
+@if (session('success'))
+    <script>
+        $(function () {
+            toast(@json(session('success')), @json(session('success')));
+        });
+    </script>
+@endif
+
+@if (session('error'))
+    <script>
+        $(function () {
+            toast(@json(session('error')), @json(session('error')));
         });
     </script>
 @endif
