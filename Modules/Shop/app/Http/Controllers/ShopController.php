@@ -12,7 +12,10 @@ use Modules\Core\Support\Features;
 use Modules\Shop\Http\Requests\StoreShopAdminRequest;
 use Modules\Shop\Http\Requests\StoreShopRequest;
 use Modules\Shop\Http\Requests\UpdateShopRequest;
+use Modules\Shop\Http\Requests\UpdateShopSubscriptionRequest;
+use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
+use Modules\Shop\Models\Subscription;
 use Spatie\Permission\Models\Role;
 
 class ShopController extends Controller
@@ -27,7 +30,7 @@ class ShopController extends Controller
     public function create(): View
     {
         return view('shop::create', [
-            'shop' => new Shop(),
+            'shop' => new Shop,
             'roles' => Role::whereNull('shop_id')->where('name', '!=', 'Super Admin')->orderBy('name')->get(),
             'features' => Features::all(),
         ]);
@@ -65,7 +68,19 @@ class ShopController extends Controller
             'roles' => Role::whereNull('shop_id')->where('name', '!=', 'Super Admin')->orderBy('name')->get(),
             'features' => Features::all(),
             'admins' => $shop->admins()->with('roles')->get(),
+            'subscription' => $shop->subscription()->with('plan')->first(),
+            'plans' => Plan::where('status', 'active')->orderBy('price')->get(),
         ]);
+    }
+
+    public function updateSubscription(UpdateShopSubscriptionRequest $request, Shop $shop): RedirectResponse
+    {
+        Subscription::updateOrCreate(
+            ['shop_id' => $shop->id],
+            $request->validated()
+        );
+
+        return redirect()->route('shops.edit', $shop)->with('status', 'সাবস্ক্রিপশন হালনাগাদ করা হয়েছে');
     }
 
     public function update(UpdateShopRequest $request, Shop $shop): RedirectResponse

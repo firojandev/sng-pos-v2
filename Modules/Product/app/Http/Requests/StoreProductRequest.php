@@ -47,6 +47,7 @@ class StoreProductRequest extends FormRequest
             'units.*.unit_id' => ['required', 'distinct', 'exists:units,id'],
             'units.*.is_base' => ['nullable', 'boolean'],
             'units.*.conversion_factor' => ['required', 'numeric', 'min:0.0001'],
+            'units.*.is_smaller_unit' => ['nullable', 'boolean'],
         ];
     }
 

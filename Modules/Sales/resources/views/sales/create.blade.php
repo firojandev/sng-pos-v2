@@ -6,7 +6,7 @@
     active="sales"
 >
     <div class="panel" style="margin-top:0; overflow:hidden;">
-        <form method="POST" action="{{ route('sales.store') }}">
+        <form method="POST" action="{{ route('sales.store') }}" id="sale-form">
             @csrf
             @include('sales::sales._form')
         </form>

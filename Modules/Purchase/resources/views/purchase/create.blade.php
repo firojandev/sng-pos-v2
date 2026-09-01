@@ -6,7 +6,7 @@
     active="purchase"
 >
     <div class="panel" style="margin-top:0; overflow:hidden;">
-        <form method="POST" action="{{ route('purchase.store') }}">
+        <form method="POST" action="{{ route('purchase.store') }}" id="purchase-form">
             @csrf
             @include('purchase::purchase._form')
         </form>

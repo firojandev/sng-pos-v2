@@ -28,6 +28,15 @@
     </div>
 
     <div class="top-actions">
+        <div class="themeswitch">
+            <button id="theme-light" onclick="setTheme('light')" title="Light">
+                <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.3" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.5v2.4M12 19.1v2.4M4.4 4.4l1.7 1.7M17.9 17.9l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.4 19.6l1.7-1.7M17.9 6.1l1.7-1.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+            <button id="theme-dark" onclick="setTheme('dark')" title="Dark">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+            </button>
+        </div>
+
         <div class="langswitch">
             <button id="btn-bn" class="active" onclick="setLang('bn')">বাং</button>
             <button id="btn-en" onclick="setLang('en')">EN</button>

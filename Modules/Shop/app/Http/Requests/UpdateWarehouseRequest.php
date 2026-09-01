@@ -1,0 +1,23 @@
+<?php
+
+namespace Modules\Shop\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class UpdateWarehouseRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    public function rules(): array
+    {
+        return [
+            'branch_id' => ['required', 'exists:branches,id'],
+            'name' => ['required', 'string', 'max:255'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'status' => ['required', 'in:active,inactive'],
+        ];
+    }
+}

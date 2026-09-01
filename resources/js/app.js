@@ -15,6 +15,65 @@ function toggleSidebar(open) {
     document.getElementById('overlay')?.classList.toggle('show', open);
 }
 
+/* ---------------- Generic modal ---------------- */
+function openModal(id) {
+    document.getElementById(id)?.classList.add('open');
+}
+function closeModal(id) {
+    document.getElementById(id)?.classList.remove('open');
+}
+
+/* ---------------- Print a section ---------------- */
+function printSection(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add('print-only');
+    window.print();
+    el.classList.remove('print-only');
+}
+
+/* ---------------- Theme (light/dark) ---------------- */
+function setTheme(theme) {
+    if (theme === 'light' || theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', theme);
+        try { localStorage.setItem('theme', theme); } catch (e) {}
+    } else {
+        document.documentElement.removeAttribute('data-theme');
+        try { localStorage.removeItem('theme'); } catch (e) {}
+    }
+    updateThemeButtons();
+}
+
+function updateThemeButtons() {
+    let stored = null;
+    try { stored = localStorage.getItem('theme'); } catch (e) {}
+    const systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const effective = stored || (systemDark ? 'dark' : 'light');
+    document.getElementById('theme-light')?.classList.toggle('active', effective === 'light');
+    document.getElementById('theme-dark')?.classList.toggle('active', effective === 'dark');
+}
+
+document.addEventListener('DOMContentLoaded', updateThemeButtons);
+window.setTheme = setTheme;
+
+/* ---------------- Mobile view preview toggle ---------------- */
+function setMobilePreview(enabled) {
+    document.body.classList.toggle('mobile-preview', enabled);
+    try { localStorage.setItem('mobile-preview', enabled ? '1' : '0'); } catch (e) {}
+}
+
+function updateMobilePreviewToggle() {
+    let stored = null;
+    try { stored = localStorage.getItem('mobile-preview'); } catch (e) {}
+    const enabled = stored === '1';
+    document.body.classList.toggle('mobile-preview', enabled);
+    const input = document.getElementById('mobile-preview-input');
+    if (input) input.checked = enabled;
+}
+
+document.addEventListener('DOMContentLoaded', updateMobilePreviewToggle);
+window.setMobilePreview = setMobilePreview;
+
 /* ---------------- Language switch ---------------- */
 const placeholderMap = {
     'খুঁজুন...': 'Search...',
@@ -43,3 +102,6 @@ document.addEventListener('DOMContentLoaded', initLang);
 window.toast = toast;
 window.toggleSidebar = toggleSidebar;
 window.setLang = setLang;
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.printSection = printSection;

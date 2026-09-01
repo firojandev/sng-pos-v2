@@ -15,6 +15,13 @@ $superAdminGroups = [
                 'en' => 'Shops',
                 'icon' => '<path d="M3 9.5 12 4l9 5.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>',
             ],
+            [
+                'key' => 'plans',
+                'route' => 'plans.index',
+                'bn' => 'প্ল্যান',
+                'en' => 'Plans',
+                'icon' => '<path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+            ],
         ],
     ],
 ];
@@ -51,6 +58,60 @@ $navGroups = [
                 'en' => 'Purchase',
                 'icon' => '<path d="M3 7h18l-1.5 10.5a2 2 0 0 1-2 1.5H6.5a2 2 0 0 1-2-1.5L3 7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8 7V5.5A3.5 3.5 0 0 1 11.5 2h1A3.5 3.5 0 0 1 16 5.5V7" stroke="currentColor" stroke-width="1.7"/>',
             ],
+            [
+                'key' => 'cashbox',
+                'route' => 'cashbox.index',
+                'bn' => 'ক্যাশবক্স',
+                'en' => 'Cashbox',
+                'icon' => '<rect x="2.5" y="6" width="19" height="13" rx="2" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12.5" r="3" stroke="currentColor" stroke-width="1.6"/><path d="M2.5 9.5h3M18.5 15.5h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+            ],
+            [
+                'key' => 'quick-sale',
+                'route' => 'quick-sale.create',
+                'bn' => 'দ্রুত বেচা',
+                'en' => 'Quick Sale',
+                'icon' => '<circle cx="12" cy="12" r="9.2" stroke="currentColor" stroke-width="1.7"/><path d="M12 7.5v9M8.7 15.3c0 1.2 1.2 2.1 3.3 2.1s3.3-.9 3.3-2.1c0-3-6.6-1.2-6.6-4.1 0-1.2 1.2-2.1 3.3-2.1s3.3.9 3.3 2.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
+            ],
+            [
+                'key' => 'purchase-ledger',
+                'permission' => 'purchase',
+                'route' => 'purchase.ledger',
+                'bn' => 'কেনার খাতা',
+                'en' => 'Purchase Ledger',
+                'icon' => '<path d="M4 4h16v16H4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 9h8M8 13h8M8 17h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+            ],
+            [
+                'key' => 'sales-ledger',
+                'permission' => 'sales',
+                'route' => 'sales.ledger',
+                'bn' => 'বেচার খাতা',
+                'en' => 'Sales Ledger',
+                'icon' => '<path d="M4 4h16v16H4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 9h8M8 13h8M8 17h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+            ],
+            [
+                'key' => 'purchase-returns',
+                'permission' => 'purchase',
+                'route' => 'purchase-returns.index',
+                'bn' => 'ক্রয় ফেরত',
+                'en' => 'Purchase Returns',
+                'icon' => '<path d="M4 12a8 8 0 1 1 2.3 5.7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M4 17v-5h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
+            ],
+            [
+                'key' => 'sale-returns',
+                'permission' => 'sales',
+                'route' => 'sale-returns.index',
+                'bn' => 'বিক্রয় ফেরত',
+                'en' => 'Sale Returns',
+                'icon' => '<path d="M4 12a8 8 0 1 1 2.3 5.7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M4 17v-5h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
+            ],
+            [
+                'key' => 'due-ledger',
+                'permission' => 'customers',
+                'route' => 'due-ledger.index',
+                'bn' => 'বাকির খাতা',
+                'en' => 'Due Ledger',
+                'icon' => '<circle cx="12" cy="12" r="9.2" stroke="currentColor" stroke-width="1.7"/><path d="M12 7.5v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="16.5" r="1" fill="currentColor"/>',
+            ],
         ],
     ],
     [
@@ -63,6 +124,14 @@ $navGroups = [
                 'bn' => 'স্টক',
                 'en' => 'Stock',
                 'icon' => '<path d="M3 8l9-5 9 5-9 5-9-5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M3 8v8l9 5 9-5V8" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+            ],
+            [
+                'key' => 'stock-transfers',
+                'permission' => 'stock',
+                'route' => 'stock-transfers.index',
+                'bn' => 'স্টক ট্রান্সফার',
+                'en' => 'Stock Transfer',
+                'icon' => '<path d="M4 7h11M15 7l-3-3M15 7l-3 3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 17H9M9 17l3-3M9 17l3 3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
             ],
             [
                 'key' => 'products',
@@ -125,6 +194,13 @@ $navGroups = [
         'gated' => true,
         'items' => [
             [
+                'key' => 'branches',
+                'route' => 'branches.index',
+                'bn' => 'শাখা ও গুদাম',
+                'en' => 'Branches & Warehouses',
+                'icon' => '<path d="M3 9.5 12 4l9 5.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>',
+            ],
+            [
                 'key' => 'employees',
                 'route' => 'employees.index',
                 'bn' => 'কর্মচারী',
@@ -137,6 +213,14 @@ $navGroups = [
                 'bn' => 'ইউজার',
                 'en' => 'Users',
                 'icon' => '<circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.6"/><path d="M4.5 20c1-4 3.8-6 7.5-6s6.5 2 7.5 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+            ],
+            [
+                'key' => 'audit-log',
+                'permission' => 'audit',
+                'route' => 'audit-log.index',
+                'bn' => 'অ্যাক্টিভিটি লগ',
+                'en' => 'Audit Log',
+                'icon' => '<path d="M4 19V9m6 10V5m6 14v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
             ],
         ],
     ],
@@ -160,6 +244,14 @@ $navGroups = [
                 'icon' => '<circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/><path d="M19 12a7 7 0 0 0-.14-1.4l2-1.5-2-3.5-2.3.9a7 7 0 0 0-2.4-1.4L14 2h-4l-.16 2.1a7 7 0 0 0-2.4 1.4l-2.3-.9-2 3.5 2 1.5A7 7 0 0 0 5 12a7 7 0 0 0 .14 1.4l-2 1.5 2 3.5 2.3-.9a7 7 0 0 0 2.4 1.4L10 22h4l.16-2.1a7 7 0 0 0 2.4-1.4l2.3.9 2-3.5-2-1.5c.09-.46.14-.93.14-1.4Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>',
                 'gated' => false,
             ],
+            [
+                'key' => 'subscription',
+                'route' => 'subscription.show',
+                'bn' => 'সাবস্ক্রিপশন',
+                'en' => 'Subscription',
+                'icon' => '<rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3 9.5h18" stroke="currentColor" stroke-width="1.6"/><path d="M6.5 14.5h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+                'gated' => false,
+            ],
         ],
     ],
 ];
@@ -169,7 +261,8 @@ $isNavItemVisible = function (array $item, bool $groupGated, $user) {
     if (! $gated) {
         return true;
     }
-    return $user && $user->shop && $user->shop->hasFeature($item['key']) && $user->can($item['key']);
+    $permissionKey = $item['permission'] ?? $item['key'];
+    return $user && $user->shop && $user->shop->hasFeature($permissionKey) && $user->can("{$permissionKey}.view");
 };
 @endphp
 
