@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Revoltify\Subscriptionify\Subscriptionify;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -27,5 +28,9 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Paginator::defaultView('vendor.pagination.custom');
+
+        Subscriptionify::resolveSubscribableUsing(function () {
+            return auth()->user()?->shop;
+        });
     }
 }

@@ -15,7 +15,6 @@ use Modules\Shop\Http\Requests\UpdateShopRequest;
 use Modules\Shop\Http\Requests\UpdateShopSubscriptionRequest;
 use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
-use Modules\Shop\Models\Subscription;
 use Spatie\Permission\Models\Role;
 
 class ShopController extends Controller
@@ -68,17 +67,30 @@ class ShopController extends Controller
             'roles' => Role::whereNull('shop_id')->where('name', '!=', 'Super Admin')->orderBy('name')->get(),
             'features' => Features::all(),
             'admins' => $shop->admins()->with('roles')->get(),
-            'subscription' => $shop->subscription()->with('plan')->first(),
-            'plans' => Plan::where('status', 'active')->orderBy('price')->get(),
+            'subscription' => $shop->subscription(),
+            'plans' => Plan::where('is_active', true)->orWhere('status', 'active')->orderBy('price')->get(),
         ]);
     }
 
     public function updateSubscription(UpdateShopSubscriptionRequest $request, Shop $shop): RedirectResponse
     {
-        Subscription::updateOrCreate(
-            ['shop_id' => $shop->id],
-            $request->validated()
-        );
+        $plan = Plan::find($request->validated('plan_id'));
+        if ($plan) {
+            $shop->subscriptions()->updateOrCreate(
+                [
+                    'subscribable_type' => Shop::class,
+                    'subscribable_id' => $shop->id,
+                ],
+                [
+                    'plan_id' => $plan->id,
+                    'status' => $request->validated('status', 'active'),
+                    'trial_ends_at' => $request->validated('trial_ends_at'),
+                    'starts_at' => $request->validated('current_period_start', now()),
+                    'ends_at' => $request->validated('current_period_end'),
+                ]
+            );
+            $shop->clearSubscriptionCache();
+        }
 
         return redirect()->route('shops.edit', $shop)->with('status', 'সাবস্ক্রিপশন হালনাগাদ করা হয়েছে');
     }

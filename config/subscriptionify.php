@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
+use Modules\Shop\Models\Plan;
+use Modules\Shop\Models\Subscription;
 use Revoltify\Subscriptionify\Models\Feature;
-use Revoltify\Subscriptionify\Models\Plan;
-use Revoltify\Subscriptionify\Models\Subscription;
 
 return [
 
