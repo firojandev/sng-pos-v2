@@ -1,6 +1,8 @@
 import $ from 'jquery';
+import DataTable from 'datatables.net';
 
 window.$ = window.jQuery = $;
+window.DataTable = DataTable;
 
 /* ---------------- Global AJAX Setup ---------------- */
 $(function () {
@@ -151,6 +153,115 @@ $(function () {
     });
 });
 
+/* ---------------- Table & DataTables Helper Logic ---------------- */
+function initTableBehaviors() {
+    // 1. Master Checkbox Select All / Deselect All
+    $(document).on('change', '[data-table-select-all]', function () {
+        const $container = $(this).closest('.table-container');
+        const isChecked = $(this).is(':checked');
+        const $rows = $container.find('[data-table-select-row]');
+
+        $rows.prop('checked', isChecked);
+        $rows.each(function () {
+            $(this).closest('tr').toggleClass('is-selected', isChecked);
+        });
+
+        updateTableBulkBar($container);
+    });
+
+    // 2. Row Checkbox Selection
+    $(document).on('change', '[data-table-select-row]', function () {
+        const $container = $(this).closest('.table-container');
+        const $row = $(this).closest('tr');
+        $row.toggleClass('is-selected', $(this).is(':checked'));
+
+        const total = $container.find('[data-table-select-row]').length;
+        const checked = $container.find('[data-table-select-row]:checked').length;
+        const $master = $container.find('[data-table-select-all]');
+
+        if (checked === 0) {
+            $master.prop('checked', false).prop('indeterminate', false);
+        } else if (checked === total) {
+            $master.prop('checked', true).prop('indeterminate', false);
+        } else {
+            $master.prop('checked', false).prop('indeterminate', true);
+        }
+
+        updateTableBulkBar($container);
+    });
+
+    function updateTableBulkBar($container) {
+        const checked = $container.find('[data-table-select-row]:checked').length;
+        const $bulkBar = $container.find('[data-table-bulk-bar]');
+        $bulkBar.find('.selected-count').text(checked);
+        if (checked > 0) {
+            $bulkBar.slideDown(150);
+        } else {
+            $bulkBar.slideUp(150);
+        }
+    }
+
+    // 3. Quick Instant Search for Static Tables
+    $(document).on('input', '.table-quick-search', function () {
+        const query = $(this).val().toLowerCase().trim();
+        const targetId = $(this).data('target');
+        const $table = targetId ? $('#' + targetId) : $(this).closest('.table-container').find('.app-table');
+
+        if (!$table.length) return;
+
+        // If DataTable instance exists, delegate to DataTable search
+        if ($.fn.DataTable && $.fn.DataTable.isDataTable($table)) {
+            $table.DataTable().search(query).draw();
+            return;
+        }
+
+        // Otherwise filter standard HTML rows
+        $table.find('tbody tr').each(function () {
+            const rowText = $(this).text().toLowerCase();
+            $(this).toggle(rowText.indexOf(query) !== -1);
+        });
+    });
+}
+
+/**
+ * Standardized DataTable Initializer Helper
+ * @param {string|jQuery} selector
+ * @param {object} options
+ */
+function initDataTable(selector, options = {}) {
+    if (!$.fn.DataTable) {
+        console.warn('DataTables plugin is not loaded yet.');
+        return null;
+    }
+
+    const defaultOptions = {
+        responsive: true,
+        processing: true,
+        pageLength: 10,
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'সকল (All)']],
+        language: {
+            search: 'খুঁজুন / Search:',
+            searchPlaceholder: 'এখানে লিখুন...',
+            lengthMenu: 'প্রতি পেজে _MENU_ টি রেকর্ড',
+            info: 'মোট _TOTAL_ টির মধ্যে _START_ থেকে _END_ দেখানো হচ্ছে',
+            infoEmpty: 'কোনো রেকর্ড নেই',
+            infoFiltered: '(_MAX_ টি রেকর্ড থেকে ফিল্টার করা)',
+            zeroRecords: 'কোনো ম্যাচিং রেকর্ড পাওয়া যায়নি',
+            emptyTable: 'টেবিলে কোনো তথ্য নেই',
+            paginate: {
+                first: 'প্রথম',
+                previous: 'পূর্ববর্তী',
+                next: 'পরবর্তী',
+                last: 'সর্বশেষ'
+            }
+        },
+        dom: '<"table-toolbar"<"table-toolbar-start"l><"table-toolbar-end"f>>rt<"table-footer"<"table-pagination-info"i><"table-pagination"p>>'
+    };
+
+    const merged = $.extend(true, {}, defaultOptions, options);
+    return $(selector).DataTable(merged);
+}
+
 /* ---------------- Expose Globals for Blade Templates ---------------- */
 window.toast = toast;
 window.toggleSidebar = toggleSidebar;
@@ -160,3 +271,9 @@ window.setMobilePreview = setMobilePreview;
 window.openModal = openModal;
 window.closeModal = closeModal;
 window.printSection = printSection;
+window.initDataTable = initDataTable;
+
+$(function () {
+    initTableBehaviors();
+});
+

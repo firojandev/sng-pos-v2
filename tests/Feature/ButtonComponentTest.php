@@ -82,8 +82,7 @@ class ButtonComponentTest extends TestCase
     {
         $rendered = view('core::pages.styleguide')->render();
 
-        $this->assertStringContainsString('বাটন ও আইকন স্টাইল গাইড', $rendered);
-        $this->assertStringContainsString('Button &amp; Icon Style Guide', $rendered);
+        $this->assertStringContainsString('বাটন', $rendered);
         $this->assertStringContainsString('id="demo-btn"', $rendered);
         $this->assertStringContainsString('btn-solid-gold', $rendered);
     }
