@@ -25,7 +25,7 @@ class RoleController extends Controller
     public function create(): View
     {
         return view('user::roles.create', [
-            'role' => new Role(),
+            'role' => new Role,
             'features' => $this->assignableFeatures(),
             'rolePermissions' => [],
         ]);

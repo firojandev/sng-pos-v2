@@ -20,7 +20,7 @@ class SupplierController extends Controller
 
     public function create(): View
     {
-        return view('supplier::create', ['supplier' => new Supplier()]);
+        return view('supplier::create', ['supplier' => new Supplier]);
     }
 
     public function store(StoreSupplierRequest $request): RedirectResponse

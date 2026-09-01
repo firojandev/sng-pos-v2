@@ -7,6 +7,7 @@ use Modules\Core\Http\Controllers\PageController;
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/', [PageController::class, 'dashboard'])->name('dashboard');
+    Route::get('/styleguide', [PageController::class, 'styleguide'])->name('styleguide');
     Route::get('/settings', [PageController::class, 'settings'])->name('settings.index');
     Route::get('/due-ledger', [DueLedgerController::class, 'index'])->name('due-ledger.index');
 

@@ -20,7 +20,7 @@ class CategoryController extends Controller
 
     public function create(): View
     {
-        return view('product::categories.create', ['category' => new Category()]);
+        return view('product::categories.create', ['category' => new Category]);
     }
 
     public function store(StoreCategoryRequest $request): RedirectResponse

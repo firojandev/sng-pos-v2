@@ -18,7 +18,7 @@ class UpdateProductRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:255'],
-            'sku' => ['required', 'string', 'max:255', 'unique:products,sku,' . $productId],
+            'sku' => ['required', 'string', 'max:255', 'unique:products,sku,'.$productId],
             'size' => ['nullable', 'string', 'max:100'],
             'purchase_price' => ['required', 'numeric', 'min:0'],
             'sale_price' => ['required', 'numeric', 'min:0'],
@@ -43,7 +43,7 @@ class UpdateProductRequest extends FormRequest
             'discount_type' => ['nullable', 'in:flat,percentage', 'required_if:has_discount,1'],
             'discount_value' => ['nullable', 'numeric', 'min:0', 'required_if:has_discount,1'],
             'has_barcode' => ['nullable', 'boolean'],
-            'barcode' => ['nullable', 'string', 'max:255', 'unique:products,barcode,' . $productId, 'required_if:has_barcode,1'],
+            'barcode' => ['nullable', 'string', 'max:255', 'unique:products,barcode,'.$productId, 'required_if:has_barcode,1'],
 
             'units' => ['required', 'array', 'min:1'],
             'units.*.unit_id' => ['required', 'distinct', 'exists:units,id'],

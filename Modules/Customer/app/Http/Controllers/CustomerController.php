@@ -20,7 +20,7 @@ class CustomerController extends Controller
 
     public function create(): View
     {
-        return view('customer::create', ['customer' => new Customer()]);
+        return view('customer::create', ['customer' => new Customer]);
     }
 
     public function store(StoreCustomerRequest $request): RedirectResponse

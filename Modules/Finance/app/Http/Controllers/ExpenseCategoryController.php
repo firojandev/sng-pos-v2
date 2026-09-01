@@ -20,7 +20,7 @@ class ExpenseCategoryController extends Controller
 
     public function create(): View
     {
-        return view('finance::expense-categories.create', ['expenseCategory' => new ExpenseCategory()]);
+        return view('finance::expense-categories.create', ['expenseCategory' => new ExpenseCategory]);
     }
 
     public function store(StoreExpenseCategoryRequest $request): RedirectResponse

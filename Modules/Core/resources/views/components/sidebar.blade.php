@@ -245,6 +245,14 @@ $navGroups = [
                 'gated' => false,
             ],
             [
+                'key' => 'styleguide',
+                'route' => 'styleguide',
+                'bn' => 'কম্পোনেন্ট গাইড',
+                'en' => 'UI Style Guide',
+                'icon' => '<rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.6"/><rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.6"/><rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.6"/>',
+                'gated' => false,
+            ],
+            [
                 'key' => 'subscription',
                 'route' => 'subscription.show',
                 'bn' => 'সাবস্ক্রিপশন',

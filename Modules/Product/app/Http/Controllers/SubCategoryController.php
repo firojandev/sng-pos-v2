@@ -23,7 +23,7 @@ class SubCategoryController extends Controller
     {
         $categories = Category::orderBy('name')->get();
 
-        return view('product::sub-categories.create', ['subCategory' => new SubCategory(), 'categories' => $categories]);
+        return view('product::sub-categories.create', ['subCategory' => new SubCategory, 'categories' => $categories]);
     }
 
     public function store(StoreSubCategoryRequest $request): RedirectResponse

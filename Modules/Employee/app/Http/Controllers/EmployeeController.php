@@ -20,7 +20,7 @@ class EmployeeController extends Controller
 
     public function create(): View
     {
-        return view('employee::create', ['employee' => new Employee()]);
+        return view('employee::create', ['employee' => new Employee]);
     }
 
     public function store(StoreEmployeeRequest $request): RedirectResponse

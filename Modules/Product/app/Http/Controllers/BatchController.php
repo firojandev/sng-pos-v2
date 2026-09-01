@@ -23,7 +23,7 @@ class BatchController extends Controller
     {
         $products = Product::orderBy('name')->get();
 
-        return view('product::batches.create', ['batch' => new Batch(), 'products' => $products]);
+        return view('product::batches.create', ['batch' => new Batch, 'products' => $products]);
     }
 
     public function store(StoreBatchRequest $request): RedirectResponse

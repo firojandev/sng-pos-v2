@@ -23,7 +23,7 @@ class ModelController extends Controller
     {
         $brands = Brand::orderBy('name')->get();
 
-        return view('product::models.create', ['model' => new ProductModel(), 'brands' => $brands]);
+        return view('product::models.create', ['model' => new ProductModel, 'brands' => $brands]);
     }
 
     public function store(StoreProductModelRequest $request): RedirectResponse

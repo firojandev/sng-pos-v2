@@ -23,7 +23,7 @@ class ExpenseController extends Controller
     {
         $expenseCategories = ExpenseCategory::orderBy('name')->get();
 
-        return view('finance::expenses.create', ['expense' => new Expense(), 'expenseCategories' => $expenseCategories]);
+        return view('finance::expenses.create', ['expense' => new Expense, 'expenseCategories' => $expenseCategories]);
     }
 
     public function store(StoreExpenseRequest $request): RedirectResponse

@@ -20,7 +20,7 @@ class IncomeController extends Controller
 
     public function create(): View
     {
-        return view('finance::income.create', ['income' => new Income()]);
+        return view('finance::income.create', ['income' => new Income]);
     }
 
     public function store(StoreIncomeRequest $request): RedirectResponse
