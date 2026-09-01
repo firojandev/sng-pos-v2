@@ -38,6 +38,8 @@
 body{font-family:'Hind Siliguri','Inter',sans-serif; background:var(--paper); color:var(--ink-900); font-size:14px;}
 .bn{display:inline;} .en{display:none;}
 body.lang-en .bn{display:none;} body.lang-en .en{display:inline;}
+th.bn, td.bn{display:table-cell;} th.en, td.en{display:none;}
+body.lang-en th.bn, body.lang-en td.bn{display:none;} body.lang-en th.en, body.lang-en td.en{display:table-cell;}
 body.lang-en{font-family:'Inter','Hind Siliguri',sans-serif;}
 .display{font-family:'Baloo Da 2',sans-serif;} body.lang-en .display{font-family:'Manrope','Baloo Da 2',sans-serif;}
 a{color:inherit; text-decoration:none;}
@@ -174,10 +176,13 @@ tbody tr:hover{background:var(--paper);}
 .act{width:28px; height:28px; border-radius:8px; background:var(--paper); border:1px solid var(--border); display:inline-flex; align-items:center; justify-content:center;}
 .act:hover{background:var(--teal-100);}
 
-.pagination{display:flex; align-items:center; justify-content:space-between; margin-top:14px; font-size:11.5px; color:var(--ink-600);}
-.pg-btns{display:flex; gap:6px;}
-.pg-btns button{width:28px; height:28px; border-radius:8px; border:1px solid var(--border); background:var(--card); font-size:11.5px; font-weight:700; color:var(--ink-600);}
+.pagination{display:flex; align-items:center; justify-content:space-between; margin-top:14px; font-size:11.5px; color:var(--ink-600); flex-wrap:wrap; gap:10px;}
+.pg-btns{display:flex; gap:6px; align-items:center; flex-wrap:wrap;}
+.pg-btns button, .pg-btns a{width:28px; height:28px; border-radius:8px; border:1px solid var(--border); background:var(--card); font-size:11.5px; font-weight:700; color:var(--ink-600); display:inline-flex; align-items:center; justify-content:center; font-family:'Hind Siliguri',sans-serif;}
+.pg-btns a:hover{background:var(--paper);}
 .pg-btns button.active{background:var(--teal-800); color:#fff; border-color:var(--teal-800);}
+.pg-btns button:disabled{opacity:.4; cursor:not-allowed;}
+.pg-btns .pg-dots{width:auto; border:none; background:none; padding:0 2px; color:var(--ink-400);}
 
 /* Tabs (Product Management) */
 .tabbar{display:flex; gap:4px; overflow-x:auto; border-bottom:1px solid var(--border); margin-bottom:16px;}
