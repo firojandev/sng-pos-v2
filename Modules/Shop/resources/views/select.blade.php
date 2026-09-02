@@ -16,10 +16,10 @@
             margin-bottom: 20px;
         }
         .shop-select-card {
-            border: 1.5px solid var(--border);
+            border: 1.5px solid var(--border, #e2e8f0);
             border-radius: 14px;
             padding: 16px 18px;
-            background: var(--card);
+            background: var(--card, #ffffff);
             transition: all 0.2s ease-in-out;
             cursor: pointer;
             position: relative;
@@ -27,42 +27,87 @@
             align-items: center;
             justify-content: space-between;
             gap: 14px;
+            color: var(--ink-900, #0f172a);
         }
         .shop-select-card:hover {
-            border-color: var(--teal-600, #0d9488);
-            box-shadow: 0 8px 20px -6px rgba(13, 148, 136, 0.18);
+            border-color: #0d9488;
+            box-shadow: 0 8px 20px -6px rgba(13, 148, 136, 0.2);
             transform: translateY(-2px);
         }
         .shop-select-card.active {
-            border-color: var(--teal-600, #0d9488);
-            background: var(--teal-50, rgba(13, 148, 136, 0.04));
+            border-color: #0d9488;
+            background: rgba(13, 148, 136, 0.05);
+        }
+        [data-theme="dark"] .shop-select-card,
+        :root[data-theme="dark"] .shop-select-card {
+            background: var(--card, #111827);
+            border-color: var(--border, #1f293d);
+            color: #f8fafc;
+        }
+        [data-theme="dark"] .shop-select-card:hover,
+        :root[data-theme="dark"] .shop-select-card:hover {
+            border-color: #14b8a6;
+            box-shadow: 0 8px 20px -6px rgba(20, 184, 166, 0.25);
+        }
+        [data-theme="dark"] .shop-select-card.active,
+        :root[data-theme="dark"] .shop-select-card.active {
+            border-color: #14b8a6 !important;
+            background: rgba(20, 184, 166, 0.12) !important;
         }
         .shop-select-icon {
             width: 44px;
             height: 44px;
             border-radius: 12px;
-            background: var(--teal-50, rgba(13, 148, 136, 0.1));
-            color: var(--teal-800, #115e59);
+            background: rgba(13, 148, 136, 0.08);
+            color: #0f766e;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
-            border: 1px solid var(--teal-200, rgba(13, 148, 136, 0.2));
+            border: 1px solid rgba(13, 148, 136, 0.2);
+        }
+        [data-theme="dark"] .shop-select-icon,
+        :root[data-theme="dark"] .shop-select-icon {
+            background: rgba(20, 184, 166, 0.15);
+            color: #2dd4bf;
+            border-color: rgba(20, 184, 166, 0.3);
         }
         .shop-select-name {
             font-size: 15px;
             font-weight: 700;
-            color: var(--ink-900);
+            color: var(--ink-900, #0f172a);
             line-height: 1.3;
+        }
+        [data-theme="dark"] .shop-select-name,
+        :root[data-theme="dark"] .shop-select-name,
+        [data-theme="dark"] .shop-select-card.active .shop-select-name,
+        :root[data-theme="dark"] .shop-select-card.active .shop-select-name {
+            color: #f8fafc !important;
         }
         .shop-select-meta {
             display: flex;
             align-items: center;
             gap: 6px;
             font-size: 11.5px;
-            color: var(--ink-500);
+            color: var(--ink-600, #475569);
             margin-top: 4px;
             flex-wrap: wrap;
+        }
+        [data-theme="dark"] .shop-select-meta,
+        :root[data-theme="dark"] .shop-select-meta,
+        [data-theme="dark"] .shop-select-card.active .shop-select-meta,
+        :root[data-theme="dark"] .shop-select-card.active .shop-select-meta {
+            color: #94a3b8 !important;
+        }
+        .shop-select-plan-tag {
+            color: #0f766e;
+            font-weight: 600;
+        }
+        [data-theme="dark"] .shop-select-plan-tag,
+        :root[data-theme="dark"] .shop-select-plan-tag,
+        [data-theme="dark"] .shop-select-card.active .shop-select-plan-tag,
+        :root[data-theme="dark"] .shop-select-card.active .shop-select-plan-tag {
+            color: #2dd4bf !important;
         }
         .shop-select-btn {
             display: inline-flex;
@@ -72,15 +117,24 @@
             font-size: 12.5px;
             font-weight: 600;
             border-radius: 8px;
-            background: var(--teal-600, #0d9488);
-            color: #ffffff;
+            background: #0d9488;
+            color: #ffffff !important;
             border: none;
             cursor: pointer;
             transition: background 0.15s ease;
             white-space: nowrap;
         }
         .shop-select-btn:hover {
-            background: var(--teal-700, #0f766e);
+            background: #0f766e;
+        }
+        [data-theme="dark"] .shop-select-btn,
+        :root[data-theme="dark"] .shop-select-btn {
+            background: #0d9488;
+            color: #ffffff !important;
+        }
+        [data-theme="dark"] .shop-select-btn:hover,
+        :root[data-theme="dark"] .shop-select-btn:hover {
+            background: #14b8a6;
         }
         .shop-select-footer {
             border-top: 1px solid var(--border);
@@ -92,6 +146,10 @@
             color: var(--ink-600);
             flex-wrap: wrap;
             gap: 10px;
+        }
+        [data-theme="dark"] .shop-select-footer,
+        :root[data-theme="dark"] .shop-select-footer {
+            color: #cbd5e1;
         }
     </style>
 
@@ -148,7 +206,7 @@
                                     @endif
                                     @if ($subscription && $subscription->plan)
                                         <span>•</span>
-                                        <span style="color:var(--teal-800); font-weight:600;">{{ $subscription->plan->name }}</span>
+                                        <span class="shop-select-plan-tag">{{ $subscription->plan->name }}</span>
                                     @endif
                                 </div>
                             </div>

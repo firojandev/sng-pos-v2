@@ -59,6 +59,9 @@
     $initialEmployeeName = old('employee_name', $purchase->employee_name);
     $initialEmployeePhone = old('employee_phone', $purchase->employee_phone);
     $initialAmount = $purchase->exists ? $purchase->paid_amount : 0;
+    $defaultAccount = $accounts->firstWhere('is_default', true) ?? $accounts->first();
+    $initialAccountId = old('payments.0.account_id', $purchase->exists ? optional($purchase->payments->first())->account_id : $defaultAccount?->id);
+    $initialPaymentMethod = old('payments.0.method', $purchase->exists ? optional($purchase->payments->first())->method : 'cash');
 @endphp
 
 <script id="purchase-products-data" type="application/json">{!! json_encode($productData) !!}</script>
@@ -168,7 +171,8 @@
 <div id="hidden-fields-container"></div>
 <input type="hidden" name="discount" id="discount-hidden">
 <input type="hidden" name="supplier_id" id="supplier-id-hidden" value="{{ $initialSupplierId }}">
-<input type="hidden" name="payments[0][method]" id="payment-method-hidden" value="cash">
+<input type="hidden" name="payments[0][account_id]" id="payment-account-hidden" value="{{ $initialAccountId }}">
+<input type="hidden" name="payments[0][method]" id="payment-method-hidden" value="{{ $initialPaymentMethod }}">
 <input type="hidden" name="payments[0][amount]" id="payment-amount-hidden" value="0">
 
 <div class="drawer-backdrop" id="confirmPaymentDrawer">
@@ -185,6 +189,17 @@
         <div class="field">
             <label class="bn">ক্রয়ের তারিখ</label><label class="en" style="display:none;">Purchase Date</label>
             <input type="text" id="drawer-date-display" readonly>
+        </div>
+
+        <div class="field" id="drawer-account-group">
+            <label class="bn">পেমেন্ট অ্যাকাউন্ট</label><label class="en" style="display:none;">Payment Account</label>
+            <select id="drawer-account-select" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-family:'Manrope',sans-serif;">
+                @foreach ($accounts as $acc)
+                    <option value="{{ $acc->id }}" data-type="{{ $acc->type }}" {{ (int) $initialAccountId === $acc->id ? 'selected' : '' }}>
+                        {{ $acc->display_name }} ({{ $acc->typeLabel()['bn'] }}) @if($acc->is_default) [ডিফল্ট] @endif
+                    </option>
+                @endforeach
+            </select>
         </div>
 
         <div class="field">
@@ -577,10 +592,22 @@
         if (drawerMode === 'cash' && amount <= 0) amount = total;
         amount = Math.min(Math.max(amount, 0), total);
 
+        const accountSelect = document.getElementById('drawer-account-select');
+        const selectedOpt = accountSelect && accountSelect.selectedIndex >= 0 ? accountSelect.options[accountSelect.selectedIndex] : null;
+        const accountType = selectedOpt ? selectedOpt.getAttribute('data-type') : 'cash';
+        const methodMap = { cash: 'cash', bank: 'bank', mfs: 'mobile_banking' };
+
+        const accountInput = document.getElementById('payment-account-hidden');
         const methodInput = document.getElementById('payment-method-hidden');
         const amountInput = document.getElementById('payment-amount-hidden');
         const hasPayment = amount > 0;
+
+        if (accountInput) {
+            accountInput.disabled = !hasPayment;
+            accountInput.value = selectedOpt ? selectedOpt.value : '';
+        }
         methodInput.disabled = !hasPayment;
+        methodInput.value = methodMap[accountType] || 'cash';
         amountInput.disabled = !hasPayment;
         if (hasPayment) amountInput.value = fmt(amount);
 

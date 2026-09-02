@@ -420,7 +420,11 @@ function initDeleteConfirmBehaviors() {
         }).then((result) => {
             if (result.isConfirmed) {
                 $form.data('confirmed', true);
-                $form.trigger('submit');
+                if ($form[0]) {
+                    $form[0].submit();
+                } else {
+                    $form.trigger('submit');
+                }
             }
         });
     });

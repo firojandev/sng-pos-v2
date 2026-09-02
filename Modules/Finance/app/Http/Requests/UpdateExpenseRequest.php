@@ -14,6 +14,7 @@ class UpdateExpenseRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'account_id' => ['nullable', 'exists:accounts,id'],
             'expense_category_id' => ['nullable', 'exists:expense_categories,id'],
             'title' => ['required', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'min:0'],

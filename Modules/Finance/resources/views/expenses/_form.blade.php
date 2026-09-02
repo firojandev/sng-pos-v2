@@ -29,9 +29,16 @@
 </div>
 
 <div class="field">
-    <label class="bn">পেমেন্ট পদ্ধতি</label><label class="en" style="display:none;">Payment Method</label>
-    <input type="text" name="payment_method" value="{{ old('payment_method', $expense->payment_method) }}" placeholder="যেমন নগদ, ব্যাংক, বিকাশ">
-    @error('payment_method') <div class="field-error">{{ $message }}</div> @enderror
+    <label class="bn">পেমেন্ট অ্যাকাউন্ট</label><label class="en" style="display:none;">Payment Account</label>
+    <select name="account_id">
+        <option value="">-- নির্বাচন করুন (ডিফল্ট অ্যাকাউন্ট) --</option>
+        @foreach ($accounts as $acc)
+            <option value="{{ $acc->id }}" {{ (int) old('account_id', $expense->account_id ?? ($acc->is_default ? $acc->id : 0)) === $acc->id ? 'selected' : '' }}>
+                {{ $acc->display_name }} ({{ $acc->typeLabel()['bn'] }}) - ব্যালেন্স: ৳{{ number_format($acc->current_balance, 2) }}
+            </option>
+        @endforeach
+    </select>
+    @error('account_id') <div class="field-error">{{ $message }}</div> @enderror
 </div>
 
 <div class="field">

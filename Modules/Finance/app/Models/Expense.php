@@ -17,7 +17,7 @@ class Expense extends Model
         static::observe(AuditObserver::class);
     }
 
-    protected $fillable = ['shop_id', 'expense_category_id', 'title', 'amount', 'expense_date', 'payment_method', 'note'];
+    protected $fillable = ['shop_id', 'account_id', 'expense_category_id', 'title', 'amount', 'expense_date', 'payment_method', 'note'];
 
     protected $casts = [
         'expense_date' => 'date',
@@ -27,5 +27,10 @@ class Expense extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(ExpenseCategory::class, 'expense_category_id');
+    }
+
+    public function account(): BelongsTo
+    {
+        return $this->belongsTo(Account::class);
     }
 }

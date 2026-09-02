@@ -52,7 +52,7 @@
 
     --paper:#0B0F19; --paper-line:#1E293B; --card:#111827;
     --ink-900:#F8FAFC; --ink-700:#CBD5E1; --ink-600:#94A3B8; --ink-400:#64748B;
-    --teal-100:#133E37; --gold-100:#3E2F13; --gold-ink:#FCD34D;
+    --teal-100:#133E37; --teal-50:#0B2926; --gold-100:#3E2F13; --gold-ink:#FCD34D;
     --red-100:#44171E; --red-ink:#FDA4AF; --red-ic-bg:#501B24;
     --green-100:#123C27; --green-ink:#86EFAC; --green-ic-bg:#1A4D33;
     --blue-100:#172B4D; --blue-ink:#93C5FD; --blue-val:#DBEAFE; --blue-ic-bg:#1E3A6B;
@@ -81,7 +81,7 @@
 
   --paper:#0B0F19; --paper-line:#1E293B; --card:#111827;
   --ink-900:#F8FAFC; --ink-700:#CBD5E1; --ink-600:#94A3B8; --ink-400:#64748B;
-  --teal-100:#133E37; --gold-100:#3E2F13; --gold-ink:#FCD34D;
+  --teal-100:#133E37; --teal-50:#0B2926; --gold-100:#3E2F13; --gold-ink:#FCD34D;
   --red-100:#44171E; --red-ink:#FDA4AF; --red-ic-bg:#501B24;
   --green-100:#123C27; --green-ink:#86EFAC; --green-ic-bg:#1A4D33;
   --blue-100:#172B4D; --blue-ink:#93C5FD; --blue-val:#DBEAFE; --blue-ic-bg:#1E3A6B;

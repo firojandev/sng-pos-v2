@@ -6,12 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Core\Support\PaymentMethods;
+use Modules\Finance\Models\Account;
 
 class PurchasePayment extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['purchase_id', 'method', 'amount', 'note'];
+    protected $fillable = ['purchase_id', 'account_id', 'method', 'amount', 'note'];
 
     protected $casts = [
         'amount' => 'decimal:2',
@@ -25,5 +26,10 @@ class PurchasePayment extends Model
     public function purchase(): BelongsTo
     {
         return $this->belongsTo(Purchase::class);
+    }
+
+    public function account(): BelongsTo
+    {
+        return $this->belongsTo(Account::class);
     }
 }

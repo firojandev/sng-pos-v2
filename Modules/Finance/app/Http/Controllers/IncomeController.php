@@ -7,20 +7,26 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Modules\Finance\Http\Requests\StoreIncomeRequest;
 use Modules\Finance\Http\Requests\UpdateIncomeRequest;
+use Modules\Finance\Models\Account;
 use Modules\Finance\Models\Income;
 
 class IncomeController extends Controller
 {
     public function index(): View
     {
-        $incomes = Income::latest('income_date')->paginate(10);
+        $incomes = Income::with('account')->latest('income_date')->paginate(10);
 
         return view('finance::income.index', compact('incomes'));
     }
 
     public function create(): View
     {
-        return view('finance::income.create', ['income' => new Income]);
+        $accounts = Account::active()->orderByDesc('is_default')->orderBy('name')->get();
+
+        return view('finance::income.create', [
+            'income' => new Income,
+            'accounts' => $accounts,
+        ]);
     }
 
     public function store(StoreIncomeRequest $request): RedirectResponse
@@ -32,7 +38,9 @@ class IncomeController extends Controller
 
     public function edit(Income $income): View
     {
-        return view('finance::income.edit', compact('income'));
+        $accounts = Account::active()->orderByDesc('is_default')->orderBy('name')->get();
+
+        return view('finance::income.edit', compact('income', 'accounts'));
     }
 
     public function update(UpdateIncomeRequest $request, Income $income): RedirectResponse

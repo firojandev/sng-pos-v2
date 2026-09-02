@@ -18,6 +18,7 @@ class StoreQuickSaleRequest extends FormRequest
     {
         return [
             'sale_date' => ['nullable', 'date'],
+            'account_id' => ['nullable', 'exists:accounts,id'],
             'payment_method' => ['nullable', 'string', 'max:100'],
             'amount' => ['required', 'numeric', 'min:0.01'],
             'profit' => ['nullable', 'numeric'],

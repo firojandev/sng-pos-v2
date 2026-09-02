@@ -24,6 +24,8 @@ class Features
             'suppliers' => ['bn' => 'সরবরাহকারী', 'en' => 'Suppliers'],
             'income' => ['bn' => 'আয়', 'en' => 'Income'],
             'expense' => ['bn' => 'ব্যয়', 'en' => 'Expense'],
+            'accounts' => ['bn' => 'অ্যাকাউন্ট', 'en' => 'Accounts'],
+            'account-transfers' => ['bn' => 'ফান্ড ট্রান্সফার', 'en' => 'Fund Transfers'],
             'tax' => ['bn' => 'ট্যাক্স ও ভ্যাট', 'en' => 'Tax & VAT'],
             'reports' => ['bn' => 'রিপোর্ট', 'en' => 'Reports'],
             'audit' => ['bn' => 'অ্যাক্টিভিটি লগ', 'en' => 'Audit Log'],

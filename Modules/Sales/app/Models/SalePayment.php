@@ -6,12 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Core\Support\PaymentMethods;
+use Modules\Finance\Models\Account;
 
 class SalePayment extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['sale_id', 'method', 'amount', 'note'];
+    protected $fillable = ['sale_id', 'account_id', 'method', 'amount', 'note'];
 
     protected $casts = [
         'amount' => 'decimal:2',
@@ -25,5 +26,10 @@ class SalePayment extends Model
     public function sale(): BelongsTo
     {
         return $this->belongsTo(Sale::class);
+    }
+
+    public function account(): BelongsTo
+    {
+        return $this->belongsTo(Account::class);
     }
 }

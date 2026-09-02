@@ -42,8 +42,107 @@
         @endphp
 
         @if ($accessibleShops->count() > 1)
-            <div class="shop-switcher-dropdown" style="position: relative;">
-                <button type="button" class="btn-shop-switcher" style="display:inline-flex; align-items:center; gap:6px; font-weight:600; font-size:12px; padding:5px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--ink-800); cursor:pointer; height:32px; transition:all 0.15s ease;" title="দোকান পরিবর্তন করুন / Switch Shop">
+            <style>
+                .shop-switcher-dropdown { position: relative; }
+                .btn-shop-switcher {
+                    display: inline-flex; align-items: center; gap: 6px;
+                    font-weight: 600; font-size: 12px; padding: 5px 12px;
+                    border-radius: 8px; border: 1px solid var(--border);
+                    background: var(--card); color: var(--ink-800);
+                    cursor: pointer; height: 32px; transition: all 0.15s ease;
+                }
+                .btn-shop-switcher:hover { border-color: #0d9488; }
+                .shop-switcher-menu {
+                    display: none; position: absolute; top: calc(100% + 6px);
+                    right: 0; min-width: 240px; background: var(--card);
+                    border: 1px solid var(--border); border-radius: 10px;
+                    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.25);
+                    padding: 6px; z-index: 100;
+                }
+                .shop-switcher-header {
+                    font-size: 10.5px; font-weight: 700; color: var(--ink-500);
+                    padding: 4px 8px 6px; text-transform: uppercase;
+                    letter-spacing: 0.5px; display: flex; align-items: center;
+                    justify-content: space-between;
+                }
+                .shop-count-badge {
+                    font-size: 10px; font-weight: 600; color: #0f766e;
+                    background: rgba(13, 148, 136, 0.1); padding: 1px 6px;
+                    border-radius: 4px;
+                }
+                [data-theme="dark"] .shop-count-badge,
+                :root[data-theme="dark"] .shop-count-badge {
+                    color: #2dd4bf; background: rgba(20, 184, 166, 0.18);
+                }
+                .shop-item-btn {
+                    width: 100%; text-align: left; display: flex;
+                    align-items: center; justify-content: space-between;
+                    gap: 8px; padding: 8px 10px; border-radius: 6px;
+                    border: none; background: transparent; color: var(--ink-800);
+                    cursor: pointer; font-size: 12px; font-weight: 500;
+                    transition: all 0.12s ease;
+                }
+                .shop-item-btn:hover {
+                    background: var(--paper, rgba(0, 0, 0, 0.04));
+                    color: var(--ink-900);
+                }
+                .shop-item-btn.is-active {
+                    background: rgba(13, 148, 136, 0.08);
+                    color: #0f766e;
+                    font-weight: 700;
+                }
+                .shop-item-btn.is-active:hover {
+                    background: rgba(13, 148, 136, 0.14);
+                }
+                [data-theme="dark"] .shop-item-btn,
+                :root[data-theme="dark"] .shop-item-btn {
+                    color: #cbd5e1;
+                }
+                [data-theme="dark"] .shop-item-btn:hover,
+                :root[data-theme="dark"] .shop-item-btn:hover {
+                    background: rgba(255, 255, 255, 0.06);
+                    color: #ffffff;
+                }
+                [data-theme="dark"] .shop-item-btn.is-active,
+                :root[data-theme="dark"] .shop-item-btn.is-active {
+                    background: rgba(20, 184, 166, 0.18) !important;
+                    color: #2dd4bf !important;
+                }
+                [data-theme="dark"] .shop-item-btn.is-active:hover,
+                :root[data-theme="dark"] .shop-item-btn.is-active:hover {
+                    background: rgba(20, 184, 166, 0.25) !important;
+                    color: #5eead4 !important;
+                }
+                .shop-code-tag {
+                    font-size: 10px; font-family: monospace; color: var(--ink-500);
+                }
+                .shop-item-btn.is-active .shop-code-tag {
+                    color: #0f766e;
+                }
+                [data-theme="dark"] .shop-item-btn.is-active .shop-code-tag,
+                :root[data-theme="dark"] .shop-item-btn.is-active .shop-code-tag {
+                    color: #2dd4bf !important; opacity: 0.9;
+                }
+                .shop-switcher-all-link {
+                    display: flex; align-items: center; gap: 6px;
+                    padding: 6px 8px; font-size: 11.5px; color: #0f766e;
+                    text-decoration: none; font-weight: 600; border-radius: 6px;
+                    transition: background 0.12s ease;
+                }
+                .shop-switcher-all-link:hover {
+                    background: var(--paper, rgba(0, 0, 0, 0.04));
+                }
+                [data-theme="dark"] .shop-switcher-all-link,
+                :root[data-theme="dark"] .shop-switcher-all-link {
+                    color: #2dd4bf;
+                }
+                [data-theme="dark"] .shop-switcher-all-link:hover,
+                :root[data-theme="dark"] .shop-switcher-all-link:hover {
+                    background: rgba(255, 255, 255, 0.06);
+                }
+            </style>
+            <div class="shop-switcher-dropdown">
+                <button type="button" class="btn-shop-switcher" title="দোকান পরিবর্তন করুন / Switch Shop">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--teal-800); flex-shrink:0;">
                         <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>
                     </svg>
@@ -54,13 +153,13 @@
                         <polyline points="6 9 12 15 18 9"/>
                     </svg>
                 </button>
-                <div class="shop-switcher-menu" style="display:none; position:absolute; top:calc(100% + 6px); right:0; min-width:240px; background:var(--card); border:1px solid var(--border); border-radius:10px; box-shadow:0 10px 25px -5px rgba(0,0,0,0.18); padding:6px; z-index:100;">
-                    <div style="font-size:10.5px; font-weight:700; color:var(--ink-500); padding:4px 8px 6px; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; justify-content:space-between;">
+                <div class="shop-switcher-menu">
+                    <div class="shop-switcher-header">
                         <span>
                             <span class="bn">দোকান পরিবর্তন করুন</span>
                             <span class="en" style="display:none;">Switch Shop</span>
                         </span>
-                        <span style="font-size:10px; font-weight:600; color:var(--teal-800); background:var(--teal-50); padding:1px 6px; border-radius:4px;">
+                        <span class="shop-count-badge">
                             {{ $accessibleShops->count() }} টি দোকান
                         </span>
                     </div>
@@ -72,21 +171,18 @@
                             @csrf
                             <button
                                 type="submit"
-                                class="shop-item-btn"
-                                style="width:100%; text-align:left; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px; border-radius:6px; border:none; background:{{ $isActiveShop ? 'var(--teal-50, rgba(13,148,136,0.08))' : 'transparent' }}; color:{{ $isActiveShop ? 'var(--teal-900)' : 'var(--ink-800)' }}; cursor:pointer; font-size:12px; font-weight:{{ $isActiveShop ? '700' : '500' }}; transition:background 0.12s ease;"
-                                onmouseover="this.style.background='{{ $isActiveShop ? 'var(--teal-50, rgba(13,148,136,0.12))' : 'var(--paper, rgba(0,0,0,0.04))' }}'"
-                                onmouseout="this.style.background='{{ $isActiveShop ? 'var(--teal-50, rgba(13,148,136,0.08))' : 'transparent' }}'"
+                                class="shop-item-btn {{ $isActiveShop ? 'is-active' : '' }}"
                             >
                                 <span style="display:flex; align-items:center; gap:8px; overflow:hidden; min-width:0;">
-                                    <span style="width:7px; height:7px; border-radius:50%; background:{{ $isActiveShop ? 'var(--teal-600)' : 'var(--ink-300)' }}; flex-shrink:0;"></span>
+                                    <span style="width:7px; height:7px; border-radius:50%; background:{{ $isActiveShop ? '#14b8a6' : 'var(--ink-300)' }}; flex-shrink:0;"></span>
                                     <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ $s->name }}</span>
                                 </span>
                                 <span style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
                                     @if ($s->store_code)
-                                        <span style="font-size:10px; font-family:monospace; color:var(--ink-500);">#{{ $s->store_code }}</span>
+                                        <span class="shop-code-tag">#{{ $s->store_code }}</span>
                                     @endif
                                     @if ($isActiveShop)
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--teal-700)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                                             <polyline points="20 6 9 17 4 12"/>
                                         </svg>
                                     @endif
@@ -95,7 +191,7 @@
                         </form>
                     @endforeach
                     <div style="border-top:1px solid var(--border); margin:4px 0; padding-top:4px;">
-                        <a href="{{ route('shops.select') }}" style="display:flex; align-items:center; gap:6px; padding:6px 8px; font-size:11.5px; color:var(--teal-800); text-decoration:none; font-weight:600; border-radius:6px;" onmouseover="this.style.background='var(--paper, rgba(0,0,0,0.04))'" onmouseout="this.style.background='transparent'">
+                        <a href="{{ route('shops.select') }}" class="shop-switcher-all-link">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
                             <span class="bn">সকল দোকান নির্বাচন পেজ</span>
                             <span class="en" style="display:none;">All Shops Selection</span>

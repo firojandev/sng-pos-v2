@@ -167,6 +167,20 @@ $navGroups = [
         'gated' => true,
         'items' => [
             [
+                'key' => 'accounts',
+                'route' => 'accounts.index',
+                'bn' => 'অ্যাকাউন্ট',
+                'en' => 'Accounts',
+                'icon' => '<rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3 10h18M7 15h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+            ],
+            [
+                'key' => 'account-transfers',
+                'route' => 'account-transfers.index',
+                'bn' => 'ফান্ড ট্রান্সফার',
+                'en' => 'Fund Transfer',
+                'icon' => '<path d="M7 10h14l-4-4M17 14H3l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+            ],
+            [
                 'key' => 'income',
                 'route' => 'income.index',
                 'bn' => 'আয়',
