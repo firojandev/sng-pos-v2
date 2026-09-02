@@ -17,12 +17,15 @@
 
     // Color Normalization
     $colorAliases = [
-        'primary' => 'gold',
+        'primary' => 'primary',
+        'secondary' => 'secondary',
         'brand' => 'teal',
         'success' => 'green',
         'danger' => 'red',
         'info' => 'blue',
         'ink' => 'dark',
+        'neutral' => 'secondary',
+        'grey' => 'secondary',
     ];
     $resolvedColor = $colorAliases[$color] ?? $color;
 

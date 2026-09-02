@@ -31,7 +31,7 @@
 
     @if ($label && $labelEn)
         <span class="bn">{{ $label }}</span>
-        <span class="en" style="display:none;">{{ $labelEn }}</span>
+        <span class="en">{{ $labelEn }}</span>
     @elseif ($label)
         {{ $label }}
     @else

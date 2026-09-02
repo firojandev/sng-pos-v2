@@ -71,6 +71,20 @@ class FormComponentTest extends TestCase
         $this->assertStringContainsString('checked', $rendered);
     }
 
+    public function test_renders_toggle_with_dynamic_on_off_labels_and_icons(): void
+    {
+        $rendered = Blade::render('<x-toggle id="theme-toggle" icon-on="moon" icon-off="sun" label-off="লাইট" label-off-en="Light" label-on="ডার্ক" label-on-en="Dark" color="gold" />');
+
+        $this->assertStringContainsString('toggle-label-off', $rendered);
+        $this->assertStringContainsString('toggle-label-on', $rendered);
+        $this->assertStringContainsString('toggle-icon-off', $rendered);
+        $this->assertStringContainsString('toggle-icon-on', $rendered);
+        $this->assertStringContainsString('লাইট', $rendered);
+        $this->assertStringContainsString('Light', $rendered);
+        $this->assertStringContainsString('ডার্ক', $rendered);
+        $this->assertStringContainsString('Dark', $rendered);
+    }
+
     public function test_renders_radio_component(): void
     {
         $rendered = Blade::render('<x-radio name="gender" value="female" label="Female" color="blue" checked />');
@@ -112,5 +126,16 @@ class FormComponentTest extends TestCase
         $this->assertStringContainsString('কাস্টম চেকবক্স প্লে-গ্রাউন্ড', $rendered);
         $this->assertStringContainsString('সুইচ ও টগল প্লে-গ্রাউন্ড', $rendered);
         $this->assertStringContainsString('রেডিও বাটন ও সিলেকশন কার্ড প্লে-গ্রাউন্ড', $rendered);
+    }
+
+    public function test_topbar_renders_with_theme_and_lang_toggles(): void
+    {
+        $rendered = Blade::render('<x-core::topbar title="ড্যাশবোর্ড" title-en="Dashboard" />');
+
+        $this->assertStringContainsString('topbar-switchers', $rendered);
+        $this->assertStringContainsString('id="theme-toggle"', $rendered);
+        $this->assertStringContainsString('id="lang-toggle"', $rendered);
+        $this->assertStringContainsString('ড্যাশবোর্ড', $rendered);
+        $this->assertStringContainsString('Dashboard', $rendered);
     }
 }

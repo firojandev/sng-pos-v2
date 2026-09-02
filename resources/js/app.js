@@ -90,6 +90,7 @@ function updateThemeButtons() {
     const effective = stored || (systemDark ? 'dark' : 'light');
     $('#theme-light').toggleClass('active', effective === 'light');
     $('#theme-dark').toggleClass('active', effective === 'dark');
+    $('#theme-toggle').prop('checked', effective === 'dark');
 }
 
 /* ---------------- Mobile Preview Toggle ---------------- */
@@ -115,9 +116,15 @@ function setLang(lang) {
     $('body').toggleClass('lang-en', lang === 'en');
     $('#btn-bn').toggleClass('active', lang === 'bn');
     $('#btn-en').toggleClass('active', lang === 'en');
+    $('#lang-toggle').prop('checked', lang === 'en');
     $('input.bn-ph').each(function () {
         const original = $(this).attr('data-bn-ph');
         $(this).attr('placeholder', lang === 'en' ? (placeholderMap[original] || original) : original);
+    });
+    $('[data-placeholder-en]').each(function () {
+        const bn = $(this).attr('data-placeholder-bn') || $(this).attr('placeholder');
+        const en = $(this).attr('data-placeholder-en');
+        $(this).attr('placeholder', lang === 'en' ? en : bn);
     });
     localStorage.setItem('lang', lang);
 }
@@ -126,7 +133,14 @@ function initLang() {
     $('input.bn-ph').each(function () {
         $(this).attr('data-bn-ph', $(this).attr('placeholder'));
     });
-    setLang(localStorage.getItem('lang') || 'bn');
+    $('[data-placeholder-en]').each(function () {
+        if (!$(this).attr('data-placeholder-bn')) {
+            $(this).attr('data-placeholder-bn', $(this).attr('placeholder'));
+        }
+    });
+    const currentLang = localStorage.getItem('lang') || 'bn';
+    $('#lang-toggle').prop('checked', currentLang === 'en');
+    setLang(currentLang);
 }
 
 /* ---------------- Keyboard Shortcuts & Listeners ---------------- */
@@ -135,6 +149,15 @@ $(function () {
     updateThemeButtons();
     updateMobilePreviewToggle();
     initLang();
+
+    // Theme & Language Toggle Switch Listeners
+    $(document).on('change', '#theme-toggle', function () {
+        setTheme($(this).is(':checked') ? 'dark' : 'light');
+    });
+
+    $(document).on('change', '#lang-toggle', function () {
+        setLang($(this).is(':checked') ? 'en' : 'bn');
+    });
 
     $(document).on('keydown', function (e) {
         // Ctrl+K / Cmd+K Search Focus

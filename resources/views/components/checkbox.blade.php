@@ -19,12 +19,15 @@
 
     // Color Normalization
     $colorAliases = [
-        'primary' => 'gold',
+        'primary' => 'primary',
+        'secondary' => 'secondary',
         'brand' => 'teal',
         'success' => 'green',
         'danger' => 'red',
         'info' => 'blue',
         'ink' => 'dark',
+        'neutral' => 'secondary',
+        'grey' => 'secondary',
     ];
     $resolvedColor = $colorAliases[$color] ?? $color;
 
@@ -55,7 +58,7 @@
         <span class="form-check-label">
             @if ($label && $labelEn)
                 <span class="bn">{{ $label }}</span>
-                <span class="en" style="display:none;">{{ $labelEn }}</span>
+                <span class="en">{{ $labelEn }}</span>
             @elseif ($label)
                 {{ $label }}
             @else

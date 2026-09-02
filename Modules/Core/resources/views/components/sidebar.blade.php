@@ -276,11 +276,15 @@ $isNavItemVisible = function (array $item, bool $groupGated, $user) {
 
 <aside class="sidebar" id="sidebar">
     <div class="side-head">
-        <div class="mark">ম</div>
+        <div class="mark">
+            <span class="bn">ম</span>
+            <span class="en">M</span>
+        </div>
         <div class="nm">
-            <span class="brand-title">মাস্টার<span class="brand-accent">পস</span></span>
+            <span class="brand-title bn">মাস্টার<span class="brand-accent">পস</span></span>
+            <span class="brand-title en">Master<span class="brand-accent">POS</span></span>
             <span class="brand-tagline bn">ব্যবসা ব্যবস্থাপনা</span>
-            <span class="brand-tagline en" style="display:none;">Business Management</span>
+            <span class="brand-tagline en">Business Management</span>
         </div>
         <button class="side-close" onclick="toggleSidebar(false)" aria-label="Close sidebar">&times;</button>
     </div>
@@ -291,14 +295,14 @@ $isNavItemVisible = function (array $item, bool $groupGated, $user) {
                 <div class="nav-group">
                     @if ($group['label'])
                         <div class="nav-group-label bn">{{ $group['label']['bn'] }}</div>
-                        <div class="nav-group-label en" style="display:none;">{{ $group['label']['en'] }}</div>
+                        <div class="nav-group-label en">{{ $group['label']['en'] }}</div>
                     @endif
 
                     @foreach ($group['items'] as $item)
                         <a href="{{ route($item['route']) }}" class="nav-item {{ $active === $item['key'] ? 'active' : '' }}">
                             <svg viewBox="0 0 24 24" fill="none">{!! $item['icon'] !!}</svg>
                             <span class="bn">{{ $item['bn'] }}</span>
-                            <span class="en" style="display:none;">{{ $item['en'] }}</span>
+                            <span class="en">{{ $item['en'] }}</span>
                         </a>
                     @endforeach
                 </div>
@@ -312,14 +316,14 @@ $isNavItemVisible = function (array $item, bool $groupGated, $user) {
                     <div class="nav-group">
                         @if ($group['label'])
                             <div class="nav-group-label bn">{{ $group['label']['bn'] }}</div>
-                            <div class="nav-group-label en" style="display:none;">{{ $group['label']['en'] }}</div>
+                            <div class="nav-group-label en">{{ $group['label']['en'] }}</div>
                         @endif
 
                         @foreach ($visibleItems as $item)
                             <a href="{{ route($item['route']) }}" class="nav-item {{ $active === $item['key'] ? 'active' : '' }}">
                                 <svg viewBox="0 0 24 24" fill="none">{!! $item['icon'] !!}</svg>
                                 <span class="bn">{{ $item['bn'] }}</span>
-                                <span class="en" style="display:none;">{{ $item['en'] }}</span>
+                                <span class="en">{{ $item['en'] }}</span>
                             </a>
                         @endforeach
                     </div>

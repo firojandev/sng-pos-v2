@@ -5,6 +5,10 @@
     'checked' => false,
     'label' => null,
     'labelEn' => null,
+    'labelOn' => null,
+    'labelOff' => null,
+    'labelOnEn' => null,
+    'labelOffEn' => null,
     'description' => null,
     'iconOn' => null,
     'iconOff' => null,
@@ -20,12 +24,15 @@
 
     // Color Normalization
     $colorAliases = [
-        'primary' => 'gold',
+        'primary' => 'primary',
+        'secondary' => 'secondary',
         'brand' => 'teal',
         'success' => 'green',
         'danger' => 'red',
         'info' => 'blue',
         'ink' => 'dark',
+        'neutral' => 'secondary',
+        'grey' => 'secondary',
     ];
     $resolvedColor = $colorAliases[$color] ?? $color;
 
@@ -45,16 +52,46 @@
     />
     <span class="form-toggle-track">
         <span class="form-toggle-thumb">
-            @if ($iconOn || $iconOff)
+            @if ($iconOn && $iconOff)
+                <span class="toggle-icon-off"><x-icon :name="$iconOff" size="10" /></span>
+                <span class="toggle-icon-on"><x-icon :name="$iconOn" size="10" /></span>
+            @elseif ($iconOn || $iconOff)
                 <x-icon :name="$isChecked ? ($iconOn ?? $iconOff) : ($iconOff ?? $iconOn)" size="10" />
             @endif
         </span>
     </span>
-    @if ($label || $slot->isNotEmpty())
+    @if ($labelOn || $labelOff || $label || $slot->isNotEmpty())
         <span class="form-toggle-label">
-            @if ($label && $labelEn)
+            @if ($labelOn || $labelOff)
+                <span class="toggle-label-off">
+                    @if ($labelOff && $labelOffEn)
+                        <span class="bn">{{ $labelOff }}</span>
+                        <span class="en">{{ $labelOffEn }}</span>
+                    @elseif ($labelOff)
+                        {{ $labelOff }}
+                    @elseif ($label && $labelEn)
+                        <span class="bn">{{ $label }}</span>
+                        <span class="en">{{ $labelEn }}</span>
+                    @else
+                        {{ $label }}
+                    @endif
+                </span>
+                <span class="toggle-label-on">
+                    @if ($labelOn && $labelOnEn)
+                        <span class="bn">{{ $labelOn }}</span>
+                        <span class="en">{{ $labelOnEn }}</span>
+                    @elseif ($labelOn)
+                        {{ $labelOn }}
+                    @elseif ($label && $labelEn)
+                        <span class="bn">{{ $label }}</span>
+                        <span class="en">{{ $labelEn }}</span>
+                    @else
+                        {{ $label }}
+                    @endif
+                </span>
+            @elseif ($label && $labelEn)
                 <span class="bn">{{ $label }}</span>
-                <span class="en" style="display:none;">{{ $labelEn }}</span>
+                <span class="en">{{ $labelEn }}</span>
             @elseif ($label)
                 {{ $label }}
             @else

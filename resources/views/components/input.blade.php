@@ -4,6 +4,7 @@
     'type' => 'text',
     'value' => null,
     'placeholder' => null,
+    'placeholderEn' => null,
     'size' => 'md',
     'variant' => 'outline',
     'color' => 'teal',
@@ -46,12 +47,15 @@
 
     // Color Normalization
     $colorAliases = [
-        'primary' => 'gold',
+        'primary' => 'primary',
+        'secondary' => 'secondary',
         'brand' => 'teal',
         'success' => 'green',
         'danger' => 'red',
         'info' => 'blue',
         'ink' => 'dark',
+        'neutral' => 'secondary',
+        'grey' => 'secondary',
     ];
     $resolvedColor = $colorAliases[$color] ?? $color;
 
@@ -137,6 +141,7 @@
                 @if ($inputId) id="{{ $inputId }}" @endif
                 @if ($inputValue !== null) value="{{ $inputValue }}" @endif
                 @if ($placeholder) placeholder="{{ $placeholder }}" @endif
+                @if ($placeholderEn) data-placeholder-en="{{ $placeholderEn }}" data-placeholder-bn="{{ $placeholder }}" @endif
                 @if ($required) required @endif
                 @if ($disabled) disabled @endif
                 @if ($readonly) readonly @endif
@@ -196,6 +201,7 @@
             @if ($inputId) id="{{ $inputId }}" @endif
             @if ($inputValue !== null) value="{{ $inputValue }}" @endif
             @if ($placeholder) placeholder="{{ $placeholder }}" @endif
+            @if ($placeholderEn) data-placeholder-en="{{ $placeholderEn }}" data-placeholder-bn="{{ $placeholder }}" @endif
             @if ($required) required @endif
             @if ($disabled) disabled @endif
             @if ($readonly) readonly @endif

@@ -31,15 +31,16 @@
 
     // Color Normalization & Aliases
     $colorAliases = [
-        'primary' => 'gold',
+        'primary' => 'primary',
+        'secondary' => 'secondary',
         'brand' => 'teal',
         'success' => 'green',
         'danger' => 'red',
         'destructive' => 'red',
         'info' => 'blue',
         'ink' => 'dark',
-        'secondary' => 'grey',
-        'neutral' => 'grey',
+        'neutral' => 'secondary',
+        'grey' => 'secondary',
     ];
 
     $resolvedColor = strtolower(trim((string) $color));
