@@ -47,7 +47,15 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="3"><div class="helper" style="margin-top:0;">কোনো মডেল নেই</div></td></tr>
+                            <tr>
+                                <td colspan="3">
+                                    <x-core::table.empty
+                                        icon="layers"
+                                        title="কোনো মডেল নেই"
+                                        title-en="No models found"
+                                    />
+                                </td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>

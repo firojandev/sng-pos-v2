@@ -53,7 +53,15 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="6"><div class="helper" style="margin-top:0;">কোনো ব্যয় নেই</div></td></tr>
+                            <tr>
+                                <td colspan="6">
+                                    <x-core::table.empty
+                                        icon="trending-down"
+                                        title="কোনো ব্যয় নেই"
+                                        title-en="No expense records found"
+                                    />
+                                </td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>

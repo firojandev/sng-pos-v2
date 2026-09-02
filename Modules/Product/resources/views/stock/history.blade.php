@@ -80,7 +80,15 @@
                                 <td>{{ $movement->creator->name ?? '—' }}</td>
                             </tr>
                         @empty
-                            <tr><td colspan="8"><div class="helper" style="margin-top:0;">কোনো স্টক পরিবর্তন নেই</div></td></tr>
+                            <tr>
+                                <td colspan="8">
+                                    <x-core::table.empty
+                                        icon="history"
+                                        title="কোনো স্টক পরিবর্তন নেই"
+                                        title-en="No stock history found"
+                                    />
+                                </td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>

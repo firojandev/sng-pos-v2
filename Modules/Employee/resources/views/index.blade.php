@@ -64,7 +64,15 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="7"><div class="helper" style="margin-top:0;">কোনো কর্মচারী নেই</div></td></tr>
+                            <tr>
+                                <td colspan="7">
+                                    <x-core::table.empty
+                                        icon="user-check"
+                                        title="কোনো কর্মচারী নেই"
+                                        title-en="No employees found"
+                                    />
+                                </td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>

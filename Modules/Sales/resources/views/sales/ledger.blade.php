@@ -94,7 +94,15 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="8"><div class="helper" style="margin-top:0;">কোনো বিক্রয় নেই</div></td></tr>
+                            <tr>
+                                <td colspan="8">
+                                    <x-core::table.empty
+                                        icon="shopping-cart"
+                                        title="কোনো বিক্রয় নেই"
+                                        title-en="No sales records found"
+                                    />
+                                </td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>

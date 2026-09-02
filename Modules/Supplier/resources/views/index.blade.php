@@ -71,7 +71,15 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="6"><div class="helper" style="margin-top:0;">কোনো সরবরাহকারী নেই</div></td></tr>
+                            <tr>
+                                <td colspan="6">
+                                    <x-core::table.empty
+                                        icon="truck"
+                                        title="কোনো সরবরাহকারী নেই"
+                                        title-en="No suppliers found"
+                                    />
+                                </td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>

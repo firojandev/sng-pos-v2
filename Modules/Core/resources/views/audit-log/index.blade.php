@@ -90,7 +90,15 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="6"><div class="helper" style="margin-top:0;">কোনো লগ নেই</div></td></tr>
+                            <tr>
+                                <td colspan="6">
+                                    <x-core::table.empty
+                                        icon="file-text"
+                                        title="কোনো লগ নেই"
+                                        title-en="No audit logs found"
+                                    />
+                                </td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>

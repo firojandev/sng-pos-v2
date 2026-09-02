@@ -35,8 +35,8 @@ abstract class BaseDataTable extends DataTable
                     'info' => '<span class="bn">মোট _TOTAL_ টির মধ্যে _START_ থেকে _END_ দেখানো হচ্ছে</span><span class="en">Showing _START_ to _END_ of _TOTAL_ entries</span>',
                     'infoEmpty' => '<span class="bn">কোনো রেকর্ড নেই</span><span class="en">No records available</span>',
                     'infoFiltered' => '<span class="bn">(_MAX_ টি রেকর্ড থেকে ফিল্টার করা)</span><span class="en">(filtered from _MAX_ total entries)</span>',
-                    'zeroRecords' => '<span class="bn">কোনো ম্যাচিং রেকর্ড পাওয়া যায়নি</span><span class="en">No matching records found</span>',
-                    'emptyTable' => '<span class="bn">টেবিলে কোনো তথ্য নেই</span><span class="en">No data available in table</span>',
+                    'zeroRecords' => '<div class="table-empty"><div class="table-empty-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="app-icon"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div><div class="table-empty-title"><span class="bn">কোনো ম্যাচিং রেকর্ড পাওয়া যায়নি</span><span class="en" style="display:none;">No matching records found</span></div></div>',
+                    'emptyTable' => '<div class="table-empty"><div class="table-empty-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="app-icon"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></div><div class="table-empty-title"><span class="bn">টেবিলে কোনো তথ্য নেই</span><span class="en" style="display:none;">No data available in table</span></div></div>',
                     'paginate' => [
                         'first' => $firstIcon,
                         'previous' => $prevIcon,

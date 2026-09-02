@@ -81,7 +81,15 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="4"><div class="helper" style="margin-top:0;">কোনো গ্রাহকের বাকি নেই</div></td></tr>
+                                <tr>
+                                    <td colspan="4">
+                                        <x-core::table.empty
+                                            icon="badge-dollar-sign"
+                                            title="কোনো গ্রাহকের বাকি নেই"
+                                            title-en="No customer dues found"
+                                        />
+                                    </td>
+                                </tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -179,7 +187,15 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="4"><div class="helper" style="margin-top:0;">কোনো সরবরাহকারীর বাকি নেই</div></td></tr>
+                                <tr>
+                                    <td colspan="4">
+                                        <x-core::table.empty
+                                            icon="badge-dollar-sign"
+                                            title="কোনো সরবরাহকারীর বাকি নেই"
+                                            title-en="No supplier dues found"
+                                        />
+                                    </td>
+                                </tr>
                             @endforelse
                         </tbody>
                     </table>

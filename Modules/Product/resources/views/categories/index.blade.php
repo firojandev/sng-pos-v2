@@ -36,7 +36,13 @@
                         <div class="sub">{{ $category->sub_categories_count }} সাব-ক্যাটাগরি &middot; {{ $category->products_count }} পণ্য</div>
                     </div>
                 @empty
-                    <div class="helper" style="margin-top:0;">কোনো ক্যাটাগরি নেই</div>
+                    <div style="grid-column: 1 / -1;">
+                        <x-core::table.empty
+                            icon="folder"
+                            title="কোনো ক্যাটাগরি নেই"
+                            title-en="No categories found"
+                        />
+                    </div>
                 @endforelse
             </div>
 

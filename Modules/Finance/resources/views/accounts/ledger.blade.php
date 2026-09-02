@@ -137,7 +137,13 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6"><div class="helper" style="margin-top:0;">এই সময়ের মধ্যে কোনো লেনদেন পাওয়া যায়নি।</div></td>
+                                <td colspan="6">
+                                    <x-core::table.empty
+                                        icon="receipt"
+                                        title="এই সময়ের মধ্যে কোনো লেনদেন পাওয়া যায়নি"
+                                        title-en="No transactions found in this period"
+                                    />
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>

@@ -469,8 +469,12 @@
                                                 </tr>
                                             @empty
                                                 <tr>
-                                                    <td colspan="4" style="text-align:center; padding:20px; color:var(--ink-400);">
-                                                        কোনো এডমিন যোগ করা নেই
+                                                    <td colspan="4">
+                                                        <x-core::table.empty
+                                                            icon="user-x"
+                                                            title="কোনো এডমিন যোগ করা নেই"
+                                                            title-en="No shop admins added yet"
+                                                        />
                                                     </td>
                                                 </tr>
                                             @endforelse

@@ -71,7 +71,15 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="6"><div class="helper" style="margin-top:0;">কোনো গ্রাহক নেই</div></td></tr>
+                            <tr>
+                                <td colspan="6">
+                                    <x-core::table.empty
+                                        icon="users"
+                                        title="কোনো গ্রাহক নেই"
+                                        title-en="No customers found"
+                                    />
+                                </td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>

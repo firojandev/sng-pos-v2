@@ -30,3 +30,6 @@ Confirmation Dialog Standards:
 - ALWAYS use SweetAlert2 (`Swal` / `window.confirmDelete()`) instead of raw native browser `confirm()` or `alert()`.
 - For delete/destroy forms, add `class="delete-form"` (or `data-confirm-delete`) to the `<form>` with optional `data-title="..."` and `data-text="..."`. The global handler in `app.js` automatically manages the styled modal and submission.
 - For custom JavaScript confirmation dialogs, call `Swal.fire({ ... })` or `window.confirmDelete(options)`.
+
+## Always Use Core Table Empty State Component (<x-core::table.empty>)
+ALWAYS use the `<x-core::table.empty>` component (located in `Modules/Core/resources/views/components/table/empty.blade.php`) inside the `@empty` block of all tables and data grids. Provide appropriate `icon`, `title`, `title-en`, and optional `description` / `description-en` props. Never use raw unstyled text or simple `helper` divs for empty table states. In BaseDataTable, styled empty state markup with icon and bilingual text is used for `emptyTable` and `zeroRecords`.

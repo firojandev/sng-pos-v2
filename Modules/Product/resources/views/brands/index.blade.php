@@ -41,7 +41,13 @@
                         </div>
                     </div>
                 @empty
-                    <div class="helper" style="margin-top:0;">কোনো ব্র্যান্ড নেই</div>
+                    <div style="grid-column: 1 / -1;">
+                        <x-core::table.empty
+                            icon="tag"
+                            title="কোনো ব্র্যান্ড নেই"
+                            title-en="No brands found"
+                        />
+                    </div>
                 @endforelse
             </div>
 

@@ -36,7 +36,13 @@
                         <div class="sub">{{ $unit->short_code }} &middot; {{ $unit->products_count }} পণ্য</div>
                     </div>
                 @empty
-                    <div class="helper" style="margin-top:0;">কোনো ইউনিট নেই</div>
+                    <div style="grid-column: 1 / -1;">
+                        <x-core::table.empty
+                            icon="scale"
+                            title="কোনো ইউনিট নেই"
+                            title-en="No units found"
+                        />
+                    </div>
                 @endforelse
             </div>
 

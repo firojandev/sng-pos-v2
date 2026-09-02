@@ -26,6 +26,12 @@
 - **Edit Action**: **Always use icon `edit`** (`icon="edit"` or `<x-core::icon name="edit" />`).
 - **Delete Action**: **Always use icon `trash-2`** (`icon="trash-2"` or `<x-core::icon name="trash-2" />`).
 
+## Table Empty State Standards
+- **Always use `<x-core::table.empty>`** inside the `@empty` block of all Blade tables and list cards:
+  - Example: `<tr><td colspan="..."><x-core::table.empty icon="package" title="কোনো পণ্য নেই" title-en="No products found" /></td></tr>`
+  - Never use raw unstyled text or simple `helper` divs for empty table states.
+  - In `BaseDataTable`, styled empty state markup with icon and bilingual text is used for `emptyTable` and `zeroRecords`.
+
 ## Confirmation Dialog & SweetAlert Standards
 - **Always use SweetAlert2 (`Swal` / `confirmDelete()`)** instead of native browser `confirm()` or `alert()`.
 - For destructive/delete form submissions, add `class="delete-form"` (or `data-confirm-delete`) to the `<form>` element with optional `data-title="..."` and `data-text="..."`. The global handler automatically intercepts and triggers a styled SweetAlert2 confirmation modal with dark-mode and bilingual support.

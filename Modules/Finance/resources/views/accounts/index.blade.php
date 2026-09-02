@@ -184,7 +184,13 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6"><div class="helper" style="margin-top:0;">কোনো অ্যাকাউন্ট পাওয়া যায়নি।</div></td>
+                                <td colspan="6">
+                                    <x-core::table.empty
+                                        icon="wallet"
+                                        title="কোনো অ্যাকাউন্ট পাওয়া যায়নি"
+                                        title-en="No accounts found"
+                                    />
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>

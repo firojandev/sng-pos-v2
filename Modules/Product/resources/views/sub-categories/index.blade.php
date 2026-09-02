@@ -49,7 +49,15 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="4"><div class="helper" style="margin-top:0;">কোনো সাব-ক্যাটাগরি নেই</div></td></tr>
+                            <tr>
+                                <td colspan="4">
+                                    <x-core::table.empty
+                                        icon="folder-tree"
+                                        title="কোনো সাব-ক্যাটাগরি নেই"
+                                        title-en="No sub-categories found"
+                                    />
+                                </td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>

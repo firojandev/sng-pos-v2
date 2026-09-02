@@ -107,7 +107,13 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7"><div class="helper" style="margin-top:0;">কোনো ফান্ড ট্রান্সফার রেকর্ড পাওয়া যায়নি।</div></td>
+                                <td colspan="7">
+                                    <x-core::table.empty
+                                        icon="arrow-left-right"
+                                        title="কোনো ফান্ড ট্রান্সফার রেকর্ড পাওয়া যায়নি"
+                                        title-en="No fund transfers found"
+                                    />
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>

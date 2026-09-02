@@ -78,7 +78,15 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="8"><div class="helper" style="margin-top:0;">কোনো পণ্য নেই</div></td></tr>
+                            <tr>
+                                <td colspan="8">
+                                    <x-core::table.empty
+                                        icon="package"
+                                        title="কোনো পণ্য নেই"
+                                        title-en="No products found"
+                                    />
+                                </td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>

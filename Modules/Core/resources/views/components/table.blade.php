@@ -16,7 +16,9 @@
     'searchPlaceholder' => 'খুঁজুন / Search...',
     'empty' => false,
     'emptyTitle' => 'কোনো তথ্য পাওয়া যায়নি',
+    'emptyTitleEn' => null,
     'emptyDescription' => null,
+    'emptyDescriptionEn' => null,
     'emptyIcon' => 'box',
     'loading' => false,
     'datatable' => false,
@@ -123,15 +125,19 @@
                 @if ($empty && !isset($emptySlot))
                     <tr>
                         <td colspan="100">
-                            <div class="table-empty">
-                                <div class="table-empty-icon">
-                                    <x-core::icon :name="$emptyIcon" size="24" />
-                                </div>
-                                <div class="table-empty-title">{{ $emptyTitle }}</div>
-                                @if ($emptyDescription)
-                                    <div class="table-empty-desc">{{ $emptyDescription }}</div>
-                                @endif
-                            </div>
+                            <x-core::table.empty
+                                :icon="$emptyIcon"
+                                :title="$emptyTitle"
+                                :title-en="$emptyTitleEn ?? 'No records found'"
+                                :description="$emptyDescription"
+                                :description-en="$emptyDescriptionEn ?? null"
+                            />
+                        </td>
+                    </tr>
+                @elseif (isset($emptySlot))
+                    <tr>
+                        <td colspan="100">
+                            {{ $emptySlot }}
                         </td>
                     </tr>
                 @else

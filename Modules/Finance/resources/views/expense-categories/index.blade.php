@@ -36,7 +36,13 @@
                         <div class="sub">{{ $expenseCategory->expenses_count }} ব্যয়</div>
                     </div>
                 @empty
-                    <div class="helper" style="margin-top:0;">কোনো ক্যাটাগরি নেই</div>
+                    <div style="grid-column: 1 / -1;">
+                        <x-core::table.empty
+                            icon="tag"
+                            title="কোনো ক্যাটাগরি নেই"
+                            title-en="No expense categories found"
+                        />
+                    </div>
                 @endforelse
             </div>
 
