@@ -95,9 +95,12 @@ function updateThemeButtons() {
     try { stored = localStorage.getItem('theme'); } catch (e) {}
     const systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     const effective = stored || (systemDark ? 'dark' : 'light');
-    $('#theme-light').toggleClass('active', effective === 'light');
-    $('#theme-dark').toggleClass('active', effective === 'dark');
-    $('#theme-toggle').prop('checked', effective === 'dark');
+    const isDark = effective === 'dark';
+    $('#theme-light').toggleClass('active', !isDark);
+    $('#theme-dark').toggleClass('active', isDark);
+    $('.switch-opt-light').toggleClass('active', !isDark);
+    $('.switch-opt-dark').toggleClass('active', isDark);
+    $('#theme-toggle').prop('checked', isDark);
 }
 
 /* ---------------- Mobile Preview Toggle ---------------- */
@@ -120,21 +123,24 @@ const placeholderMap = {
 };
 
 function setLang(lang) {
-    $('html').toggleClass('lang-en', lang === 'en');
-    $('body').toggleClass('lang-en', lang === 'en');
-    $('#btn-bn').toggleClass('active', lang === 'bn');
-    $('#btn-en').toggleClass('active', lang === 'en');
-    $('#lang-toggle').prop('checked', lang === 'en');
+    const isEn = lang === 'en';
+    $('html').toggleClass('lang-en', isEn);
+    $('body').toggleClass('lang-en', isEn);
+    $('#btn-bn').toggleClass('active', !isEn);
+    $('#btn-en').toggleClass('active', isEn);
+    $('.switch-opt-bn').toggleClass('active', !isEn);
+    $('.switch-opt-en').toggleClass('active', isEn);
+    $('#lang-toggle').prop('checked', isEn);
     $('input.bn-ph').each(function () {
         const original = $(this).attr('data-bn-ph');
-        $(this).attr('placeholder', lang === 'en' ? (placeholderMap[original] || original) : original);
+        $(this).attr('placeholder', isEn ? (placeholderMap[original] || original) : original);
     });
     $('[data-placeholder-en]').each(function () {
         const bn = $(this).attr('data-placeholder-bn') || $(this).attr('placeholder');
         const en = $(this).attr('data-placeholder-en');
-        $(this).attr('placeholder', lang === 'en' ? en : bn);
+        $(this).attr('placeholder', isEn ? en : bn);
     });
-    $('.dataTables_filter input, .dt-search input').attr('placeholder', lang === 'en' ? 'Search...' : 'এখানে লিখুন...');
+    $('.dataTables_filter input, .dt-search input').attr('placeholder', isEn ? 'Search...' : 'এখানে লিখুন...');
     localStorage.setItem('lang', lang);
 }
 
@@ -148,7 +154,6 @@ function initLang() {
         }
     });
     const currentLang = localStorage.getItem('lang') || 'bn';
-    $('#lang-toggle').prop('checked', currentLang === 'en');
     setLang(currentLang);
 }
 
@@ -159,13 +164,30 @@ $(function () {
     updateMobilePreviewToggle();
     initLang();
 
-    // Theme & Language Toggle Switch Listeners
+    // Theme Switcher Listeners
     $(document).on('change', '#theme-toggle', function () {
         setTheme($(this).is(':checked') ? 'dark' : 'light');
     });
+    $(document).on('click', '[data-action="set-theme-light"], .switch-opt-light', function (e) {
+        if ($(e.target).is('input')) return;
+        setTheme('light');
+    });
+    $(document).on('click', '[data-action="set-theme-dark"], .switch-opt-dark', function (e) {
+        if ($(e.target).is('input')) return;
+        setTheme('dark');
+    });
 
+    // Language Switcher Listeners
     $(document).on('change', '#lang-toggle', function () {
         setLang($(this).is(':checked') ? 'en' : 'bn');
+    });
+    $(document).on('click', '[data-action="set-lang-bn"], .switch-opt-bn', function (e) {
+        if ($(e.target).is('input')) return;
+        setLang('bn');
+    });
+    $(document).on('click', '[data-action="set-lang-en"], .switch-opt-en', function (e) {
+        if ($(e.target).is('input')) return;
+        setLang('en');
     });
 
     $(document).on('keydown', function (e) {

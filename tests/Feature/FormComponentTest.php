@@ -138,4 +138,28 @@ class FormComponentTest extends TestCase
         $this->assertStringContainsString('ড্যাশবোর্ড', $rendered);
         $this->assertStringContainsString('Dashboard', $rendered);
     }
+
+    public function test_renders_theme_switcher_with_left_light_center_toggle_and_right_dark(): void
+    {
+        $rendered = Blade::render('<x-core::theme-switcher />');
+
+        $this->assertStringContainsString('theme-segmented-switcher', $rendered);
+        $this->assertStringContainsString('switch-opt-light', $rendered);
+        $this->assertStringContainsString('id="theme-toggle"', $rendered);
+        $this->assertStringContainsString('switch-opt-dark', $rendered);
+        $this->assertStringContainsString('লাইট', $rendered);
+        $this->assertStringContainsString('ডার্ক', $rendered);
+    }
+
+    public function test_renders_lang_switcher_with_left_bn_center_toggle_and_right_en(): void
+    {
+        $rendered = Blade::render('<x-core::lang-switcher />');
+
+        $this->assertStringContainsString('lang-segmented-switcher', $rendered);
+        $this->assertStringContainsString('switch-opt-bn', $rendered);
+        $this->assertStringContainsString('id="lang-toggle"', $rendered);
+        $this->assertStringContainsString('switch-opt-en', $rendered);
+        $this->assertStringContainsString('বাং', $rendered);
+        $this->assertStringContainsString('EN', $rendered);
+    }
 }

@@ -34,29 +34,11 @@
 
     <div class="top-actions">
         <div class="topbar-switchers">
-            <x-core::toggle
-                id="theme-toggle"
-                color="primary"
-                size="sm"
-                icon-on="moon"
-                icon-off="sun"
-                label-off="লাইট"
-                label-off-en="Light"
-                label-on="ডার্ক"
-                label-on-en="Dark"
-            />
+            <x-core::theme-switcher />
 
             <div class="topbar-switcher-divider"></div>
 
-            <x-core::toggle
-                id="lang-toggle"
-                color="primary"
-                size="sm"
-                label-off="বাংলা"
-                label-off-en="Bangla"
-                label-on="English"
-                label-on-en="English"
-            />
+            <x-core::lang-switcher />
         </div>
 
         <div class="icbtn" onclick="toast('৩টি নতুন নোটিফিকেশন','3 new notifications')" title="নোটিফিকেশন / Notifications" aria-label="Notifications">

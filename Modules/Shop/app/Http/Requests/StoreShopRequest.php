@@ -18,6 +18,7 @@ class StoreShopRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255', 'alpha_dash', 'unique:shops,slug'],
+            'store_code' => ['nullable', 'string', 'max:50', 'alpha_dash', 'unique:shops,store_code'],
             'phone' => ['nullable', 'string', 'max:30'],
             'address' => ['nullable', 'string', 'max:255'],
             'status' => ['required', 'in:active,inactive'],

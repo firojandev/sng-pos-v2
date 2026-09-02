@@ -4,32 +4,108 @@ namespace Modules\Shop\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 use Modules\Core\Support\Features;
+use Modules\Shop\DataTables\ShopsDataTable;
 use Modules\Shop\Http\Requests\StoreShopAdminRequest;
 use Modules\Shop\Http\Requests\StoreShopRequest;
 use Modules\Shop\Http\Requests\UpdateShopRequest;
 use Modules\Shop\Http\Requests\UpdateShopSubscriptionRequest;
 use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
+use Revoltify\Subscriptionify\Enums\SubscriptionStatus;
 use Spatie\Permission\Models\Role;
 
 class ShopController extends Controller
 {
-    public function index(): View
+    public function index(ShopsDataTable $dataTable)
     {
-        $shops = Shop::withCount('admins')->latest()->paginate(10);
+        return $dataTable->render('shop::index');
+    }
 
-        return view('shop::index', compact('shops'));
+    public function checkAvailability(Request $request): JsonResponse
+    {
+        $slug = trim((string) $request->query('slug', ''));
+        $storeCode = trim((string) $request->query('store_code', ''));
+        $ignoreId = $request->query('ignore_id');
+
+        $slugAvailable = true;
+        if ($slug !== '') {
+            $slugQuery = Shop::where('slug', $slug);
+            if ($ignoreId) {
+                $slugQuery->where('id', '!=', $ignoreId);
+            }
+            $slugAvailable = ! $slugQuery->exists();
+        }
+
+        $storeCodeAvailable = true;
+        if ($storeCode !== '') {
+            $codeQuery = Shop::where('store_code', $storeCode);
+            if ($ignoreId) {
+                $codeQuery->where('id', '!=', $ignoreId);
+            }
+            $storeCodeAvailable = ! $codeQuery->exists();
+        }
+
+        return response()->json([
+            'slug' => $slug,
+            'slug_available' => $slugAvailable,
+            'store_code' => $storeCode,
+            'store_code_available' => $storeCodeAvailable,
+        ]);
+    }
+
+    public function show(Shop $shop): JsonResponse|RedirectResponse
+    {
+        $shop->load(['admins.roles', 'activeSubscription.plan']);
+
+        if (request()->wantsJson() || request()->ajax()) {
+            $subscription = $shop->activeSubscription;
+            $plan = $subscription?->plan;
+
+            return response()->json([
+                'id' => $shop->id,
+                'name' => $shop->name,
+                'slug' => $shop->slug,
+                'store_code' => $shop->store_code,
+                'phone' => $shop->phone,
+                'address' => $shop->address,
+                'status' => $shop->status,
+                'enabled_features' => $shop->enabled_features ?? [],
+                'created_at' => $shop->created_at?->format('d M, Y (h:i A)'),
+                'edit_url' => route('shops.edit', $shop),
+                'subscription' => $subscription ? [
+                    'plan_name' => $plan?->name ?? 'Custom Plan',
+                    'price' => $plan ? '৳'.number_format($plan->price, 0) : null,
+                    'billing_cycle' => $plan?->billing_cycle === 'yearly' ? 'Yearly' : 'Monthly',
+                    'status' => $subscription->status instanceof SubscriptionStatus
+                        ? $subscription->status->value
+                        : (string) $subscription->status,
+                    'status_label' => $subscription->statusLabel()['bn'] ?? (string) $subscription->status,
+                    'current_period_end' => $subscription->ends_at?->format('d M, Y'),
+                    'trial_ends_at' => $subscription->trial_ends_at?->format('d M, Y'),
+                ] : null,
+                'admins' => $shop->admins->map(fn ($admin) => [
+                    'name' => $admin->name,
+                    'email' => $admin->email,
+                    'roles' => $admin->roles->pluck('name')->toArray(),
+                ]),
+            ]);
+        }
+
+        return redirect()->route('shops.edit', $shop);
     }
 
     public function create(): View
     {
         return view('shop::create', [
             'shop' => new Shop,
+            'nextStoreCode' => Shop::generateNextStoreCode(),
             'roles' => Role::whereNull('shop_id')->where('name', '!=', 'Super Admin')->orderBy('name')->get(),
             'features' => Features::all(),
         ]);
@@ -38,9 +114,12 @@ class ShopController extends Controller
     public function store(StoreShopRequest $request): RedirectResponse
     {
         DB::transaction(function () use ($request) {
+            $storeCode = $request->validated('store_code') ?: Shop::generateNextStoreCode();
+
             $shop = Shop::create([
                 'name' => $request->validated('name'),
                 'slug' => $request->validated('slug'),
+                'store_code' => $storeCode,
                 'phone' => $request->validated('phone'),
                 'address' => $request->validated('address'),
                 'status' => $request->validated('status'),
@@ -100,6 +179,7 @@ class ShopController extends Controller
         $shop->update([
             'name' => $request->validated('name'),
             'slug' => $request->validated('slug'),
+            'store_code' => $request->validated('store_code'),
             'phone' => $request->validated('phone'),
             'address' => $request->validated('address'),
             'status' => $request->validated('status'),

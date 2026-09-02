@@ -8,7 +8,8 @@ use Modules\Shop\Http\Controllers\SubscriptionController;
 use Modules\Shop\Http\Controllers\WarehouseController;
 
 Route::middleware(['auth', 'role:Super Admin'])->group(function () {
-    Route::resource('shops', ShopController::class)->except(['show']);
+    Route::get('shops/check-availability', [ShopController::class, 'checkAvailability'])->name('shops.check-availability');
+    Route::resource('shops', ShopController::class);
     Route::resource('plans', PlanController::class)->except(['show']);
 
     Route::post('shops/{shop}/admins', [ShopController::class, 'storeAdmin'])->name('shops.admins.store');

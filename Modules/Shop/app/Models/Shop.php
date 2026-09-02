@@ -19,6 +19,7 @@ class Shop extends Model implements Subscribable
     protected $fillable = [
         'name',
         'slug',
+        'store_code',
         'phone',
         'address',
         'status',
@@ -81,5 +82,40 @@ class Shop extends Model implements Subscribable
         $this->unsetRelation('directFeatures');
         $this->featureGrantService()->revoke($this, $slug);
         $this->unsetRelation('directFeatures');
+    }
+
+    /**
+     * Generate next sequential store code (e.g. shop-001, shop-002).
+     */
+    public static function generateNextStoreCode(string $prefix = 'shop-'): string
+    {
+        $codes = static::query()
+            ->whereNotNull('store_code')
+            ->where(function ($query) use ($prefix) {
+                $query->where('store_code', 'LIKE', strtolower($prefix).'%')
+                    ->orWhere('store_code', 'LIKE', strtoupper($prefix).'%');
+            })
+            ->pluck('store_code');
+
+        $maxNumber = 0;
+        foreach ($codes as $code) {
+            $numberStr = substr($code, strlen($prefix));
+            if (is_numeric($numberStr)) {
+                $num = (int) $numberStr;
+                if ($num > $maxNumber) {
+                    $maxNumber = $num;
+                }
+            }
+        }
+
+        $nextNumber = $maxNumber + 1;
+        $code = sprintf('%s%03d', $prefix, $nextNumber);
+
+        while (static::where('store_code', $code)->exists()) {
+            $nextNumber++;
+            $code = sprintf('%s%03d', $prefix, $nextNumber);
+        }
+
+        return $code;
     }
 }

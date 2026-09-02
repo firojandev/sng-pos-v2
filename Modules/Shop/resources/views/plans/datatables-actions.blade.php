@@ -2,7 +2,7 @@
     <x-core::button
         :href="route('plans.edit', $plan)"
         variant="soft"
-        color="teal"
+        color="primary"
         icon="edit"
         icon-only
         title="এডিট / Edit"
