@@ -317,11 +317,22 @@
                                 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:12px;">
                                     <div>
                                         <x-core::form-group name="plan_id" label="সাবস্ক্রিপশন প্ল্যান" label-en="Subscription Plan" icon="tag" required>
-                                            <select name="plan_id" class="form-control form-select" required>
+                                            <select name="plan_id" id="edit-shop-plan-select" class="form-control form-select" required>
                                                 <option value="" disabled {{ $subscription?->plan_id ? '' : 'selected' }}>-- প্ল্যান নির্বাচন করুন --</option>
                                                 @foreach ($plans as $plan)
-                                                    <option value="{{ $plan->id }}" {{ (string) old('plan_id', $subscription->plan_id ?? '') === (string) $plan->id ? 'selected' : '' }}>
-                                                        {{ $plan->name }} (৳{{ number_format($plan->price, 0) }}/{{ $plan->billing_cycle === 'yearly' ? 'বছর' : 'মাস' }})
+                                                    @php
+                                                        $cycle = $plan->billing_cycle ?? ($plan->billing_interval?->value ?? 'month');
+                                                        $cycleLabel = in_array(strtolower((string) $cycle), ['yearly', 'year', 'annual']) ? '১ বছর (1 Year)' : 'মাসিক (Monthly)';
+                                                    @endphp
+                                                    <option
+                                                        value="{{ $plan->id }}"
+                                                        data-billing-cycle="{{ $cycle }}"
+                                                        data-price="{{ number_format($plan->price, 0) }}"
+                                                        data-name="{{ $plan->name }}"
+                                                        data-trial-days="{{ $plan->trial_days ?? 0 }}"
+                                                        {{ (string) old('plan_id', $subscription->plan_id ?? '') === (string) $plan->id ? 'selected' : '' }}
+                                                    >
+                                                        {{ $plan->name }} (৳{{ number_format($plan->price, 0) }}/{{ $cycleLabel }})
                                                     </option>
                                                 @endforeach
                                             </select>
@@ -329,7 +340,7 @@
                                     </div>
                                     <div>
                                         <x-core::form-group name="status" label="সাবস্ক্রিপশন অবস্থা" label-en="Subscription Status" icon="check-circle" required>
-                                            <select name="status" class="form-control form-select" required>
+                                            <select name="status" id="edit-subscription-status-select" class="form-control form-select" required>
                                                 @foreach (\Modules\Shop\Models\Subscription::statusLabels() as $key => $label)
                                                     <option value="{{ $key }}" {{ old('status', $subscription->status ?? 'active') === $key ? 'selected' : '' }}>
                                                         {{ $label['bn'] }} ({{ $label['en'] }})
@@ -345,6 +356,7 @@
                                         <x-core::input
                                             type="date"
                                             name="trial_ends_at"
+                                            id="edit-subscription-trial-input"
                                             label="ট্রায়াল সমাপ্তির তারিখ"
                                             label-en="Trial Ends At"
                                             icon="calendar"
@@ -355,6 +367,7 @@
                                         <x-core::input
                                             type="date"
                                             name="current_period_start"
+                                            id="edit-subscription-start-input"
                                             label="বর্তমান মেয়াদ শুরু"
                                             label-en="Period Start Date"
                                             icon="calendar"
@@ -365,6 +378,7 @@
                                         <x-core::input
                                             type="date"
                                             name="current_period_end"
+                                            id="edit-subscription-end-input"
                                             label="বর্তমান মেয়াদ শেষ"
                                             label-en="Period End Date"
                                             icon="calendar"
@@ -835,6 +849,65 @@
                     $badge.find('.en').text(isActive ? 'Active' : 'Inactive');
                 } else {
                     $badge.text(isActive ? 'সক্রিয়' : 'নিষ্ক্রিয়');
+                }
+            });
+
+            // 4. Live Subscription & Date Calculations for Edit
+            function formatYMD(dateObj) {
+                var year = dateObj.getFullYear();
+                var month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                var day = String(dateObj.getDate()).padStart(2, '0');
+                return year + '-' + month + '-' + day;
+            }
+
+            function calculateDatesForEditPlan() {
+                var $selectedPlan = $('#edit-shop-plan-select option:selected');
+                var planId = $selectedPlan.val();
+                if (!planId) return;
+
+                var cycle = String($selectedPlan.data('billing-cycle') || 'month').toLowerCase();
+                var trialDays = parseInt($selectedPlan.data('trial-days') || 0, 10);
+
+                var startDate = new Date();
+                var endDate = new Date(startDate.getTime());
+
+                if (cycle === 'yearly' || cycle === 'year' || cycle === 'annual') {
+                    endDate.setDate(endDate.getDate() + 365);
+                } else {
+                    endDate.setDate(endDate.getDate() + 30);
+                }
+
+                var startStr = formatYMD(startDate);
+                var endStr = formatYMD(endDate);
+
+                $('#edit-subscription-start-input').val(startStr);
+                $('#edit-subscription-end-input').val(endStr);
+
+                if (trialDays > 0) {
+                    var trialDate = new Date(startDate.getTime());
+                    trialDate.setDate(trialDate.getDate() + trialDays);
+                    $('#edit-subscription-trial-input').val(formatYMD(trialDate));
+                }
+            }
+
+            $(document).on('change', '#edit-shop-plan-select', function () {
+                calculateDatesForEditPlan();
+            });
+
+            $(document).on('change', '#edit-subscription-start-input', function () {
+                var startVal = $(this).val();
+                if (startVal) {
+                    var $selectedPlan = $('#edit-shop-plan-select option:selected');
+                    var cycle = String($selectedPlan.data('billing-cycle') || 'month').toLowerCase();
+                    var d = new Date(startVal);
+                    if (!isNaN(d.getTime())) {
+                        if (cycle === 'yearly' || cycle === 'year' || cycle === 'annual') {
+                            d.setDate(d.getDate() + 365);
+                        } else {
+                            d.setDate(d.getDate() + 30);
+                        }
+                        $('#edit-subscription-end-input').val(formatYMD(d));
+                    }
                 }
             });
 

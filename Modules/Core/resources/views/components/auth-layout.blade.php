@@ -6,6 +6,7 @@
     'cardSubtitle' => 'আপনার হিসাব পরিচালনা করতে লগইন করুন',
     'cardSubtitleEn' => 'Sign in to manage your business account',
     'mark' => 'ম',
+    'maxWidth' => '400px',
 ])
 
 <!DOCTYPE html>
@@ -148,7 +149,7 @@
 </div>
 
 <div class="auth-shell">
-    <div class="auth-card">
+    <div class="auth-card" style="max-width: {{ $maxWidth }};">
         @if ($mark)
             <div class="auth-mark">{{ $mark }}</div>
         @endif
@@ -195,29 +196,33 @@
 
 <div class="toast" id="toast"></div>
 
-@if (session('status'))
+@if (session('status') || session('success') || session('error'))
     <script>
-        $(function () {
-            toast(@json(session('status')), @json(session('status')));
-        });
+        (function () {
+            function showToasts() {
+                if (typeof window.toast !== 'function') {
+                    setTimeout(showToasts, 30);
+                    return;
+                }
+                @if (session('status'))
+                    toast(@json(session('status')), @json(session('status')));
+                @endif
+                @if (session('success'))
+                    toast(@json(session('success')), @json(session('success')));
+                @endif
+                @if (session('error'))
+                    toast(@json(session('error')), @json(session('error')));
+                @endif
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', showToasts);
+            } else {
+                showToasts();
+            }
+        })();
     </script>
 @endif
 
-@if (session('success'))
-    <script>
-        $(function () {
-            toast(@json(session('success')), @json(session('success')));
-        });
-    </script>
-@endif
-
-@if (session('error'))
-    <script>
-        $(function () {
-            toast(@json(session('error')), @json(session('error')));
-        });
-    </script>
-@endif
-
+@stack('scripts')
 </body>
 </html>

@@ -96,7 +96,7 @@ class ShopDataTableTest extends TestCase
         $response->assertOk();
         $response->assertSee('নতুন দোকান তৈরি করুন');
         $response->assertSee('দোকানের প্রাথমিক বিবরণ');
-        $response->assertSee('প্রথম এডমিন অ্যাকাউন্ট তৈরি');
+        $response->assertSee('দোকানের মালিক');
         $response->assertSee('লাইভ দোকান প্রিভিউ');
     }
 

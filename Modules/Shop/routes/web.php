@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Modules\Shop\Http\Controllers\BranchController;
 use Modules\Shop\Http\Controllers\PlanController;
 use Modules\Shop\Http\Controllers\ShopController;
+use Modules\Shop\Http\Controllers\ShopSelectionController;
 use Modules\Shop\Http\Controllers\SubscriptionController;
 use Modules\Shop\Http\Controllers\WarehouseController;
 
@@ -29,5 +30,7 @@ Route::middleware(['auth', 'feature:branches'])->group(function () {
 });
 
 Route::middleware(['auth'])->group(function () {
+    Route::get('select-shop', [ShopSelectionController::class, 'index'])->name('shops.select');
+    Route::post('select-shop/{shop}', [ShopSelectionController::class, 'select'])->name('shops.switch');
     Route::get('subscription', [SubscriptionController::class, 'show'])->name('subscription.show');
 });

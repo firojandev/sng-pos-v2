@@ -338,7 +338,16 @@ $isNavItemVisible = function (array $item, bool $groupGated, $user) {
             <div class="user-info">
                 <div class="nm" title="{{ $user->name ?? '' }}">{{ $user->name ?? 'User' }}</div>
                 <div class="role" title="{{ $isSuperAdmin ? 'Super Admin' : ($user->shop->name ?? '') }}">
-                    {{ $isSuperAdmin ? 'Super Admin' : ($user->shop->name ?? 'Staff') }}
+                    @if ($isSuperAdmin)
+                        Super Admin
+                    @elseif ($user && $user->activeShops()->count() > 1)
+                        <a href="{{ route('shops.select') }}" style="color:inherit; text-decoration:none; display:inline-flex; align-items:center; gap:4px;" title="দোকান পরিবর্তন করুন / Switch Shop">
+                            <span>{{ $user->shop->name ?? 'দোকান' }}</span>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                        </a>
+                    @else
+                        {{ $user->shop->name ?? 'Staff' }}
+                    @endif
                 </div>
             </div>
             <form method="POST" action="{{ route('logout') }}" class="logout-form">

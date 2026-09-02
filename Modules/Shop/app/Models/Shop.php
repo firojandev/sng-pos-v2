@@ -4,7 +4,7 @@ namespace Modules\Shop\Models;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Revoltify\Subscriptionify\Concerns\InteractsWithSubscriptions;
 use Revoltify\Subscriptionify\Contracts\Subscribable;
@@ -30,9 +30,22 @@ class Shop extends Model implements Subscribable
         'enabled_features' => 'array',
     ];
 
-    public function admins(): HasMany
+    /**
+     * Users/Admins associated with this shop via pivot table.
+     */
+    public function users(): BelongsToMany
     {
-        return $this->hasMany(User::class);
+        return $this->belongsToMany(User::class, 'shop_user')
+            ->withPivot('role', 'is_owner')
+            ->withTimestamps();
+    }
+
+    /**
+     * Alias for shop administrators.
+     */
+    public function admins(): BelongsToMany
+    {
+        return $this->users();
     }
 
     /**

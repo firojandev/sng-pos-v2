@@ -190,6 +190,17 @@ $(function () {
         setLang('en');
     });
 
+    // Topbar Shop Switcher Dropdown
+    $(document).on('click', '.btn-shop-switcher', function (e) {
+        e.stopPropagation();
+        $(this).siblings('.shop-switcher-menu').fadeToggle(120);
+    });
+    $(document).on('click', function (e) {
+        if (!$(e.target).closest('.shop-switcher-dropdown').length) {
+            $('.shop-switcher-menu').hide();
+        }
+    });
+
     $(document).on('keydown', function (e) {
         // Ctrl+K / Cmd+K Search Focus
         if ((e.ctrlKey || e.metaKey) && e.key === 'k') {

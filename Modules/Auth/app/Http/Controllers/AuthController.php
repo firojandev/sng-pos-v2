@@ -32,6 +32,39 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
+        $user = Auth::user();
+
+        if ($user->isSuperAdmin()) {
+            return redirect()->intended(route('dashboard'));
+        }
+
+        $shops = $user->activeShops()->get();
+
+        if ($shops->isEmpty() && $user->shop_id && $user->shop && $user->shop->status === 'active') {
+            $user->shops()->syncWithoutDetaching([
+                $user->shop_id => [
+                    'role' => $user->roles->first()?->name ?? 'Admin',
+                    'is_owner' => true,
+                ],
+            ]);
+            $shops = collect([$user->shop]);
+        }
+
+        if ($shops->count() > 1) {
+            return redirect()->route('shops.select');
+        }
+
+        if ($shops->count() === 1) {
+            $singleShop = $shops->first();
+            if ($user->shop_id !== $singleShop->id) {
+                $user->shop_id = $singleShop->id;
+                $user->save();
+            }
+            session(['current_shop_id' => $singleShop->id]);
+
+            return redirect()->intended(route('dashboard'));
+        }
+
         return redirect()->intended(route('dashboard'));
     }
 

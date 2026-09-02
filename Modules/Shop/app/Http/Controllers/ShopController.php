@@ -4,6 +4,7 @@ namespace Modules\Shop\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -108,6 +109,11 @@ class ShopController extends Controller
             'nextStoreCode' => Shop::generateNextStoreCode(),
             'roles' => Role::whereNull('shop_id')->where('name', '!=', 'Super Admin')->orderBy('name')->get(),
             'features' => Features::all(),
+            'plans' => Plan::where('is_active', true)->orWhere('status', 'active')->orderBy('sort_order')->orderBy('price')->get(),
+            'existingOwners' => User::whereDoesntHave('roles', fn ($q) => $q->where('name', 'Super Admin'))
+                ->with(['shop', 'roles'])
+                ->orderBy('name')
+                ->get(),
         ]);
     }
 
@@ -126,14 +132,77 @@ class ShopController extends Controller
                 'enabled_features' => $request->validated('features', []),
             ]);
 
-            $admin = User::create([
-                'shop_id' => $shop->id,
-                'name' => $request->validated('admin_name'),
-                'email' => $request->validated('admin_email'),
-                'password' => Hash::make($request->validated('admin_password')),
+            $ownerType = $request->input('owner_type', 'new');
+
+            if ($ownerType === 'existing' && $request->filled('existing_user_id')) {
+                $admin = User::findOrFail($request->validated('existing_user_id'));
+                if (! $admin->shop_id) {
+                    $admin->shop_id = $shop->id;
+                    $admin->save();
+                }
+            } else {
+                $adminEmail = $request->validated('admin_email');
+                $admin = User::where('email', $adminEmail)->first();
+
+                if (! $admin) {
+                    $admin = User::create([
+                        'shop_id' => $shop->id,
+                        'name' => $request->validated('admin_name'),
+                        'email' => $adminEmail,
+                        'password' => Hash::make($request->validated('admin_password')),
+                    ]);
+                } else {
+                    if (! $admin->shop_id) {
+                        $admin->shop_id = $shop->id;
+                        $admin->save();
+                    }
+                }
+            }
+
+            $roleName = $request->validated('admin_role');
+            $admin->assignRole($roleName);
+
+            $shop->users()->syncWithoutDetaching([
+                $admin->id => [
+                    'role' => $roleName,
+                    'is_owner' => true,
+                ],
             ]);
 
-            $admin->assignRole($request->validated('admin_role'));
+            if ($request->filled('plan_id')) {
+                $plan = Plan::find($request->validated('plan_id'));
+                if ($plan) {
+                    $billingCycle = $plan->billing_cycle ?? ($plan->billing_interval?->value ?? 'month');
+                    $startDate = $request->validated('current_period_start')
+                        ? Carbon::parse($request->validated('current_period_start'))
+                        : now();
+
+                    if ($request->filled('current_period_end')) {
+                        $endDate = Carbon::parse($request->validated('current_period_end'));
+                    } elseif (in_array(strtolower((string) $billingCycle), ['yearly', 'year', 'annual'])) {
+                        $endDate = $startDate->copy()->addDays(365);
+                    } else {
+                        $endDate = $startDate->copy()->addDays(30);
+                    }
+
+                    $trialEndsAt = $request->filled('trial_ends_at')
+                        ? Carbon::parse($request->validated('trial_ends_at'))
+                        : null;
+
+                    $shop->subscriptions()->create([
+                        'subscribable_type' => Shop::class,
+                        'subscribable_id' => $shop->id,
+                        'plan_id' => $plan->id,
+                        'status' => $request->validated('subscription_status', 'active'),
+                        'trial_ends_at' => $trialEndsAt,
+                        'starts_at' => $startDate,
+                        'ends_at' => $endDate,
+                        'current_period_start' => $startDate,
+                        'current_period_end' => $endDate,
+                    ]);
+                    $shop->clearSubscriptionCache();
+                }
+            }
         });
 
         return redirect()->route('shops.index')->with('status', 'দোকান ও এডমিন সফলভাবে তৈরি করা হয়েছে');
@@ -155,6 +224,23 @@ class ShopController extends Controller
     {
         $plan = Plan::find($request->validated('plan_id'));
         if ($plan) {
+            $billingCycle = $plan->billing_cycle ?? ($plan->billing_interval?->value ?? 'month');
+            $startDate = $request->validated('current_period_start')
+                ? Carbon::parse($request->validated('current_period_start'))
+                : now();
+
+            if ($request->filled('current_period_end')) {
+                $endDate = Carbon::parse($request->validated('current_period_end'));
+            } elseif (in_array(strtolower((string) $billingCycle), ['yearly', 'year', 'annual'])) {
+                $endDate = $startDate->copy()->addDays(365);
+            } else {
+                $endDate = $startDate->copy()->addDays(30);
+            }
+
+            $trialEndsAt = $request->filled('trial_ends_at')
+                ? Carbon::parse($request->validated('trial_ends_at'))
+                : null;
+
             $shop->subscriptions()->updateOrCreate(
                 [
                     'subscribable_type' => Shop::class,
@@ -163,9 +249,11 @@ class ShopController extends Controller
                 [
                     'plan_id' => $plan->id,
                     'status' => $request->validated('status', 'active'),
-                    'trial_ends_at' => $request->validated('trial_ends_at'),
-                    'starts_at' => $request->validated('current_period_start', now()),
-                    'ends_at' => $request->validated('current_period_end'),
+                    'trial_ends_at' => $trialEndsAt,
+                    'starts_at' => $startDate,
+                    'ends_at' => $endDate,
+                    'current_period_start' => $startDate,
+                    'current_period_end' => $endDate,
                 ]
             );
             $shop->clearSubscriptionCache();
@@ -198,25 +286,52 @@ class ShopController extends Controller
 
     public function storeAdmin(StoreShopAdminRequest $request, Shop $shop): RedirectResponse
     {
-        $admin = User::create([
-            'shop_id' => $shop->id,
-            'name' => $request->validated('name'),
-            'email' => $request->validated('email'),
-            'password' => Hash::make($request->validated('password')),
-        ]);
+        $email = $request->validated('email');
+        $admin = User::where('email', $email)->first();
 
-        $admin->assignRole($request->validated('role'));
+        if (! $admin) {
+            $admin = User::create([
+                'shop_id' => $shop->id,
+                'name' => $request->validated('name'),
+                'email' => $email,
+                'password' => Hash::make($request->validated('password')),
+            ]);
+            $admin->assignRole($request->validated('role'));
+        } else {
+            if (! $admin->shop_id) {
+                $admin->shop_id = $shop->id;
+                $admin->save();
+            }
+        }
+
+        $shop->users()->syncWithoutDetaching([
+            $admin->id => [
+                'role' => $request->validated('role'),
+                'is_owner' => false,
+            ],
+        ]);
 
         return redirect()->route('shops.edit', $shop)->with('status', 'নতুন এডমিন যোগ করা হয়েছে');
     }
 
     public function destroyAdmin(Shop $shop, User $admin): RedirectResponse
     {
-        if ($admin->shop_id !== $shop->id) {
+        $belongsToShop = $shop->users()->where('users.id', $admin->id)->exists() || $admin->shop_id === $shop->id;
+        if (! $belongsToShop) {
             abort(404);
         }
 
-        $admin->delete();
+        $shop->users()->detach($admin->id);
+
+        if ($admin->shop_id === $shop->id) {
+            $nextShop = $admin->shops()->first();
+            $admin->shop_id = $nextShop?->id;
+            $admin->save();
+        }
+
+        if ($admin->shops()->count() === 0 && ! $admin->isSuperAdmin()) {
+            $admin->delete();
+        }
 
         return redirect()->route('shops.edit', $shop)->with('status', 'এডমিন মুছে ফেলা হয়েছে');
     }
