@@ -109,7 +109,15 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="5"><div class="helper" style="margin-top:0;">কোনো পণ্য নেই</div></td></tr>
+                            <tr>
+                                <td colspan="5">
+                                    <x-core::table.empty
+                                        icon="database"
+                                        title="কোনো পণ্য নেই"
+                                        title-en="No stock records found"
+                                    />
+                                </td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>

@@ -167,6 +167,20 @@ $navGroups = [
         'gated' => true,
         'items' => [
             [
+                'key' => 'accounts',
+                'route' => 'accounts.index',
+                'bn' => 'অ্যাকাউন্ট',
+                'en' => 'Accounts',
+                'icon' => '<rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3 10h18M7 15h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+            ],
+            [
+                'key' => 'account-transfers',
+                'route' => 'account-transfers.index',
+                'bn' => 'ফান্ড ট্রান্সফার',
+                'en' => 'Fund Transfer',
+                'icon' => '<path d="M7 10h14l-4-4M17 14H3l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+            ],
+            [
                 'key' => 'income',
                 'route' => 'income.index',
                 'bn' => 'আয়',
@@ -245,6 +259,14 @@ $navGroups = [
                 'gated' => false,
             ],
             [
+                'key' => 'styleguide',
+                'route' => 'styleguide',
+                'bn' => 'কম্পোনেন্ট গাইড',
+                'en' => 'UI Style Guide',
+                'icon' => '<rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.6"/><rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.6"/><rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.6"/>',
+                'gated' => false,
+            ],
+            [
                 'key' => 'subscription',
                 'route' => 'subscription.show',
                 'bn' => 'সাবস্ক্রিপশন',
@@ -268,45 +290,29 @@ $isNavItemVisible = function (array $item, bool $groupGated, $user) {
 
 <aside class="sidebar" id="sidebar">
     <div class="side-head">
-        <div class="mark">ম</div>
-        <div class="nm">
-            মাস্টারপস
-            <span class="bn">ব্যবসা ব্যবস্থাপনা</span>
-            <span class="en">Business Management</span>
+        <div class="mark">
+            <span class="bn">ম</span>
+            <span class="en">M</span>
         </div>
-        <button class="side-close" onclick="toggleSidebar(false)">&times;</button>
+        <div class="nm">
+            <span class="brand-title bn">মাস্টার<span class="brand-accent">পস</span></span>
+            <span class="brand-title en">Master<span class="brand-accent">POS</span></span>
+            <span class="brand-tagline bn">ব্যবসা ব্যবস্থাপনা</span>
+            <span class="brand-tagline en">Business Management</span>
+        </div>
+        <button class="side-close" onclick="toggleSidebar(false)" aria-label="Close sidebar">&times;</button>
     </div>
 
-    @if ($isSuperAdmin)
-        @foreach ($superAdminGroups as $group)
-            <div class="nav-group">
-                @if ($group['label'])
-                    <div class="nav-group-label bn">{{ $group['label']['bn'] }}</div>
-                    <div class="nav-group-label en" style="display:none;">{{ $group['label']['en'] }}</div>
-                @endif
-
-                @foreach ($group['items'] as $item)
-                    <a href="{{ route($item['route']) }}" class="nav-item {{ $active === $item['key'] ? 'active' : '' }}">
-                        <svg viewBox="0 0 24 24" fill="none">{!! $item['icon'] !!}</svg>
-                        <span class="bn">{{ $item['bn'] }}</span>
-                        <span class="en">{{ $item['en'] }}</span>
-                    </a>
-                @endforeach
-            </div>
-        @endforeach
-    @else
-        @foreach ($navGroups as $group)
-            @php
-                $visibleItems = array_filter($group['items'], fn ($item) => $isNavItemVisible($item, $group['gated'], $user));
-            @endphp
-            @if (count($visibleItems))
+    <div class="side-nav-wrapper">
+        @if ($isSuperAdmin)
+            @foreach ($superAdminGroups as $group)
                 <div class="nav-group">
                     @if ($group['label'])
                         <div class="nav-group-label bn">{{ $group['label']['bn'] }}</div>
-                        <div class="nav-group-label en" style="display:none;">{{ $group['label']['en'] }}</div>
+                        <div class="nav-group-label en">{{ $group['label']['en'] }}</div>
                     @endif
 
-                    @foreach ($visibleItems as $item)
+                    @foreach ($group['items'] as $item)
                         <a href="{{ route($item['route']) }}" class="nav-item {{ $active === $item['key'] ? 'active' : '' }}">
                             <svg viewBox="0 0 24 24" fill="none">{!! $item['icon'] !!}</svg>
                             <span class="bn">{{ $item['bn'] }}</span>
@@ -314,19 +320,58 @@ $isNavItemVisible = function (array $item, bool $groupGated, $user) {
                         </a>
                     @endforeach
                 </div>
-            @endif
-        @endforeach
-    @endif
+            @endforeach
+        @else
+            @foreach ($navGroups as $group)
+                @php
+                    $visibleItems = array_filter($group['items'], fn ($item) => $isNavItemVisible($item, $group['gated'], $user));
+                @endphp
+                @if (count($visibleItems))
+                    <div class="nav-group">
+                        @if ($group['label'])
+                            <div class="nav-group-label bn">{{ $group['label']['bn'] }}</div>
+                            <div class="nav-group-label en">{{ $group['label']['en'] }}</div>
+                        @endif
+
+                        @foreach ($visibleItems as $item)
+                            <a href="{{ route($item['route']) }}" class="nav-item {{ $active === $item['key'] ? 'active' : '' }}">
+                                <svg viewBox="0 0 24 24" fill="none">{!! $item['icon'] !!}</svg>
+                                <span class="bn">{{ $item['bn'] }}</span>
+                                <span class="en">{{ $item['en'] }}</span>
+                            </a>
+                        @endforeach
+                    </div>
+                @endif
+            @endforeach
+        @endif
+    </div>
 
     <div class="side-foot">
-        <div class="av">{{ mb_substr($user->name ?? '?', 0, 1) }}</div>
-        <div>
-            <div class="nm">{{ $user->name ?? '' }}</div>
-            <div class="role" style="color:#9FC4B7;">{{ $isSuperAdmin ? 'Super Admin' : ($user->shop->name ?? '') }}</div>
-            <form method="POST" action="{{ route('logout') }}">
+        <div class="side-user-card">
+            <div class="av">{{ mb_substr($user->name ?? '?', 0, 1) }}</div>
+            <div class="user-info">
+                <div class="nm" title="{{ $user->name ?? '' }}">{{ $user->name ?? 'User' }}</div>
+                <div class="role" title="{{ $isSuperAdmin ? 'Super Admin' : ($user->shop->name ?? '') }}">
+                    @if ($isSuperAdmin)
+                        Super Admin
+                    @elseif ($user && $user->activeShops()->count() > 1)
+                        <a href="{{ route('shops.select') }}" style="color:inherit; text-decoration:none; display:inline-flex; align-items:center; gap:4px;" title="দোকান পরিবর্তন করুন / Switch Shop">
+                            <span>{{ $user->shop->name ?? 'দোকান' }}</span>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                        </a>
+                    @else
+                        {{ $user->shop->name ?? 'Staff' }}
+                    @endif
+                </div>
+            </div>
+            <form method="POST" action="{{ route('logout') }}" class="logout-form">
                 @csrf
-                <button type="submit" class="role" style="background:none; border:none; padding:0; color:#9FC4B7; cursor:pointer; text-decoration:underline;">
-                    <span class="bn">লগ আউট</span><span class="en">Logout</span>
+                <button type="submit" class="logout-btn" title="লগ আউট / Logout">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
                 </button>
             </form>
         </div>

@@ -125,6 +125,11 @@ class PageController extends Controller
         return $this->placeholder('settings', 'সেটিংস', 'Settings', 'দোকান ও অ্যাকাউন্ট সেটিংস পরিচালনা করুন', 'Manage shop and account settings');
     }
 
+    public function styleguide(): View
+    {
+        return view('core::pages.styleguide');
+    }
+
     private function placeholder(string $active, string $title, string $titleEn, string $subtitle, string $subtitleEn): View
     {
         return view('core::pages.placeholder', compact('active', 'title', 'titleEn', 'subtitle', 'subtitleEn'));

@@ -13,14 +13,14 @@ class ExpenseCategoryController extends Controller
 {
     public function index(): View
     {
-        $expenseCategories = ExpenseCategory::withCount('expenses')->latest()->paginate(10);
+        $expenseCategories = ExpenseCategory::parents()->withCount(['subCategories', 'expenses'])->latest()->paginate(10);
 
         return view('finance::expense-categories.index', compact('expenseCategories'));
     }
 
     public function create(): View
     {
-        return view('finance::expense-categories.create', ['expenseCategory' => new ExpenseCategory()]);
+        return view('finance::expense-categories.create', ['expenseCategory' => new ExpenseCategory]);
     }
 
     public function store(StoreExpenseCategoryRequest $request): RedirectResponse
@@ -44,8 +44,8 @@ class ExpenseCategoryController extends Controller
 
     public function destroy(ExpenseCategory $expenseCategory): RedirectResponse
     {
-        if ($expenseCategory->expenses()->exists()) {
-            return redirect()->route('expense-categories.index')->with('status', 'এই ক্যাটাগরিতে ব্যয় যুক্ত আছে, মুছে ফেলা যাবে না');
+        if ($expenseCategory->subCategories()->exists() || $expenseCategory->expenses()->exists()) {
+            return redirect()->route('expense-categories.index')->with('status', 'এই ক্যাটাগরিতে সাব-ক্যাটাগরি/ব্যয় যুক্ত আছে, মুছে ফেলা যাবে না');
         }
 
         $expenseCategory->delete();

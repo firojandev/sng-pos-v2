@@ -64,7 +64,15 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="7"><div class="helper" style="margin-top:0;">কোনো স্টক ট্রান্সফার নেই</div></td></tr>
+                            <tr>
+                                <td colspan="7">
+                                    <x-core::table.empty
+                                        icon="arrow-left-right"
+                                        title="কোনো স্টক ট্রান্সফার নেই"
+                                        title-en="No stock transfers found"
+                                    />
+                                </td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>

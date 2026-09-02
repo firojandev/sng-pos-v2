@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('sku')->unique();
             $table->string('image_url')->nullable();
             $table->foreignId('category_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('sub_category_id')->nullable()->constrained('sub_categories')->nullOnDelete();
+            $table->foreignId('sub_category_id')->nullable()->constrained('categories')->nullOnDelete();
             $table->foreignId('brand_id')->nullable()->constrained()->nullOnDelete();
             $table->text('short_description')->nullable();
             $table->unsignedInteger('alert_qty')->default(0);

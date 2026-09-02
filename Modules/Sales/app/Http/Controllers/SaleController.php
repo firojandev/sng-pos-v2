@@ -11,6 +11,7 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Modules\Customer\Models\Customer;
 use Modules\Employee\Models\Employee;
+use Modules\Finance\Models\Account;
 use Modules\Product\Models\Batch;
 use Modules\Product\Models\Product;
 use Modules\Product\Models\StockMovement;
@@ -72,6 +73,7 @@ class SaleController extends Controller
             ->withSum(['batches as batches_sum_quantity' => fn ($q) => $q->where('warehouse_id', $warehouseId)], 'quantity')
             ->with('units')
             ->orderBy('name')->get();
+        $accounts = Account::active()->orderByDesc('is_default')->orderBy('name')->get();
 
         return view('sales::sales.create', [
             'sale' => new Sale,
@@ -80,6 +82,7 @@ class SaleController extends Controller
             'warehouses' => $warehouses,
             'warehouseId' => $warehouseId,
             'employees' => $employees,
+            'accounts' => $accounts,
         ]);
     }
 
@@ -128,9 +131,10 @@ class SaleController extends Controller
             ->withSum(['batches as batches_sum_quantity' => fn ($q) => $q->where('warehouse_id', $sale->warehouse_id)], 'quantity')
             ->with('units')
             ->orderBy('name')->get();
+        $accounts = Account::active()->orderByDesc('is_default')->orderBy('name')->get();
         $sale->load('items', 'warehouse', 'payments');
 
-        return view('sales::sales.edit', compact('sale', 'customers', 'products', 'employees'));
+        return view('sales::sales.edit', compact('sale', 'customers', 'products', 'employees', 'accounts'));
     }
 
     public function update(UpdateSaleRequest $request, Sale $sale): RedirectResponse
@@ -287,13 +291,14 @@ class SaleController extends Controller
     }
 
     /**
-     * @param  array<int, array{method: string, amount: float}>  $payments
+     * @param  array<int, array{account_id?: ?int, method: string, amount: float}>  $payments
      */
     private function applyPayments(Sale $sale, array $payments): void
     {
         foreach ($payments as $payment) {
             $sale->payments()->create([
-                'method' => $payment['method'],
+                'account_id' => $payment['account_id'] ?? null,
+                'method' => $payment['method'] ?? 'cash',
                 'amount' => $payment['amount'],
             ]);
         }

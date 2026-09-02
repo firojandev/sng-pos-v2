@@ -1,44 +1,90 @@
-/* ---------------- Toast ---------------- */
+import $ from 'jquery';
+import DataTable from 'datatables.net';
+import Swal from 'sweetalert2';
+import { createIcons, icons } from 'lucide';
+
+window.$ = window.jQuery = $;
+window.DataTable = DataTable;
+window.Swal = Swal;
+window.lucide = { createIcons, icons };
+window.createIcons = (options = {}) => createIcons({ icons, ...options });
+
+
+
+/* ---------------- Global AJAX Setup ---------------- */
+$(function () {
+    $.ajaxSetup({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        }
+    });
+});
+
+/* ---------------- Toast Notification ---------------- */
 let toastTimer = null;
 function toast(bn, en) {
-    const el = document.getElementById('toast');
-    if (!el) return;
-    el.textContent = document.body.classList.contains('lang-en') ? en : bn;
-    el.classList.add('show');
+    const $toast = $('#toast');
+    if (!$toast.length) return;
+    const msg = $('body').hasClass('lang-en') ? en : bn;
+    $toast.text(msg).addClass('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+    toastTimer = setTimeout(() => $toast.removeClass('show'), 2200);
 }
 
-/* ---------------- Sidebar (mobile) ---------------- */
-function toggleSidebar(open) {
-    document.getElementById('sidebar')?.classList.toggle('open', open);
-    document.getElementById('overlay')?.classList.toggle('show', open);
+/* ---------------- Sidebar (Desktop collapse & Mobile drawer) ---------------- */
+function toggleSidebar(forceState) {
+    const isMobile = $(window).width() <= 1024;
+    const $app = $('.app');
+    const $sidebar = $('#sidebar');
+    const $overlay = $('#overlay');
+
+    if (isMobile) {
+        const shouldOpen = typeof forceState === 'boolean' ? forceState : !$sidebar.hasClass('open');
+        $sidebar.toggleClass('open', shouldOpen);
+        $overlay.toggleClass('show', shouldOpen);
+    } else {
+        const shouldCollapse = typeof forceState === 'boolean' ? !forceState : !$app.hasClass('sidebar-collapsed');
+        $app.toggleClass('sidebar-collapsed', shouldCollapse);
+        try {
+            localStorage.setItem('sidebar-collapsed', shouldCollapse ? '1' : '0');
+        } catch (e) {}
+    }
 }
 
-/* ---------------- Generic modal ---------------- */
+function initSidebarState() {
+    try {
+        const isCollapsed = localStorage.getItem('sidebar-collapsed') === '1';
+        if (isCollapsed && $(window).width() > 1024) {
+            $('.app').addClass('sidebar-collapsed');
+        }
+    } catch (e) {}
+}
+
+/* ---------------- Generic Modals & Drawers ---------------- */
 function openModal(id) {
-    document.getElementById(id)?.classList.add('open');
+    $('#' + id).addClass('open');
 }
+
 function closeModal(id) {
-    document.getElementById(id)?.classList.remove('open');
+    $('#' + id).removeClass('open');
 }
 
-/* ---------------- Print a section ---------------- */
+/* ---------------- Print a Section ---------------- */
 function printSection(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.add('print-only');
+    const $el = $('#' + id);
+    if (!$el.length) return;
+    $el.addClass('print-only');
     window.print();
-    el.classList.remove('print-only');
+    $el.removeClass('print-only');
 }
 
-/* ---------------- Theme (light/dark) ---------------- */
+/* ---------------- Theme (Light / Dark) ---------------- */
 function setTheme(theme) {
     if (theme === 'light' || theme === 'dark') {
-        document.documentElement.setAttribute('data-theme', theme);
+        $('html').attr('data-theme', theme);
         try { localStorage.setItem('theme', theme); } catch (e) {}
     } else {
-        document.documentElement.removeAttribute('data-theme');
+        $('html').removeAttr('data-theme');
         try { localStorage.removeItem('theme'); } catch (e) {}
     }
     updateThemeButtons();
@@ -49,16 +95,17 @@ function updateThemeButtons() {
     try { stored = localStorage.getItem('theme'); } catch (e) {}
     const systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     const effective = stored || (systemDark ? 'dark' : 'light');
-    document.getElementById('theme-light')?.classList.toggle('active', effective === 'light');
-    document.getElementById('theme-dark')?.classList.toggle('active', effective === 'dark');
+    const isDark = effective === 'dark';
+    $('#theme-light').toggleClass('active', !isDark);
+    $('#theme-dark').toggleClass('active', isDark);
+    $('.switch-opt-light').toggleClass('active', !isDark);
+    $('.switch-opt-dark').toggleClass('active', isDark);
+    $('#theme-toggle').prop('checked', isDark);
 }
 
-document.addEventListener('DOMContentLoaded', updateThemeButtons);
-window.setTheme = setTheme;
-
-/* ---------------- Mobile view preview toggle ---------------- */
+/* ---------------- Mobile Preview Toggle ---------------- */
 function setMobilePreview(enabled) {
-    document.body.classList.toggle('mobile-preview', enabled);
+    $('body').toggleClass('mobile-preview', enabled);
     try { localStorage.setItem('mobile-preview', enabled ? '1' : '0'); } catch (e) {}
 }
 
@@ -66,42 +113,466 @@ function updateMobilePreviewToggle() {
     let stored = null;
     try { stored = localStorage.getItem('mobile-preview'); } catch (e) {}
     const enabled = stored === '1';
-    document.body.classList.toggle('mobile-preview', enabled);
-    const input = document.getElementById('mobile-preview-input');
-    if (input) input.checked = enabled;
+    $('body').toggleClass('mobile-preview', enabled);
+    $('#mobile-preview-input').prop('checked', enabled);
 }
 
-document.addEventListener('DOMContentLoaded', updateMobilePreviewToggle);
-window.setMobilePreview = setMobilePreview;
-
-/* ---------------- Language switch ---------------- */
+/* ---------------- Language Switch ---------------- */
 const placeholderMap = {
     'খুঁজুন...': 'Search...',
 };
 
 function setLang(lang) {
-    document.body.classList.toggle('lang-en', lang === 'en');
-    document.getElementById('btn-bn')?.classList.toggle('active', lang === 'bn');
-    document.getElementById('btn-en')?.classList.toggle('active', lang === 'en');
-    document.querySelectorAll('input.bn-ph').forEach((el) => {
-        const original = el.getAttribute('data-bn-ph');
-        el.placeholder = lang === 'en' ? (placeholderMap[original] || original) : original;
+    const isEn = lang === 'en';
+    $('html').toggleClass('lang-en', isEn);
+    $('body').toggleClass('lang-en', isEn);
+    $('#btn-bn').toggleClass('active', !isEn);
+    $('#btn-en').toggleClass('active', isEn);
+    $('.switch-opt-bn').toggleClass('active', !isEn);
+    $('.switch-opt-en').toggleClass('active', isEn);
+    $('#lang-toggle').prop('checked', isEn);
+    $('input.bn-ph').each(function () {
+        const original = $(this).attr('data-bn-ph');
+        $(this).attr('placeholder', isEn ? (placeholderMap[original] || original) : original);
     });
+    $('[data-placeholder-en]').each(function () {
+        const bn = $(this).attr('data-placeholder-bn') || $(this).attr('placeholder');
+        const en = $(this).attr('data-placeholder-en');
+        $(this).attr('placeholder', isEn ? en : bn);
+    });
+    $('.dataTables_filter input, .dt-search input').attr('placeholder', isEn ? 'Search...' : 'এখানে লিখুন...');
     localStorage.setItem('lang', lang);
 }
 
 function initLang() {
-    document.querySelectorAll('input.bn-ph').forEach((el) => {
-        el.setAttribute('data-bn-ph', el.placeholder);
+    $('input.bn-ph').each(function () {
+        $(this).attr('data-bn-ph', $(this).attr('placeholder'));
     });
-    setLang(localStorage.getItem('lang') || 'bn');
+    $('[data-placeholder-en]').each(function () {
+        if (!$(this).attr('data-placeholder-bn')) {
+            $(this).attr('data-placeholder-bn', $(this).attr('placeholder'));
+        }
+    });
+    const currentLang = localStorage.getItem('lang') || 'bn';
+    setLang(currentLang);
 }
 
-document.addEventListener('DOMContentLoaded', initLang);
+/* ---------------- Keyboard Shortcuts & Listeners ---------------- */
+$(function () {
+    initSidebarState();
+    updateThemeButtons();
+    updateMobilePreviewToggle();
+    initLang();
 
+    // Theme Switcher Listeners
+    $(document).on('change', '#theme-toggle', function () {
+        setTheme($(this).is(':checked') ? 'dark' : 'light');
+    });
+    $(document).on('click', '[data-action="set-theme-light"], .switch-opt-light', function (e) {
+        if ($(e.target).is('input')) return;
+        setTheme('light');
+    });
+    $(document).on('click', '[data-action="set-theme-dark"], .switch-opt-dark', function (e) {
+        if ($(e.target).is('input')) return;
+        setTheme('dark');
+    });
+
+    // Language Switcher Listeners
+    $(document).on('change', '#lang-toggle', function () {
+        setLang($(this).is(':checked') ? 'en' : 'bn');
+    });
+    $(document).on('click', '[data-action="set-lang-bn"], .switch-opt-bn', function (e) {
+        if ($(e.target).is('input')) return;
+        setLang('bn');
+    });
+    $(document).on('click', '[data-action="set-lang-en"], .switch-opt-en', function (e) {
+        if ($(e.target).is('input')) return;
+        setLang('en');
+    });
+
+    // Topbar Shop Switcher Dropdown
+    $(document).on('click', '.btn-shop-switcher', function (e) {
+        e.stopPropagation();
+        $(this).siblings('.shop-switcher-menu').fadeToggle(120);
+    });
+    $(document).on('click', function (e) {
+        if (!$(e.target).closest('.shop-switcher-dropdown').length) {
+            $('.shop-switcher-menu').hide();
+        }
+    });
+
+    $(document).on('keydown', function (e) {
+        // Ctrl+K / Cmd+K Search Focus
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            const $search = $('.top-search input');
+            if ($search.length) {
+                $search.trigger('focus').trigger('select');
+            }
+        }
+        // Escape closes sidebars/drawers/modals
+        if (e.key === 'Escape') {
+            toggleSidebar(false);
+            $('.drawer-backdrop.open, .modal-backdrop.open, .unit-modal-backdrop.open').removeClass('open');
+        }
+    });
+});
+
+/* ---------------- Table & DataTables Helper Logic ---------------- */
+function initTableBehaviors() {
+    // 1. Master Checkbox Select All / Deselect All
+    $(document).on('change', '[data-table-select-all]', function () {
+        const $container = $(this).closest('.table-container');
+        const isChecked = $(this).is(':checked');
+        const $rows = $container.find('[data-table-select-row]');
+
+        $rows.prop('checked', isChecked);
+        $rows.each(function () {
+            $(this).closest('tr').toggleClass('is-selected', isChecked);
+        });
+
+        updateTableBulkBar($container);
+    });
+
+    // 2. Row Checkbox Selection
+    $(document).on('change', '[data-table-select-row]', function () {
+        const $container = $(this).closest('.table-container');
+        const $row = $(this).closest('tr');
+        $row.toggleClass('is-selected', $(this).is(':checked'));
+
+        const total = $container.find('[data-table-select-row]').length;
+        const checked = $container.find('[data-table-select-row]:checked').length;
+        const $master = $container.find('[data-table-select-all]');
+
+        if (checked === 0) {
+            $master.prop('checked', false).prop('indeterminate', false);
+        } else if (checked === total) {
+            $master.prop('checked', true).prop('indeterminate', false);
+        } else {
+            $master.prop('checked', false).prop('indeterminate', true);
+        }
+
+        updateTableBulkBar($container);
+    });
+
+    function updateTableBulkBar($container) {
+        const checked = $container.find('[data-table-select-row]:checked').length;
+        const $bulkBar = $container.find('[data-table-bulk-bar]');
+        $bulkBar.find('.selected-count').text(checked);
+        if (checked > 0) {
+            $bulkBar.slideDown(150);
+        } else {
+            $bulkBar.slideUp(150);
+        }
+    }
+
+    // 3. Quick Instant Search for Static Tables
+    $(document).on('input', '.table-quick-search', function () {
+        const query = $(this).val().toLowerCase().trim();
+        const targetId = $(this).data('target');
+        const $table = targetId ? $('#' + targetId) : $(this).closest('.table-container').find('.app-table');
+
+        if (!$table.length) return;
+
+        // If DataTable instance exists, delegate to DataTable search
+        if ($.fn.DataTable && $.fn.DataTable.isDataTable($table)) {
+            $table.DataTable().search(query).draw();
+            return;
+        }
+
+        // Otherwise filter standard HTML rows
+        $table.find('tbody tr').each(function () {
+            const rowText = $(this).text().toLowerCase();
+            $(this).toggle(rowText.indexOf(query) !== -1);
+        });
+    });
+}
+
+/**
+ * Standardized DataTable Initializer Helper
+ * @param {string|jQuery} selector
+ * @param {object} options
+ */
+function initDataTable(selector, options = {}) {
+    if (!$.fn.DataTable) {
+        console.warn('DataTables plugin is not loaded yet.');
+        return null;
+    }
+
+    const defaultOptions = {
+        responsive: true,
+        processing: true,
+        pageLength: 10,
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'সকল (All)']],
+        language: {
+            search: 'খুঁজুন / Search:',
+            searchPlaceholder: 'এখানে লিখুন...',
+            lengthMenu: 'প্রতি পেজে _MENU_ টি রেকর্ড',
+            info: 'মোট _TOTAL_ টির মধ্যে _START_ থেকে _END_ দেখানো হচ্ছে',
+            infoEmpty: 'কোনো রেকর্ড নেই',
+            infoFiltered: '(_MAX_ টি রেকর্ড থেকে ফিল্টার করা)',
+            zeroRecords: 'কোনো ম্যাচিং রেকর্ড পাওয়া যায়নি',
+            emptyTable: 'টেবিলে কোনো তথ্য নেই',
+            paginate: {
+                first: 'প্রথম',
+                previous: 'পূর্ববর্তী',
+                next: 'পরবর্তী',
+                last: 'সর্বশেষ'
+            }
+        },
+        dom: '<"table-toolbar"<"table-toolbar-start"l><"table-toolbar-end"f>>rt<"table-footer"<"table-pagination-info"i><"table-pagination"p>>'
+    };
+
+    const merged = $.extend(true, {}, defaultOptions, options);
+    return $(selector).DataTable(merged);
+}
+
+/* ---------------- Button Group & Segmented Controls ---------------- */
+function initButtonGroupBehaviors() {
+    $(document).on('click', '.btn-group-segmented .btn, .btn-group [data-btn-group-item]', function (e) {
+        const $btn = $(this);
+        const $group = $btn.closest('.btn-group, .btn-group-segmented, .btn-group-vertical');
+
+        if ($btn.hasClass('disabled') || $btn.prop('disabled') || $btn.attr('aria-disabled') === 'true') {
+            e.preventDefault();
+            return;
+        }
+
+        const $radio = $btn.find('input[type="radio"]');
+        if ($radio.length && !$radio.is(':disabled')) {
+            $radio.prop('checked', true).trigger('change');
+            $group.find('.btn').removeClass('active');
+            $btn.addClass('active');
+            return;
+        }
+
+        if ($group.hasClass('btn-group-segmented') || $btn.is('[data-btn-group-item]')) {
+            $group.find('.btn').removeClass('active').removeAttr('aria-pressed');
+            $btn.addClass('active').attr('aria-pressed', 'true');
+            $group.trigger('change', [$btn.data('value') || $btn.text().trim()]);
+        }
+    });
+
+    $(document).on('change', '.btn-group input[type="radio"], .btn-group-segmented input[type="radio"]', function () {
+        const $group = $(this).closest('.btn-group, .btn-group-segmented, .btn-group-vertical');
+        $group.find('.btn').removeClass('active');
+        $(this).closest('.btn').addClass('active');
+    });
+}
+
+/* ---------------- SweetAlert2 Confirmation Helpers ---------------- */
+function confirmDelete(options = {}) {
+    const isEn = $('body').hasClass('lang-en') || $('html').hasClass('lang-en');
+    const isDark = $('html').attr('data-theme') === 'dark' || (!document.documentElement.hasAttribute('data-theme') && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+    const defaultTitle = isEn ? 'Are you sure?' : 'আপনি কি নিশ্চিত?';
+    const defaultText = isEn
+        ? 'This item will be permanently deleted!'
+        : 'এই তথ্যটি স্থায়ীভাবে মুছে ফেলা হবে!';
+    const defaultConfirmText = isEn ? 'Yes, Delete' : 'হ্যাঁ, মুছে ফেলুন';
+    const defaultCancelText = isEn ? 'Cancel' : 'বাতিল';
+
+    return Swal.fire({
+        title: options.title || defaultTitle,
+        text: options.text || defaultText,
+        icon: options.icon || 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#E11D48',
+        cancelButtonColor: isDark ? '#334155' : '#64748B',
+        confirmButtonText: options.confirmButtonText || defaultConfirmText,
+        cancelButtonText: options.cancelButtonText || defaultCancelText,
+        reverseButtons: true,
+        background: isDark ? '#111827' : '#FFFFFF',
+        color: isDark ? '#F8FAFC' : '#0F172A',
+        customClass: {
+            popup: 'app-swal-popup'
+        }
+    });
+}
+
+function initDeleteConfirmBehaviors() {
+    $(document).on('submit', '.delete-plan-form, .delete-form, [data-confirm-delete]', function (e) {
+        const $form = $(this);
+        if ($form.data('confirmed')) {
+            return true;
+        }
+
+        e.preventDefault();
+
+        const isEn = $('body').hasClass('lang-en') || $('html').hasClass('lang-en');
+        const isPlan = $form.hasClass('delete-plan-form');
+        const customTitle = $form.data('title');
+        const customText = $form.data('text');
+
+        const title = customTitle || (isPlan
+            ? (isEn ? 'Delete Plan?' : 'প্ল্যান মুছে ফেলতে চান?')
+            : (isEn ? 'Are you sure?' : 'আপনি কি নিশ্চিত?'));
+
+        const text = customText || (isPlan
+            ? (isEn ? 'Are you sure you want to delete this plan? This action cannot be undone.' : 'এই প্ল্যানটি চিরতরে মুছে ফেলা হবে। আপনি কি নিশ্চিত?')
+            : (isEn ? 'This record will be permanently deleted.' : 'এই তথ্যটি স্থায়ীভাবে মুছে ফেলা হবে।'));
+
+        confirmDelete({
+            title: title,
+            text: text,
+            confirmButtonText: isEn ? 'Yes, Delete' : 'হ্যাঁ, মুছুন',
+            cancelButtonText: isEn ? 'Cancel' : 'বাতিল'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $form.data('confirmed', true);
+                if ($form[0]) {
+                    $form[0].submit();
+                } else {
+                    $form.trigger('submit');
+                }
+            }
+        });
+    });
+}
+
+/* ---------------- Accordion & Feature Box Behaviors ---------------- */
+function toggleAccordion($box, forceOpen) {
+    if (!$box || !$box.length) return;
+    const $content = $box.find('[data-accordion-content], .app-accordion-body, .app-accordion-content');
+    const isOpen = typeof forceOpen === 'boolean' ? forceOpen : !$box.hasClass('is-open');
+
+    // Handle group exclusivity
+    const groupName = $box.data('accordion-group');
+    if (isOpen && groupName) {
+        $(`[data-accordion][data-accordion-group="${groupName}"]`).not($box).each(function () {
+            const $otherBox = $(this);
+            const $otherContent = $otherBox.find('[data-accordion-content], .app-accordion-body, .app-accordion-content');
+            const $otherCheckbox = $otherBox.find('[data-accordion-checkbox], input[type="checkbox"]');
+            $otherBox.removeClass('is-open active');
+            $otherContent.stop(true, true).slideUp(180);
+            if ($otherCheckbox.length) {
+                $otherCheckbox.prop('checked', false);
+            }
+        });
+    }
+
+    if (isOpen) {
+        $box.addClass('is-open active');
+        $content.stop(true, true).slideDown(180);
+    } else {
+        $box.removeClass('is-open active');
+        $content.stop(true, true).slideUp(180);
+    }
+}
+
+function initAccordionBehaviors() {
+    // 1. Trigger clicked (Header)
+    $(document).on('click', '[data-accordion-trigger], .feature-box-toggle', function (e) {
+        // Prevent firing on interactive elements inside the header (like inputs, buttons, selects, links)
+        if ($(e.target).closest('input, select, textarea, button:not([data-accordion-trigger]), a').length) {
+            return;
+        }
+
+        const $box = $(this).closest('[data-accordion], .feature-box');
+        const $label = $(e.target).closest('label');
+        const $checkbox = $box.find('[data-accordion-checkbox], input[type="checkbox"]');
+
+        // If user clicked inside a label associated with a checkbox, native browser event toggles checkbox and triggers 'change'
+        if ($label.length && $checkbox.length) {
+            return;
+        }
+
+        if ($checkbox.length && !$checkbox.prop('disabled')) {
+            // Clicked outside label (empty space or chevron icon)
+            $checkbox.prop('checked', !$checkbox.prop('checked')).trigger('change');
+        } else if (!$checkbox.length) {
+            // Standard accordion without checkbox
+            toggleAccordion($box);
+        }
+    });
+
+    // 2. Checkbox change event
+    $(document).on('change', '[data-accordion-checkbox], [data-accordion] input[type="checkbox"], .feature-box input[type="checkbox"]', function () {
+        const $box = $(this).closest('[data-accordion], .feature-box');
+        const isChecked = $(this).is(':checked');
+        toggleAccordion($box, isChecked);
+    });
+}
+
+/* ---------------- Status Segmented Switcher Behaviors ---------------- */
+function initStatusSwitcherBehaviors() {
+    // 1. Click on Left/Right option
+    $(document).on('click', '[data-status-switcher] [data-status-opt]', function (e) {
+        const $opt = $(this);
+        const $switcher = $opt.closest('[data-status-switcher]');
+        const $wrapper = $switcher.closest('.status-toggle-wrapper');
+        const $toggle = $switcher.find('[data-status-toggle]');
+        const selectedVal = String($opt.data('status-opt'));
+        const activeVal = String($toggle.data('active-val') || 'active');
+
+        if ($toggle.prop('disabled')) return;
+
+        const isNowActive = selectedVal === activeVal;
+        $toggle.prop('checked', !isNowActive);
+
+        updateStatusSwitcherState($switcher, $wrapper, isNowActive, selectedVal);
+    });
+
+    // 2. Click / Change on Center Checkbox Slider
+    $(document).on('change', '[data-status-toggle]', function () {
+        const $toggle = $(this);
+        const $switcher = $toggle.closest('[data-status-switcher]');
+        const $wrapper = $switcher.closest('.status-toggle-wrapper');
+        const isChecked = $toggle.is(':checked'); // checked means inactive (right)
+        const activeVal = String($toggle.data('active-val') || 'active');
+        const inactiveVal = String($toggle.data('inactive-val') || 'inactive');
+
+        const isNowActive = !isChecked;
+        const selectedVal = isNowActive ? activeVal : inactiveVal;
+
+        updateStatusSwitcherState($switcher, $wrapper, isNowActive, selectedVal);
+    });
+
+    function updateStatusSwitcherState($switcher, $wrapper, isActive, selectedVal) {
+        $switcher.toggleClass('is-active', isActive).toggleClass('is-inactive', !isActive);
+        $switcher.find('.switch-opt-active').toggleClass('active', isActive);
+        $switcher.find('.switch-opt-inactive').toggleClass('active', !isActive);
+
+        const $hidden = $wrapper.find('[data-status-input], input[type="hidden"]');
+        if ($hidden.length) {
+            $hidden.val(selectedVal).trigger('change');
+        }
+    }
+}
+
+/* ---------------- Expose Globals for Blade Templates ---------------- */
 window.toast = toast;
 window.toggleSidebar = toggleSidebar;
 window.setLang = setLang;
+window.setTheme = setTheme;
+window.setMobilePreview = setMobilePreview;
 window.openModal = openModal;
 window.closeModal = closeModal;
 window.printSection = printSection;
+window.initDataTable = initDataTable;
+window.initButtonGroupBehaviors = initButtonGroupBehaviors;
+window.confirmDelete = confirmDelete;
+window.initDeleteConfirmBehaviors = initDeleteConfirmBehaviors;
+window.toggleAccordion = toggleAccordion;
+window.initAccordionBehaviors = initAccordionBehaviors;
+window.initStatusSwitcherBehaviors = initStatusSwitcherBehaviors;
+
+$(function () {
+    initTableBehaviors();
+    initButtonGroupBehaviors();
+    initDeleteConfirmBehaviors();
+    initAccordionBehaviors();
+    initStatusSwitcherBehaviors();
+
+    // Initialize Lucide Icons globally
+    createIcons({ icons });
+
+    // Re-initialize Lucide Icons on dynamic DOM modifications
+    $(document).on('draw.dt ajaxComplete shown.bs.modal', function () {
+        createIcons({ icons });
+    });
+});
+
+
+
+

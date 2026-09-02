@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Modules\Product\DataTables\ProductsDataTable;
 use Modules\Product\Http\Requests\StoreProductRequest;
 use Modules\Product\Http\Requests\UpdateProductRequest;
 use Modules\Product\Models\Brand;
@@ -18,11 +19,12 @@ use Modules\Shop\Support\PlanLimits;
 
 class ProductController extends Controller
 {
-    public function index(): View
+    public function index(ProductsDataTable $dataTable): mixed
     {
-        $products = Product::with(['category', 'subCategory', 'brand', 'units'])->latest()->paginate(10);
+        $categories = Category::parents()->orderBy('name')->get();
+        $brands = Brand::orderBy('name')->get();
 
-        return view('product::products.index', compact('products'));
+        return $dataTable->render('product::products.index', compact('categories', 'brands'));
     }
 
     public function create(): View
@@ -126,7 +128,7 @@ class ProductController extends Controller
     private function formOptions(): array
     {
         return [
-            'categories' => Category::with('subCategories')->orderBy('name')->get(),
+            'categories' => Category::parents()->with('subCategories')->orderBy('name')->get(),
             'brands' => Brand::orderBy('name')->get(),
             'units' => Unit::orderBy('name')->get(),
             'subCategories' => SubCategory::orderBy('name')->get(),

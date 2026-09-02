@@ -20,7 +20,7 @@ class UnitController extends Controller
 
     public function create(): View
     {
-        return view('product::units.create', ['unit' => new Unit()]);
+        return view('product::units.create', ['unit' => new Unit]);
     }
 
     public function store(StoreUnitRequest $request): RedirectResponse

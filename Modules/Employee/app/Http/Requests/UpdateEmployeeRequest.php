@@ -17,8 +17,8 @@ class UpdateEmployeeRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'string', 'max:20', 'unique:employees,phone,' . $employeeId],
-            'email' => ['nullable', 'email', 'max:255', 'unique:employees,email,' . $employeeId],
+            'phone' => ['required', 'string', 'max:20', 'unique:employees,phone,'.$employeeId],
+            'email' => ['nullable', 'email', 'max:255', 'unique:employees,email,'.$employeeId],
             'designation' => ['required', 'string', 'max:255'],
             'department' => ['nullable', 'string', 'max:255'],
             'salary' => ['required', 'numeric', 'min:0'],

@@ -2,8 +2,19 @@
 
 namespace Modules\Finance\Providers;
 
+use Modules\Finance\Models\Expense;
+use Modules\Finance\Models\Income;
+use Modules\Finance\Observers\ExpenseAccountObserver;
+use Modules\Finance\Observers\IncomeAccountObserver;
+use Modules\Finance\Observers\PurchasePaymentAccountObserver;
+use Modules\Finance\Observers\PurchaseReturnAccountObserver;
+use Modules\Finance\Observers\SalePaymentAccountObserver;
+use Modules\Finance\Observers\SaleReturnAccountObserver;
+use Modules\Purchase\Models\PurchasePayment;
+use Modules\Purchase\Models\PurchaseReturn;
+use Modules\Sales\Models\SalePayment;
+use Modules\Sales\Models\SaleReturn;
 use Nwidart\Modules\Support\ModuleServiceProvider;
-use Illuminate\Console\Scheduling\Schedule;
 
 class FinanceServiceProvider extends ModuleServiceProvider
 {
@@ -18,13 +29,6 @@ class FinanceServiceProvider extends ModuleServiceProvider
     protected string $nameLower = 'finance';
 
     /**
-     * Command classes to register.
-     *
-     * @var string[]
-     */
-    // protected array $commands = [];
-
-    /**
      * Provider classes to register.
      *
      * @var string[]
@@ -35,12 +39,17 @@ class FinanceServiceProvider extends ModuleServiceProvider
     ];
 
     /**
-     * Define module schedules.
-     * 
-     * @param $schedule
+     * Boot the module, wiring up account ledger observers.
      */
-    // protected function configureSchedules(Schedule $schedule): void
-    // {
-    //     $schedule->command('inspire')->hourly();
-    // }
+    public function boot(): void
+    {
+        parent::boot();
+
+        SalePayment::observe(SalePaymentAccountObserver::class);
+        PurchasePayment::observe(PurchasePaymentAccountObserver::class);
+        Expense::observe(ExpenseAccountObserver::class);
+        Income::observe(IncomeAccountObserver::class);
+        SaleReturn::observe(SaleReturnAccountObserver::class);
+        PurchaseReturn::observe(PurchaseReturnAccountObserver::class);
+    }
 }

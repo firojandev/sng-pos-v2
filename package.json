@@ -8,10 +8,16 @@
     },
     "devDependencies": {
         "concurrently": "^10.0.3",
+        "laravel-datatables-vite": "^0.7.0",
         "laravel-vite-plugin": "^3.1",
         "vite": "^8.0.0"
     },
     "optionalDependencies": {
         "@laravel/multiplex": "^0.4.1"
+    },
+    "dependencies": {
+        "jquery": "^4.0.0",
+        "lucide": "^1.39.0",
+        "sweetalert2": "^11.26.25"
     }
 }

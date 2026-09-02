@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Modules\Finance\Http\Requests\StoreExpenseRequest;
 use Modules\Finance\Http\Requests\UpdateExpenseRequest;
+use Modules\Finance\Models\Account;
 use Modules\Finance\Models\Expense;
 use Modules\Finance\Models\ExpenseCategory;
 
@@ -14,16 +15,21 @@ class ExpenseController extends Controller
 {
     public function index(): View
     {
-        $expenses = Expense::with('category')->latest('expense_date')->paginate(10);
+        $expenses = Expense::with(['category', 'subCategory', 'account'])->latest('expense_date')->paginate(10);
 
         return view('finance::expenses.index', compact('expenses'));
     }
 
     public function create(): View
     {
-        $expenseCategories = ExpenseCategory::orderBy('name')->get();
+        $expenseCategories = ExpenseCategory::parents()->with('subCategories')->orderBy('name')->get();
+        $accounts = Account::active()->orderByDesc('is_default')->orderBy('name')->get();
 
-        return view('finance::expenses.create', ['expense' => new Expense(), 'expenseCategories' => $expenseCategories]);
+        return view('finance::expenses.create', [
+            'expense' => new Expense,
+            'expenseCategories' => $expenseCategories,
+            'accounts' => $accounts,
+        ]);
     }
 
     public function store(StoreExpenseRequest $request): RedirectResponse
@@ -35,9 +41,10 @@ class ExpenseController extends Controller
 
     public function edit(Expense $expense): View
     {
-        $expenseCategories = ExpenseCategory::orderBy('name')->get();
+        $expenseCategories = ExpenseCategory::parents()->with('subCategories')->orderBy('name')->get();
+        $accounts = Account::active()->orderByDesc('is_default')->orderBy('name')->get();
 
-        return view('finance::expenses.edit', compact('expense', 'expenseCategories'));
+        return view('finance::expenses.edit', compact('expense', 'expenseCategories', 'accounts'));
     }
 
     public function update(UpdateExpenseRequest $request, Expense $expense): RedirectResponse

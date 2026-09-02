@@ -11,12 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('sub_categories', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('category_id')->constrained()->cascadeOnDelete();
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->timestamps();
+        Schema::table('shops', function (Blueprint $table) {
+            $table->string('store_code')->nullable()->unique()->after('slug');
         });
     }
 
@@ -25,6 +21,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('sub_categories');
+        Schema::table('shops', function (Blueprint $table) {
+            $table->dropUnique(['store_code']);
+            $table->dropColumn('store_code');
+        });
     }
 };

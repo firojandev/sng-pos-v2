@@ -5,6 +5,11 @@
     subtitle-en="Add a quick cash sale in one step"
     active="quick-sale"
 >
+    @php
+        $defaultAccount = $accounts->firstWhere('is_default', true) ?? $accounts->first();
+        $initialAccountId = old('account_id', $defaultAccount?->id);
+    @endphp
+
     <div class="modal-backdrop open" id="quickSaleModal">
         <div class="modal-box" style="width:460px;">
             <div class="modal-head">
@@ -20,6 +25,18 @@
                     <label class="bn">বিক্রির তারিখ</label><label class="en" style="display:none;">Sale Date</label>
                     <input type="date" name="sale_date" value="{{ old('sale_date', now()->format('Y-m-d')) }}">
                     @error('sale_date') <div class="field-error">{{ $message }}</div> @enderror
+                </div>
+
+                <div class="field">
+                    <label class="bn">পেমেন্ট অ্যাকাউন্ট</label><label class="en" style="display:none;">Payment Account</label>
+                    <select name="account_id" id="accountSelect" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-family:'Manrope',sans-serif;">
+                        @foreach ($accounts as $acc)
+                            <option value="{{ $acc->id }}" data-type="{{ $acc->type }}" {{ (int) $initialAccountId === $acc->id ? 'selected' : '' }}>
+                                {{ $acc->display_name }} ({{ $acc->typeLabel()['bn'] }}) @if($acc->is_default) [ডিফল্ট] @endif
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('account_id') <div class="field-error">{{ $message }}</div> @enderror
                 </div>
 
                 <div class="field">
@@ -64,78 +81,93 @@
                     @error('note') <div class="field-error">{{ $message }}</div> @enderror
                 </div>
 
-                <button type="submit" class="btn" style="width:100%; justify-content:center; margin-top:18px; background:var(--ink-900); color:#fff; padding:13px 0; font-size:13.5px;">
-                    <span class="bn">টাকার মূল্য পেয়েছেন</span><span class="en">Amount Received</span>
+                <button type="submit" class="btn btn-gold" style="width:100%; justify-content:center; margin-top:18px; padding:13px 0; font-size:13.5px;">
+                    <span class="bn">টাকার মূল্য পেয়েছেন</span><span class="en" style="display:none;">Amount Received</span>
                 </button>
             </form>
         </div>
     </div>
 
+    @push('scripts')
     <script>
     (function () {
-        const seg = document.getElementById('paymentMethodSeg');
-        const pmInput = document.getElementById('paymentMethodInput');
-        seg?.addEventListener('click', (e) => {
-            const btn = e.target.closest('button');
-            if (!btn) return;
-            seg.querySelectorAll('button').forEach((b) => b.classList.remove('active'));
-            btn.classList.add('active');
-            pmInput.value = btn.dataset.value;
-        });
-
-        const nameInput = document.getElementById('customerNameInput');
-        const phoneInput = document.getElementById('customerPhoneInput');
-        const idInput = document.getElementById('customerIdInput');
-        const results = document.getElementById('customerResults');
-        let debounceTimer = null;
-
-        function renderResults(list) {
-            if (!list.length) {
-                results.style.display = 'none';
-                results.innerHTML = '';
+        function initQuickSale() {
+            if (typeof window.$ === 'undefined' || typeof window.jQuery === 'undefined') {
+                setTimeout(initQuickSale, 20);
                 return;
             }
-            results.innerHTML = list.map((c) => (
-                '<div class="cust-opt" data-id="' + c.id + '" data-name="' + String(c.name || '').replace(/"/g, '&quot;') + '" data-phone="' + (c.phone || '') + '" ' +
-                'style="padding:9px 12px; font-size:12.5px; cursor:pointer; border-bottom:1px solid var(--paper-line);">' +
-                (c.name || '') + (c.phone ? ' <span style="color:var(--ink-600);">(' + c.phone + ')</span>' : '') +
-                '</div>'
-            )).join('');
-            results.style.display = 'block';
+
+            var $ = window.jQuery;
+            $(function () {
+                $('#paymentMethodSeg').on('click', 'button', function () {
+                    $('#paymentMethodSeg button').removeClass('active');
+                    $(this).addClass('active');
+                    $('#paymentMethodInput').val($(this).data('value'));
+                });
+
+                // When account changes, update active payment method chip
+                $('#accountSelect').on('change', function () {
+                    var selectedType = $(this).find('option:selected').data('type');
+                    var targetLabel = 'নগদ টাকা';
+                    if (selectedType === 'bank') targetLabel = 'ব্যাংক';
+                    else if (selectedType === 'mfs') targetLabel = 'মোবাইল ব্যাংকিং';
+
+                    $('#paymentMethodSeg button').removeClass('active');
+                    $('#paymentMethodSeg button[data-value="' + targetLabel + '"]').addClass('active');
+                    $('#paymentMethodInput').val(targetLabel);
+                });
+
+                var debounceTimer = null;
+
+                function renderResults(list) {
+                    var $results = $('#customerResults');
+                    if (!list || !list.length) {
+                        $results.hide().empty();
+                        return;
+                    }
+                    var html = list.map(function (c) {
+                        return '<div class="cust-opt" data-id="' + c.id + '" data-name="' + String(c.name || '').replace(/"/g, '&quot;') + '" data-phone="' + (c.phone || '') + '" ' +
+                            'style="padding:9px 12px; font-size:12.5px; cursor:pointer; border-bottom:1px solid var(--border);">' +
+                            (c.name || '') + (c.phone ? ' <span style="color:var(--text-muted);">(' + c.phone + ')</span>' : '') +
+                            '</div>';
+                    }).join('');
+                    $results.html(html).show();
+                }
+
+                function search(q) {
+                    if (!q) {
+                        $('#customerResults').hide().empty();
+                        return;
+                    }
+                    $.getJSON("{{ route('quick-sale.customers.search') }}", { q: q }, renderResults);
+                }
+
+                $('#customerNameInput').on('input', function () {
+                    $('#customerIdInput').val('');
+                    clearTimeout(debounceTimer);
+                    var val = $(this).val().trim();
+                    debounceTimer = setTimeout(function () {
+                        search(val);
+                    }, 250);
+                });
+
+                $(document).on('click', '.cust-opt', function () {
+                    $('#customerIdInput').val($(this).data('id'));
+                    $('#customerNameInput').val($(this).data('name'));
+                    $('#customerPhoneInput').val($(this).data('phone'));
+                    $('#customerResults').hide().empty();
+                });
+
+                $(document).on('click', function (e) {
+                    if (!$(e.target).closest('#customerNameInput, #customerResults').length) {
+                        $('#customerResults').hide();
+                    }
+                });
+            });
         }
 
-        function search(q) {
-            if (!q) {
-                results.style.display = 'none';
-                results.innerHTML = '';
-                return;
-            }
-            fetch("{{ route('quick-sale.customers.search') }}?q=" + encodeURIComponent(q))
-                .then((r) => r.json())
-                .then(renderResults);
-        }
-
-        nameInput.addEventListener('input', () => {
-            idInput.value = '';
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => search(nameInput.value.trim()), 250);
-        });
-
-        results.addEventListener('click', (e) => {
-            const opt = e.target.closest('.cust-opt');
-            if (!opt) return;
-            idInput.value = opt.dataset.id;
-            nameInput.value = opt.dataset.name;
-            phoneInput.value = opt.dataset.phone;
-            results.style.display = 'none';
-            results.innerHTML = '';
-        });
-
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('#customerNameInput') && !e.target.closest('#customerResults')) {
-                results.style.display = 'none';
-            }
-        });
+        initQuickSale();
     })();
     </script>
+    @endpush
 </x-core::layout>

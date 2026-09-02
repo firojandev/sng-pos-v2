@@ -3,52 +3,96 @@
 namespace Modules\Customer\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Modules\Customer\DataTables\CustomersDataTable;
 use Modules\Customer\Http\Requests\StoreCustomerRequest;
 use Modules\Customer\Http\Requests\UpdateCustomerRequest;
 use Modules\Customer\Models\Customer;
 
 class CustomerController extends Controller
 {
-    public function index(): View
+    public function index(CustomersDataTable $dataTable): mixed
     {
-        $customers = Customer::withSum('sales', 'due_amount')->latest()->paginate(10);
-
-        return view('customer::index', compact('customers'));
+        return $dataTable->render('customer::index');
     }
 
     public function create(): View
     {
-        return view('customer::create', ['customer' => new Customer()]);
+        return view('customer::create', ['customer' => new Customer]);
     }
 
-    public function store(StoreCustomerRequest $request): RedirectResponse
+    public function store(StoreCustomerRequest $request): RedirectResponse|JsonResponse
     {
-        Customer::create($request->validated());
+        $customer = Customer::create($request->validated());
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'গ্রাহক সফলভাবে যোগ করা হয়েছে',
+                'customer' => $customer,
+            ]);
+        }
 
         return redirect()->route('customers.index')->with('status', 'গ্রাহক সফলভাবে যোগ করা হয়েছে');
     }
 
-    public function edit(Customer $customer): View
+    public function edit(Request $request, Customer $customer): View|JsonResponse
     {
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'id' => $customer->id,
+                'name' => $customer->name,
+                'phone' => $customer->phone,
+                'email' => $customer->email,
+                'address' => $customer->address,
+                'opening_due' => (float) $customer->opening_due,
+                'status' => $customer->status,
+                'update_url' => route('customers.update', $customer),
+            ]);
+        }
+
         return view('customer::edit', compact('customer'));
     }
 
-    public function update(UpdateCustomerRequest $request, Customer $customer): RedirectResponse
+    public function update(UpdateCustomerRequest $request, Customer $customer): RedirectResponse|JsonResponse
     {
         $customer->update($request->validated());
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'গ্রাহক হালনাগাদ করা হয়েছে',
+                'customer' => $customer,
+            ]);
+        }
 
         return redirect()->route('customers.index')->with('status', 'গ্রাহক হালনাগাদ করা হয়েছে');
     }
 
-    public function destroy(Customer $customer): RedirectResponse
+    public function destroy(Request $request, Customer $customer): RedirectResponse|JsonResponse
     {
         if ($customer->sales()->exists()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'এই গ্রাহকের বিক্রয় রেকর্ড আছে, মুছে ফেলা যাবে না',
+                ], 422);
+            }
+
             return redirect()->route('customers.index')->with('status', 'এই গ্রাহকের বিক্রয় রেকর্ড আছে, মুছে ফেলা যাবে না');
         }
 
         $customer->delete();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'গ্রাহক মুছে ফেলা হয়েছে',
+            ]);
+        }
 
         return redirect()->route('customers.index')->with('status', 'গ্রাহক মুছে ফেলা হয়েছে');
     }

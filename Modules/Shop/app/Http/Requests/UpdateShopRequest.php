@@ -19,7 +19,8 @@ class UpdateShopRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:255'],
-            'slug' => ['required', 'string', 'max:255', 'alpha_dash', 'unique:shops,slug,' . $shopId],
+            'slug' => ['required', 'string', 'max:255', 'alpha_dash', 'unique:shops,slug,'.$shopId],
+            'store_code' => ['nullable', 'string', 'max:50', 'alpha_dash', 'unique:shops,store_code,'.$shopId],
             'phone' => ['nullable', 'string', 'max:30'],
             'address' => ['nullable', 'string', 'max:255'],
             'status' => ['required', 'in:active,inactive'],

@@ -5,6 +5,7 @@ namespace Modules\Product\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use Modules\Product\DataTables\ModelsDataTable;
 use Modules\Product\Http\Requests\StoreProductModelRequest;
 use Modules\Product\Http\Requests\UpdateProductModelRequest;
 use Modules\Product\Models\Brand;
@@ -12,18 +13,18 @@ use Modules\Product\Models\ProductModel;
 
 class ModelController extends Controller
 {
-    public function index(): View
+    public function index(ModelsDataTable $dataTable): mixed
     {
-        $models = ProductModel::with('brand')->latest()->paginate(10);
+        $brands = Brand::orderBy('name')->get();
 
-        return view('product::models.index', compact('models'));
+        return $dataTable->render('product::models.index', compact('brands'));
     }
 
     public function create(): View
     {
         $brands = Brand::orderBy('name')->get();
 
-        return view('product::models.create', ['model' => new ProductModel(), 'brands' => $brands]);
+        return view('product::models.create', ['model' => new ProductModel, 'brands' => $brands]);
     }
 
     public function store(StoreProductModelRequest $request): RedirectResponse
@@ -49,6 +50,10 @@ class ModelController extends Controller
 
     public function destroy(ProductModel $model): RedirectResponse
     {
+        if ($model->products()->exists()) {
+            return redirect()->route('models.index')->with('status', 'এই মডেলে পণ্য যুক্ত আছে, মুছে ফেলা যাবে না');
+        }
+
         $model->delete();
 
         return redirect()->route('models.index')->with('status', 'মডেল মুছে ফেলা হয়েছে');

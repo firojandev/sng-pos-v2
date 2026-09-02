@@ -4,11 +4,13 @@ use Illuminate\Support\Facades\Route;
 use Modules\Shop\Http\Controllers\BranchController;
 use Modules\Shop\Http\Controllers\PlanController;
 use Modules\Shop\Http\Controllers\ShopController;
+use Modules\Shop\Http\Controllers\ShopSelectionController;
 use Modules\Shop\Http\Controllers\SubscriptionController;
 use Modules\Shop\Http\Controllers\WarehouseController;
 
 Route::middleware(['auth', 'role:Super Admin'])->group(function () {
-    Route::resource('shops', ShopController::class)->except(['show']);
+    Route::get('shops/check-availability', [ShopController::class, 'checkAvailability'])->name('shops.check-availability');
+    Route::resource('shops', ShopController::class);
     Route::resource('plans', PlanController::class)->except(['show']);
 
     Route::post('shops/{shop}/admins', [ShopController::class, 'storeAdmin'])->name('shops.admins.store');
@@ -28,5 +30,7 @@ Route::middleware(['auth', 'feature:branches'])->group(function () {
 });
 
 Route::middleware(['auth'])->group(function () {
+    Route::get('select-shop', [ShopSelectionController::class, 'index'])->name('shops.select');
+    Route::post('select-shop/{shop}', [ShopSelectionController::class, 'select'])->name('shops.switch');
     Route::get('subscription', [SubscriptionController::class, 'show'])->name('subscription.show');
 });

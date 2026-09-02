@@ -27,6 +27,7 @@ class StorePurchaseRequest extends FormRequest
             'employee_name' => ['nullable', 'string', 'max:255'],
             'employee_phone' => ['nullable', 'string', 'max:30'],
             'payments' => ['nullable', 'array'],
+            'payments.*.account_id' => ['nullable', 'exists:accounts,id'],
             'payments.*.method' => ['required', 'in:'.implode(',', PaymentMethods::keys())],
             'payments.*.amount' => ['required', 'numeric', 'min:0.01'],
             'note' => ['nullable', 'string'],

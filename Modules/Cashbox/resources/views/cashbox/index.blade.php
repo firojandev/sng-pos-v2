@@ -123,7 +123,15 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="5"><div class="helper" style="margin-top:0;">কোনো লেনদেন নেই</div></td></tr>
+                            <tr>
+                                <td colspan="5">
+                                    <x-core::table.empty
+                                        icon="coins"
+                                        title="কোনো লেনদেন নেই"
+                                        title-en="No cash transactions found"
+                                    />
+                                </td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>

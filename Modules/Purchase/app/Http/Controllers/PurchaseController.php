@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Modules\Employee\Models\Employee;
+use Modules\Finance\Models\Account;
 use Modules\Product\Models\Batch;
 use Modules\Product\Models\Product;
 use Modules\Product\Models\StockMovement;
@@ -67,6 +68,7 @@ class PurchaseController extends Controller
         $products = Product::where('status', 'active')->withSum('batches', 'quantity')->with('units')->orderBy('name')->get();
         $warehouses = Warehouse::where('status', 'active')->with('branch')->orderBy('name')->get();
         $employees = Employee::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);
+        $accounts = Account::active()->orderByDesc('is_default')->orderBy('name')->get();
 
         return view('purchase::purchase.create', [
             'purchase' => new Purchase,
@@ -74,6 +76,7 @@ class PurchaseController extends Controller
             'products' => $products,
             'warehouses' => $warehouses,
             'employees' => $employees,
+            'accounts' => $accounts,
         ]);
     }
 
@@ -118,9 +121,10 @@ class PurchaseController extends Controller
         $products = Product::where('status', 'active')->withSum('batches', 'quantity')->with('units')->orderBy('name')->get();
         $warehouses = Warehouse::where('status', 'active')->with('branch')->orderBy('name')->get();
         $employees = Employee::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);
+        $accounts = Account::active()->orderByDesc('is_default')->orderBy('name')->get();
         $purchase->load('items', 'payments');
 
-        return view('purchase::purchase.edit', compact('purchase', 'suppliers', 'products', 'warehouses', 'employees'));
+        return view('purchase::purchase.edit', compact('purchase', 'suppliers', 'products', 'warehouses', 'employees', 'accounts'));
     }
 
     public function update(UpdatePurchaseRequest $request, Purchase $purchase): RedirectResponse
@@ -217,13 +221,14 @@ class PurchaseController extends Controller
     }
 
     /**
-     * @param  array<int, array{method: string, amount: float}>  $payments
+     * @param  array<int, array{account_id?: ?int, method: string, amount: float}>  $payments
      */
     private function applyPayments(Purchase $purchase, array $payments): void
     {
         foreach ($payments as $payment) {
             $purchase->payments()->create([
-                'method' => $payment['method'],
+                'account_id' => $payment['account_id'] ?? null,
+                'method' => $payment['method'] ?? 'cash',
                 'amount' => $payment['amount'],
             ]);
         }

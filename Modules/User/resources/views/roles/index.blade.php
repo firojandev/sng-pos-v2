@@ -44,7 +44,13 @@
                         </div>
                     </div>
                 @empty
-                    <div class="helper" style="margin-top:0;">কোনো কাস্টম রোল নেই</div>
+                    <div style="grid-column: 1 / -1;">
+                        <x-core::table.empty
+                            icon="shield"
+                            title="কোনো কাস্টম রোল নেই"
+                            title-en="No custom roles found"
+                        />
+                    </div>
                 @endforelse
             </div>
 
