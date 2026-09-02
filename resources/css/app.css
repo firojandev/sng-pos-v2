@@ -89,14 +89,26 @@
 
 *{box-sizing:border-box; margin:0; padding:0;}
 body{font-family:'Hind Siliguri','Plus Jakarta Sans','Inter',sans-serif; background:var(--paper); color:var(--ink-900); font-size:14px; -webkit-font-smoothing:antialiased;}
-.bn{display:inline;} .en{display:none !important;}
-:is(div, p, h1, h2, h3, h4, h5, h6, label, .brand-title, .brand-tagline).bn, .auth-title.bn, .auth-sub.bn {display:block;}
-body.lang-en .bn{display:none !important;} body.lang-en .en{display:inline !important;}
-body.lang-en :is(div, p, h1, h2, h3, h4, h5, h6, label, .brand-title, .brand-tagline).en, body.lang-en .auth-title.en, body.lang-en .auth-sub.en {display:block !important;}
-th.bn, td.bn{display:table-cell;} th.en, td.en{display:none !important;}
-body.lang-en th.bn, body.lang-en td.bn{display:none !important;} body.lang-en th.en, body.lang-en td.en{display:table-cell !important;}
-body.lang-en{font-family:'Plus Jakarta Sans','Inter','Hind Siliguri',sans-serif;}
-.display{font-family:'Baloo Da 2',sans-serif;} body.lang-en .display{font-family:'Plus Jakarta Sans','Manrope','Baloo Da 2',sans-serif;}
+.bn { display: inline; }
+.en { display: none !important; }
+:is(div, p, h1, h2, h3, h4, h5, h6, label, .brand-title, .brand-tagline).bn, .auth-title.bn, .auth-sub.bn { display: block; }
+
+html.lang-en .bn, body.lang-en .bn { display: none !important; }
+html.lang-en .en, body.lang-en .en { display: inline !important; }
+html.lang-en :is(div, p, h1, h2, h3, h4, h5, h6, label, .brand-title, .brand-tagline).en,
+body.lang-en :is(div, p, h1, h2, h3, h4, h5, h6, label, .brand-title, .brand-tagline).en,
+html.lang-en .auth-title.en, body.lang-en .auth-title.en,
+html.lang-en .auth-sub.en, body.lang-en .auth-sub.en { display: block !important; }
+
+th.bn, td.bn { display: table-cell; }
+th.en, td.en { display: none !important; }
+html.lang-en th.bn, body.lang-en th.bn,
+html.lang-en td.bn, body.lang-en td.bn { display: none !important; }
+html.lang-en th.en, body.lang-en th.en,
+html.lang-en td.en, body.lang-en td.en { display: table-cell !important; }
+
+html.lang-en body, body.lang-en { font-family: 'Plus Jakarta Sans', 'Inter', 'Hind Siliguri', sans-serif; }
+html.lang-en .display, body.lang-en .display { font-family: 'Plus Jakarta Sans', 'Manrope', 'Baloo Da 2', sans-serif; }
 a{color:inherit; text-decoration:none;}
 button{font-family:inherit; cursor:pointer;}
 
@@ -331,7 +343,7 @@ html.sidebar-collapsed-init .side-user-card .av{
   box-shadow:0 2px 8px rgba(13,148,136,.25);
 }
 
-.content{padding:24px; max-width:1400px; width:100%; margin:0 auto; flex:1 0 auto;}
+.content{padding:10px 40px; width:100%; margin:0 auto; flex:1 0 auto;}
 .page{display:none;} .page.active{display:block;}
 
 /* ============ FOOTER ============ */
@@ -1025,12 +1037,57 @@ tbody tr:hover{background:var(--paper);}
 .row-avatar{display:flex; align-items:center; gap:10px;}
 .row-avatar .av{width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-family:'Baloo Da 2',sans-serif; font-weight:700; font-size:12px; color:#fff; flex:0 0 auto;}
 
-.badge{display:inline-block; font-size:11px; font-weight:700; padding:3px 10px; border-radius:99px;}
-.b-green{background:var(--green-100); color:var(--green-600);}
-.b-red{background:var(--red-100); color:var(--red-600);}
-.b-gold{background:var(--gold-100); color:var(--gold-ink);}
-.b-teal{background:var(--teal-100); color:var(--teal-800);}
-.b-grey{background:var(--grey-100); color:var(--ink-600);}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 99px;
+  line-height: 1.3;
+  white-space: nowrap;
+  vertical-align: middle;
+  transition: all .15s ease;
+}
+.badge .badge-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+/* Subtle / Soft Color Variants */
+.b-green, .badge-green, .badge-success { background: var(--green-100); color: var(--green-600); }
+.b-red, .badge-red, .badge-danger, .badge-destructive { background: var(--red-100); color: var(--red-600); }
+.b-gold, .badge-gold, .badge-warning, .badge-primary { background: var(--gold-100); color: var(--gold-ink); }
+.b-teal, .badge-teal, .badge-brand { background: var(--teal-100); color: var(--teal-800); }
+.b-grey, .badge-grey, .badge-secondary, .badge-dark, .badge-neutral { background: var(--grey-100); color: var(--ink-600); }
+.b-blue, .badge-blue, .badge-info { background: var(--blue-100); color: var(--blue-ink); }
+
+/* Solid Color Variants */
+.badge-solid-green { background: var(--green-600); color: #FFFFFF; }
+.badge-solid-red { background: var(--red-600); color: #FFFFFF; }
+.badge-solid-gold { background: var(--gold-500); color: #FFFFFF; }
+.badge-solid-teal { background: var(--teal-800); color: #FFFFFF; }
+.badge-solid-grey { background: var(--ink-700); color: #FFFFFF; }
+.badge-solid-blue { background: var(--blue-600); color: #FFFFFF; }
+
+/* Outline Variants */
+.badge-outline { background: transparent; border: 1px solid currentColor; }
+
+/* Size Variants */
+.badge-xs { font-size: 10px; padding: 1.5px 6px; }
+.badge-sm { font-size: 11px; padding: 2.5px 8px; }
+.badge-md { font-size: 12px; padding: 4px 11px; }
+.badge-lg { font-size: 13.5px; padding: 5px 14px; }
+
+/* Shape Variants */
+.badge-pill { border-radius: 99px; }
+.badge-rounded { border-radius: 6px; }
+.badge-square { border-radius: 0; }
 
 .row-actions{display:flex; gap:6px; justify-content:flex-end;}
 .act{width:30px; height:30px; border-radius:8px; background:var(--card); border:1px solid var(--border); display:inline-flex; align-items:center; justify-content:center; color:var(--ink-700); transition:all .15s ease;}
@@ -2116,8 +2173,8 @@ table.pos-table{width:100%; border-collapse:collapse; min-width:820px;}
   --table-striped-bg: rgba(0, 0, 0, 0.015);
   --table-selected-bg: rgba(13, 148, 136, 0.08);
   --table-accent: var(--teal-800);
-  --table-px: 14px;
-  --table-py: 11px;
+  --table-px: 10px;
+  --table-py: 9px;
   --table-font-size: 13px;
   --table-header-font-size: 11.5px;
   --table-radius: 12px;
@@ -2154,7 +2211,7 @@ table.pos-table{width:100%; border-collapse:collapse; min-width:820px;}
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 18px;
+  padding: 4px 14px;
   background: var(--table-bg);
   border-bottom: 1px solid var(--table-border);
   flex-wrap: wrap;
@@ -2194,7 +2251,7 @@ table.pos-table{width:100%; border-collapse:collapse; min-width:820px;}
 .table-bulk-bar {
   background: var(--table-selected-bg);
   border-bottom: 1px solid var(--table-border);
-  padding: 10px 18px;
+  padding: 8px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2333,26 +2390,26 @@ table.pos-table{width:100%; border-collapse:collapse; min-width:820px;}
 
 /* Size Densities */
 .table-xs, .table-container-xs .app-table {
-  --table-px: 8px;
-  --table-py: 6px;
+  --table-px: 6px;
+  --table-py: 4px;
   --table-font-size: 11.5px;
   --table-header-font-size: 10.5px;
 }
 .table-sm, .table-container-sm .app-table {
-  --table-px: 10px;
-  --table-py: 8px;
+  --table-px: 8px;
+  --table-py: 6px;
   --table-font-size: 12.5px;
   --table-header-font-size: 11px;
 }
 .table-md, .table-container-md .app-table {
-  --table-px: 14px;
-  --table-py: 11px;
+  --table-px: 10px;
+  --table-py: 9px;
   --table-font-size: 13px;
   --table-header-font-size: 11.5px;
 }
 .table-lg, .table-container-lg .app-table {
-  --table-px: 18px;
-  --table-py: 15px;
+  --table-px: 14px;
+  --table-py: 12px;
   --table-font-size: 14.5px;
   --table-header-font-size: 12.5px;
 }
@@ -2446,56 +2503,110 @@ table.pos-table{width:100%; border-collapse:collapse; min-width:820px;}
 }
 
 /* Table Footer & Pagination */
-.table-footer {
+.table-footer,
+.dataTables_wrapper .table-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  padding: 12px 18px;
+  gap: 12px;
+  padding: 10px 14px;
   background: var(--table-bg);
   border-top: 1px solid var(--table-border);
   flex-wrap: wrap;
 }
-.table-pagination-info {
-  font-size: 12px;
-  color: var(--ink-600);
-}
-.table-pagination {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.table-page-btn {
+.table-pagination-info,
+.dataTables_wrapper .dataTables_info,
+.dt-container .dt-info {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  min-width: 30px;
-  height: 30px;
-  padding: 0 8px;
-  border-radius: 8px;
-  border: 1px solid var(--table-border);
-  background: var(--table-bg);
-  color: var(--ink-700);
   font-size: 12px;
-  font-weight: 600;
+  color: var(--ink-600);
+  margin: 0 !important;
+  padding: 0 !important;
+  float: none !important;
+}
+.table-pagination,
+.dataTables_wrapper .dataTables_paginate,
+.dt-container .dt-paging {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px;
+  margin: 0 !important;
+  padding: 0 !important;
+  float: none !important;
+  vertical-align: middle !important;
+  line-height: 1 !important;
+}
+.dataTables_wrapper .dataTables_paginate > span,
+.dt-container .dt-paging > span {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px;
+  height: 32px !important;
+  vertical-align: middle !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.table-page-btn,
+.dataTables_wrapper .dataTables_paginate .paginate_button,
+.dt-container .dt-paging .dt-paging-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  border-radius: 8px;
+  border: 1px solid var(--table-border) !important;
+  background: var(--table-bg) !important;
+  color: var(--ink-700) !important;
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
   cursor: pointer;
   transition: all .15s ease;
   text-decoration: none;
+  line-height: 1 !important;
+  text-align: center !important;
 }
-.table-page-btn:hover:not(.disabled):not(.active) {
-  background: var(--paper);
-  border-color: var(--ink-400);
-  color: var(--table-accent);
+.table-page-btn:hover:not(.disabled):not(.active),
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover:not(.disabled):not(.current),
+.dt-container .dt-paging .dt-paging-button:hover:not(.disabled):not(.current) {
+  background: var(--paper) !important;
+  color: var(--teal-800) !important;
+  border-color: var(--teal-800) !important;
 }
-.table-page-btn.active {
-  background: var(--table-accent);
-  color: #FFFFFF;
-  border-color: var(--table-accent);
+.table-page-btn.active,
+.dataTables_wrapper .dataTables_paginate .paginate_button.current,
+.dt-container .dt-paging .dt-paging-button.current {
+  background: var(--teal-800) !important;
+  color: #FFFFFF !important;
+  border-color: var(--teal-800) !important;
   font-weight: 700;
 }
-.table-page-btn.disabled {
-  opacity: .4;
+.table-page-btn.disabled,
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled,
+.dt-container .dt-paging .dt-paging-button.disabled {
+  opacity: .35;
   cursor: not-allowed;
+}
+.table-page-btn svg,
+.dataTables_wrapper .dataTables_paginate .paginate_button svg,
+.dt-container .dt-paging .dt-paging-button svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  pointer-events: none;
+  stroke: currentColor;
+  display: block;
+  margin: auto;
+  vertical-align: middle;
 }
 
 /* ============ YAJRA DATATABLES & DATATABLES V2 OVERRIDES ============ */
@@ -2515,7 +2626,7 @@ table.pos-table{width:100%; border-collapse:collapse; min-width:820px;}
 .dataTables_wrapper .dataTables_filter,
 .dt-container .dt-length,
 .dt-container .dt-search {
-  padding: 14px 18px;
+  padding: 10px 14px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -2562,7 +2673,7 @@ table.pos-table{width:100%; border-collapse:collapse; min-width:820px;}
 .dt-buttons,
 .dataTables_wrapper .dt-buttons,
 .dt-container .dt-buttons {
-  padding: 12px 18px;
+  padding: 8px 14px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -2637,70 +2748,102 @@ table.dataTable.no-footer {
   border-bottom: 1px solid var(--table-border);
 }
 
-/* Sorting Indicators */
-table.dataTable thead .sorting,
-table.dataTable thead .sorting_asc,
-table.dataTable thead .sorting_desc,
-table.dataTable thead .dt-column-order {
+/* Sorting Indicators & Arrows */
+table.dataTable thead th.sorting,
+table.dataTable thead th.sorting_asc,
+table.dataTable thead th.sorting_desc,
+table.dataTable thead th.dt-orderable-asc,
+table.dataTable thead th.dt-orderable-desc,
+table.dataTable thead th.dt-ordering-asc,
+table.dataTable thead th.dt-ordering-desc {
   cursor: pointer;
-}
-table.dataTable thead .sorting_asc,
-table.dataTable thead .sorting_desc {
-  color: var(--teal-800) !important;
+  position: relative;
+  padding-right: 24px !important;
+  user-select: none;
+  transition: all .15s ease;
 }
 
-/* Info & Pagination Bottom Bar */
-.dataTables_wrapper .dataTables_info,
-.dt-container .dt-info {
-  padding: 14px 18px;
-  font-size: 12px;
-  color: var(--ink-600);
-  float: left;
-}
-.dataTables_wrapper .dataTables_paginate,
-.dt-container .dt-paging {
-  padding: 12px 18px;
-  float: right;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.dataTables_wrapper .dataTables_paginate .paginate_button,
-.dt-container .dt-paging .dt-paging-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 30px;
-  height: 30px;
-  padding: 0 8px;
-  border-radius: 8px;
-  border: 1px solid var(--table-border) !important;
-  background: var(--table-bg) !important;
-  color: var(--ink-700) !important;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all .15s ease;
-  margin: 0 2px;
-}
-.dataTables_wrapper .dataTables_paginate .paginate_button:hover,
-.dt-container .dt-paging .dt-paging-button:hover:not(.disabled):not(.current) {
-  background: var(--paper) !important;
-  color: var(--teal-800) !important;
-  border-color: var(--teal-800) !important;
-}
-.dataTables_wrapper .dataTables_paginate .paginate_button.current,
-.dt-container .dt-paging .dt-paging-button.current {
-  background: var(--teal-800) !important;
-  color: #FFFFFF !important;
-  border-color: var(--teal-800) !important;
+/* Neutral Sortable State (↕) */
+table.dataTable thead th.sorting::after,
+table.dataTable thead th.dt-orderable-asc::after,
+table.dataTable thead th.dt-orderable-desc::after {
+  content: "⇅";
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
   font-weight: 700;
+  color: var(--ink-400);
+  opacity: 0.6;
+  transition: all .15s ease;
 }
-.dataTables_wrapper .dataTables_paginate .paginate_button.disabled,
-.dt-container .dt-paging .dt-paging-button.disabled {
-  opacity: .4;
-  cursor: not-allowed;
+
+table.dataTable thead th.sorting:hover::after,
+table.dataTable thead th.dt-orderable-asc:hover::after,
+table.dataTable thead th.dt-orderable-desc:hover::after {
+  opacity: 1;
+  color: var(--teal-800);
 }
+
+/* Ascending Sort State (▲) */
+table.dataTable thead th.sorting_asc::after,
+table.dataTable thead th.dt-ordering-asc::after {
+  content: "▲";
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  font-weight: 900;
+  color: var(--teal-800);
+  opacity: 1;
+}
+
+/* Descending Sort State (▼) */
+table.dataTable thead th.sorting_desc::after,
+table.dataTable thead th.dt-ordering-desc::after {
+  content: "▼";
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  font-weight: 900;
+  color: var(--teal-800);
+  opacity: 1;
+}
+
+/* Active Sorting Column Header Styling */
+table.dataTable thead th.sorting_asc,
+table.dataTable thead th.sorting_desc,
+table.dataTable thead th.dt-ordering-asc,
+table.dataTable thead th.dt-ordering-desc {
+  color: var(--teal-800) !important;
+  background-color: var(--teal-50) !important;
+}
+
+:root[data-theme="dark"] table.dataTable thead th.sorting_asc,
+:root[data-theme="dark"] table.dataTable thead th.sorting_desc,
+:root[data-theme="dark"] table.dataTable thead th.dt-ordering-asc,
+:root[data-theme="dark"] table.dataTable thead th.dt-ordering-desc {
+  background-color: rgba(13, 148, 136, 0.12) !important;
+  color: var(--teal-400) !important;
+}
+
+/* Disabled Sorting Columns */
+table.dataTable thead th.sorting_disabled,
+table.dataTable thead th.dt-orderable-none {
+  cursor: default;
+  padding-right: var(--table-px) !important;
+}
+table.dataTable thead th.sorting_disabled::after,
+table.dataTable thead th.dt-orderable-none::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* Processing State Overlay */
 .dataTables_wrapper .dataTables_processing,
 .dt-container .dt-processing {
   position: absolute;

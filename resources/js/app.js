@@ -113,6 +113,7 @@ const placeholderMap = {
 };
 
 function setLang(lang) {
+    $('html').toggleClass('lang-en', lang === 'en');
     $('body').toggleClass('lang-en', lang === 'en');
     $('#btn-bn').toggleClass('active', lang === 'bn');
     $('#btn-en').toggleClass('active', lang === 'en');
@@ -126,6 +127,7 @@ function setLang(lang) {
         const en = $(this).attr('data-placeholder-en');
         $(this).attr('placeholder', lang === 'en' ? en : bn);
     });
+    $('.dataTables_filter input, .dt-search input').attr('placeholder', lang === 'en' ? 'Search...' : 'এখানে লিখুন...');
     localStorage.setItem('lang', lang);
 }
 

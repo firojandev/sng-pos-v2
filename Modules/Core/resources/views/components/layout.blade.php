@@ -22,6 +22,10 @@
                 if (t === 'light' || t === 'dark') {
                     document.documentElement.setAttribute('data-theme', t);
                 }
+                var l = localStorage.getItem('lang');
+                if (l === 'en') {
+                    document.documentElement.classList.add('lang-en');
+                }
                 if (localStorage.getItem('sidebar-collapsed') === '1' && window.innerWidth > 1024) {
                     document.documentElement.classList.add('sidebar-collapsed-init');
                 }
@@ -34,6 +38,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @stack('styles')
 </head>
 <body>
 
@@ -55,29 +60,33 @@
 
 <div class="toast" id="toast"></div>
 
-@if (session('status'))
+@if (session('status') || session('success') || session('error'))
     <script>
-        $(function () {
-            toast(@json(session('status')), @json(session('status')));
-        });
+        (function () {
+            function showToasts() {
+                if (typeof window.toast !== 'function') {
+                    setTimeout(showToasts, 30);
+                    return;
+                }
+                @if (session('status'))
+                    toast(@json(session('status')), @json(session('status')));
+                @endif
+                @if (session('success'))
+                    toast(@json(session('success')), @json(session('success')));
+                @endif
+                @if (session('error'))
+                    toast(@json(session('error')), @json(session('error')));
+                @endif
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', showToasts);
+            } else {
+                showToasts();
+            }
+        })();
     </script>
 @endif
 
-@if (session('success'))
-    <script>
-        $(function () {
-            toast(@json(session('success')), @json(session('success')));
-        });
-    </script>
-@endif
-
-@if (session('error'))
-    <script>
-        $(function () {
-            toast(@json(session('error')), @json(session('error')));
-        });
-    </script>
-@endif
-
+@stack('scripts')
 </body>
 </html>
