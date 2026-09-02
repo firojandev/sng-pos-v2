@@ -211,7 +211,7 @@
                     <span class="bn">রিসোর্স কোটা ও সীমাবদ্ধতা</span>
                     <span class="en" style="display:none;">Resource Quotas & Limits</span>
                 </div>
-                <x-core::badge color="grey" size="xs" label="খালি রাখলে সীমাহীন (&infin;)" label-en="Blank for unlimited (&infin;)" />
+                <x-core::badge color="grey" size="xs" label="খালি রাখলে সীমাহীন (∞)" label-en="Blank for unlimited (∞)" />
             </div>
             <div class="panel-body" style="padding:18px;">
                 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:12px;">

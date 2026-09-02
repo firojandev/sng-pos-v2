@@ -1,5 +1,8 @@
+@import "sweetalert2/dist/sweetalert2.min.css";
+
 :root{
   /* Primary & Secondary Color System */
+
   --primary:#0F172A;
   --primary-hover:#1E293B;
   --primary-active:#334155;
@@ -1022,6 +1025,323 @@ html.sidebar-collapsed-init .side-user-card .av{
   --btn-active-scale: 1;
 }
 .btn-link-green:hover { text-decoration: underline; }
+
+/* ============ BUTTON GROUP SYSTEM ============ */
+.btn-group,
+.btn-group-vertical {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.btn-group {
+  flex-direction: row;
+}
+
+.btn-group-vertical {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+}
+
+/* Base direct child button styling inside button groups */
+.btn-group > .btn,
+.btn-group > form,
+.btn-group > form > .btn,
+.btn-group > .btn-group,
+.btn-group-vertical > .btn,
+.btn-group-vertical > form,
+.btn-group-vertical > form > .btn,
+.btn-group-vertical > .btn-group {
+  position: relative;
+  flex: 0 1 auto;
+}
+
+.btn-group > form,
+.btn-group-vertical > form {
+  display: inline-flex;
+}
+
+/* Attached Horizontal Button Group (Borders & Radius) */
+.btn-group:not(.btn-group-spaced):not(.btn-group-segmented) > .btn:not(:first-child),
+.btn-group:not(.btn-group-spaced):not(.btn-group-segmented) > form:not(:first-child) > .btn,
+.btn-group:not(.btn-group-spaced):not(.btn-group-segmented) > .btn-group:not(:first-child) {
+  margin-left: -1px;
+}
+
+.btn-group:not(.btn-group-spaced):not(.btn-group-segmented) > .btn:not(:last-child):not(.dropdown-toggle),
+.btn-group:not(.btn-group-spaced):not(.btn-group-segmented) > form:not(:last-child) > .btn,
+.btn-group:not(.btn-group-spaced):not(.btn-group-segmented) > .btn-group:not(:last-child) > .btn {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.btn-group:not(.btn-group-spaced):not(.btn-group-segmented) > .btn:not(:first-child),
+.btn-group:not(.btn-group-spaced):not(.btn-group-segmented) > form:not(:first-child) > .btn,
+.btn-group:not(.btn-group-spaced):not(.btn-group-segmented) > .btn-group:not(:first-child) > .btn {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+
+/* Attached Vertical Button Group (Borders & Radius) */
+.btn-group-vertical:not(.btn-group-spaced):not(.btn-group-segmented) > .btn:not(:first-child),
+.btn-group-vertical:not(.btn-group-spaced):not(.btn-group-segmented) > form:not(:first-child) > .btn,
+.btn-group-vertical:not(.btn-group-spaced):not(.btn-group-segmented) > .btn-group:not(:first-child) {
+  margin-top: -1px;
+  margin-left: 0;
+}
+
+.btn-group-vertical:not(.btn-group-spaced):not(.btn-group-segmented) > .btn:not(:last-child):not(.dropdown-toggle),
+.btn-group-vertical:not(.btn-group-spaced):not(.btn-group-segmented) > form:not(:last-child) > .btn,
+.btn-group-vertical:not(.btn-group-spaced):not(.btn-group-segmented) > .btn-group:not(:last-child) > .btn {
+  border-bottom-right-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+
+.btn-group-vertical:not(.btn-group-spaced):not(.btn-group-segmented) > .btn:not(:first-child),
+.btn-group-vertical:not(.btn-group-spaced):not(.btn-group-segmented) > form:not(:first-child) > .btn,
+.btn-group-vertical:not(.btn-group-spaced):not(.btn-group-segmented) > .btn-group:not(:first-child) > .btn {
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+}
+
+/* Hover, Focus, Active Z-Index Elevation */
+.btn-group > .btn:hover,
+.btn-group > .btn:focus,
+.btn-group > .btn:active,
+.btn-group > .btn.active,
+.btn-group > .btn:has(input:checked),
+.btn-group-vertical > .btn:hover,
+.btn-group-vertical > .btn:focus,
+.btn-group-vertical > .btn:active,
+.btn-group-vertical > .btn.active,
+.btn-group-vertical > .btn:has(input:checked) {
+  z-index: 2;
+}
+
+.btn-group > .btn:focus-visible,
+.btn-group-vertical > .btn:focus-visible {
+  z-index: 3;
+}
+
+/* Spaced / Separated Button Groups */
+.btn-group-spaced,
+.btn-group-vertical.btn-group-spaced {
+  --btn-group-gap: 8px;
+  gap: var(--btn-group-gap);
+}
+.btn-group.gap-xs { --btn-group-gap: 4px; gap: 4px; }
+.btn-group.gap-sm, .btn-group.gap-1 { --btn-group-gap: 6px; gap: 6px; }
+.btn-group.gap-md, .btn-group.gap-2 { --btn-group-gap: 8px; gap: 8px; }
+.btn-group.gap-lg, .btn-group.gap-3 { --btn-group-gap: 12px; gap: 12px; }
+.btn-group.gap-xl, .btn-group.gap-4 { --btn-group-gap: 16px; gap: 16px; }
+
+/* Block / Full-Width / Justified */
+.btn-group-block,
+.btn-group-full,
+.btn-group-justified {
+  display: flex;
+  width: 100%;
+}
+.btn-group-block > .btn,
+.btn-group-full > .btn,
+.btn-group-justified > .btn {
+  flex: 1 1 0%;
+  justify-content: center;
+}
+
+/* Rounded Corner Modifiers on Button Group */
+.btn-group-rounded-none > .btn {
+  --btn-radius: 0px !important;
+  border-radius: 0 !important;
+}
+
+.btn-group-rounded-sm { --btn-group-radius: 6px; }
+.btn-group-rounded-md { --btn-group-radius: 10px; }
+.btn-group-rounded-lg { --btn-group-radius: 14px; }
+.btn-group-rounded-xl { --btn-group-radius: 18px; }
+.btn-group-pill { --btn-group-radius: 999px; }
+
+.btn-group:not(.btn-group-vertical):not(.btn-group-spaced)[class*="btn-group-rounded-"] > .btn:first-child:not(:last-child),
+.btn-group:not(.btn-group-vertical):not(.btn-group-spaced).btn-group-pill > .btn:first-child:not(:last-child) {
+  border-top-left-radius: var(--btn-group-radius, var(--radius)) !important;
+  border-bottom-left-radius: var(--btn-group-radius, var(--radius)) !important;
+}
+
+.btn-group:not(.btn-group-vertical):not(.btn-group-spaced)[class*="btn-group-rounded-"] > .btn:last-child:not(:first-child),
+.btn-group:not(.btn-group-vertical):not(.btn-group-spaced).btn-group-pill > .btn:last-child:not(:first-child) {
+  border-top-right-radius: var(--btn-group-radius, var(--radius)) !important;
+  border-bottom-right-radius: var(--btn-group-radius, var(--radius)) !important;
+}
+
+.btn-group-vertical:not(.btn-group-spaced)[class*="btn-group-rounded-"] > .btn:first-child:not(:last-child),
+.btn-group-vertical:not(.btn-group-spaced).btn-group-pill > .btn:first-child:not(:last-child) {
+  border-top-left-radius: var(--btn-group-radius, var(--radius)) !important;
+  border-top-right-radius: var(--btn-group-radius, var(--radius)) !important;
+}
+
+.btn-group-vertical:not(.btn-group-spaced)[class*="btn-group-rounded-"] > .btn:last-child:not(:first-child),
+.btn-group-vertical:not(.btn-group-spaced).btn-group-pill > .btn:last-child:not(:first-child) {
+  border-bottom-left-radius: var(--btn-group-radius, var(--radius)) !important;
+  border-bottom-right-radius: var(--btn-group-radius, var(--radius)) !important;
+}
+
+/* Sizing Overrides inherited by child buttons */
+.btn-group-xs {
+  --btn-px: 8px;
+  --btn-py: 3px;
+  --btn-font-size: 11px;
+  --btn-height: 26px;
+  --btn-icon-size: 12px;
+  --btn-gap: 4px;
+  --btn-radius: 6px;
+}
+.btn-group-sm {
+  --btn-px: 11px;
+  --btn-py: 6px;
+  --btn-font-size: 11.5px;
+  --btn-height: 32px;
+  --btn-icon-size: 13.5px;
+  --btn-gap: 5px;
+  --btn-radius: 8px;
+}
+.btn-group-md {
+  --btn-px: 16px;
+  --btn-py: 9px;
+  --btn-font-size: 12.5px;
+  --btn-height: 38px;
+  --btn-icon-size: 15px;
+  --btn-gap: 7px;
+  --btn-radius: 10px;
+}
+.btn-group-lg {
+  --btn-px: 20px;
+  --btn-py: 11px;
+  --btn-font-size: 14px;
+  --btn-height: 46px;
+  --btn-icon-size: 17px;
+  --btn-gap: 8px;
+  --btn-radius: 12px;
+}
+.btn-group-xl {
+  --btn-px: 26px;
+  --btn-py: 13px;
+  --btn-font-size: 15.5px;
+  --btn-height: 52px;
+  --btn-icon-size: 19px;
+  --btn-gap: 10px;
+  --btn-radius: 14px;
+}
+
+/* ============ SEGMENTED CONTROLS ============ */
+.btn-group-segmented {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 10px);
+  padding: 3px;
+  gap: 3px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn-group-segmented.btn-group-pill {
+  border-radius: 999px;
+  padding: 4px;
+}
+
+.btn-group-segmented > .btn {
+  margin: 0 !important;
+  border: 1px solid transparent !important;
+  background: transparent;
+  color: var(--ink-600);
+  box-shadow: none !important;
+  border-radius: calc(var(--radius, 10px) - 3px) !important;
+  font-weight: 600;
+  transition: all .15s ease;
+  min-height: calc(var(--btn-height, 38px) - 8px);
+}
+
+.btn-group-segmented.btn-group-pill > .btn {
+  border-radius: 999px !important;
+}
+
+.btn-group-segmented > .btn:hover {
+  color: var(--ink-900);
+  background: rgba(15, 23, 42, 0.05);
+}
+
+:root[data-theme="dark"] .btn-group-segmented > .btn:hover,
+:root:not([data-theme="light"]) .btn-group-segmented > .btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.btn-group-segmented > .btn.active,
+.btn-group-segmented > .btn:has(input:checked) {
+  background: var(--card) !important;
+  color: var(--ink-900) !important;
+  border-color: var(--border) !important;
+  box-shadow: var(--shadow-sm) !important;
+  font-weight: 700;
+  z-index: 2;
+}
+
+/* Colored active states for segmented control */
+.btn-group-segmented.btn-group-teal > .btn.active,
+.btn-group-segmented.btn-group-teal > .btn:has(input:checked) {
+  background: var(--teal-800) !important;
+  color: #FFFFFF !important;
+  border-color: var(--teal-800) !important;
+  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3) !important;
+}
+
+.btn-group-segmented.btn-group-gold > .btn.active,
+.btn-group-segmented.btn-group-gold > .btn:has(input:checked) {
+  background: var(--gold-500) !important;
+  color: #FFFFFF !important;
+  border-color: var(--gold-500) !important;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3) !important;
+}
+
+.btn-group-segmented.btn-group-primary > .btn.active,
+.btn-group-segmented.btn-group-primary > .btn:has(input:checked) {
+  background: var(--primary) !important;
+  color: var(--primary-text) !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 2px 8px var(--primary-ring) !important;
+}
+
+.btn-group-segmented.btn-group-red > .btn.active,
+.btn-group-segmented.btn-group-red > .btn:has(input:checked) {
+  background: var(--red-600) !important;
+  color: #FFFFFF !important;
+  border-color: var(--red-600) !important;
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.3) !important;
+}
+
+.btn-group-segmented.btn-group-green > .btn.active,
+.btn-group-segmented.btn-group-green > .btn:has(input:checked) {
+  background: var(--green-600) !important;
+  color: #FFFFFF !important;
+  border-color: var(--green-600) !important;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3) !important;
+}
+
+.btn-group-segmented.btn-group-blue > .btn.active,
+.btn-group-segmented.btn-group-blue > .btn:has(input:checked) {
+  background: var(--blue-600) !important;
+  color: #FFFFFF !important;
+  border-color: var(--blue-600) !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3) !important;
+}
+
+/* ============ BUTTON TOOLBAR ============ */
+.btn-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
 
 .table-wrap{overflow-x:auto; border-radius:12px; border:1px solid var(--border); background:var(--card);}
 table{width:100%; border-collapse:collapse; min-width:760px;}
@@ -2891,3 +3211,37 @@ table.dataTable thead th.dt-orderable-none::after {
   .panel-body{padding:12px;}
   .app-footer{padding:12px 14px; justify-content:center; text-align:center;}
 }
+
+/* ============ SWEETALERT2 STYLES ============ */
+.app-swal-popup {
+  font-family: 'Hind Siliguri', 'Plus Jakarta Sans', 'Inter', sans-serif !important;
+  border-radius: var(--radius, 14px) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.18) !important;
+  padding: 24px !important;
+}
+.app-swal-popup .swal2-title {
+  font-size: 19px !important;
+  font-weight: 700 !important;
+  color: var(--ink-900) !important;
+  margin-bottom: 8px !important;
+}
+.app-swal-popup .swal2-html-container {
+  font-size: 13.5px !important;
+  color: var(--ink-600) !important;
+  margin: 8px 0 16px !important;
+  line-height: 1.5 !important;
+}
+.app-swal-popup .swal2-actions {
+  gap: 10px !important;
+  margin-top: 14px !important;
+}
+.app-swal-popup .swal2-confirm,
+.app-swal-popup .swal2-cancel {
+  border-radius: 9px !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  padding: 10px 20px !important;
+  box-shadow: none !important;
+}
+

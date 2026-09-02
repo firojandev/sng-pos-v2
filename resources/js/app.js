@@ -1,8 +1,15 @@
 import $ from 'jquery';
 import DataTable from 'datatables.net';
+import Swal from 'sweetalert2';
+import { createIcons, icons } from 'lucide';
 
 window.$ = window.jQuery = $;
 window.DataTable = DataTable;
+window.Swal = Swal;
+window.lucide = { createIcons, icons };
+window.createIcons = (options = {}) => createIcons({ icons, ...options });
+
+
 
 /* ---------------- Global AJAX Setup ---------------- */
 $(function () {
@@ -287,6 +294,105 @@ function initDataTable(selector, options = {}) {
     return $(selector).DataTable(merged);
 }
 
+/* ---------------- Button Group & Segmented Controls ---------------- */
+function initButtonGroupBehaviors() {
+    $(document).on('click', '.btn-group-segmented .btn, .btn-group [data-btn-group-item]', function (e) {
+        const $btn = $(this);
+        const $group = $btn.closest('.btn-group, .btn-group-segmented, .btn-group-vertical');
+
+        if ($btn.hasClass('disabled') || $btn.prop('disabled') || $btn.attr('aria-disabled') === 'true') {
+            e.preventDefault();
+            return;
+        }
+
+        const $radio = $btn.find('input[type="radio"]');
+        if ($radio.length && !$radio.is(':disabled')) {
+            $radio.prop('checked', true).trigger('change');
+            $group.find('.btn').removeClass('active');
+            $btn.addClass('active');
+            return;
+        }
+
+        if ($group.hasClass('btn-group-segmented') || $btn.is('[data-btn-group-item]')) {
+            $group.find('.btn').removeClass('active').removeAttr('aria-pressed');
+            $btn.addClass('active').attr('aria-pressed', 'true');
+            $group.trigger('change', [$btn.data('value') || $btn.text().trim()]);
+        }
+    });
+
+    $(document).on('change', '.btn-group input[type="radio"], .btn-group-segmented input[type="radio"]', function () {
+        const $group = $(this).closest('.btn-group, .btn-group-segmented, .btn-group-vertical');
+        $group.find('.btn').removeClass('active');
+        $(this).closest('.btn').addClass('active');
+    });
+}
+
+/* ---------------- SweetAlert2 Confirmation Helpers ---------------- */
+function confirmDelete(options = {}) {
+    const isEn = $('body').hasClass('lang-en') || $('html').hasClass('lang-en');
+    const isDark = $('html').attr('data-theme') === 'dark' || (!document.documentElement.hasAttribute('data-theme') && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+    const defaultTitle = isEn ? 'Are you sure?' : 'আপনি কি নিশ্চিত?';
+    const defaultText = isEn
+        ? 'This item will be permanently deleted!'
+        : 'এই তথ্যটি স্থায়ীভাবে মুছে ফেলা হবে!';
+    const defaultConfirmText = isEn ? 'Yes, Delete' : 'হ্যাঁ, মুছে ফেলুন';
+    const defaultCancelText = isEn ? 'Cancel' : 'বাতিল';
+
+    return Swal.fire({
+        title: options.title || defaultTitle,
+        text: options.text || defaultText,
+        icon: options.icon || 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#E11D48',
+        cancelButtonColor: isDark ? '#334155' : '#64748B',
+        confirmButtonText: options.confirmButtonText || defaultConfirmText,
+        cancelButtonText: options.cancelButtonText || defaultCancelText,
+        reverseButtons: true,
+        background: isDark ? '#111827' : '#FFFFFF',
+        color: isDark ? '#F8FAFC' : '#0F172A',
+        customClass: {
+            popup: 'app-swal-popup'
+        }
+    });
+}
+
+function initDeleteConfirmBehaviors() {
+    $(document).on('submit', '.delete-plan-form, .delete-form, [data-confirm-delete]', function (e) {
+        const $form = $(this);
+        if ($form.data('confirmed')) {
+            return true;
+        }
+
+        e.preventDefault();
+
+        const isEn = $('body').hasClass('lang-en') || $('html').hasClass('lang-en');
+        const isPlan = $form.hasClass('delete-plan-form');
+        const customTitle = $form.data('title');
+        const customText = $form.data('text');
+
+        const title = customTitle || (isPlan
+            ? (isEn ? 'Delete Plan?' : 'প্ল্যান মুছে ফেলতে চান?')
+            : (isEn ? 'Are you sure?' : 'আপনি কি নিশ্চিত?'));
+
+        const text = customText || (isPlan
+            ? (isEn ? 'Are you sure you want to delete this plan? This action cannot be undone.' : 'এই প্ল্যানটি চিরতরে মুছে ফেলা হবে। আপনি কি নিশ্চিত?')
+            : (isEn ? 'This record will be permanently deleted.' : 'এই তথ্যটি স্থায়ীভাবে মুছে ফেলা হবে।'));
+
+        confirmDelete({
+            title: title,
+            text: text,
+            confirmButtonText: isEn ? 'Yes, Delete' : 'হ্যাঁ, মুছুন',
+            cancelButtonText: isEn ? 'Cancel' : 'বাতিল'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $form.data('confirmed', true);
+                $form.trigger('submit');
+            }
+        });
+    });
+}
+
 /* ---------------- Expose Globals for Blade Templates ---------------- */
 window.toast = toast;
 window.toggleSidebar = toggleSidebar;
@@ -297,8 +403,24 @@ window.openModal = openModal;
 window.closeModal = closeModal;
 window.printSection = printSection;
 window.initDataTable = initDataTable;
+window.initButtonGroupBehaviors = initButtonGroupBehaviors;
+window.confirmDelete = confirmDelete;
+window.initDeleteConfirmBehaviors = initDeleteConfirmBehaviors;
 
 $(function () {
     initTableBehaviors();
+    initButtonGroupBehaviors();
+    initDeleteConfirmBehaviors();
+
+    // Initialize Lucide Icons globally
+    createIcons({ icons });
+
+    // Re-initialize Lucide Icons on dynamic DOM modifications
+    $(document).on('draw.dt ajaxComplete shown.bs.modal', function () {
+        createIcons({ icons });
+    });
 });
+
+
+
 

@@ -1,14 +1,27 @@
-<div class="table-cell-actions">
-    <a href="{{ route('plans.edit', $plan) }}" class="btn btn-soft-teal btn-xs" title="Edit">
-        <x-core::icon name="edit" size="13" />
-        <span class="bn">এডিট</span><span class="en">Edit</span>
-    </a>
-    <form method="POST" action="{{ route('plans.destroy', $plan) }}" class="delete-plan-form" style="display:inline;" onsubmit="return confirm('এই প্ল্যান মুছে ফেলতে চান? / Are you sure you want to delete this plan?');">
+<x-core::button-group size="xs" aria-label="Plan Actions">
+    <x-core::button
+        :href="route('plans.edit', $plan)"
+        variant="soft"
+        color="teal"
+        icon="edit"
+        icon-only
+        title="এডিট / Edit"
+    />
+    <form
+        method="POST"
+        action="{{ route('plans.destroy', $plan) }}"
+        class="delete-plan-form"
+    >
         @csrf
         @method('DELETE')
-        <button type="submit" class="btn btn-soft-red btn-xs" title="Delete">
-            <x-core::icon name="trash" size="13" />
-            <span class="bn">মুছুন</span><span class="en">Delete</span>
-        </button>
+        <x-core::button
+            type="submit"
+            variant="soft"
+            color="red"
+            icon="trash-2"
+            icon-only
+            title="মুছুন / Delete"
+        />
     </form>
-</div>
+</x-core::button-group>
+

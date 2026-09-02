@@ -16,6 +16,8 @@
         "@laravel/multiplex": "^0.4.1"
     },
     "dependencies": {
-        "jquery": "^4.0.0"
+        "jquery": "^4.0.0",
+        "lucide": "^1.39.0",
+        "sweetalert2": "^11.26.25"
     }
 }

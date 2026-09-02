@@ -359,6 +359,142 @@
                         </div>
                     </div>
                 </div>
+
+                {{-- Button Group Showcase Panel --}}
+                <div class="panel">
+                    <div class="panel-head">
+                        <div class="panel-title" style="display:flex; align-items:center; gap:8px;">
+                            <x-core::icon name="box" size="18" style="color:var(--teal-800);" />
+                            <span class="bn">বাটন গ্রুপ ও সেগমেন্টেড কন্ট্রোল (&lt;x-core::button-group&gt;)</span>
+                            <span class="en" style="display:none;">Button Groups & Segmented Controls</span>
+                        </div>
+                    </div>
+                    <div class="panel-body" style="display:flex; flex-direction:column; gap:24px;">
+                        {{-- 1. Standard Button Groups --}}
+                        <div>
+                            <h4 style="font-size:13px; font-weight:700; color:var(--ink-900); margin-bottom:10px;">১. সাধারণ বাটন গ্রুপ (Standard Joined Button Groups)</h4>
+                            <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:center;">
+                                <x-core::button-group>
+                                    <x-core::button variant="outline" color="secondary">Left</x-core::button>
+                                    <x-core::button variant="outline" color="secondary">Middle</x-core::button>
+                                    <x-core::button variant="outline" color="secondary">Right</x-core::button>
+                                </x-core::button-group>
+
+                                <x-core::button-group color="teal">
+                                    <x-core::button variant="solid" color="teal" icon="plus">Create</x-core::button>
+                                    <x-core::button variant="solid" color="teal" icon="edit">Edit</x-core::button>
+                                    <x-core::button variant="solid" color="teal" icon="trash">Delete</x-core::button>
+                                </x-core::button-group>
+
+                                <x-core::button-group rounded="pill" color="gold">
+                                    <x-core::button variant="outline" color="gold">Previous</x-core::button>
+                                    <x-core::button variant="solid" color="gold">Current</x-core::button>
+                                    <x-core::button variant="outline" color="gold">Next</x-core::button>
+                                </x-core::button-group>
+                            </div>
+                        </div>
+
+                        {{-- 2. Segmented Controls --}}
+                        <div>
+                            <h4 style="font-size:13px; font-weight:700; color:var(--ink-900); margin-bottom:10px;">২. সেগমেন্টেড কন্ট্রোল ও ভিউ সুইচার (Segmented Toggle Controls)</h4>
+                            <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:center;">
+                                <x-core::button-group
+                                    variant="segmented"
+                                    size="sm"
+                                    rounded="pill"
+                                    :options="[
+                                        'all' => 'সকল (All)',
+                                        'paid' => 'পরিশোধিত',
+                                        'due' => 'বকেয়া (Due)',
+                                        'canceled' => 'বাতিল',
+                                    ]"
+                                    value="paid"
+                                />
+
+                                <x-core::button-group
+                                    variant="segmented"
+                                    color="teal"
+                                    size="sm"
+                                    :options="[
+                                        ['value' => 'grid', 'label' => 'গ্রিড ভিউ', 'icon' => 'box'],
+                                        ['value' => 'list', 'label' => 'লিস্ট ভিউ', 'icon' => 'tag'],
+                                    ]"
+                                    value="grid"
+                                />
+                            </div>
+                        </div>
+
+                        {{-- 3. Toolbar & Sizing --}}
+                        <div>
+                            <h4 style="font-size:13px; font-weight:700; color:var(--ink-900); margin-bottom:10px;">৩. বাটন টুলবার ও সাইজিং (Toolbar & Sizing)</h4>
+                            <div style="display:flex; flex-direction:column; gap:12px;">
+                                <x-core::button-group toolbar aria-label="Editor Toolbar">
+                                    <x-core::button-group size="sm">
+                                        <x-core::button icon="arrow-left" icon-only variant="outline" color="secondary" title="Undo" />
+                                        <x-core::button icon="arrow-right" icon-only variant="outline" color="secondary" title="Redo" />
+                                    </x-core::button-group>
+
+                                    <x-core::button-group size="sm">
+                                        <x-core::button icon="copy" icon-only variant="outline" color="secondary" title="Copy" />
+                                        <x-core::button icon="printer" icon-only variant="outline" color="secondary" title="Print" />
+                                        <x-core::button icon="download" icon-only variant="outline" color="secondary" title="Download" />
+                                    </x-core::button-group>
+
+                                    <x-core::button-group size="sm" color="teal">
+                                        <x-core::button variant="solid" color="teal" icon="save">Save Changes</x-core::button>
+                                        <x-core::button variant="solid" color="teal" icon="chevron-down" icon-only title="More Actions" />
+                                    </x-core::button-group>
+                                </x-core::button-group>
+
+                                <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:center; margin-top:6px;">
+                                    <x-core::button-group size="xs">
+                                        <x-core::button variant="outline">XS 1</x-core::button>
+                                        <x-core::button variant="outline">XS 2</x-core::button>
+                                    </x-core::button-group>
+                                    <x-core::button-group size="sm">
+                                        <x-core::button variant="outline">SM 1</x-core::button>
+                                        <x-core::button variant="outline">SM 2</x-core::button>
+                                    </x-core::button-group>
+                                    <x-core::button-group size="md">
+                                        <x-core::button variant="outline">MD 1</x-core::button>
+                                        <x-core::button variant="outline">MD 2</x-core::button>
+                                    </x-core::button-group>
+                                    <x-core::button-group size="lg">
+                                        <x-core::button variant="outline">LG 1</x-core::button>
+                                        <x-core::button variant="outline">LG 2</x-core::button>
+                                    </x-core::button-group>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- 4. Vertical & Block Groups --}}
+                        <div>
+                            <h4 style="font-size:13px; font-weight:700; color:var(--ink-900); margin-bottom:10px;">৪. ভার্টিক্যাল ও ফুল-উইডথ বাটন গ্রুপ (Vertical & Block Width)</h4>
+                            <div style="display:grid; grid-template-columns:180px 1fr; gap:20px; align-items:start;">
+                                <x-core::button-group orientation="vertical" size="sm">
+                                    <x-core::button variant="outline" icon="user">প্রোফাইল</x-core::button>
+                                    <x-core::button variant="outline" icon="settings">সেটিংস</x-core::button>
+                                    <x-core::button variant="outline" icon="bell">নোটিফিকেশন</x-core::button>
+                                    <x-core::button variant="outline" color="red" icon="logout">লগআউট</x-core::button>
+                                </x-core::button-group>
+
+                                <div style="display:flex; flex-direction:column; gap:12px;">
+                                    <x-core::button-group block size="md">
+                                        <x-core::button variant="outline" color="teal">বিকল্প ক (Option A)</x-core::button>
+                                        <x-core::button variant="outline" color="teal">বিকল্প খ (Option B)</x-core::button>
+                                        <x-core::button variant="outline" color="teal">বিকল্প গ (Option C)</x-core::button>
+                                    </x-core::button-group>
+
+                                    <x-core::button-group :attached="false" gap="2">
+                                        <x-core::button variant="solid" color="teal" icon="check">সংরক্ষণ করুন</x-core::button>
+                                        <x-core::button variant="outline" color="secondary">বাতিল</x-core::button>
+                                        <x-core::button variant="soft" color="red" icon="trash">মুছে ফেলুন</x-core::button>
+                                    </x-core::button-group>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
 
