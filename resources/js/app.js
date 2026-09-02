@@ -430,6 +430,116 @@ function initDeleteConfirmBehaviors() {
     });
 }
 
+/* ---------------- Accordion & Feature Box Behaviors ---------------- */
+function toggleAccordion($box, forceOpen) {
+    if (!$box || !$box.length) return;
+    const $content = $box.find('[data-accordion-content], .app-accordion-body, .app-accordion-content');
+    const isOpen = typeof forceOpen === 'boolean' ? forceOpen : !$box.hasClass('is-open');
+
+    // Handle group exclusivity
+    const groupName = $box.data('accordion-group');
+    if (isOpen && groupName) {
+        $(`[data-accordion][data-accordion-group="${groupName}"]`).not($box).each(function () {
+            const $otherBox = $(this);
+            const $otherContent = $otherBox.find('[data-accordion-content], .app-accordion-body, .app-accordion-content');
+            const $otherCheckbox = $otherBox.find('[data-accordion-checkbox], input[type="checkbox"]');
+            $otherBox.removeClass('is-open active');
+            $otherContent.stop(true, true).slideUp(180);
+            if ($otherCheckbox.length) {
+                $otherCheckbox.prop('checked', false);
+            }
+        });
+    }
+
+    if (isOpen) {
+        $box.addClass('is-open active');
+        $content.stop(true, true).slideDown(180);
+    } else {
+        $box.removeClass('is-open active');
+        $content.stop(true, true).slideUp(180);
+    }
+}
+
+function initAccordionBehaviors() {
+    // 1. Trigger clicked (Header)
+    $(document).on('click', '[data-accordion-trigger], .feature-box-toggle', function (e) {
+        // Prevent firing on interactive elements inside the header (like inputs, buttons, selects, links)
+        if ($(e.target).closest('input, select, textarea, button:not([data-accordion-trigger]), a').length) {
+            return;
+        }
+
+        const $box = $(this).closest('[data-accordion], .feature-box');
+        const $label = $(e.target).closest('label');
+        const $checkbox = $box.find('[data-accordion-checkbox], input[type="checkbox"]');
+
+        // If user clicked inside a label associated with a checkbox, native browser event toggles checkbox and triggers 'change'
+        if ($label.length && $checkbox.length) {
+            return;
+        }
+
+        if ($checkbox.length && !$checkbox.prop('disabled')) {
+            // Clicked outside label (empty space or chevron icon)
+            $checkbox.prop('checked', !$checkbox.prop('checked')).trigger('change');
+        } else if (!$checkbox.length) {
+            // Standard accordion without checkbox
+            toggleAccordion($box);
+        }
+    });
+
+    // 2. Checkbox change event
+    $(document).on('change', '[data-accordion-checkbox], [data-accordion] input[type="checkbox"], .feature-box input[type="checkbox"]', function () {
+        const $box = $(this).closest('[data-accordion], .feature-box');
+        const isChecked = $(this).is(':checked');
+        toggleAccordion($box, isChecked);
+    });
+}
+
+/* ---------------- Status Segmented Switcher Behaviors ---------------- */
+function initStatusSwitcherBehaviors() {
+    // 1. Click on Left/Right option
+    $(document).on('click', '[data-status-switcher] [data-status-opt]', function (e) {
+        const $opt = $(this);
+        const $switcher = $opt.closest('[data-status-switcher]');
+        const $wrapper = $switcher.closest('.status-toggle-wrapper');
+        const $toggle = $switcher.find('[data-status-toggle]');
+        const selectedVal = String($opt.data('status-opt'));
+        const activeVal = String($toggle.data('active-val') || 'active');
+
+        if ($toggle.prop('disabled')) return;
+
+        const isNowActive = selectedVal === activeVal;
+        $toggle.prop('checked', !isNowActive);
+
+        updateStatusSwitcherState($switcher, $wrapper, isNowActive, selectedVal);
+    });
+
+    // 2. Click / Change on Center Checkbox Slider
+    $(document).on('change', '[data-status-toggle]', function () {
+        const $toggle = $(this);
+        const $switcher = $toggle.closest('[data-status-switcher]');
+        const $wrapper = $switcher.closest('.status-toggle-wrapper');
+        const isChecked = $toggle.is(':checked'); // checked means inactive (right)
+        const activeVal = String($toggle.data('active-val') || 'active');
+        const inactiveVal = String($toggle.data('inactive-val') || 'inactive');
+
+        const isNowActive = !isChecked;
+        const selectedVal = isNowActive ? activeVal : inactiveVal;
+
+        updateStatusSwitcherState($switcher, $wrapper, isNowActive, selectedVal);
+    });
+
+    function updateStatusSwitcherState($switcher, $wrapper, isActive, selectedVal) {
+        $switcher.toggleClass('is-active', isActive).toggleClass('is-inactive', !isActive);
+        $switcher.find('.switch-opt-active').toggleClass('active', isActive);
+        $switcher.find('.switch-opt-inactive').toggleClass('active', !isActive);
+
+        const $hidden = $wrapper.find('[data-status-input], input[type="hidden"]');
+        if ($hidden.length) {
+            $hidden.val(selectedVal).trigger('change');
+        }
+    }
+}
+
 /* ---------------- Expose Globals for Blade Templates ---------------- */
 window.toast = toast;
 window.toggleSidebar = toggleSidebar;
@@ -443,11 +553,16 @@ window.initDataTable = initDataTable;
 window.initButtonGroupBehaviors = initButtonGroupBehaviors;
 window.confirmDelete = confirmDelete;
 window.initDeleteConfirmBehaviors = initDeleteConfirmBehaviors;
+window.toggleAccordion = toggleAccordion;
+window.initAccordionBehaviors = initAccordionBehaviors;
+window.initStatusSwitcherBehaviors = initStatusSwitcherBehaviors;
 
 $(function () {
     initTableBehaviors();
     initButtonGroupBehaviors();
     initDeleteConfirmBehaviors();
+    initAccordionBehaviors();
+    initStatusSwitcherBehaviors();
 
     // Initialize Lucide Icons globally
     createIcons({ icons });

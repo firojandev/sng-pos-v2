@@ -30,21 +30,8 @@
 
 <div class="field">
     <label class="bn">অবস্থা</label><label class="en" style="display:none;">Status</label>
-    <div class="seg">
-        <button type="button" class="status-btn {{ old('status', $supplier->status ?? 'active') === 'active' ? 'active' : '' }}" data-val="active" onclick="selSupplierStatus(this)">
-            <span class="bn">সক্রিয়</span><span class="en">Active</span>
-        </button>
-        <button type="button" class="status-btn {{ old('status', $supplier->status ?? 'active') === 'inactive' ? 'active' : '' }}" data-val="inactive" onclick="selSupplierStatus(this)">
-            <span class="bn">নিষ্ক্রিয়</span><span class="en">Inactive</span>
-        </button>
-    </div>
-    <input type="hidden" name="status" id="status-input" value="{{ old('status', $supplier->status ?? 'active') }}">
+    <x-core::status-toggle
+        name="status"
+        :value="old('status', $supplier->status ?? 'active')"
+    />
 </div>
-
-<script>
-    function selSupplierStatus(btn) {
-        btn.parentElement.querySelectorAll('button').forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById('status-input').value = btn.getAttribute('data-val');
-    }
-</script>

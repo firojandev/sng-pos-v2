@@ -199,6 +199,11 @@
                 <span>রেডিও ও কার্ড / Radios</span>
                 <span class="badge-num">8+</span>
             </a>
+            <a class="sg-nav-link" data-target="pane-accordions" href="#accordions">
+                <x-core::icon name="chevron-down" size="16" />
+                <span>অ্যাকর্ডিয়ন / Accordions</span>
+                <span class="badge-num">6+</span>
+            </a>
 
             <div class="sg-nav-heading">ডেটা ও টেবিল (Data Tables)</div>
             <a class="sg-nav-link" data-target="pane-tables" href="#tables">
@@ -1317,6 +1322,146 @@
                 </div>
             </div>
 
+
+            {{-- ========================================================================= --}}
+            {{-- PANE: ACCORDIONS & COLLAPSIBLES --}}
+            {{-- ========================================================================= --}}
+            <div class="sg-pane" id="pane-accordions">
+                <div class="panel" style="margin-top:0;">
+                    <div class="panel-head">
+                        <div class="panel-title" style="display:flex; align-items:center; gap:8px;">
+                            <x-core::icon name="chevron-down" size="18" style="color:var(--teal-800);" />
+                            <span class="bn">অ্যাকর্ডিয়ন ও ফিচার টগল বক্স কম্পোনেন্ট</span>
+                            <span class="en" style="display:none;">Accordion & Feature Box Components</span>
+                        </div>
+                    </div>
+                    <div class="panel-body" style="display:flex; flex-direction:column; gap:20px;">
+                        {{-- 1. Checkbox-controlled Accordions --}}
+                        <div>
+                            <div style="font-weight:700; font-size:14px; color:var(--ink-900); margin-bottom:6px;">১. চেকবক্স ফিচার টগল বক্স (Checkbox Feature Toggles)</div>
+                            <p style="font-size:12.5px; color:var(--ink-600); margin-bottom:12px;">ফর্মের মধ্যে শর্তসাপেক্ষ ফিল্ডগুলো এনাবেল/ডিসাবেল করতে ব্যবহৃত হয়।</p>
+                            
+                            <div style="display:flex; flex-direction:column; gap:10px;">
+                                <x-core::accordion
+                                    name="sg_demo_vat"
+                                    :checked="true"
+                                    title="এই পণ্যে ভ্যাট প্রযোজ্য (VAT Applicable)"
+                                    title-en="VAT Applicable on this product"
+                                    icon="percent"
+                                    color="teal"
+                                >
+                                    <div style="max-width:320px;">
+                                        <x-core::input
+                                            name="sg_vat_val"
+                                            label="ভ্যাটের হার (%)"
+                                            label-en="VAT Percentage (%)"
+                                            value="15"
+                                            suffix="%"
+                                            no-margin
+                                        />
+                                    </div>
+                                </x-core::accordion>
+
+                                <x-core::accordion
+                                    name="sg_demo_wholesale"
+                                    :checked="false"
+                                    title="পাইকারি মূল্য সুবিধা (Wholesale Pricing)"
+                                    title-en="Enable Wholesale Pricing"
+                                    icon="shopping-cart"
+                                    color="primary"
+                                >
+                                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+                                        <x-core::input
+                                            name="sg_ws_price"
+                                            label="পাইকারি মূল্য (৳)"
+                                            placeholder="0.00"
+                                            prefix="৳"
+                                            no-margin
+                                        />
+                                        <x-core::input
+                                            name="sg_ws_qty"
+                                            label="সর্বনিম্ন পরিমাণ"
+                                            placeholder="10"
+                                            type="number"
+                                            no-margin
+                                        />
+                                    </div>
+                                </x-core::accordion>
+                            </div>
+                        </div>
+
+                        {{-- 2. Standard Expandable Accordions --}}
+                        <div>
+                            <div style="font-weight:700; font-size:14px; color:var(--ink-900); margin-bottom:6px;">২. স্ট্যান্ডার্ড অ্যাকর্ডিয়ন (Standard Expandable)</div>
+                            <p style="font-size:12.5px; color:var(--ink-600); margin-bottom:12px;">ক্লিক করে বিস্তারিত তথ্য প্রদর্শন করার জন্য ব্যবহৃত হয়।</p>
+
+                            <div style="display:flex; flex-direction:column; gap:10px;">
+                                <x-core::accordion
+                                    title="সিস্টেম ব্যাকআপ ও ডাটাবেজ অপশন"
+                                    title-en="System Backup & Database Options"
+                                    description="দৈনিক স্বয়ংক্রিয় ব্যাকআপ কনফিগারেশন"
+                                    description-en="Configure automated daily backups"
+                                    icon="save"
+                                    badge="অ্যাক্টিভ"
+                                    badge-en="Active"
+                                    badge-color="teal"
+                                    :open="true"
+                                >
+                                    <p style="font-size:13px; color:var(--ink-700); margin:0;">
+                                        আপনার ক্লাউড ডাটাবেজ ব্যাকআপ প্রতিদিন রাত ১২:০০ টায় স্বয়ংক্রিয়ভাবে সংরক্ষিত হয়।
+                                    </p>
+                                </x-core::accordion>
+
+                                <x-core::accordion
+                                    title="প্রিন্টার ও ইনভয়েস সেটিংস"
+                                    title-en="Printer & Invoice Settings"
+                                    description="থার্মাল পিওএস প্রিন্টার ও পেপার সাইজ"
+                                    description-en="Thermal POS printer and paper size"
+                                    icon="printer"
+                                    color="gold"
+                                    :open="false"
+                                >
+                                    <p style="font-size:13px; color:var(--ink-700); margin:0;">
+                                        ৮০ মিমি এবং ৫৮ মিমি থার্মাল প্রিন্টার সাপোর্টেড।
+                                    </p>
+                                </x-core::accordion>
+                            </div>
+                        </div>
+
+                        {{-- 3. Mutually Exclusive Accordion Group --}}
+                        <div>
+                            <div style="font-weight:700; font-size:14px; color:var(--ink-900); margin-bottom:6px;">৩. গ্রুপ অ্যাকর্ডিয়ন (Accordion Group - Single Expand)</div>
+                            <p style="font-size:12.5px; color:var(--ink-600); margin-bottom:12px;">একটি ওপেন হলে অন্যগুলো স্বয়ংক্রিয়ভাবে বন্ধ হয়ে যায় (<code>group="faq-group"</code>)।</p>
+
+                            <div style="display:flex; flex-direction:column; gap:10px;">
+                                <x-core::accordion
+                                    title="প্রশ্ন ১: কীভাবে নতুন পণ্য যুক্ত করবেন?"
+                                    title-en="Q1: How to add a new product?"
+                                    icon="info"
+                                    group="faq-demo"
+                                    :open="true"
+                                >
+                                    <p style="font-size:13px; color:var(--ink-700); margin:0;">
+                                        পণ্য মেনু থেকে 'নতুন পণ্য' বাটনে ক্লিক করে ফর্মটি পূরণ করুন।
+                                    </p>
+                                </x-core::accordion>
+
+                                <x-core::accordion
+                                    title="প্রশ্ন ২: কীভাবে ক্যাশ ড্রয়ার ব্যালেন্স মেলাবেন?"
+                                    title-en="Q2: How to reconcile cash drawer balance?"
+                                    icon="dollar-sign"
+                                    group="faq-demo"
+                                    :open="false"
+                                >
+                                    <p style="font-size:13px; color:var(--ink-700); margin:0;">
+                                        ক্যাশবক্স মডিউলে গিয়ে 'ক্যাশ ক্লোজিং' অপশন নির্বাচন করুন।
+                                    </p>
+                                </x-core::accordion>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             {{-- ========================================================================= --}}
             {{-- PANE 11: THEMING & SCOPES --}}

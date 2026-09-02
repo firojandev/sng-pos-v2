@@ -162,4 +162,29 @@ class FormComponentTest extends TestCase
         $this->assertStringContainsString('বাং', $rendered);
         $this->assertStringContainsString('EN', $rendered);
     }
+
+    public function test_renders_status_toggle_component_active(): void
+    {
+        $rendered = Blade::render('<x-core::status-toggle name="status" value="active" />');
+
+        $this->assertStringContainsString('status-segmented-switcher', $rendered);
+        $this->assertStringContainsString('data-status-switcher', $rendered);
+        $this->assertStringContainsString('switch-opt-active active', $rendered);
+        $this->assertStringContainsString('data-status-opt="active"', $rendered);
+        $this->assertStringContainsString('data-status-opt="inactive"', $rendered);
+        $this->assertStringContainsString('name="status"', $rendered);
+        $this->assertStringContainsString('value="active"', $rendered);
+        $this->assertStringContainsString('is-active', $rendered);
+    }
+
+    public function test_renders_status_toggle_component_inactive(): void
+    {
+        $rendered = Blade::render('<x-status-toggle name="status" value="inactive" active-label="সক্রিয়" inactive-label="নিষ্ক্রিয়" />');
+
+        $this->assertStringContainsString('status-segmented-switcher', $rendered);
+        $this->assertStringContainsString('switch-opt-inactive active', $rendered);
+        $this->assertStringContainsString('checked', $rendered);
+        $this->assertStringContainsString('value="inactive"', $rendered);
+        $this->assertStringContainsString('is-inactive', $rendered);
+    }
 }
