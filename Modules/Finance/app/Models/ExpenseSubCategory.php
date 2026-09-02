@@ -1,23 +1,23 @@
 <?php
 
-namespace Modules\Product\Models;
+namespace Modules\Finance\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Models\Category as BaseCategory;
 
-class SubCategory extends BaseCategory
+class ExpenseSubCategory extends BaseCategory
 {
     protected static function booted(): void
     {
-        static::addGlobalScope('product_sub_category', function (Builder $builder) {
-            $builder->where('categories.type', 'product')->whereNotNull('categories.parent_id');
+        static::addGlobalScope('expense_sub_category', function (Builder $builder) {
+            $builder->where('categories.type', 'expense')->whereNotNull('categories.parent_id');
         });
 
         static::creating(function ($model) {
             if (empty($model->type)) {
-                $model->type = 'product';
+                $model->type = 'expense';
             }
             if (isset($model->category_id) && ! isset($model->parent_id)) {
                 $model->parent_id = $model->category_id;
@@ -38,11 +38,11 @@ class SubCategory extends BaseCategory
 
     public function category(): BelongsTo
     {
-        return $this->belongsTo(Category::class, 'parent_id');
+        return $this->belongsTo(ExpenseCategory::class, 'parent_id');
     }
 
-    public function products(): HasMany
+    public function expenses(): HasMany
     {
-        return $this->hasMany(Product::class, 'sub_category_id');
+        return $this->hasMany(Expense::class, 'expense_sub_category_id');
     }
 }

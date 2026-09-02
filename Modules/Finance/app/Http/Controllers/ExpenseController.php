@@ -15,14 +15,14 @@ class ExpenseController extends Controller
 {
     public function index(): View
     {
-        $expenses = Expense::with(['category', 'account'])->latest('expense_date')->paginate(10);
+        $expenses = Expense::with(['category', 'subCategory', 'account'])->latest('expense_date')->paginate(10);
 
         return view('finance::expenses.index', compact('expenses'));
     }
 
     public function create(): View
     {
-        $expenseCategories = ExpenseCategory::orderBy('name')->get();
+        $expenseCategories = ExpenseCategory::parents()->with('subCategories')->orderBy('name')->get();
         $accounts = Account::active()->orderByDesc('is_default')->orderBy('name')->get();
 
         return view('finance::expenses.create', [
@@ -41,7 +41,7 @@ class ExpenseController extends Controller
 
     public function edit(Expense $expense): View
     {
-        $expenseCategories = ExpenseCategory::orderBy('name')->get();
+        $expenseCategories = ExpenseCategory::parents()->with('subCategories')->orderBy('name')->get();
         $accounts = Account::active()->orderByDesc('is_default')->orderBy('name')->get();
 
         return view('finance::expenses.edit', compact('expense', 'expenseCategories', 'accounts'));

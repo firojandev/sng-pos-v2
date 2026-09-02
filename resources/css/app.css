@@ -1608,6 +1608,117 @@ tbody tr:hover{background:var(--paper);}
 .modal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
 .modal-title{font-family:'Baloo Da 2',sans-serif; font-size:17px; font-weight:700;}
 
+/* Modal Scrollbar - Thin & Sleek */
+.modal,
+.modal-box,
+.modal-body,
+.modal-content,
+.unit-modal,
+.modal-dialog-scrollable .modal-body,
+.swal2-popup,
+.swal2-html-container,
+.modal-box *,
+.modal-body *,
+.unit-modal * {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+}
+
+.modal::-webkit-scrollbar,
+.modal-box::-webkit-scrollbar,
+.modal-body::-webkit-scrollbar,
+.modal-content::-webkit-scrollbar,
+.unit-modal::-webkit-scrollbar,
+.modal-dialog-scrollable .modal-body::-webkit-scrollbar,
+.swal2-popup::-webkit-scrollbar,
+.swal2-html-container::-webkit-scrollbar,
+.modal-box *::-webkit-scrollbar,
+.modal-body *::-webkit-scrollbar,
+.unit-modal *::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.modal::-webkit-scrollbar-track,
+.modal-box::-webkit-scrollbar-track,
+.modal-body::-webkit-scrollbar-track,
+.modal-content::-webkit-scrollbar-track,
+.unit-modal::-webkit-scrollbar-track,
+.modal-dialog-scrollable .modal-body::-webkit-scrollbar-track,
+.swal2-popup::-webkit-scrollbar-track,
+.swal2-html-container::-webkit-scrollbar-track,
+.modal-box *::-webkit-scrollbar-track,
+.modal-body *::-webkit-scrollbar-track,
+.unit-modal *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal::-webkit-scrollbar-thumb,
+.modal-box::-webkit-scrollbar-thumb,
+.modal-body::-webkit-scrollbar-thumb,
+.modal-content::-webkit-scrollbar-thumb,
+.unit-modal::-webkit-scrollbar-thumb,
+.modal-dialog-scrollable .modal-body::-webkit-scrollbar-thumb,
+.swal2-popup::-webkit-scrollbar-thumb,
+.swal2-html-container::-webkit-scrollbar-thumb,
+.modal-box *::-webkit-scrollbar-thumb,
+.modal-body *::-webkit-scrollbar-thumb,
+.unit-modal *::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
+}
+
+.modal:hover::-webkit-scrollbar-thumb,
+.modal-box:hover::-webkit-scrollbar-thumb,
+.modal-body:hover::-webkit-scrollbar-thumb,
+.modal-content:hover::-webkit-scrollbar-thumb,
+.unit-modal:hover::-webkit-scrollbar-thumb,
+.modal-dialog-scrollable .modal-body:hover::-webkit-scrollbar-thumb,
+.swal2-popup:hover::-webkit-scrollbar-thumb,
+.swal2-html-container:hover::-webkit-scrollbar-thumb,
+.modal-box *:hover::-webkit-scrollbar-thumb,
+.modal-body *:hover::-webkit-scrollbar-thumb,
+.unit-modal *:hover::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.6);
+}
+
+.modal::-webkit-scrollbar-thumb:hover,
+.modal-box::-webkit-scrollbar-thumb:hover,
+.modal-body::-webkit-scrollbar-thumb:hover,
+.modal-content::-webkit-scrollbar-thumb:hover,
+.unit-modal::-webkit-scrollbar-thumb:hover,
+.modal-dialog-scrollable .modal-body::-webkit-scrollbar-thumb:hover,
+.swal2-popup::-webkit-scrollbar-thumb:hover,
+.swal2-html-container::-webkit-scrollbar-thumb:hover,
+.modal-box *::-webkit-scrollbar-thumb:hover,
+.modal-body *::-webkit-scrollbar-thumb:hover,
+.unit-modal *::-webkit-scrollbar-thumb:hover {
+  background: var(--teal-600, #0D9488) !important;
+}
+
+[data-theme="dark"] .modal,
+[data-theme="dark"] .modal-box,
+[data-theme="dark"] .modal-body,
+[data-theme="dark"] .modal-content,
+[data-theme="dark"] .unit-modal,
+[data-theme="dark"] .modal-box *,
+[data-theme="dark"] .modal-body *,
+[data-theme="dark"] .unit-modal * {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+[data-theme="dark"] .modal::-webkit-scrollbar-thumb,
+[data-theme="dark"] .modal-box::-webkit-scrollbar-thumb,
+[data-theme="dark"] .modal-body::-webkit-scrollbar-thumb,
+[data-theme="dark"] .modal-content::-webkit-scrollbar-thumb,
+[data-theme="dark"] .unit-modal::-webkit-scrollbar-thumb,
+[data-theme="dark"] .modal-box *::-webkit-scrollbar-thumb,
+[data-theme="dark"] .modal-body *::-webkit-scrollbar-thumb,
+[data-theme="dark"] .unit-modal *::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+}
+
 @media print{
   body *{visibility:hidden;}
   .print-only, .print-only *{visibility:visible;}

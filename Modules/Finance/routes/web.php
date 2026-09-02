@@ -5,6 +5,7 @@ use Modules\Finance\Http\Controllers\AccountController;
 use Modules\Finance\Http\Controllers\AccountTransferController;
 use Modules\Finance\Http\Controllers\ExpenseCategoryController;
 use Modules\Finance\Http\Controllers\ExpenseController;
+use Modules\Finance\Http\Controllers\ExpenseSubCategoryController;
 use Modules\Finance\Http\Controllers\IncomeController;
 
 Route::middleware(['auth', 'feature:expense'])->group(function () {
@@ -15,6 +16,13 @@ Route::middleware(['auth', 'feature:expense'])->group(function () {
 
     Route::prefix('expense')->group(function () {
         Route::resource('expense-categories', ExpenseCategoryController::class)->except(['show'])
+            ->middlewareFor(['index'], 'permission:expense.view')
+            ->middlewareFor(['create', 'store', 'edit', 'update'], 'permission:expense.write')
+            ->middlewareFor(['destroy'], 'permission:expense.delete');
+
+        Route::resource('expense-sub-categories', ExpenseSubCategoryController::class)
+            ->parameters(['expense-sub-categories' => 'expenseSubCategory'])
+            ->except(['show'])
             ->middlewareFor(['index'], 'permission:expense.view')
             ->middlewareFor(['create', 'store', 'edit', 'update'], 'permission:expense.write')
             ->middlewareFor(['destroy'], 'permission:expense.delete');

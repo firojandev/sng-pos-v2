@@ -5,6 +5,7 @@ namespace Modules\Product\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use Modules\Product\DataTables\BatchesDataTable;
 use Modules\Product\Http\Requests\StoreBatchRequest;
 use Modules\Product\Http\Requests\UpdateBatchRequest;
 use Modules\Product\Models\Batch;
@@ -12,11 +13,11 @@ use Modules\Product\Models\Product;
 
 class BatchController extends Controller
 {
-    public function index(): View
+    public function index(BatchesDataTable $dataTable): mixed
     {
-        $batches = Batch::with('product')->latest()->paginate(10);
+        $products = Product::orderBy('name')->get();
 
-        return view('product::batches.index', compact('batches'));
+        return $dataTable->render('product::batches.index', compact('products'));
     }
 
     public function create(): View

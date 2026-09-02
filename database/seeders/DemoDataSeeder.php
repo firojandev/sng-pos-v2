@@ -75,7 +75,7 @@ class DemoDataSeeder extends Seeder
     /** @var Collection<int, Customer> */
     private Collection $customers;
 
-    /** @var Collection<int, ExpenseCategory> */
+    /** @var Collection<int, array{category: ExpenseCategory, sub_categories: Collection<int, ExpenseCategory>}> */
     private Collection $expenseCategories;
 
     public function run(): void
@@ -131,6 +131,20 @@ class DemoDataSeeder extends Seeder
     private function seedLocations(): void
     {
         $main = Warehouse::first();
+        if (! $main) {
+            $mainBranch = Branch::first() ?? Branch::create([
+                'name' => 'প্রধান শাখা',
+                'phone' => $this->phone(),
+                'address' => $this->faker->address(),
+                'status' => 'active',
+            ]);
+            $main = Warehouse::create([
+                'branch_id' => $mainBranch->id,
+                'name' => 'প্রধান গুদাম',
+                'address' => $this->faker->address(),
+                'status' => 'active',
+            ]);
+        }
 
         $branch2 = Branch::create([
             'name' => 'উত্তরা শাখা',
@@ -223,8 +237,24 @@ class DemoDataSeeder extends Seeder
         ];
         $this->units = collect($unitDefs)->map(fn ($u) => Unit::create(['name' => $u[0], 'short_code' => $u[1]]));
 
-        $expenseCategoryNames = ['ভাড়া', 'বিদ্যুৎ বিল', 'বেতন', 'পরিবহন', 'বিবিধ'];
-        $this->expenseCategories = collect($expenseCategoryNames)->map(fn ($name) => ExpenseCategory::create(['name' => $name, 'description' => null]));
+        $expenseCategoryMap = [
+            'দোকান পরিচালনা' => ['দোকান ভাড়া', 'বিদ্যুৎ বিল', 'ইন্টারনেট বিল'],
+            'কর্মী খরচ' => ['বেতন', 'বোনাস', 'আপ্যায়ন'],
+            'লজিস্টিকস' => ['পরিবহন খরচ', 'কুরিয়ার চার্জ'],
+            'বিবিধ' => ['অফিস সামগ্রী', 'মেরামত'],
+        ];
+
+        $expenseCategories = collect();
+        foreach ($expenseCategoryMap as $parentName => $subs) {
+            $cat = ExpenseCategory::create(['name' => $parentName, 'description' => null]);
+            $subCats = collect($subs)->map(fn ($sName) => ExpenseCategory::create([
+                'parent_id' => $cat->id,
+                'name' => $sName,
+                'description' => null,
+            ]));
+            $expenseCategories->push(['category' => $cat, 'sub_categories' => $subCats]);
+        }
+        $this->expenseCategories = $expenseCategories;
     }
 
     private function seedProducts(): void
@@ -775,20 +805,15 @@ class DemoDataSeeder extends Seeder
             ]);
         }
 
-        $expenseTitlesByCategory = [
-            'ভাড়া' => 'দোকান ভাড়া',
-            'বিদ্যুৎ বিল' => 'বিদ্যুৎ বিল পরিশোধ',
-            'বেতন' => 'কর্মচারী বেতন',
-            'পরিবহন' => 'পণ্য পরিবহন খরচ',
-            'বিবিধ' => 'বিবিধ খরচ',
-        ];
-
         foreach (range(1, 20) as $i) {
-            $category = $this->expenseCategories->random();
+            $entry = $this->expenseCategories->random();
+            $category = $entry['category'];
+            $subCategory = $entry['sub_categories']->random();
 
             Expense::create([
                 'expense_category_id' => $category->id,
-                'title' => $expenseTitlesByCategory[$category->name] ?? $category->name,
+                'expense_sub_category_id' => $subCategory->id,
+                'title' => $subCategory->name,
                 'amount' => $this->faker->randomFloat(2, 300, 20000),
                 'expense_date' => now()->subDays($this->faker->numberBetween(0, 90)),
                 'payment_method' => $paymentMethods[array_rand($paymentMethods)],

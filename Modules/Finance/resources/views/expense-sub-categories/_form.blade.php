@@ -12,7 +12,7 @@
 
 <div class="field">
     <label class="bn">নাম</label><label class="en" style="display:none;">Name</label>
-    <input type="text" name="name" value="{{ old('name', $subCategory->name) }}" placeholder="যেমন মোবাইল ফোন" required>
+    <input type="text" name="name" value="{{ old('name', $subCategory->name) }}" placeholder="যেমন অফিস ভাড়া / বিদ্যুৎ বিল" required>
     @error('name') <div class="field-error">{{ $message }}</div> @enderror
 </div>
 
