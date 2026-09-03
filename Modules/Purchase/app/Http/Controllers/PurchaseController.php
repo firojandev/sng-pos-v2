@@ -116,7 +116,10 @@ class PurchaseController extends Controller
 
     public function create(): View
     {
-        $suppliers = Supplier::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone', 'address']);
+        $suppliers = Supplier::where('status', 'active')
+            ->withSum('purchases', 'due_amount')
+            ->orderBy('name')
+            ->get(['id', 'name', 'phone', 'address', 'opening_due']);
         $products = Product::where('status', 'active')->withSum('batches', 'quantity')->with('units')->orderBy('name')->get();
         $warehouses = Warehouse::where('status', 'active')->with('branch')->orderBy('name')->get();
         $employees = Employee::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);
@@ -169,7 +172,10 @@ class PurchaseController extends Controller
 
     public function edit(Purchase $purchase): View
     {
-        $suppliers = Supplier::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone', 'address']);
+        $suppliers = Supplier::where('status', 'active')
+            ->withSum(['purchases' => fn ($q) => $q->where('id', '!=', $purchase->id)], 'due_amount')
+            ->orderBy('name')
+            ->get(['id', 'name', 'phone', 'address', 'opening_due']);
         $products = Product::where('status', 'active')->withSum('batches', 'quantity')->with('units')->orderBy('name')->get();
         $warehouses = Warehouse::where('status', 'active')->with('branch')->orderBy('name')->get();
         $employees = Employee::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);

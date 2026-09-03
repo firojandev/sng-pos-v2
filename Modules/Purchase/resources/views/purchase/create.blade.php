@@ -11,4 +11,6 @@
             @include('purchase::purchase._form')
         </form>
     </div>
+
+    @include('purchase::purchase._quick_supplier_modal')
 </x-core::layout>
