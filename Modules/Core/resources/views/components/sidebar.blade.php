@@ -41,7 +41,7 @@ $navGroups = [
         ],
     ],
     [
-        'label' => ['bn' => 'বিক্রয় ও ক্রয়', 'en' => 'Sales & Purchase'],
+        'label' => ['bn' => 'বিক্রয়', 'en' => 'Sales'],
         'gated' => true,
         'items' => [
             [
@@ -52,11 +52,11 @@ $navGroups = [
                 'icon' => '<path d="M4 4h2l2.2 11.5a2 2 0 0 0 2 1.6h6.6a2 2 0 0 0 2-1.6L20 8H7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="20" r="1.4" stroke="currentColor" stroke-width="1.6"/><circle cx="17" cy="20" r="1.4" stroke="currentColor" stroke-width="1.6"/>',
             ],
             [
-                'key' => 'purchase',
-                'route' => 'purchase.index',
-                'bn' => 'ক্রয়',
-                'en' => 'Purchase',
-                'icon' => '<path d="M3 7h18l-1.5 10.5a2 2 0 0 1-2 1.5H6.5a2 2 0 0 1-2-1.5L3 7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8 7V5.5A3.5 3.5 0 0 1 11.5 2h1A3.5 3.5 0 0 1 16 5.5V7" stroke="currentColor" stroke-width="1.7"/>',
+                'key' => 'quick-sale',
+                'route' => 'quick-sale.create',
+                'bn' => 'দ্রুত বেচা',
+                'en' => 'Quick Sale',
+                'icon' => '<circle cx="12" cy="12" r="9.2" stroke="currentColor" stroke-width="1.7"/><path d="M12 7.5v9M8.7 15.3c0 1.2 1.2 2.1 3.3 2.1s3.3-.9 3.3-2.1c0-3-6.6-1.2-6.6-4.1 0-1.2 1.2-2.1 3.3-2.1s3.3.9 3.3 2.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
             ],
             [
                 'key' => 'cashbox',
@@ -66,43 +66,12 @@ $navGroups = [
                 'icon' => '<rect x="2.5" y="6" width="19" height="13" rx="2" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12.5" r="3" stroke="currentColor" stroke-width="1.6"/><path d="M2.5 9.5h3M18.5 15.5h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
             ],
             [
-                'key' => 'quick-sale',
-                'route' => 'quick-sale.create',
-                'bn' => 'দ্রুত বেচা',
-                'en' => 'Quick Sale',
-                'icon' => '<circle cx="12" cy="12" r="9.2" stroke="currentColor" stroke-width="1.7"/><path d="M12 7.5v9M8.7 15.3c0 1.2 1.2 2.1 3.3 2.1s3.3-.9 3.3-2.1c0-3-6.6-1.2-6.6-4.1 0-1.2 1.2-2.1 3.3-2.1s3.3.9 3.3 2.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
-            ],
-            [
-                'key' => 'purchase-ledger',
-                'permission' => 'purchase',
-                'route' => 'purchase.ledger',
-                'bn' => 'কেনার খাতা',
-                'en' => 'Purchase Ledger',
-                'icon' => '<path d="M4 4h16v16H4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 9h8M8 13h8M8 17h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
-            ],
-            [
-                'key' => 'purchase-delivery-orders',
-                'permission' => 'purchase',
-                'route' => 'purchase-delivery-orders.index',
-                'bn' => 'ডেলিভারি অর্ডার',
-                'en' => 'Delivery Orders',
-                'icon' => '<rect x="1" y="3" width="15" height="13" rx="2" stroke="currentColor" stroke-width="1.6"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" stroke="currentColor" stroke-width="1.6"/><circle cx="5.5" cy="18.5" r="2.5" stroke="currentColor" stroke-width="1.6"/><circle cx="18.5" cy="18.5" r="2.5" stroke="currentColor" stroke-width="1.6"/>',
-            ],
-            [
                 'key' => 'sales-ledger',
                 'permission' => 'sales',
                 'route' => 'sales.ledger',
                 'bn' => 'বেচার খাতা',
                 'en' => 'Sales Ledger',
                 'icon' => '<path d="M4 4h16v16H4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 9h8M8 13h8M8 17h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
-            ],
-            [
-                'key' => 'purchase-returns',
-                'permission' => 'purchase',
-                'route' => 'purchase-returns.index',
-                'bn' => 'ক্রয় ফেরত',
-                'en' => 'Purchase Returns',
-                'icon' => '<path d="M4 12a8 8 0 1 1 2.3 5.7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M4 17v-5h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
             ],
             [
                 'key' => 'sale-returns',
@@ -119,6 +88,44 @@ $navGroups = [
                 'bn' => 'বাকির খাতা',
                 'en' => 'Due Ledger',
                 'icon' => '<circle cx="12" cy="12" r="9.2" stroke="currentColor" stroke-width="1.7"/><path d="M12 7.5v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="16.5" r="1" fill="currentColor"/>',
+            ],
+        ],
+    ],
+    [
+        'label' => ['bn' => 'ক্রয়', 'en' => 'Purchase'],
+        'gated' => true,
+        'items' => [
+            [
+                'key' => 'purchase',
+                'route' => 'purchase.index',
+                'bn' => 'ক্রয়',
+                'en' => 'Purchase',
+                'icon' => '<path d="M3 7h18l-1.5 10.5a2 2 0 0 1-2 1.5H6.5a2 2 0 0 1-2-1.5L3 7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8 7V5.5A3.5 3.5 0 0 1 11.5 2h1A3.5 3.5 0 0 1 16 5.5V7" stroke="currentColor" stroke-width="1.7"/>',
+            ],
+            [
+                'key' => 'purchase-ledger',
+                'permission' => 'purchase',
+                'route' => 'purchase.ledger',
+                'bn' => 'কেনার খাতা',
+                'en' => 'Purchase Ledger',
+                'icon' => '<path d="M4 4h16v16H4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 9h8M8 13h8M8 17h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+            ],
+            [
+                'key' => 'purchase-delivery-orders',
+                'permission' => 'purchase',
+                'route' => 'purchase-delivery-orders.index',
+                'bn' => 'ডেলিভারি অর্ডার',
+                'en' => 'Delivery Orders',
+                'icon' => '<rect x="1" y="3" width="15" height="13" rx="2" stroke="currentColor" stroke-width="1.6"/><polygon points="16 8 20 8 23 11 23 16 16 16 8" stroke="currentColor" stroke-width="1.6"/><circle cx="5.5" cy="18.5" r="2.5" stroke="currentColor" stroke-width="1.6"/><circle cx="18.5" cy="18.5" r="2.5" stroke="currentColor" stroke-width="1.6"/>',
+                'enabled' => (bool) config('purchase.delivery_orders_enabled', false),
+            ],
+            [
+                'key' => 'purchase-returns',
+                'permission' => 'purchase',
+                'route' => 'purchase-returns.index',
+                'bn' => 'ক্রয় ফেরত',
+                'en' => 'Purchase Returns',
+                'icon' => '<path d="M4 12a8 8 0 1 1 2.3 5.7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M4 17v-5h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
             ],
         ],
     ],
@@ -287,6 +294,9 @@ $navGroups = [
 ];
 
 $isNavItemVisible = function (array $item, bool $groupGated, $user) {
+    if (isset($item['enabled']) && ! $item['enabled']) {
+        return false;
+    }
     $gated = $item['gated'] ?? $groupGated;
     if (! $gated) {
         return true;
