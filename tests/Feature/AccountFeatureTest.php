@@ -414,4 +414,81 @@ class AccountFeatureTest extends TestCase
             'sourceable_id' => $transfer->id,
         ]);
     }
+
+    public function test_accounts_and_fund_transfers_have_separate_features_and_permissions(): void
+    {
+        // User with ONLY accounts permission
+        $accountsRole = Role::create(['name' => 'AccountsOnly', 'guard_name' => 'web']);
+        $accountsRole->givePermissionTo(['accounts.view', 'accounts.write', 'accounts.delete']);
+
+        $accountsUser = User::create([
+            'name' => 'Accounts Manager',
+            'email' => 'accounts@test.com',
+            'password' => Hash::make('password'),
+            'shop_id' => $this->shop->id,
+        ]);
+        $accountsUser->syncRoles([$accountsRole]);
+
+        // User with ONLY account-transfers permission
+        $transferRole = Role::create(['name' => 'TransferOnly', 'guard_name' => 'web']);
+        $transferRole->givePermissionTo(['account-transfers.view', 'account-transfers.write', 'account-transfers.delete']);
+
+        $transferUser = User::create([
+            'name' => 'Transfer Manager',
+            'email' => 'transfer@test.com',
+            'password' => Hash::make('password'),
+            'shop_id' => $this->shop->id,
+        ]);
+        $transferUser->syncRoles([$transferRole]);
+
+        // Accounts user can view accounts, but forbidden from transfers
+        $this->actingAs($accountsUser)->get(route('accounts.index'))->assertOk();
+        $this->actingAs($accountsUser)->get(route('account-transfers.index'))->assertForbidden();
+
+        // Transfer user can view transfers, but forbidden from accounts
+        $this->actingAs($transferUser)->get(route('account-transfers.index'))->assertOk();
+        $this->actingAs($transferUser)->get(route('accounts.index'))->assertForbidden();
+    }
+
+    public function test_accounts_views_and_transfer_views_are_separate(): void
+    {
+        // Accounts view does not include account-tabbar or createTransferModal
+        $accountsResponse = $this->actingAs($this->user)->get(route('accounts.index'));
+        $accountsResponse->assertOk();
+        $accountsResponse->assertDontSee('createTransferModal');
+        $accountsResponse->assertDontSee('btnOpenTransferModal');
+        $accountsResponse->assertSee(route('accounts.index').'" class="nav-item active"', false);
+        $accountsResponse->assertDontSee(route('account-transfers.index').'" class="nav-item active"', false);
+
+        // Fund transfers view activates account-transfers nav item in sidebar
+        $transferResponse = $this->actingAs($this->user)->get(route('account-transfers.index'));
+        $transferResponse->assertOk();
+        $transferResponse->assertSee(route('account-transfers.index').'" class="nav-item active"', false);
+        $transferResponse->assertDontSee(route('accounts.index').'" class="nav-item active"', false);
+    }
+
+    public function test_ledger_renders_daily_cash_in_out_and_net_change_graph(): void
+    {
+        $account = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Cash Account',
+            'type' => 'cash',
+            'opening_balance' => 5000,
+            'current_balance' => 5000,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($this->user)->get(route('accounts.ledger', $account));
+
+        $response->assertOk();
+        $response->assertSee('dailyCashflowChart');
+        $response->assertSee('দৈনিক ক্যাশ ইন, আউট ও নেট পরিবর্তন গ্রাফ');
+        $response->assertViewHas('chartData', function ($data) {
+            return isset($data['labels'], $data['cash_in'], $data['cash_out'], $data['net_change'])
+                && is_array($data['labels'])
+                && is_array($data['cash_in'])
+                && is_array($data['cash_out'])
+                && is_array($data['net_change']);
+        });
+    }
 }

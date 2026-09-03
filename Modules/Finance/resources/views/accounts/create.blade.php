@@ -5,7 +5,6 @@
     subtitle-en="Add a new Bank, MFS, or Cash account"
     active="accounts"
 >
-    <x-finance::account-tabbar active="accounts" />
 
     <div class="panel" style="margin-top:0; max-width:760px;">
         <div class="panel-body">

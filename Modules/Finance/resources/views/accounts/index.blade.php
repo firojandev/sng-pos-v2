@@ -5,7 +5,6 @@
     subtitle-en="Overview of all bank, mobile banking, and cash accounts"
     active="accounts"
 >
-    <x-finance::account-tabbar active="accounts" />
 
     {{-- KPI Cards --}}
     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:20px;">
@@ -87,11 +86,7 @@
                     @endif
                 </form>
 
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <x-core::button variant="secondary" size="sm" id="btnOpenTransferModal">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M7 10h14l-4-4M17 14H3l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        <span class="bn">ফান্ড ট্রান্সফার</span><span class="en" style="display:none;">Transfer</span>
-                    </x-core::button>
+                <div>
                     <x-core::button color="primary" size="sm" id="btnOpenAccountModal" icon="plus">
                         <span class="bn">নতুন অ্যাকাউন্ট</span><span class="en" style="display:none;">New Account</span>
                     </x-core::button>
@@ -204,7 +199,7 @@
     </div>
 
     {{-- Create Account Modal --}}
-    <div class="modal-backdrop @if ($errors->any() && old('modal_type', 'account') === 'account' && !old('from_account_id')) open @endif" id="createAccountModal">
+    <div class="modal-backdrop @if ($errors->any() && old('modal_type', 'account') === 'account') open @endif" id="createAccountModal">
         <div class="modal-box" style="width:680px; max-width:95vw; max-height:90vh; overflow-y:auto;">
             <div class="modal-head">
                 <div class="modal-title">
@@ -398,24 +393,6 @@
         </div>
     </div>
 
-    {{-- Fund Transfer Modal --}}
-    <div class="modal-backdrop @if ($errors->any() && old('from_account_id')) open @endif" id="createTransferModal">
-        <div class="modal-box" style="width:640px; max-width:95vw; max-height:90vh; overflow-y:auto;">
-            <div class="modal-head">
-                <div class="modal-title">
-                    <span class="bn">নতুন ফান্ড ট্রান্সফার</span>
-                    <span class="en" style="display:none;">New Fund Transfer</span>
-                </div>
-                <button type="button" class="drawer-x modal-close-btn">&times;</button>
-            </div>
-            <form method="POST" action="{{ route('account-transfers.store') }}" id="create_transfer_modal_form">
-                @csrf
-                <input type="hidden" name="redirect_to" value="accounts.index">
-                @include('finance::transfers._form', ['transfer' => $transfer, 'accounts' => $activeAccounts, 'isModal' => true])
-            </form>
-        </div>
-    </div>
-
     @push('scripts')
     <script>
     (function () {
@@ -430,11 +407,6 @@
                 // Open Create Account Modal
                 $('#btnOpenAccountModal').on('click', function () {
                     $('#createAccountModal').addClass('open');
-                });
-
-                // Open Fund Transfer Modal
-                $('#btnOpenTransferModal').on('click', function () {
-                    $('#createTransferModal').addClass('open');
                 });
 
                 // Open Edit Account Modal via AJAX

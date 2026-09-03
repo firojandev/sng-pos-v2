@@ -3809,6 +3809,11 @@ table.dataTable thead th.dt-orderable-none::after {
   margin: 8px 0 16px !important;
   line-height: 1.5 !important;
 }
+
+#swal2-html-container {
+    padding-top: 0 !important;
+}
+
 .app-swal-popup .swal2-actions {
   gap: 10px !important;
   margin-top: 14px !important;

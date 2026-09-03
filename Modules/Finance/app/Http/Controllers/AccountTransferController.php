@@ -91,10 +91,7 @@ class AccountTransferController extends Controller
             userId: Auth::id()
         );
 
-        $redirectRoute = $request->input('redirect_to', 'account-transfers.index');
-        $targetUrl = ($redirectRoute === 'accounts.index') ? route('accounts.index') : route('account-transfers.index');
-
-        return redirect()->to($targetUrl)->with('status', 'ফান্ড ট্রান্সফার সফলভাবে সম্পন্ন হয়েছে');
+        return redirect()->route('account-transfers.index')->with('status', 'ফান্ড ট্রান্সফার সফলভাবে সম্পন্ন হয়েছে');
     }
 
     public function destroy(AccountTransfer $accountTransfer): RedirectResponse

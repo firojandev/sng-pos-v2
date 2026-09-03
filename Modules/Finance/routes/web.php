@@ -49,11 +49,13 @@ Route::middleware(['auth', 'feature:accounts'])->group(function () {
         ->middlewareFor(['index'], 'permission:accounts.view')
         ->middlewareFor(['create', 'store', 'edit', 'update'], 'permission:accounts.write')
         ->middlewareFor(['destroy'], 'permission:accounts.delete');
+});
 
+Route::middleware(['auth', 'feature:account-transfers'])->group(function () {
     Route::resource('account-transfers', AccountTransferController::class)
         ->parameters(['account-transfers' => 'accountTransfer'])
         ->except(['show', 'edit', 'update'])
-        ->middlewareFor(['index'], 'permission:accounts.view')
-        ->middlewareFor(['create', 'store'], 'permission:accounts.write')
-        ->middlewareFor(['destroy'], 'permission:accounts.delete');
+        ->middlewareFor(['index'], 'permission:account-transfers.view')
+        ->middlewareFor(['create', 'store'], 'permission:account-transfers.write')
+        ->middlewareFor(['destroy'], 'permission:account-transfers.delete');
 });

@@ -11,7 +11,7 @@
         <div class="filters" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
             <div style="min-width:220px;">
                 <select name="filter_parent_category" id="filter-parent-category" style="height:36px; padding:0 12px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--ink-800); font-size:13px; outline:none;">
-                    <option value="">সকল মূল ক্যাটাগরি (All Categories)</option>
+                    <option value="" data-text-bn="সকল মূল ক্যাটাগরি" data-text-en="All Categories">সকল মূল ক্যাটাগরি</option>
                     @foreach ($categories as $cat)
                         <option value="{{ $cat->id }}">{{ $cat->name }}</option>
                     @endforeach
@@ -62,7 +62,7 @@
                         <label class="bn">মূল ক্যাটাগরি <span class="text-danger">*</span></label>
                         <label class="en" style="display:none;">Parent Category <span class="text-danger">*</span></label>
                         <select name="parent_id" id="create_subcat_parent_id" required>
-                            <option value="">-- নির্বাচন করুন --</option>
+                            <option value="" data-text-bn="-- নির্বাচন করুন --" data-text-en="-- Select --">-- নির্বাচন করুন --</option>
                             @foreach ($categories as $category)
                                 <option value="{{ $category->id }}" {{ (int) old('parent_id') === $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
                             @endforeach
@@ -122,7 +122,7 @@
                         <label class="bn">মূল ক্যাটাগরি <span class="text-danger">*</span></label>
                         <label class="en" style="display:none;">Parent Category <span class="text-danger">*</span></label>
                         <select name="parent_id" id="edit_subcat_parent_id" required>
-                            <option value="">-- নির্বাচন করুন --</option>
+                            <option value="" data-text-bn="-- নির্বাচন করুন --" data-text-en="-- Select --">-- নির্বাচন করুন --</option>
                             @foreach ($categories as $category)
                                 <option value="{{ $category->id }}">{{ $category->name }}</option>
                             @endforeach

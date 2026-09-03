@@ -3,9 +3,8 @@
     title-en="Fund Transfers"
     subtitle="দোকানের এক অ্যাকাউন্ট থেকে অন্য অ্যাকাউন্টে টাকা স্থানান্তরের ইতিহাস"
     subtitle-en="History of fund transfers between accounts"
-    active="accounts"
+    active="account-transfers"
 >
-    <x-finance::account-tabbar active="account-transfers" />
 
     {{-- KPI Cards --}}
     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:20px;">
@@ -138,7 +137,6 @@
             </div>
             <form method="POST" action="{{ route('account-transfers.store') }}" id="create_transfer_modal_form">
                 @csrf
-                <input type="hidden" name="redirect_to" value="account-transfers.index">
                 @include('finance::transfers._form', ['transfer' => $transfer, 'accounts' => $accounts, 'isModal' => true])
             </form>
         </div>

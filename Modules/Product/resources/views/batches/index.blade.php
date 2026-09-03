@@ -11,7 +11,7 @@
         <div class="filters" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
             <div style="min-width:240px;">
                 <select name="filter_product" id="filter-product" style="height:36px; padding:0 12px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--ink-800); font-size:13px; outline:none;">
-                    <option value="">সকল পণ্য (All Products)</option>
+                    <option value="" data-text-bn="সকল পণ্য" data-text-en="All Products">সকল পণ্য</option>
                     @foreach ($products as $p)
                         <option value="{{ $p->id }}">{{ $p->name }} ({{ $p->sku }})</option>
                     @endforeach
@@ -62,7 +62,7 @@
                         <label class="bn">পণ্য <span class="text-danger">*</span></label>
                         <label class="en" style="display:none;">Product <span class="text-danger">*</span></label>
                         <select name="product_id" id="create_batch_product_id" required>
-                            <option value="">-- নির্বাচন করুন --</option>
+                            <option value="" data-text-bn="-- নির্বাচন করুন --" data-text-en="-- Select --">-- নির্বাচন করুন --</option>
                             @foreach ($products as $product)
                                 <option value="{{ $product->id }}" {{ (int) old('product_id') === $product->id ? 'selected' : '' }}>{{ $product->name }} ({{ $product->sku }})</option>
                             @endforeach
@@ -137,7 +137,7 @@
                         <label class="bn">পণ্য <span class="text-danger">*</span></label>
                         <label class="en" style="display:none;">Product <span class="text-danger">*</span></label>
                         <select name="product_id" id="edit_batch_product_id" required>
-                            <option value="">-- নির্বাচন করুন --</option>
+                            <option value="" data-text-bn="-- নির্বাচন করুন --" data-text-en="-- Select --">-- নির্বাচন করুন --</option>
                             @foreach ($products as $product)
                                 <option value="{{ $product->id }}">{{ $product->name }} ({{ $product->sku }})</option>
                             @endforeach
