@@ -128,7 +128,7 @@
     background-color: var(--card);
     border-radius: 9px;
     padding: 6px 12px;
-    font-family: 'Hind Siliguri', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'SolaimanLipi', 'Hind Siliguri', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     font-size: 13px;
     color: var(--ink-900);
     outline: none;
