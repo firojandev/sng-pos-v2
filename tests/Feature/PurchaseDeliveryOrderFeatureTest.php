@@ -380,9 +380,12 @@ class PurchaseDeliveryOrderFeatureTest extends TestCase
             'payment_status' => 'due',
         ]);
 
-        $response = $this->actingAs($this->user)->get(route('purchase.ledger', ['q' => 'PU-PDO-1-1']));
+        $response = $this->actingAs($this->user)->getJson(route('purchase.ledger', ['q' => 'PU-PDO-1-1']), [
+            'X-Requested-With' => 'XMLHttpRequest',
+        ]);
         $response->assertOk();
-        $response->assertSee('PU-PDO-1-1');
-        $response->assertSee($this->supplier->name);
+        $response->assertJsonFragment(['recordsFiltered' => 1]);
+        $this->assertStringContainsString('PU-PDO-1-1', $response->json('data.0.invoice_no'));
+        $this->assertStringContainsString($this->supplier->name, $response->json('data.0.supplier'));
     }
 }

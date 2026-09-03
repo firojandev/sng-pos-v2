@@ -13,6 +13,7 @@ use Modules\Finance\Models\Account;
 use Modules\Product\Models\Batch;
 use Modules\Product\Models\Product;
 use Modules\Product\Models\StockMovement;
+use Modules\Purchase\DataTables\PurchasesDataTable;
 use Modules\Purchase\Http\Requests\StorePurchaseRequest;
 use Modules\Purchase\Http\Requests\UpdatePurchaseRequest;
 use Modules\Purchase\Models\Purchase;
@@ -26,17 +27,34 @@ class PurchaseController extends Controller
         return $this->create();
     }
 
-    public function ledger(Request $request): View
+    public function ledger(PurchasesDataTable $dataTable)
     {
+        $totals = Purchase::query()
+            ->selectRaw('
+                COALESCE(SUM(total), 0) as total_amount,
+                COALESCE(SUM(paid_amount), 0) as total_paid,
+                COALESCE(SUM(due_amount), 0) as total_due,
+                COUNT(id) as total_count
+            ')
+            ->first();
+
+        $totalAmount = (float) ($totals->total_amount ?? 0);
+        $totalPaid = (float) ($totals->total_paid ?? 0);
+        $totalDue = (float) ($totals->total_due ?? 0);
+        $totalCount = (int) ($totals->total_count ?? 0);
+
+        return $dataTable->render('purchase::purchase.ledger', compact('totalAmount', 'totalPaid', 'totalDue', 'totalCount'));
+    }
+
+    public function printLedger(Request $request): View
+    {
+        $from = $request->query('from');
+        $to = $request->query('to');
+        $status = $request->query('status');
         $search = trim((string) $request->query('q', ''));
-        $status = $request->query('status', 'all');
-        $hasCustomDate = $request->filled('from') || $request->filled('to');
 
-        // If searching with a query without explicit dates, do not restrict to current month so matching records from any date appear
-        $from = $request->query('from', ($search !== '' && ! $hasCustomDate) ? '' : now()->startOfMonth()->toDateString());
-        $to = $request->query('to', ($search !== '' && ! $hasCustomDate) ? '' : now()->endOfMonth()->toDateString());
-
-        $query = Purchase::with(['supplier', 'items.product', 'payments']);
+        $query = Purchase::with(['supplier', 'items.product', 'warehouse'])
+            ->latest('purchase_date');
 
         if ($from) {
             $query->whereDate('purchase_date', '>=', $from);
@@ -44,10 +62,13 @@ class PurchaseController extends Controller
         if ($to) {
             $query->whereDate('purchase_date', '<=', $to);
         }
-
+        if ($status && in_array($status, ['paid', 'partial', 'due'], true)) {
+            $query->where('payment_status', $status);
+        }
         if ($search !== '') {
-            $query->where(function ($q) use ($search) {
-                $q->where('invoice_no', 'like', "%{$search}%")
+            $searchClean = ltrim($search, '#');
+            $query->where(function ($q) use ($search, $searchClean) {
+                $q->where('invoice_no', 'like', "%{$searchClean}%")
                     ->orWhere('note', 'like', "%{$search}%")
                     ->orWhereHas('supplier', function ($sq) use ($search) {
                         $sq->where('name', 'like', "%{$search}%")
@@ -63,22 +84,34 @@ class PurchaseController extends Controller
             });
         }
 
-        if (in_array($status, ['paid', 'partial', 'due'], true)) {
-            $query->where('payment_status', $status);
-        }
+        $totals = (clone $query)->selectRaw('
+            COALESCE(SUM(total), 0) as total_amount,
+            COALESCE(SUM(paid_amount), 0) as total_paid,
+            COALESCE(SUM(due_amount), 0) as total_due,
+            COUNT(id) as total_count
+        ')->first();
 
-        $totalAmount = (clone $query)->sum('total');
+        $purchases = $query->get();
+        $shop = Auth::user()?->shop;
 
-        $purchases = $query->latest('purchase_date')->paginate(10)->withQueryString();
-
-        return view('purchase::purchase.ledger', [
+        return view('purchase::purchase.print-ledger', [
             'purchases' => $purchases,
-            'totalAmount' => $totalAmount,
-            'search' => $search,
-            'status' => $status,
-            'from' => $from,
-            'to' => $to,
+            'totals' => $totals,
+            'shop' => $shop,
+            'filters' => [
+                'from' => $from,
+                'to' => $to,
+                'status' => $status,
+                'search' => $search,
+            ],
         ]);
+    }
+
+    public function show(Purchase $purchase): View
+    {
+        $purchase->load(['supplier', 'warehouse', 'items.product', 'payments']);
+
+        return view('purchase::purchase.detail-drawer', compact('purchase'));
     }
 
     public function create(): View
@@ -182,14 +215,21 @@ class PurchaseController extends Controller
         return redirect()->route('purchase.index')->with('status', 'ক্রয় হালনাগাদ করা হয়েছে');
     }
 
-    public function destroy(Purchase $purchase): RedirectResponse
+    public function destroy(Purchase $purchase)
     {
         DB::transaction(function () use ($purchase) {
             $this->revertItems($purchase);
             $purchase->delete();
         });
 
-        return redirect()->route('purchase.index')->with('status', 'ক্রয় বাতিল করা হয়েছে');
+        if (request()->wantsJson() || request()->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'ক্রয় বাতিল করা হয়েছে',
+            ]);
+        }
+
+        return redirect()->route('purchase.ledger')->with('status', 'ক্রয় বাতিল করা হয়েছে');
     }
 
     /**
