@@ -42,6 +42,8 @@ class PurchaseDeliveryOrderFeatureTest extends TestCase
     {
         parent::setUp();
 
+        config(['purchase.delivery_orders_enabled' => true]);
+
         (new SubscriptionifySeeder)->run();
 
         foreach (Permissions::all() as $name) {
@@ -387,5 +389,58 @@ class PurchaseDeliveryOrderFeatureTest extends TestCase
         $response->assertJsonFragment(['recordsFiltered' => 1]);
         $this->assertStringContainsString('PU-PDO-1-1', $response->json('data.0.invoice_no'));
         $this->assertStringContainsString($this->supplier->name, $response->json('data.0.supplier'));
+    }
+
+    public function test_access_is_forbidden_to_all_delivery_order_routes_when_feature_is_disabled(): void
+    {
+        config(['purchase.delivery_orders_enabled' => false]);
+
+        $response = $this->actingAs($this->user)->get(route('purchase-delivery-orders.index'));
+        $response->assertForbidden();
+
+        $createResponse = $this->actingAs($this->user)->get(route('purchase-delivery-orders.create'));
+        $createResponse->assertForbidden();
+
+        $storeResponse = $this->actingAs($this->user)->post(route('purchase-delivery-orders.store'), []);
+        $storeResponse->assertForbidden();
+    }
+
+    public function test_sidebar_hides_delivery_orders_when_disabled(): void
+    {
+        config(['purchase.delivery_orders_enabled' => false]);
+
+        $this->actingAs($this->user);
+        $html = (string) $this->blade('<x-core::sidebar active="purchase" />');
+
+        $this->assertStringNotContainsString('/purchase-delivery-orders', $html);
+        $this->assertStringNotContainsString('ডেলিভারি অর্ডার', $html);
+    }
+
+    public function test_sidebar_shows_delivery_orders_when_enabled(): void
+    {
+        config(['purchase.delivery_orders_enabled' => true]);
+
+        $this->actingAs($this->user);
+        $html = (string) $this->blade('<x-core::sidebar active="purchase" />');
+
+        $this->assertStringContainsString('/purchase-delivery-orders', $html);
+        $this->assertStringContainsString('ডেলিভারি অর্ডার', $html);
+    }
+
+    public function test_sidebar_renders_sales_and_purchase_as_separate_menus(): void
+    {
+        $this->actingAs($this->user);
+        $html = (string) $this->blade('<x-core::sidebar active="sales" />');
+
+        $this->assertStringContainsString('Sales', $html);
+        $this->assertStringContainsString('Purchase', $html);
+        $this->assertStringNotContainsString('Sales & Purchase', $html);
+        $this->assertStringNotContainsString('বিক্রয় ও ক্রয়', $html);
+
+        $salesPos = strpos($html, route('sales.index'));
+        $purchasePos = strpos($html, route('purchase.index'));
+        $this->assertNotFalse($salesPos);
+        $this->assertNotFalse($purchasePos);
+        $this->assertLessThan($purchasePos, $salesPos);
     }
 }
