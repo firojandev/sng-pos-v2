@@ -5,5 +5,5 @@ paths:
 
 # Css
 
-## Always Use SolaimanLipi Font
-Always use 'SolaimanLipi' as the primary font family for the whole website (body, headings, buttons, inputs, selects, tables, and dialogs). Ensure the font stack is: 'SolaimanLipi', 'Hind Siliguri', 'Plus Jakarta Sans', 'Inter', sans-serif. When creating or styling custom elements or views, never override font-family with other Bengali fonts (such as raw Hind Siliguri or Baloo Da 2 alone); always place 'SolaimanLipi' first. Include SolaimanLipi stylesheet link or use @font-face from public/fonts/.
+## Always Use Noto Sans Bengali Font
+Always use 'Noto Sans Bengali' as the primary font family for the whole website (body, headings, buttons, inputs, selects, tables, and dialogs). Ensure the font stack is: 'Noto Sans Bengali', 'SolaimanLipi', 'Hind Siliguri', 'Plus Jakarta Sans', 'Inter', sans-serif. When creating or styling custom elements or views, never override font-family with other Bengali fonts alone; always place 'Noto Sans Bengali' first. Include the Google Fonts Noto Sans Bengali link or use local @font-face from public/fonts/.

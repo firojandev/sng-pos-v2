@@ -34,6 +34,7 @@ Confirmation Dialog Standards:
 ## Always Use Core Table Empty State Component (<x-core::table.empty>)
 ALWAYS use the `<x-core::table.empty>` component (located in `Modules/Core/resources/views/components/table/empty.blade.php`) inside the `@empty` block of all tables and data grids. Provide appropriate `icon`, `title`, `title-en`, and optional `description` / `description-en` props. Never use raw unstyled text or simple `helper` divs for empty table states. In BaseDataTable, styled empty state markup with icon and bilingual text is used for `emptyTable` and `zeroRecords`.
 
-## Typography & Font Standards (Always Use SolaimanLipi)
-ALWAYS use `'SolaimanLipi'` as the primary Bengali font family across the whole website (body, headings `h1`-`h6`, buttons, inputs, selects, tables, and dialogs). Ensure the font stack is: `'SolaimanLipi', 'Hind Siliguri', 'Plus Jakarta Sans', 'Inter', sans-serif`. When creating or styling custom elements or views, never override font-family with standalone Bengali fonts (such as raw Hind Siliguri or Baloo Da 2 alone); always place `'SolaimanLipi'` first. Include the SolaimanLipi stylesheet link (`https://fonts.maateen.me/solaiman-lipi/font.css`) or local `@font-face` from `public/fonts/`.
+## Typography & Font Standards (Always Use Noto Sans Bengali)
+ALWAYS use `'Noto Sans Bengali'` as the primary Bengali font family across the whole website (body, headings `h1`-`h6`, buttons, inputs, selects, tables, and dialogs). Ensure the font stack is: `'Noto Sans Bengali', 'SolaimanLipi', 'Hind Siliguri', 'Plus Jakarta Sans', 'Inter', sans-serif`. When creating or styling custom elements or views, never override font-family with standalone Bengali fonts alone; always place `'Noto Sans Bengali'` first. Include the Google Fonts link (`https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&display=swap`) or local `@font-face` from `public/fonts/`.
+
 

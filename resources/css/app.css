@@ -1,6 +1,16 @@
 @import "sweetalert2/dist/sweetalert2.min.css";
 
-/* ============ SOLAIMANLIPI FONT DEFINITIONS ============ */
+/* ============ NOTO SANS BENGALI & SOLAIMANLIPI FONT DEFINITIONS ============ */
+@font-face {
+  font-family: 'Noto Sans Bengali';
+  font-display: swap;
+  font-style: normal;
+  font-weight: 100 900;
+  src: local('Noto Sans Bengali'), local('NotoSansBengali'),
+       url('/fonts/noto-sans-bengali.woff2') format('woff2'),
+       url('/fonts/noto-sans-bengali-variable.ttf') format('truetype');
+}
+
 @font-face {
   font-family: 'SolaimanLipi';
   font-display: swap;
@@ -121,8 +131,8 @@
 }
 
 *{box-sizing:border-box; margin:0; padding:0;}
-body{font-family:'SolaimanLipi','Hind Siliguri','Plus Jakarta Sans','Inter',sans-serif; background:var(--paper); color:var(--ink-900); font-size:14px; -webkit-font-smoothing:antialiased;}
-h1, h2, h3, h4, h5, h6 { font-family: 'SolaimanLipi', 'Baloo Da 2', 'Plus Jakarta Sans', sans-serif; }
+body{font-family:'Noto Sans Bengali','SolaimanLipi','Hind Siliguri','Plus Jakarta Sans','Inter',sans-serif; background:var(--paper); color:var(--ink-900); font-size:14px; -webkit-font-smoothing:antialiased;}
+h1, h2, h3, h4, h5, h6 { font-family: 'Noto Sans Bengali', 'SolaimanLipi', 'Baloo Da 2', 'Plus Jakarta Sans', sans-serif; }
 button, input, select, textarea, optgroup { font-family: inherit; }
 .bn { display: inline; }
 .en { display: none !important; }
@@ -142,8 +152,8 @@ html.lang-en td.bn, body.lang-en td.bn { display: none !important; }
 html.lang-en th.en, body.lang-en th.en,
 html.lang-en td.en, body.lang-en td.en { display: table-cell !important; }
 
-html.lang-en body, body.lang-en { font-family: 'Plus Jakarta Sans', 'Inter', 'SolaimanLipi', 'Hind Siliguri', sans-serif; }
-html.lang-en .display, body.lang-en .display { font-family: 'Plus Jakarta Sans', 'Manrope', 'SolaimanLipi', 'Baloo Da 2', sans-serif; }
+html.lang-en body, body.lang-en { font-family: 'Plus Jakarta Sans', 'Inter', 'Noto Sans Bengali', 'SolaimanLipi', 'Hind Siliguri', sans-serif; }
+html.lang-en .display, body.lang-en .display { font-family: 'Plus Jakarta Sans', 'Manrope', 'Noto Sans Bengali', 'SolaimanLipi', 'Baloo Da 2', sans-serif; }
 a{color:inherit; text-decoration:none;}
 button{font-family:inherit; cursor:pointer;}
 
@@ -168,16 +178,16 @@ button{font-family:inherit; cursor:pointer;}
   width:38px; height:38px; border-radius:10px;
   background:linear-gradient(135deg, #0D9488 0%, #14B8A6 100%);
   display:flex; align-items:center; justify-content:center;
-  font-family:'SolaimanLipi','Baloo Da 2',sans-serif; font-weight:800; color:#FFFFFF; font-size:18px; flex:0 0 auto;
+  font-family:'Noto Sans Bengali','SolaimanLipi','Baloo Da 2',sans-serif; font-weight:800; color:#FFFFFF; font-size:18px; flex:0 0 auto;
   box-shadow:0 4px 14px rgba(13,148,136,.35);
 }
 .side-head .nm{
   display:flex; flex-direction:column; justify-content:center;
-  font-family:'SolaimanLipi','Baloo Da 2',sans-serif; font-weight:700; font-size:17px; color:#F8FAFC;
+  font-family:'Noto Sans Bengali','SolaimanLipi','Baloo Da 2',sans-serif; font-weight:700; font-size:17px; color:#F8FAFC;
 }
 .side-head .nm .brand-title{line-height:1.2;}
 .side-head .nm .brand-accent{color:#14B8A6;}
-.side-head .nm .brand-tagline{font-family:'SolaimanLipi','Hind Siliguri','Inter',sans-serif; font-weight:500; font-size:11px; color:#64748B; margin-top:1px; line-height:1.2;}
+.side-head .nm .brand-tagline{font-family:'Noto Sans Bengali','SolaimanLipi','Hind Siliguri','Inter',sans-serif; font-weight:500; font-size:11px; color:#64748B; margin-top:1px; line-height:1.2;}
 .side-close{
   margin-left:auto; display:none; width:30px; height:30px; border-radius:8px;
   background:rgba(255,255,255,.08); align-items:center; justify-content:center;
@@ -246,7 +256,7 @@ button{font-family:inherit; cursor:pointer;}
   width:34px; height:34px; border-radius:10px;
   background:linear-gradient(135deg, #0D9488 0%, #0891B2 100%);
   color:#FFFFFF; display:flex; align-items:center; justify-content:center;
-  font-family:'SolaimanLipi','Baloo Da 2',sans-serif; font-weight:700; font-size:14px; flex:0 0 auto;
+  font-family:'Noto Sans Bengali','SolaimanLipi','Baloo Da 2',sans-serif; font-weight:700; font-size:14px; flex:0 0 auto;
 }
 .side-user-card .user-info{min-width:0; flex:1;}
 .side-foot .nm, .side-user-card .nm{font-size:12.5px; font-weight:600; color:#F8FAFC; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
@@ -362,7 +372,7 @@ html.sidebar-collapsed-init .side-user-card .av{
   transform-origin:12px 12px;
 }
 .topbar .titles{min-width:0; display:flex; flex-direction:column; justify-content:center;}
-.topbar .titles h1{font-family:'SolaimanLipi','Baloo Da 2','Plus Jakarta Sans',sans-serif; font-size:19px; font-weight:700; color:var(--ink-900); letter-spacing:-.01em; margin:0; line-height:1.2;}
+.topbar .titles h1{font-family:'Noto Sans Bengali','SolaimanLipi','Baloo Da 2','Plus Jakarta Sans',sans-serif; font-size:19px; font-weight:700; color:var(--ink-900); letter-spacing:-.01em; margin:0; line-height:1.2;}
 .topbar .titles p{font-size:12px; color:var(--ink-600); margin:2px 0 0 0; line-height:1.3;}
 .top-search{
   flex:1; max-width:380px; display:flex; align-items:center; gap:9px;
@@ -370,7 +380,7 @@ html.sidebar-collapsed-init .side-user-card .av{
   border-radius:10px; padding:7px 12px; margin-left:12px; transition:all .15s ease;
 }
 .top-search:focus-within{border-color:var(--teal-800); box-shadow:0 0 0 3px rgba(13,148,136,.12); background:var(--card);}
-.top-search input{border:none; background:transparent; outline:none; font-family:'SolaimanLipi','Hind Siliguri','Inter',sans-serif; font-size:13px; flex:1; color:var(--ink-900);}
+.top-search input{border:none; background:transparent; outline:none; font-family:'Noto Sans Bengali','SolaimanLipi','Hind Siliguri','Inter',sans-serif; font-size:13px; flex:1; color:var(--ink-900);}
 .top-search .search-kbd{font-size:10px; font-weight:700; color:var(--ink-400); background:var(--card); border:1px solid var(--border); border-radius:6px; padding:2px 6px; font-family:'Inter',monospace;}
 
 .top-actions{margin-left:auto; display:flex; align-items:center; gap:12px;}
@@ -381,7 +391,7 @@ html.sidebar-collapsed-init .side-user-card .av{
   align-items: center;
   gap: 6px;
   user-select: none;
-  font-family: 'SolaimanLipi', 'Hind Siliguri', 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-family: 'Noto Sans Bengali', 'SolaimanLipi', 'Hind Siliguri', 'Plus Jakarta Sans', 'Inter', sans-serif;
   font-size: 11.5px;
   line-height: 1;
 }
@@ -606,7 +616,7 @@ html.sidebar-collapsed-init .side-user-card .av{
   width:36px; height:36px; border-radius:10px;
   background:linear-gradient(135deg, #0D9488 0%, #0891B2 100%);
   color:#fff; display:flex; align-items:center; justify-content:center;
-  font-family:'SolaimanLipi','Baloo Da 2',sans-serif; font-weight:700; font-size:14px;
+  font-family:'Noto Sans Bengali','SolaimanLipi','Baloo Da 2',sans-serif; font-weight:700; font-size:14px;
   box-shadow:0 2px 8px rgba(13,148,136,.25);
 }
 
@@ -640,14 +650,14 @@ html.sidebar-collapsed-init .side-user-card .av{
 
 .panel{background:var(--card); border:1px solid var(--border); border-radius:var(--radius); margin-top:16px; box-shadow:var(--shadow-card);}
 .panel-head{display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border); position:relative;}
-.panel-title{font-family:'SolaimanLipi','Baloo Da 2',sans-serif; font-size:16px; font-weight:700; color:var(--ink-900);}
+.panel-title{font-family:'Noto Sans Bengali','SolaimanLipi','Baloo Da 2',sans-serif; font-size:16px; font-weight:700; color:var(--ink-900);}
 .panel-body{padding:18px 20px 20px;}
 
 .section-row{display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom:16px;}
 .filters{display:flex; gap:8px; flex-wrap:wrap; flex:1;}
 .filters select, .filters input{
   border:1px solid var(--border); background:var(--card); border-radius:10px; padding:9px 12px;
-  font-size:12.5px; color:var(--ink-900); font-family:'SolaimanLipi','Hind Siliguri',sans-serif; outline:none;
+  font-size:12.5px; color:var(--ink-900); font-family:'Noto Sans Bengali','SolaimanLipi','Hind Siliguri',sans-serif; outline:none;
 }
 .filters select:focus, .filters input:focus{border-color:var(--teal-800); box-shadow:0 0 0 3px rgba(13,148,136,.12);}
 .search-inline{
@@ -694,7 +704,7 @@ html.sidebar-collapsed-init .side-user-card .av{
   min-height: var(--btn-height);
   font-size: var(--btn-font-size);
   font-weight: var(--btn-font-weight);
-  font-family: 'SolaimanLipi', 'Hind Siliguri', 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-family: 'Noto Sans Bengali', 'SolaimanLipi', 'Hind Siliguri', 'Plus Jakarta Sans', 'Inter', sans-serif;
   line-height: 1.25;
   white-space: nowrap;
   vertical-align: middle;
@@ -1619,7 +1629,7 @@ tbody tr:hover{background:var(--paper);}
 .cell-main{font-weight:700;}
 .cell-sub{font-size:11px; color:var(--ink-600); font-weight:400; margin-top:2px;}
 .row-avatar{display:flex; align-items:center; gap:10px;}
-.row-avatar .av{width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-family:'SolaimanLipi','Baloo Da 2',sans-serif; font-weight:700; font-size:12px; color:#fff; flex:0 0 auto;}
+.row-avatar .av{width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-family:'Noto Sans Bengali','SolaimanLipi','Baloo Da 2',sans-serif; font-weight:700; font-size:12px; color:#fff; flex:0 0 auto;}
 
 .badge {
   display: inline-flex;
@@ -1679,7 +1689,7 @@ tbody tr:hover{background:var(--paper);}
 
 .pagination{display:flex; align-items:center; justify-content:space-between; margin-top:16px; font-size:12px; color:var(--ink-600); flex-wrap:wrap; gap:10px;}
 .pg-btns{display:flex; gap:6px; align-items:center; flex-wrap:wrap;}
-.pg-btns button, .pg-btns a{width:30px; height:30px; border-radius:8px; border:1px solid var(--border); background:var(--card); font-size:12px; font-weight:700; color:var(--ink-600); display:inline-flex; align-items:center; justify-content:center; font-family:'SolaimanLipi','Hind Siliguri',sans-serif; transition:all .15s ease;}
+.pg-btns button, .pg-btns a{width:30px; height:30px; border-radius:8px; border:1px solid var(--border); background:var(--card); font-size:12px; font-weight:700; color:var(--ink-600); display:inline-flex; align-items:center; justify-content:center; font-family:'Noto Sans Bengali','SolaimanLipi','Hind Siliguri',sans-serif; transition:all .15s ease;}
 .pg-btns a:hover{background:var(--paper); border-color:var(--ink-400);}
 .pg-btns button.active{background:var(--teal-800); color:#fff; border-color:var(--teal-800); box-shadow:0 2px 6px rgba(13,148,136,.3);}
 .pg-btns button:disabled{opacity:.4; cursor:not-allowed;}
@@ -1700,13 +1710,13 @@ tbody tr:hover{background:var(--paper);}
 }
 @keyframes slidein{from{transform:translateX(30px); opacity:0;} to{transform:translateX(0); opacity:1;}}
 .drawer-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid var(--border);}
-.drawer-title{font-family:'SolaimanLipi','Baloo Da 2',sans-serif; font-size:18px; font-weight:700; color:var(--ink-900);}
+.drawer-title{font-family:'Noto Sans Bengali','SolaimanLipi','Baloo Da 2',sans-serif; font-size:18px; font-weight:700; color:var(--ink-900);}
 .drawer-x{width:32px; height:32px; border-radius:9px; background:var(--card); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; color:var(--ink-600); cursor:pointer;}
 .drawer-x:hover{background:var(--paper); color:var(--ink-900);}
 .field{margin-top:14px;}
 .field label{font-size:12px; font-weight:700; color:var(--ink-600); display:block; margin-bottom:6px;}
 .field input, .field select, .field textarea{
-  width:100%; border:1px solid var(--border); background:var(--card); border-radius:10px; padding:10px 13px; font-family:'SolaimanLipi','Hind Siliguri',sans-serif; font-size:13px; color:var(--ink-900); outline:none; transition:all .15s ease;
+  width:100%; border:1px solid var(--border); background:var(--card); border-radius:10px; padding:10px 13px; font-family:'Noto Sans Bengali','SolaimanLipi','Hind Siliguri',sans-serif; font-size:13px; color:var(--ink-900); outline:none; transition:all .15s ease;
 }
 .field textarea{resize:vertical; min-height:64px;}
 .field input:focus, .field select:focus, .field textarea:focus{border-color:var(--teal-800); box-shadow:0 0 0 3px rgba(13,148,136,.12);}
@@ -1736,7 +1746,7 @@ tbody tr:hover{background:var(--paper);}
 .modal-backdrop.open{display:flex;}
 .modal-box{width:420px; max-width:100%; background:var(--paper); border-radius:14px; padding:22px; border:1px solid var(--border); box-shadow:0 20px 25px -5px rgba(0,0,0,.2); animation:slidein .18s ease;}
 .modal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
-.modal-title{font-family:'SolaimanLipi','Baloo Da 2',sans-serif; font-size:17px; font-weight:700;}
+.modal-title{font-family:'Noto Sans Bengali','SolaimanLipi','Baloo Da 2',sans-serif; font-size:17px; font-weight:700;}
 
 /* Modal Scrollbar - Thin & Sleek */
 .modal,
@@ -1900,7 +1910,7 @@ body.mobile-preview .dash-2col{grid-template-columns:1fr !important;}
 .cash-page-head{display:flex; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px;}
 .cash-page-head .back{width:36px; height:36px; border-radius:10px; background:var(--card); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; flex:0 0 auto; color:var(--ink-700);}
 .cash-page-head .back:hover{background:var(--paper);}
-.cash-page-head .ttl{font-family:'SolaimanLipi','Baloo Da 2',sans-serif; font-size:19px; font-weight:700;}
+.cash-page-head .ttl{font-family:'Noto Sans Bengali','SolaimanLipi','Baloo Da 2',sans-serif; font-size:19px; font-weight:700;}
 .cash-page-head .actions{margin-left:auto; display:flex; flex-wrap:wrap; gap:8px; align-items:center;}
 @media (max-width:900px){ .cash-summary{grid-template-columns:1fr;} }
 
@@ -1908,11 +1918,11 @@ body.mobile-preview .dash-2col{grid-template-columns:1fr !important;}
 .pos-overlay{position:fixed; inset:0; background:var(--paper); z-index:150; display:none; flex-direction:column;}
 .pos-overlay.open{display:flex;}
 .pos-header{background:var(--card); border-bottom:1px solid var(--border); padding:14px 24px; display:flex; align-items:flex-end; gap:16px; flex-wrap:wrap; position:relative;}
-.pos-header .ttl{font-family:'SolaimanLipi','Baloo Da 2',sans-serif; font-size:18px; font-weight:700;}
+.pos-header .ttl{font-family:'Noto Sans Bengali','SolaimanLipi','Baloo Da 2',sans-serif; font-size:18px; font-weight:700;}
 .pos-header .meta{font-size:11.5px; color:var(--ink-600); margin-top:2px;}
 .pos-header .fld{display:flex; flex-direction:column; gap:4px;}
 .pos-header .fld label{font-size:11px; font-weight:700; color:var(--ink-600);}
-.pos-header .fld input, .pos-header .fld select{border:1px solid var(--border); border-radius:9px; padding:8px 12px; font-size:12.5px; font-family:'SolaimanLipi','Hind Siliguri',sans-serif; background:var(--paper); outline:none;}
+.pos-header .fld input, .pos-header .fld select{border:1px solid var(--border); border-radius:9px; padding:8px 12px; font-size:12.5px; font-family:'Noto Sans Bengali','SolaimanLipi','Hind Siliguri',sans-serif; background:var(--paper); outline:none;}
 .pos-header .fld.party select{min-width:190px;}
 .pos-header .fld.invno input{width:110px; text-align:center; font-weight:700; color:var(--teal-800);}
 .pos-close{margin-left:auto; width:36px; height:36px; border-radius:10px; background:var(--paper); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer;}
@@ -1925,14 +1935,14 @@ table.pos-table{width:100%; border-collapse:collapse; min-width:820px;}
 .pos-table thead th{background:var(--paper); font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-600); font-weight:700; padding:11px 12px; text-align:left; border-bottom:1px solid var(--border); white-space:nowrap;}
 .pos-table tbody td{padding:8px 10px; border-bottom:1px solid var(--paper-line); vertical-align:middle;}
 .pos-table tbody tr:hover{background:var(--paper);}
-.pos-table input, .pos-table select{width:100%; border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-size:12.5px; font-family:'SolaimanLipi','Hind Siliguri',sans-serif; background:var(--card); outline:none;}
+.pos-table input, .pos-table select{width:100%; border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-size:12.5px; font-family:'Noto Sans Bengali','SolaimanLipi','Hind Siliguri',sans-serif; background:var(--card); outline:none;}
 .pos-table .lt{font-weight:800; font-family:'Plus Jakarta Sans','Manrope',sans-serif; font-size:12.5px; white-space:nowrap;}
 .pos-rm{width:30px; height:30px; border-radius:8px; background:var(--red-100); color:var(--red-600); border:none; font-size:13px; display:flex; align-items:center; justify-content:center; cursor:pointer;}
 .pos-addrow{margin-top:14px; width:100%; border:1.6px dashed var(--border); background:transparent; border-radius:11px; padding:11px; font-weight:700; font-size:12.5px; color:var(--teal-800); display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all .15s ease;}
 .pos-addrow:hover{border-color:var(--teal-800); background:var(--teal-100);}
 
 .payment-line{display:flex; gap:6px; margin-bottom:7px; align-items:center;}
-.payment-line select, .payment-line input{border:1px solid var(--border); background:var(--card); border-radius:8px; padding:8px 10px; font-size:12.5px; font-family:'SolaimanLipi','Hind Siliguri',sans-serif; outline:none;}
+.payment-line select, .payment-line input{border:1px solid var(--border); background:var(--card); border-radius:8px; padding:8px 10px; font-size:12.5px; font-family:'Noto Sans Bengali','SolaimanLipi','Hind Siliguri',sans-serif; outline:none;}
 .payment-line select{flex:1.3; min-width:0;}
 .payment-line input{flex:1; min-width:0; font-family:'Plus Jakarta Sans','Manrope',sans-serif; text-align:right;}
 .payment-line .pos-rm{flex:0 0 auto; width:30px; height:30px;}
@@ -1942,12 +1952,12 @@ table.pos-table{width:100%; border-collapse:collapse; min-width:820px;}
 .sum-row{display:flex; justify-content:space-between; align-items:center; padding:9px 0; font-size:12.5px; border-bottom:1px solid var(--paper-line); gap:10px;}
 .sum-row .sum-label{color:var(--ink-600); font-weight:600;}
 .sum-row.total{border-bottom:none; padding-top:14px;}
-.sum-row.total .sum-label{color:var(--ink-900); font-family:'SolaimanLipi','Baloo Da 2',sans-serif; font-weight:700; font-size:15px;}
+.sum-row.total .sum-label{color:var(--ink-900); font-family:'Noto Sans Bengali','SolaimanLipi','Baloo Da 2',sans-serif; font-weight:700; font-size:15px;}
 .sum-row.total b{font-family:'Plus Jakarta Sans','Manrope',sans-serif; font-weight:800; font-size:20px; color:var(--teal-800);}
 .disc-row{display:flex; gap:6px;}
-.disc-row select{width:76px; border:1px solid var(--border); border-radius:8px; padding:6px 6px; font-size:11px; font-family:'SolaimanLipi','Hind Siliguri',sans-serif;}
+.disc-row select{width:76px; border:1px solid var(--border); border-radius:8px; padding:6px 6px; font-size:11px; font-family:'Noto Sans Bengali','SolaimanLipi','Hind Siliguri',sans-serif;}
 .disc-row input{width:84px; border:1px solid var(--border); border-radius:8px; padding:6px 8px; font-size:12px; text-align:right; font-family:'Plus Jakarta Sans','Manrope',sans-serif;}
-.tax-select{width:112px; border:1px solid var(--border); border-radius:8px; padding:6px 8px; font-size:11.5px; font-family:'SolaimanLipi','Hind Siliguri',sans-serif;}
+.tax-select{width:112px; border:1px solid var(--border); border-radius:8px; padding:6px 8px; font-size:11.5px; font-family:'Noto Sans Bengali','SolaimanLipi','Hind Siliguri',sans-serif;}
 
 @media (max-width:900px){
   .pos-body{flex-direction:column;}
@@ -1997,7 +2007,7 @@ table.pos-table{width:100%; border-collapse:collapse; min-width:820px;}
 .cart-item .ci-grid.ci-grid-6{grid-template-columns:0.7fr 0.9fr 0.9fr 0.9fr 1.2fr 0.9fr; gap:6px;}
 .cart-item .ci-grid label{display:block; font-size:10px; font-weight:700; color:var(--ink-600); margin-bottom:3px;}
 .cart-item .ci-grid input, .cart-item .ci-grid select{width:100%; border:1px solid var(--border); border-radius:8px; padding:7px 8px; font-size:12px; font-family:'Plus Jakarta Sans','Manrope',sans-serif;}
-.cart-item .ci-grid select{font-family:'SolaimanLipi','Hind Siliguri',sans-serif; font-size:11.5px;}
+.cart-item .ci-grid select{font-family:'Noto Sans Bengali','SolaimanLipi','Hind Siliguri',sans-serif; font-size:11.5px;}
 .cart-item .ci-grid.ci-grid-6 label{font-size:9px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .cart-item .ci-grid.ci-grid-6 input, .cart-item .ci-grid.ci-grid-6 select{padding:6px 5px; font-size:11px;}
 .cart-item .ci-grid .ci-unit-price{background:var(--paper); color:var(--ink-600);}
@@ -2013,7 +2023,7 @@ table.pos-table{width:100%; border-collapse:collapse; min-width:820px;}
 .item-popover .fld{margin-bottom:8px;}
 .item-popover .fld:last-child{margin-bottom:0;}
 .item-popover label{display:block; font-size:10px; font-weight:700; color:var(--ink-600); margin-bottom:3px;}
-.item-popover input{width:100%; border:1px solid var(--border); border-radius:8px; padding:7px 8px; font-size:12px; font-family:'SolaimanLipi','Hind Siliguri',sans-serif; background:var(--card);}
+.item-popover input{width:100%; border:1px solid var(--border); border-radius:8px; padding:7px 8px; font-size:12px; font-family:'Noto Sans Bengali','SolaimanLipi','Hind Siliguri',sans-serif; background:var(--card);}
 
 .cart-item .ci-actions .warranty-toggle-btn.has-value{width:auto; height:auto; min-height:26px; padding:4px 8px; gap:5px;}
 .cart-item .ci-actions .warranty-toggle-btn .ci-warranty-label{display:none;}
@@ -2024,7 +2034,7 @@ table.pos-table{width:100%; border-collapse:collapse; min-width:820px;}
 .warranty-presets button:hover{border-color:var(--teal-800); background:var(--teal-100); color:var(--teal-800);}
 .warranty-custom{display:flex; gap:6px; align-items:center;}
 .warranty-custom input{flex:1; min-width:0; border:1px solid var(--border); border-radius:8px; padding:7px 8px; font-size:12px;}
-.warranty-custom select{border:1px solid var(--border); border-radius:8px; padding:7px 6px; font-size:11.5px; font-family:'SolaimanLipi','Hind Siliguri',sans-serif;}
+.warranty-custom select{border:1px solid var(--border); border-radius:8px; padding:7px 6px; font-size:11.5px; font-family:'Noto Sans Bengali','SolaimanLipi','Hind Siliguri',sans-serif;}
 .warranty-custom .btn{flex:0 0 auto;}
 .warranty-clear{margin-top:8px; text-align:center;}
 .warranty-clear button{background:none; border:none; color:var(--red-600); font-size:11px; font-weight:700; cursor:pointer;}
@@ -3781,7 +3791,7 @@ table.dataTable thead th.dt-orderable-none::after {
 
 /* ============ SWEETALERT2 STYLES ============ */
 .app-swal-popup {
-  font-family: 'SolaimanLipi', 'Hind Siliguri', 'Plus Jakarta Sans', 'Inter', sans-serif !important;
+  font-family: 'Noto Sans Bengali', 'SolaimanLipi', 'Hind Siliguri', 'Plus Jakarta Sans', 'Inter', sans-serif !important;
   border-radius: var(--radius, 14px) !important;
   border: 1px solid var(--border) !important;
   box-shadow: 0 20px 40px rgba(0,0,0,0.18) !important;

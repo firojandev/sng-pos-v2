@@ -38,12 +38,12 @@
 - For custom programmatic confirmation prompts, use `Swal.fire({ ... })` or `window.confirmDelete(options)`.
 
 ## Typography & Font Standards
-- **Always use `SolaimanLipi` font across the entire website**:
-  - The primary Bengali font family must always be `'SolaimanLipi'` (with `'Hind Siliguri'`, `'Plus Jakarta Sans'`, `'Inter'`, `sans-serif` as fallback).
-  - Headings (`h1`-`h6`), page titles, topbar titles, and modal/drawer headers must use `'SolaimanLipi', 'Baloo Da 2', 'Plus Jakarta Sans', sans-serif`.
-  - All form controls (`input`, `select`, `textarea`, `button`) must inherit or specify `'SolaimanLipi'`.
-  - Never override font-family with standalone `Hind Siliguri` or `Baloo Da 2` without placing `'SolaimanLipi'` first.
-  - When creating new layouts or document views, always include the SolaimanLipi font stylesheet (`<link rel="stylesheet" href="https://fonts.maateen.me/solaiman-lipi/font.css">`) or local `@font-face` from `public/fonts/`.
+- **Always use `Noto Sans Bengali` font across the entire website**:
+  - The primary Bengali font family must always be `'Noto Sans Bengali'` (with `'SolaimanLipi'`, `'Hind Siliguri'`, `'Plus Jakarta Sans'`, `'Inter'`, `sans-serif` as fallback).
+  - Headings (`h1`-`h6`), page titles, topbar titles, and modal/drawer headers must use `'Noto Sans Bengali', 'SolaimanLipi', 'Baloo Da 2', 'Plus Jakarta Sans', sans-serif`.
+  - All form controls (`input`, `select`, `textarea`, `button`) must inherit or specify `'Noto Sans Bengali'`.
+  - Never override font-family with standalone `Hind Siliguri` or `Baloo Da 2` without placing `'Noto Sans Bengali'` first.
+  - When creating new layouts or document views, always include the Google Fonts link for Noto Sans Bengali (`https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&display=swap`) or local `@font-face` from `public/fonts/`.
 
 ===
 
