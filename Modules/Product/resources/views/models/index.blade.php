@@ -11,7 +11,7 @@
         <div class="filters" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
             <div style="min-width:220px;">
                 <select name="filter_brand" id="filter-brand" style="height:36px; padding:0 12px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--ink-800); font-size:13px; outline:none;">
-                    <option value="">সকল ব্র্যান্ড (All Brands)</option>
+                    <option value="" data-text-bn="সকল ব্র্যান্ড" data-text-en="All Brands">সকল ব্র্যান্ড</option>
                     @foreach ($brands as $b)
                         <option value="{{ $b->id }}">{{ $b->name }}</option>
                     @endforeach
@@ -62,7 +62,7 @@
                         <label class="bn">ব্র্যান্ড <span class="text-danger">*</span></label>
                         <label class="en" style="display:none;">Brand <span class="text-danger">*</span></label>
                         <select name="brand_id" id="create_model_brand_id" required>
-                            <option value="">-- নির্বাচন করুন --</option>
+                            <option value="" data-text-bn="-- নির্বাচন করুন --" data-text-en="-- Select --">-- নির্বাচন করুন --</option>
                             @foreach ($brands as $brand)
                                 <option value="{{ $brand->id }}" {{ (int) old('brand_id') === $brand->id ? 'selected' : '' }}>{{ $brand->name }}</option>
                             @endforeach
@@ -115,7 +115,7 @@
                         <label class="bn">ব্র্যান্ড <span class="text-danger">*</span></label>
                         <label class="en" style="display:none;">Brand <span class="text-danger">*</span></label>
                         <select name="brand_id" id="edit_model_brand_id" required>
-                            <option value="">-- নির্বাচন করুন --</option>
+                            <option value="" data-text-bn="-- নির্বাচন করুন --" data-text-en="-- Select --">-- নির্বাচন করুন --</option>
                             @foreach ($brands as $brand)
                                 <option value="{{ $brand->id }}">{{ $brand->name }}</option>
                             @endforeach

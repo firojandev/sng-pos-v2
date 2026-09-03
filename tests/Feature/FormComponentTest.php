@@ -28,6 +28,17 @@ class FormComponentTest extends TestCase
         $this->assertStringContainsString('form-input-btn', $rendered);
     }
 
+    public function test_renders_number_input_with_modern_stepper(): void
+    {
+        $rendered = Blade::render('<x-core::input type="number" name="quantity" value="5" min="1" max="100" />');
+
+        $this->assertStringContainsString('type="number"', $rendered);
+        $this->assertStringContainsString('has-stepper', $rendered);
+        $this->assertStringContainsString('form-input-stepper', $rendered);
+        $this->assertStringContainsString('form-stepper-up', $rendered);
+        $this->assertStringContainsString('form-stepper-down', $rendered);
+    }
+
     public function test_renders_select_component(): void
     {
         $opts = ['active' => 'Active', 'inactive' => 'Inactive'];
@@ -37,6 +48,29 @@ class FormComponentTest extends TestCase
         $this->assertStringContainsString('Choose status', $rendered);
         $this->assertStringContainsString('value="active"', $rendered);
         $this->assertStringContainsString('Active', $rendered);
+    }
+
+    public function test_select_component_parses_bilingual_options_without_displaying_dual_text(): void
+    {
+        $opts = [
+            '' => 'সকল ধরন (All Types)',
+            'cash' => 'নগদ (Cash)',
+            'bank' => 'ব্যাংক (Bank)',
+        ];
+        $rendered = Blade::render('<x-core::select name="type" :options="$opts" placeholder="-- নির্বাচন করুন (Select Type) --" />', ['opts' => $opts]);
+
+        $this->assertStringContainsString('data-text-bn="সকল ধরন"', $rendered);
+        $this->assertStringContainsString('data-text-en="All Types"', $rendered);
+        $this->assertStringContainsString('data-text-bn="নগদ"', $rendered);
+        $this->assertStringContainsString('data-text-en="Cash"', $rendered);
+        $this->assertStringContainsString('data-text-bn="-- নির্বাচন করুন --"', $rendered);
+        $this->assertStringContainsString('data-text-en="-- Select Type --"', $rendered);
+
+        // Crucial: Option text itself should not show the English parenthetical simultaneously
+        $this->assertStringNotContainsString('>সকল ধরন (All Types)<', $rendered);
+        $this->assertStringNotContainsString('>নগদ (Cash)<', $rendered);
+        $this->assertStringContainsString('>সকল ধরন<', $rendered);
+        $this->assertStringContainsString('>নগদ<', $rendered);
     }
 
     public function test_renders_textarea_component(): void

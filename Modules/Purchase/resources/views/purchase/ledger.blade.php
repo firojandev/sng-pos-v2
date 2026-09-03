@@ -29,7 +29,7 @@
         <div class="filters">
             <div class="search-inline">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#8B978F" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="#8B978F" stroke-width="2" stroke-linecap="round"/></svg>
-                <input type="text" name="q" value="{{ $search }}" placeholder="নাম অথবা মোবাইল দিয়ে খোঁজ করুন">
+                <input type="text" name="q" value="{{ $search }}" placeholder="ইনভয়েস নং, সরবরাহকারী বা পণ্য দিয়ে খোঁজ করুন...">
             </div>
             <input type="date" name="from" value="{{ $from }}">
             <input type="date" name="to" value="{{ $to }}">

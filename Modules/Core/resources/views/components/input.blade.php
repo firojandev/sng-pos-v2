@@ -18,6 +18,7 @@
     'addonRight' => null,
     'clearable' => false,
     'passwordToggle' => false,
+    'stepper' => true,
     'required' => false,
     'disabled' => false,
     'readonly' => false,
@@ -107,6 +108,9 @@
     if (in_array($size, ['xs', 'sm', 'md', 'lg', 'xl'])) $groupClasses[] = 'form-input-group-' . $size;
     if ($rounded === 'pill') $groupClasses[] = 'form-rounded-pill';
 
+    $hasStepper = ($type === 'number' && $stepper && ! $disabled && ! $readonly);
+    if ($hasStepper) $groupClasses[] = 'has-stepper';
+
     $hasWrapper = (bool) ($label || $helper || $hasError);
 @endphp
 
@@ -178,6 +182,17 @@
                 </span>
             @endif
 
+            @if ($hasStepper)
+                <div class="form-input-stepper" tabindex="-1">
+                    <button type="button" class="form-stepper-btn form-stepper-up" tabindex="-1" aria-label="Increase">
+                        <svg viewBox="0 0 24 24" width="8" height="8" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+                    </button>
+                    <button type="button" class="form-stepper-btn form-stepper-down" tabindex="-1" aria-label="Decrease">
+                        <svg viewBox="0 0 24 24" width="8" height="8" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                    </button>
+                </div>
+            @endif
+
             @if ($rightAddon)
                 <span class="form-input-addon form-input-addon-right">{{ $rightAddon }}</span>
             @endif
@@ -236,6 +251,17 @@
             <span class="form-input-icon form-input-icon-right">
                 <x-core::icon :name="$iconRight" />
             </span>
+        @endif
+
+        @if ($hasStepper)
+            <div class="form-input-stepper" tabindex="-1">
+                <button type="button" class="form-stepper-btn form-stepper-up" tabindex="-1" aria-label="Increase">
+                    <svg viewBox="0 0 24 24" width="8" height="8" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+                </button>
+                <button type="button" class="form-stepper-btn form-stepper-down" tabindex="-1" aria-label="Decrease">
+                    <svg viewBox="0 0 24 24" width="8" height="8" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+            </div>
         @endif
 
         @if ($rightAddon)

@@ -30,17 +30,36 @@ class PurchaseController extends Controller
     {
         $search = trim((string) $request->query('q', ''));
         $status = $request->query('status', 'all');
-        $from = $request->query('from', now()->startOfMonth()->toDateString());
-        $to = $request->query('to', now()->endOfMonth()->toDateString());
+        $hasCustomDate = $request->filled('from') || $request->filled('to');
 
-        $query = Purchase::with(['supplier', 'items.product', 'payments'])
-            ->whereDate('purchase_date', '>=', $from)
-            ->whereDate('purchase_date', '<=', $to);
+        // If searching with a query without explicit dates, do not restrict to current month so matching records from any date appear
+        $from = $request->query('from', ($search !== '' && ! $hasCustomDate) ? '' : now()->startOfMonth()->toDateString());
+        $to = $request->query('to', ($search !== '' && ! $hasCustomDate) ? '' : now()->endOfMonth()->toDateString());
+
+        $query = Purchase::with(['supplier', 'items.product', 'payments']);
+
+        if ($from) {
+            $query->whereDate('purchase_date', '>=', $from);
+        }
+        if ($to) {
+            $query->whereDate('purchase_date', '<=', $to);
+        }
 
         if ($search !== '') {
-            $query->whereHas('supplier', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%");
+            $query->where(function ($q) use ($search) {
+                $q->where('invoice_no', 'like', "%{$search}%")
+                    ->orWhere('note', 'like', "%{$search}%")
+                    ->orWhereHas('supplier', function ($sq) use ($search) {
+                        $sq->where('name', 'like', "%{$search}%")
+                            ->orWhere('phone', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('items', function ($iq) use ($search) {
+                        $iq->where('batch_no', 'like', "%{$search}%")
+                            ->orWhereHas('product', function ($pq) use ($search) {
+                                $pq->where('name', 'like', "%{$search}%")
+                                    ->orWhere('sku', 'like', "%{$search}%");
+                            });
+                    });
             });
         }
 

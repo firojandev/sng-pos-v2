@@ -11,7 +11,7 @@
         <div class="filters" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
             <div style="min-width:190px;">
                 <select name="filter_category" id="filter-category" style="height:36px; padding:0 12px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--ink-800); font-size:13px; outline:none;">
-                    <option value="">সকল ক্যাটাগরি (All Categories)</option>
+                    <option value="" data-text-bn="সকল ক্যাটাগরি" data-text-en="All Categories">সকল ক্যাটাগরি</option>
                     @foreach ($categories as $cat)
                         <option value="{{ $cat->id }}">{{ $cat->name }}</option>
                     @endforeach
@@ -19,7 +19,7 @@
             </div>
             <div style="min-width:180px;">
                 <select name="filter_brand" id="filter-brand" style="height:36px; padding:0 12px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--ink-800); font-size:13px; outline:none;">
-                    <option value="">সকল ব্র্যান্ড (All Brands)</option>
+                    <option value="" data-text-bn="সকল ব্র্যান্ড" data-text-en="All Brands">সকল ব্র্যান্ড</option>
                     @foreach ($brands as $b)
                         <option value="{{ $b->id }}">{{ $b->name }}</option>
                     @endforeach
@@ -27,9 +27,9 @@
             </div>
             <div style="min-width:160px;">
                 <select name="filter_status" id="filter-status" style="height:36px; padding:0 12px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--ink-800); font-size:13px; outline:none;">
-                    <option value="">সকল অবস্থা (All Status)</option>
-                    <option value="active">সক্রিয় (Active)</option>
-                    <option value="inactive">নিষ্ক্রিয় (Inactive)</option>
+                    <option value="" data-text-bn="সকল অবস্থা" data-text-en="All Status">সকল অবস্থা</option>
+                    <option value="active" data-text-bn="সক্রিয়" data-text-en="Active">সক্রিয়</option>
+                    <option value="inactive" data-text-bn="নিষ্ক্রিয়" data-text-en="Inactive">নিষ্ক্রিয়</option>
                 </select>
             </div>
             <x-core::button

@@ -39,15 +39,15 @@
                 <input type="text" name="q" value="{{ $search }}" placeholder="পণ্য খুঁজে করুন">
             </div>
             <select name="sort" onchange="this.form.submit()">
-                <option value="newest" @selected($sort === 'newest')>নতুন থেকে পুরাতন</option>
-                <option value="oldest" @selected($sort === 'oldest')>পুরাতন থেকে নতুন</option>
-                <option value="qty_desc" @selected($sort === 'qty_desc')>মজুদ (বেশি-কম)</option>
-                <option value="qty_asc" @selected($sort === 'qty_asc')>মজুদ (কম-বেশি)</option>
+                <option value="newest" data-text-bn="নতুন থেকে পুরাতন" data-text-en="Newest First" @selected($sort === 'newest')>নতুন থেকে পুরাতন</option>
+                <option value="oldest" data-text-bn="পুরাতন থেকে নতুন" data-text-en="Oldest First" @selected($sort === 'oldest')>পুরাতন থেকে নতুন</option>
+                <option value="qty_desc" data-text-bn="মজুদ (বেশি-কম)" data-text-en="Stock (High-Low)" @selected($sort === 'qty_desc')>মজুদ (বেশি-কম)</option>
+                <option value="qty_asc" data-text-bn="মজুদ (কম-বেশি)" data-text-en="Stock (Low-High)" @selected($sort === 'qty_asc')>মজুদ (কম-বেশি)</option>
             </select>
             <select name="filter" onchange="this.form.submit()">
-                <option value="all" @selected($filter === 'all')>All ({{ $allCount }})</option>
-                <option value="low" @selected($filter === 'low')>নিম্ন মজুদ ({{ $lowCount }})</option>
-                <option value="out" @selected($filter === 'out')>স্টক আউট ({{ $outCount }})</option>
+                <option value="all" data-text-bn="সব ({{ $allCount }})" data-text-en="All ({{ $allCount }})" @selected($filter === 'all')>সব ({{ $allCount }})</option>
+                <option value="low" data-text-bn="নিম্ন মজুদ ({{ $lowCount }})" data-text-en="Low Stock ({{ $lowCount }})" @selected($filter === 'low')>নিম্ন মজুদ ({{ $lowCount }})</option>
+                <option value="out" data-text-bn="স্টক আউট ({{ $outCount }})" data-text-en="Stock Out ({{ $outCount }})" @selected($filter === 'out')>স্টক আউট ({{ $outCount }})</option>
             </select>
         </div>
         <div class="total-pill">

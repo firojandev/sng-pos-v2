@@ -5,6 +5,7 @@ namespace Modules\Purchase\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Core\Concerns\BelongsToShop;
 use Modules\Core\Observers\AuditObserver;
@@ -59,5 +60,10 @@ class Purchase extends Model
     public function returns(): HasMany
     {
         return $this->hasMany(PurchaseReturn::class);
+    }
+
+    public function deliveryReceipt(): HasOne
+    {
+        return $this->hasOne(PurchaseDeliveryReceipt::class);
     }
 }

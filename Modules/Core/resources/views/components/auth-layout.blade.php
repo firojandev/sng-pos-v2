@@ -31,7 +31,8 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&family=Baloo+Da+2:wght@500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.maateen.me/solaiman-lipi/font.css">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
@@ -61,7 +62,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: 'Baloo Da 2', sans-serif;
+            font-family: 'Noto Sans Bengali', 'SolaimanLipi', 'Baloo Da 2', sans-serif;
             font-weight: 800;
             color: var(--primary-text);
             font-size: 22px;
@@ -71,7 +72,7 @@
         .auth-title {
             display: block;
             width: 100%;
-            font-family: 'Baloo Da 2', sans-serif;
+            font-family: 'Noto Sans Bengali', 'SolaimanLipi', 'Baloo Da 2', sans-serif;
             font-size: 20px;
             font-weight: 700;
             text-align: center;

@@ -4,6 +4,7 @@
     'value' => null,
     'options' => [],
     'placeholder' => null,
+    'placeholderEn' => null,
     'size' => 'md',
     'variant' => 'outline',
     'color' => 'teal',
@@ -91,6 +92,61 @@
     if ($rounded === 'pill') $groupClasses[] = 'form-rounded-pill';
 
     $hasWrapper = (bool) ($label || $helper || $hasError);
+
+    $formatOption = function ($key, $val, $selectedVal) {
+        $keyStr = (string) $key;
+        $isSelected = false;
+        if (is_array($selectedVal)) {
+            $isSelected = in_array($keyStr, array_map('strval', $selectedVal));
+        } else {
+            $isSelected = ((string) $selectedVal === $keyStr);
+        }
+
+        $textBn = null;
+        $textEn = null;
+        if (is_array($val)) {
+            $textBn = $val['bn'] ?? ($val[0] ?? '');
+            $textEn = $val['en'] ?? ($val[1] ?? $textBn);
+        } elseif (is_string($val) && preg_match('/^(--\s*)?(.+?)\s*\(([^)]+)\)(\s*--)?$/u', $val, $m)) {
+            $prefix = $m[1] ?? '';
+            $part1 = trim($m[2] ?? '');
+            $part2 = trim($m[3] ?? '');
+            $suffix = $m[4] ?? '';
+            if (preg_match('/[\x{0980}-\x{09FF}]/u', $part1) && preg_match('/[a-zA-Z]/', $part2)) {
+                $textBn = $prefix . $part1 . $suffix;
+                $textEn = $prefix . $part2 . $suffix;
+            }
+        }
+
+        $display = $textBn ?? (is_array($val) ? ($val['bn'] ?? '') : $val);
+
+        $attrs = ' value="' . e($key) . '"';
+        if ($isSelected) {
+            $attrs .= ' selected';
+        }
+        if ($textBn && $textEn) {
+            $attrs .= ' data-text-bn="' . e($textBn) . '" data-text-en="' . e($textEn) . '"';
+        }
+
+        return '<option' . $attrs . '>' . e($display) . '</option>';
+    };
+
+    $formatPlaceholder = function ($pl, $plEn, $selectedVal) {
+        $pBn = $pl;
+        $pEn = $plEn;
+        if (! $pEn && is_string($pl) && preg_match('/^(--\s*)?(.+?)\s*\(([^)]+)\)(\s*--)?$/u', $pl, $pm)) {
+            $pBn = ($pm[1] ?? '') . trim($pm[2] ?? '') . ($pm[4] ?? '');
+            $pEn = ($pm[1] ?? '') . trim($pm[3] ?? '') . ($pm[4] ?? '');
+        }
+
+        $isSelected = ($selectedVal === null || $selectedVal === '');
+        $attrs = ' value=""' . ($isSelected ? ' selected' : '') . ' disabled';
+        if ($pEn) {
+            $attrs .= ' data-text-bn="' . e($pBn) . '" data-text-en="' . e($pEn) . '"';
+        }
+
+        return '<option' . $attrs . '>' . e($pBn) . '</option>';
+    };
 @endphp
 
 @if ($hasWrapper)
@@ -123,25 +179,12 @@
                 {{ $attributes->merge(['class' => implode(' ', $controlClasses)]) }}
             >
                 @if ($placeholder)
-                    <option value="" @if ($selectedValue === null || $selectedValue === '') selected @endif disabled>
-                        {{ $placeholder }}
-                    </option>
+                    {!! $formatPlaceholder($placeholder, $placeholderEn, $selectedValue) !!}
                 @endif
 
                 @if (!empty($options))
                     @foreach ($options as $optKey => $optVal)
-                        @php
-                            $optKeyStr = (string) $optKey;
-                            $isSelected = false;
-                            if (is_array($selectedValue)) {
-                                $isSelected = in_array($optKeyStr, array_map('strval', $selectedValue));
-                            } else {
-                                $isSelected = ((string) $selectedValue === $optKeyStr);
-                            }
-                        @endphp
-                        <option value="{{ $optKey }}" @if ($isSelected) selected @endif>
-                            {{ $optVal }}
-                        </option>
+                        {!! $formatOption($optKey, $optVal, $selectedValue) !!}
                     @endforeach
                 @else
                     {{ $slot }}
@@ -166,25 +209,12 @@
             {{ $attributes->merge(['class' => implode(' ', $controlClasses)]) }}
         >
             @if ($placeholder)
-                <option value="" @if ($selectedValue === null || $selectedValue === '') selected @endif disabled>
-                    {{ $placeholder }}
-                </option>
+                {!! $formatPlaceholder($placeholder, $placeholderEn, $selectedValue) !!}
             @endif
 
             @if (!empty($options))
                 @foreach ($options as $optKey => $optVal)
-                    @php
-                        $optKeyStr = (string) $optKey;
-                        $isSelected = false;
-                        if (is_array($selectedValue)) {
-                            $isSelected = in_array($optKeyStr, array_map('strval', $selectedValue));
-                        } else {
-                            $isSelected = ((string) $selectedValue === $optKeyStr);
-                        }
-                    @endphp
-                    <option value="{{ $optKey }}" @if ($isSelected) selected @endif>
-                        {{ $optVal }}
-                    </option>
+                    {!! $formatOption($optKey, $optVal, $selectedValue) !!}
                 @endforeach
             @else
                 {{ $slot }}

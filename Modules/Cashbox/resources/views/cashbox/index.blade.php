@@ -27,13 +27,13 @@
     <form method="GET" action="{{ route('cashbox.index') }}" class="section-row" style="margin-bottom:16px;">
         <div class="filters">
             <select name="type" onchange="this.form.submit()">
-                <option value="all" @selected($type === 'all')>সব লেনদেন</option>
-                <option value="cash_in" @selected($type === 'cash_in')>ক্যাশ ইন</option>
-                <option value="cash_out" @selected($type === 'cash_out')>ক্যাশ আউট</option>
-                <option value="sale" @selected($type === 'sale')>বেচা</option>
-                <option value="purchase" @selected($type === 'purchase')>কেনা</option>
-                <option value="income" @selected($type === 'income')>আয়</option>
-                <option value="expense" @selected($type === 'expense')>ব্যয়</option>
+                <option value="all" data-text-bn="সব লেনদেন" data-text-en="All Transactions" @selected($type === 'all')>সব লেনদেন</option>
+                <option value="cash_in" data-text-bn="ক্যাশ ইন" data-text-en="Cash In" @selected($type === 'cash_in')>ক্যাশ ইন</option>
+                <option value="cash_out" data-text-bn="ক্যাশ আউট" data-text-en="Cash Out" @selected($type === 'cash_out')>ক্যাশ আউট</option>
+                <option value="sale" data-text-bn="বেচা" data-text-en="Sales" @selected($type === 'sale')>বেচা</option>
+                <option value="purchase" data-text-bn="কেনা" data-text-en="Purchases" @selected($type === 'purchase')>কেনা</option>
+                <option value="income" data-text-bn="আয়" data-text-en="Income" @selected($type === 'income')>আয়</option>
+                <option value="expense" data-text-bn="ব্যয়" data-text-en="Expense" @selected($type === 'expense')>ব্যয়</option>
             </select>
 
             <input type="date" name="from" value="{{ $from }}">
@@ -41,7 +41,7 @@
 
             @if ($creators->count())
                 <select name="creator" onchange="this.form.submit()">
-                    <option value="">সব ({{ $creators->count() }})</option>
+                    <option value="" data-text-bn="সব ({{ $creators->count() }})" data-text-en="All ({{ $creators->count() }})">সব ({{ $creators->count() }})</option>
                     @foreach ($creators as $user)
                         <option value="{{ $user->id }}" @selected((string) $creator === (string) $user->id)>{{ $user->name }}</option>
                     @endforeach

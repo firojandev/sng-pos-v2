@@ -81,6 +81,14 @@ $navGroups = [
                 'icon' => '<path d="M4 4h16v16H4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 9h8M8 13h8M8 17h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
             ],
             [
+                'key' => 'purchase-delivery-orders',
+                'permission' => 'purchase',
+                'route' => 'purchase-delivery-orders.index',
+                'bn' => 'ডেলিভারি অর্ডার',
+                'en' => 'Delivery Orders',
+                'icon' => '<rect x="1" y="3" width="15" height="13" rx="2" stroke="currentColor" stroke-width="1.6"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" stroke="currentColor" stroke-width="1.6"/><circle cx="5.5" cy="18.5" r="2.5" stroke="currentColor" stroke-width="1.6"/><circle cx="18.5" cy="18.5" r="2.5" stroke="currentColor" stroke-width="1.6"/>',
+            ],
+            [
                 'key' => 'sales-ledger',
                 'permission' => 'sales',
                 'route' => 'sales.ledger',

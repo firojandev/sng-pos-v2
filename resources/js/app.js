@@ -122,6 +122,105 @@ const placeholderMap = {
     'খুঁজুন...': 'Search...',
 };
 
+const commonSelectPhrases = {
+    '-- নির্বাচন করুন --': '-- Select --',
+    '-- নির্বাচন করুন (ঐচ্ছিক) --': '-- Select (Optional) --',
+    '-- নির্বাচন করুন (ডিফল্ট অ্যাকাউন্ট) --': '-- Select (Default Account) --',
+    '-- নির্বাচন করুন (Select Category) --': '-- Select Category --',
+    '-- কোনো ব্র্যান্ড নেই --': '-- No Brand --',
+    '-- কোনো সাব-ক্যাটাগরি নেই --': '-- No Sub-category --',
+    'সব লেনদেন': 'All Transactions',
+    'ক্যাশ ইন': 'Cash In',
+    'ক্যাশ আউট': 'Cash Out',
+    'বেচা': 'Sales',
+    'কেনা': 'Purchases',
+    'আয়': 'Income',
+    'ব্যয়': 'Expense',
+    'বৃদ্ধি (ইন)': 'Increase (In)',
+    'হ্রাস (আউট)': 'Decrease (Out)',
+    'মজুদ (বেশি-কম)': 'Stock (High-Low)',
+    'মজুদ (কম-বেশি)': 'Stock (Low-High)',
+    'নিম্ন মজুদ': 'Low Stock',
+    'স্টক আউট': 'Stock Out',
+};
+
+function initSelectOption(opt) {
+    const $opt = $(opt);
+    if ($opt.attr('data-text-en') && $opt.attr('data-text-bn')) {
+        return;
+    }
+
+    let en = $opt.attr('data-en') || $opt.attr('data-text-en');
+    let bn = $opt.attr('data-bn') || $opt.attr('data-text-bn');
+
+    // Handle options with child spans like <span class="bn">...</span><span class="en">...</span>
+    const $bnSpan = $opt.find('.bn');
+    const $enSpan = $opt.find('.en');
+    if ($bnSpan.length && $enSpan.length) {
+        bn = $bnSpan.text().trim();
+        en = $enSpan.text().trim();
+        $opt.empty();
+    }
+
+    if (!en || !bn) {
+        const rawText = $opt.text().trim();
+
+        if (commonSelectPhrases[rawText]) {
+            bn = rawText;
+            en = commonSelectPhrases[rawText];
+        } else {
+            // Regex matches: "সকল ক্যাটাগরি (All Categories)", "সক্রিয় (Active)", "-- কোনো ব্র্যান্ড নেই (None) --"
+            const match = rawText.match(/^(--\s*)?(.+?)\s*\(([^)]+)\)(\s*--)?$/);
+            if (match) {
+                const prefix = match[1] || '';
+                const part1 = match[2].trim();
+                const part2 = match[3].trim();
+                const suffix = match[4] || '';
+
+                const hasBn = /[\u0980-\u09FF]/.test(part1);
+                const hasEn = /[a-zA-Z]/.test(part2);
+
+                if (hasBn && hasEn) {
+                    bn = prefix + part1 + suffix;
+                    en = prefix + part2 + suffix;
+                }
+            }
+        }
+    }
+
+    if (bn && en) {
+        $opt.attr('data-text-bn', bn);
+        $opt.attr('data-text-en', en);
+    }
+}
+
+function initSelectOptionsLang($container) {
+    const $scope = $container ? $($container) : $(document);
+    $scope.find('select option').each(function () {
+        initSelectOption(this);
+    });
+}
+
+function updateSelectOptionsText(isEn, $container) {
+    const $scope = $container ? $($container) : $(document);
+    $scope.find('select option[data-text-en]').each(function () {
+        const en = $(this).attr('data-text-en');
+        const bn = $(this).attr('data-text-bn');
+        if (en && bn) {
+            const targetText = isEn ? en : bn;
+            if (this.text !== targetText) {
+                this.text = targetText;
+            }
+        }
+    });
+}
+
+window.updateSelectOptionsLang = function ($container) {
+    const isEn = (localStorage.getItem('lang') || 'bn') === 'en';
+    initSelectOptionsLang($container);
+    updateSelectOptionsText(isEn, $container);
+};
+
 function setLang(lang) {
     const isEn = lang === 'en';
     $('html').toggleClass('lang-en', isEn);
@@ -141,6 +240,10 @@ function setLang(lang) {
         $(this).attr('placeholder', isEn ? en : bn);
     });
     $('.dataTables_filter input, .dt-search input').attr('placeholder', isEn ? 'Search...' : 'এখানে লিখুন...');
+
+    initSelectOptionsLang();
+    updateSelectOptionsText(isEn);
+
     localStorage.setItem('lang', lang);
 }
 
@@ -153,8 +256,32 @@ function initLang() {
             $(this).attr('data-placeholder-bn', $(this).attr('placeholder'));
         }
     });
+    initSelectOptionsLang();
     const currentLang = localStorage.getItem('lang') || 'bn';
     setLang(currentLang);
+
+    if (window.MutationObserver) {
+        const selectObserver = new MutationObserver(function (mutations) {
+            let hasNewSelect = false;
+            for (let i = 0; i < mutations.length; i++) {
+                const added = mutations[i].addedNodes;
+                for (let j = 0; j < added.length; j++) {
+                    const node = added[j];
+                    if (node.nodeType === 1 && (node.nodeName === 'SELECT' || node.nodeName === 'OPTION' || (node.querySelector && node.querySelector('select')))) {
+                        hasNewSelect = true;
+                        break;
+                    }
+                }
+                if (hasNewSelect) break;
+            }
+            if (hasNewSelect) {
+                const isEn = (localStorage.getItem('lang') || 'bn') === 'en';
+                initSelectOptionsLang();
+                updateSelectOptionsText(isEn);
+            }
+        });
+        selectObserver.observe(document.body, { childList: true, subtree: true });
+    }
 }
 
 /* ---------------- Keyboard Shortcuts & Listeners ---------------- */
@@ -563,6 +690,7 @@ $(function () {
     initDeleteConfirmBehaviors();
     initAccordionBehaviors();
     initStatusSwitcherBehaviors();
+    initNumberStepperBehaviors();
 
     // Initialize Lucide Icons globally
     createIcons({ icons });
@@ -572,6 +700,37 @@ $(function () {
         createIcons({ icons });
     });
 });
+
+/* ---------------- Modern Number Input Stepper ---------------- */
+function initNumberStepperBehaviors() {
+    $(document).on('click', '.form-stepper-btn', function (e) {
+        e.preventDefault();
+        const isUp = $(this).hasClass('form-stepper-up');
+        const $input = $(this).closest('.form-input-group').find('input[type="number"]');
+        if (!$input.length) return;
+        const inp = $input[0];
+        if (inp.disabled || inp.readOnly) return;
+
+        try {
+            if (isUp) {
+                inp.stepUp();
+            } else {
+                inp.stepDown();
+            }
+        } catch (err) {
+            const step = parseFloat(inp.step) || 1;
+            const val = parseFloat(inp.value) || 0;
+            const min = inp.min !== '' ? parseFloat(inp.min) : -Infinity;
+            const max = inp.max !== '' ? parseFloat(inp.max) : Infinity;
+            let next = isUp ? val + step : val - step;
+            if (next < min) next = min;
+            if (next > max) next = max;
+            const decimals = (step.toString().split('.')[1] || '').length;
+            inp.value = decimals > 0 ? next.toFixed(decimals) : next;
+        }
+        $input.trigger('input').trigger('change');
+    });
+}
 
 
 
