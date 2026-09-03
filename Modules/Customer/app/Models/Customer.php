@@ -17,6 +17,11 @@ class Customer extends Model
         'opening_due' => 'decimal:2',
     ];
 
+    public function setOpeningDueAttribute($value): void
+    {
+        $this->attributes['opening_due'] = ($value === null || $value === '') ? 0 : $value;
+    }
+
     public function sales(): HasMany
     {
         return $this->hasMany(Sale::class);

@@ -26,7 +26,9 @@ class CustomerController extends Controller
 
     public function store(StoreCustomerRequest $request): RedirectResponse|JsonResponse
     {
-        $customer = Customer::create($request->validated());
+        $data = $request->validated();
+        $data['opening_due'] = $data['opening_due'] ?? 0;
+        $customer = Customer::create($data);
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
@@ -59,7 +61,11 @@ class CustomerController extends Controller
 
     public function update(UpdateCustomerRequest $request, Customer $customer): RedirectResponse|JsonResponse
     {
-        $customer->update($request->validated());
+        $data = $request->validated();
+        if (array_key_exists('opening_due', $data)) {
+            $data['opening_due'] = $data['opening_due'] ?? 0;
+        }
+        $customer->update($data);
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([

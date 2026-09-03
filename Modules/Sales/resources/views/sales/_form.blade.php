@@ -135,9 +135,31 @@
     <div class="pos-cart">
         <div class="cart-head">
             <div class="ct"><span class="bn">পণ্য নির্বাচন করেছেন: (</span><span class="en" style="display:none;">Products selected: (</span><span id="cart-count">0</span>)</div>
-            <button type="button" class="clear-cart" id="clear-cart-btn"><span class="bn">কার্ট খালি করুন</span><span class="en">Clear cart</span></button>
+            <x-core::button type="button" variant="soft" color="danger" size="sm" icon="trash-2" id="clear-cart-btn">
+                <span class="bn">কার্ট খালি করুন</span><span class="en">Clear cart</span>
+            </x-core::button>
         </div>
-        <div id="cart-list" class="cart-list"></div>
+        <div id="cart-list" class="cart-list">
+            <div class="cart-empty">
+                <div class="cart-empty-icon">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+                    <span class="cart-empty-badge">0</span>
+                </div>
+                <div class="cart-empty-title">
+                    <span class="bn">কার্ট খালি রয়েছে</span>
+                    <span class="en" style="display:none;">Your cart is empty</span>
+                </div>
+                <div class="cart-empty-desc">
+                    <span class="bn">বিক্রয় তালিকায় যোগ করতে ক্যাটালগ থেকে পণ্য নির্বাচন করুন</span>
+                    <span class="en" style="display:none;">Select items from the catalog to add to invoice</span>
+                </div>
+                <div class="cart-empty-hint">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    <span class="bn">ক্যাটালগ থেকে পণ্য যোগ করুন</span>
+                    <span class="en" style="display:none;">Choose items from catalog</span>
+                </div>
+            </div>
+        </div>
 
         <div class="cart-totals">
             <div class="sum-row">
@@ -371,7 +393,11 @@
             return '<div class="catalog-item" data-id="' + pid + '">' +
                 '<div class="thumb"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="8" height="8" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="13" y="4" width="8" height="8" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="14" width="8" height="6" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="13" y="14" width="8" height="6" rx="1.6" stroke="currentColor" stroke-width="1.6"/></svg></div>' +
                 '<div class="info"><div class="nm">' + escapeHtml(p.name) + '</div><div class="meta">৳' + fmt(p.price) + ' | স্টক: ' + fmt(p.stock).replace(/\.00$/, '') + '</div></div>' +
-                '<div class="add-btn"><button type="button" class="add-to-cart-btn" data-id="' + pid + '">Add</button>' + (count ? '<span class="count">' + fmt(count).replace(/\.00$/, '') + '</span>' : '') + '</div>' +
+                '<div class="add-btn">' +
+                    '<button type="button" class="decrease-from-cart-btn" data-id="' + pid + '" title="পরিমাণ হ্রাস করুন"' + (count > 0 ? '' : ' disabled') + '><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>' +
+                    (count ? '<span class="count">' + fmt(count).replace(/\.00$/, '') + '</span>' : '') +
+                    '<button type="button" class="add-to-cart-btn" data-id="' + pid + '" title="পরিমাণ বৃদ্ধি করুন"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>' +
+                '</div>' +
             '</div>';
         }).join('');
     }
@@ -395,9 +421,35 @@
         renderAll();
     }
 
+    function decreaseFromCart(productId) {
+        let index = -1;
+        for (let i = cart.length - 1; i >= 0; i--) {
+            if (String(cart[i].productId) === String(productId)) {
+                index = i;
+                break;
+            }
+        }
+        if (index === -1) return;
+
+        if (cart[index].qty > 1) {
+            cart[index].qty -= 1;
+        } else {
+            cart.splice(index, 1);
+        }
+        renderAll();
+    }
+
     catalogList.addEventListener('click', (e) => {
-        const btn = e.target.closest('.add-to-cart-btn');
-        if (btn) addToCart(btn.dataset.id);
+        const incBtn = e.target.closest('.add-to-cart-btn');
+        if (incBtn) {
+            addToCart(incBtn.dataset.id);
+            return;
+        }
+        const decBtn = e.target.closest('.decrease-from-cart-btn');
+        if (decBtn && !decBtn.disabled) {
+            decreaseFromCart(decBtn.dataset.id);
+            return;
+        }
     });
 
     catalogSearch.addEventListener('input', renderCatalog);
@@ -430,7 +482,25 @@
         cartCount.textContent = cart.length;
 
         if (cart.length === 0) {
-            cartList.innerHTML = '<div class="cart-empty"><span class="bn">কার্ট খালি</span><span class="en">Cart is empty</span></div>';
+            cartList.innerHTML = '<div class="cart-empty">' +
+                '<div class="cart-empty-icon">' +
+                    '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>' +
+                    '<span class="cart-empty-badge">0</span>' +
+                '</div>' +
+                '<div class="cart-empty-title">' +
+                    '<span class="bn">কার্ট খালি রয়েছে</span>' +
+                    '<span class="en" style="display:none;">Your cart is empty</span>' +
+                '</div>' +
+                '<div class="cart-empty-desc">' +
+                    '<span class="bn">বিক্রয় তালিকায় যোগ করতে ক্যাটালগ থেকে পণ্য নির্বাচন করুন</span>' +
+                    '<span class="en" style="display:none;">Select items from the catalog to add to invoice</span>' +
+                '</div>' +
+                '<div class="cart-empty-hint">' +
+                    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>' +
+                    '<span class="bn">ক্যাটালগ থেকে পণ্য যোগ করুন</span>' +
+                    '<span class="en" style="display:none;">Choose items from catalog</span>' +
+                '</div>' +
+            '</div>';
             return;
         }
 

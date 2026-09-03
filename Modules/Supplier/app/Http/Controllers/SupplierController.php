@@ -26,7 +26,9 @@ class SupplierController extends Controller
 
     public function store(StoreSupplierRequest $request): RedirectResponse|JsonResponse
     {
-        $supplier = Supplier::create($request->validated());
+        $data = $request->validated();
+        $data['opening_due'] = $data['opening_due'] ?? 0;
+        $supplier = Supplier::create($data);
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
@@ -59,7 +61,11 @@ class SupplierController extends Controller
 
     public function update(UpdateSupplierRequest $request, Supplier $supplier): RedirectResponse|JsonResponse
     {
-        $supplier->update($request->validated());
+        $data = $request->validated();
+        if (array_key_exists('opening_due', $data)) {
+            $data['opening_due'] = $data['opening_due'] ?? 0;
+        }
+        $supplier->update($data);
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([

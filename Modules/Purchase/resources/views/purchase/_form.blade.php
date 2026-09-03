@@ -27,9 +27,16 @@
         ];
     }
 
-    $supplierData = $suppliers->map(fn ($s) => [
-        'id' => $s->id, 'name' => $s->name, 'phone' => $s->phone, 'address' => $s->address,
-    ])->values();
+    $supplierData = $suppliers->map(function ($s) {
+        $due = round((float) ($s->opening_due ?? 0) + (float) ($s->purchases_sum_due_amount ?? 0), 2);
+        return [
+            'id' => $s->id,
+            'name' => $s->name,
+            'phone' => $s->phone,
+            'address' => $s->address,
+            'due' => $due,
+        ];
+    })->values();
 
     $employeeData = $employees->map(fn ($e) => ['name' => $e->name, 'phone' => $e->phone])->values();
 
@@ -37,6 +44,7 @@
         ? $purchase->items->map(fn ($item) => [
             'product_id' => (int) $item->product_id,
             'qty' => rtrim(rtrim(number_format($item->quantity, 2, '.', ''), '0'), '.'),
+            'received_qty' => rtrim(rtrim(number_format($item->received_qty ?? 0, 2, '.', ''), '0'), '.'),
             'price' => rtrim(rtrim(number_format($item->purchase_price, 2, '.', ''), '0'), '.'),
             'salePrice' => rtrim(rtrim(number_format($item->product->sale_price ?? 0, 2, '.', ''), '0'), '.'),
             'unitId' => null,
@@ -62,6 +70,10 @@
     $defaultAccount = $accounts->firstWhere('is_default', true) ?? $accounts->first();
     $initialAccountId = old('payments.0.account_id', $purchase->exists ? optional($purchase->payments->first())->account_id : $defaultAccount?->id);
     $initialPaymentMethod = old('payments.0.method', $purchase->exists ? optional($purchase->payments->first())->method : 'cash');
+    $initialDoNumber = old('do_number', $purchase->do_number ?? '');
+    $initialDoDate = old('do_date', isset($purchase->do_date) ? (is_string($purchase->do_date) ? $purchase->do_date : optional($purchase->do_date)->format('Y-m-d')) : '');
+    $initialVehicleNumber = old('vehicle_number', $purchase->vehicle_number ?? '');
+    $initialDeliveryPersonName = old('delivery_person_name', $purchase->delivery_person_name ?? '');
 @endphp
 
 <script id="purchase-products-data" type="application/json">{!! json_encode($productData) !!}</script>
@@ -84,22 +96,95 @@
         </div>
     </div>
 
-    <div class="fld">
-        <label class="bn">গুদাম</label><label class="en" style="display:none;">Warehouse</label>
-        <select name="warehouse_id" required>
+
+    <div style="width: 190px; flex-shrink: 0;">
+        <x-core::select
+            name="warehouse_id"
+            label="গুদাম"
+            label-en="Warehouse"
+            size="sm"
+            required
+            :no-margin="true"
+        >
             <option value="">-- নির্বাচন করুন --</option>
             @foreach ($warehouses as $warehouse)
                 <option value="{{ $warehouse->id }}" {{ (string) old('warehouse_id', $purchase->warehouse_id ?? optional($warehouses->first())->id) === (string) $warehouse->id ? 'selected' : '' }}>{{ $warehouse->name }} @if($warehouse->branch) ({{ $warehouse->branch->name }}) @endif</option>
             @endforeach
-        </select>
+        </x-core::select>
     </div>
 
-    <div class="fld">
-        <label class="bn">তারিখ</label><label class="en" style="display:none;">Date</label>
-        <input type="date" name="purchase_date" id="purchase-date-input" value="{{ old('purchase_date', optional($purchase->purchase_date)->format('Y-m-d') ?? now()->format('Y-m-d')) }}" required>
+    <div style="width: 145px; flex-shrink: 0;">
+        <x-core::input
+            type="date"
+            name="purchase_date"
+            id="purchase-date-input"
+            label="তারিখ"
+            label-en="Date"
+            size="sm"
+            required
+            :no-margin="true"
+            value="{{ old('purchase_date', optional($purchase->purchase_date)->format('Y-m-d') ?? now()->format('Y-m-d')) }}"
+        />
     </div>
 
-    <a href="{{ route('purchase.ledger') }}" class="pos-close" title="Back">&times;</a>
+    <div style="width: 140px; flex-shrink: 0;">
+        <x-core::input
+            type="text"
+            name="do_number"
+            id="do-number-input"
+            label="ডিও নম্বর"
+            label-en="D.O. Number"
+            size="sm"
+            :no-margin="true"
+            placeholder="ডিও নম্বর"
+            placeholder-en="D.O. No"
+            value="{{ $initialDoNumber }}"
+            required
+        />
+    </div>
+
+    <div style="width: 145px; flex-shrink: 0;">
+        <x-core::input
+            type="date"
+            name="do_date"
+            id="do-date-input"
+            label="ডিও তারিখ"
+            label-en="D.O. Date"
+            size="sm"
+            :no-margin="true"
+            value="{{ $initialDoDate }}"
+            required
+        />
+    </div>
+
+    <div style="width: 155px; flex-shrink: 0;">
+        <x-core::input
+            type="text"
+            name="vehicle_number"
+            id="vehicle-number-input"
+            label="গাড়ির নম্বর"
+            label-en="Vehicle Number"
+            size="sm"
+            :no-margin="true"
+            placeholder="গাড়ির নম্বর"
+            placeholder-en="Vehicle No"
+            value="{{ $initialVehicleNumber }}"
+        />
+    </div>
+    <div style="width: 155px; flex-shrink: 0;">
+        <x-core::input
+            type="text"
+            name="delivery_person_name"
+            id="delivery-person-name-input"
+            label="ডেলিভারি ব্যক্তির নাম"
+            label-en="Delivery Person Name"
+            size="sm"
+            :no-margin="true"
+            placeholder="েলিভারি ব্যক্তির নাম"
+            placeholder-en="Delivery Person Name"
+            value="{{ $initialDeliveryPersonName }}"
+        />
+    </div>
 </div>
 
 @error('items') <div class="field-error" style="margin:10px 22px 0;">{{ $message }}</div> @enderror
@@ -128,31 +213,36 @@
     <div class="pos-cart">
         <div class="cart-head">
             <div class="ct"><span class="bn">পণ্য নির্বাচন করেছেন: (</span><span class="en" style="display:none;">Products selected: (</span><span id="cart-count">0</span>)</div>
-            <button type="button" class="clear-cart" id="clear-cart-btn"><span class="bn">কার্ট খালি করুন</span><span class="en">Clear cart</span></button>
+            <x-core::button type="button" variant="soft" color="danger" size="sm" icon="trash-2" id="clear-cart-btn">
+                <span class="bn">কার্ট খালি করুন</span><span class="en">Clear cart</span>
+            </x-core::button>
         </div>
-        <div id="cart-list" class="cart-list"></div>
-
-        <div class="cart-totals">
-            <div class="sum-row">
-                <span class="sum-label bn">মোট</span><span class="sum-label en" style="display:none;">Total</span>
-                <span id="subtotal-display">0.00</span>
-            </div>
-            <div class="sum-row">
-                <span class="sum-label bn">ডিস্কাউন্ট</span><span class="sum-label en" style="display:none;">Discount</span>
-                <div class="disc-row">
-                    <input type="number" step="0.01" min="0" id="discount-raw-input" value="{{ is_numeric($initialDiscount) ? rtrim(rtrim(number_format($initialDiscount, 2, '.', ''), '0'), '.') : 0 }}">
-                    <select id="discount-type-select">
-                        <option value="flat">৳</option>
-                        <option value="percent">%</option>
-                    </select>
+        <div id="cart-list" class="cart-list">
+            <div class="cart-empty">
+                <div class="cart-empty-icon">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+                    <span class="cart-empty-badge">0</span>
+                </div>
+                <div class="cart-empty-title">
+                    <span class="bn">কার্ট খালি রয়েছে</span>
+                    <span class="en" style="display:none;">Your cart is empty</span>
+                </div>
+                <div class="cart-empty-desc">
+                    <span class="bn">ক্রয় তালিকায় যোগ করতে ক্যাটালগ থেকে পণ্য নির্বাচন করুন</span>
+                    <span class="en" style="display:none;">Select items from the catalog to add to purchase</span>
+                </div>
+                <div class="cart-empty-hint">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    <span class="bn">ক্যাটালগ থেকে পণ্য যোগ করুন</span>
+                    <span class="en" style="display:none;">Choose items from catalog</span>
                 </div>
             </div>
-            <div class="sum-row">
-                <span class="sum-label bn">ডেলিভারী চার্জ</span><span class="sum-label en" style="display:none;">Delivery Charge</span>
-                <input type="number" step="0.01" min="0" name="delivery_charge" id="delivery-charge-input" value="{{ rtrim(rtrim(number_format($initialDeliveryCharge, 2, '.', ''), '0'), '.') }}" style="width:100px; text-align:right; border:1px solid var(--border); border-radius:8px; padding:6px 8px; font-family:'Manrope',sans-serif;">
-            </div>
+        </div>
+
+        <div class="cart-totals">
+            <span id="subtotal-display" style="display:none;">0.00</span>
             <div class="sum-row total">
-                <span class="sum-label bn">সর্বমোট</span><span class="sum-label en" style="display:none;">Grand Total</span>
+                <span class="sum-label bn">সর্বমোট</span><span class="sum-label en" style="display:none;">Total Amount</span>
                 <b id="total-display">0.00</b>
             </div>
 
@@ -169,8 +259,8 @@
 </div>
 
 <div id="hidden-fields-container"></div>
-<input type="hidden" name="discount" id="discount-hidden">
-<input type="hidden" name="supplier_id" id="supplier-id-hidden" value="{{ $initialSupplierId }}">
+<input type="hidden" name="discount" id="discount-hidden" value="0">
+<input type="hidden" name="delivery_charge" id="delivery-charge-hidden" value="0">
 <input type="hidden" name="payments[0][account_id]" id="payment-account-hidden" value="{{ $initialAccountId }}">
 <input type="hidden" name="payments[0][method]" id="payment-method-hidden" value="{{ $initialPaymentMethod }}">
 <input type="hidden" name="payments[0][amount]" id="payment-amount-hidden" value="0">
@@ -179,91 +269,254 @@
     <div class="drawer">
         <div class="drawer-head">
             <div class="drawer-title" id="drawer-title-bn">Confirm Payment</div>
-            <button type="button" class="drawer-x" id="drawer-close-btn">&times;</button>
+            <x-core::button
+                type="button"
+                variant="ghost"
+                size="sm"
+                id="drawer-close-btn"
+                class="drawer-x"
+                icon="x"
+                title="বন্ধ করুন"
+                style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;"
+            />
         </div>
 
-        <div class="tx-section" id="drawer-total-banner" style="display:none; text-align:center; font-weight:700;">
+        <div class="tx-section" id="drawer-total-banner" style="display:none; text-align:center; font-weight:700; margin-bottom:14px;">
             <span class="bn">মোট প্রদেয় </span><span class="en" style="display:none;">Total Payable </span><span id="drawer-total-payable">0.00</span>
         </div>
 
-        <div class="field">
-            <label class="bn">ক্রয়ের তারিখ</label><label class="en" style="display:none;">Purchase Date</label>
-            <input type="text" id="drawer-date-display" readonly>
+        <div style="margin-bottom:14px;">
+            <x-core::input
+                type="text"
+                id="drawer-date-display"
+                label="ক্রয়ের তারিখ"
+                label-en="Purchase Date"
+                size="sm"
+                :readonly="true"
+            />
         </div>
 
-        <div class="field" id="drawer-account-group">
-            <label class="bn">পেমেন্ট অ্যাকাউন্ট</label><label class="en" style="display:none;">Payment Account</label>
-            <select id="drawer-account-select" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-family:'Manrope',sans-serif;">
+        <div style="margin-bottom:14px;" id="drawer-account-group">
+            <x-core::select
+                id="drawer-account-select"
+                label="পেমেন্ট অ্যাকাউন্ট"
+                label-en="Payment Account"
+                size="sm"
+            >
                 @foreach ($accounts as $acc)
                     <option value="{{ $acc->id }}" data-type="{{ $acc->type }}" {{ (int) $initialAccountId === $acc->id ? 'selected' : '' }}>
                         {{ $acc->display_name }} ({{ $acc->typeLabel()['bn'] }}) @if($acc->is_default) [ডিফল্ট] @endif
                     </option>
                 @endforeach
-            </select>
+            </x-core::select>
         </div>
 
-        <div class="field">
-            <label class="bn" id="drawer-amount-label-bn">টাকার পরিমান</label><label class="en" style="display:none;">Amount</label>
-            <input type="number" step="0.01" min="0" id="drawer-amount-input" value="{{ $initialAmount }}">
+        <div style="margin-bottom:14px;">
+            <x-core::textarea
+                name="note"
+                id="drawer-note-input"
+                label="মন্তব্য লিখুন"
+                label-en="Note"
+                size="sm"
+                placeholder="ঐচ্ছিক নোট"
+                placeholder-en="Optional note"
+                :rows="2"
+                value="{{ $initialNote }}"
+            />
         </div>
 
-        <div class="field">
-            <label class="bn">মন্তব্য লিখুন</label><label class="en" style="display:none;">Note</label>
-            <textarea name="note" id="drawer-note-input" placeholder="ঐচ্ছিক নোট">{{ $initialNote }}</textarea>
+        <div style="margin-bottom:14px;">
+            <div style="display: flex; align-items: flex-end; gap: 6px;">
+                <div style="flex: 1; min-width: 0;">
+                    <x-core::select
+                        name="supplier_id"
+                        id="supplier-id-select"
+                        label="সাপ্লায়ার"
+                        label-en="Supplier"
+                        size="sm"
+                        :no-margin="true"
+                    >
+                        <option value="">-- নির্বাচন করুন --</option>
+                        <option value="__create_new__" style="font-weight:700; color:var(--teal-800);">+ নতুন সরবরাহকারী যোগ করুন</option>
+                        @foreach ($suppliers as $supplier)
+                            @php
+                                $sDue = round((float) ($supplier->opening_due ?? 0) + (float) ($supplier->purchases_sum_due_amount ?? 0), 2);
+                            @endphp
+                            <option value="{{ $supplier->id }}" data-due="{{ $sDue }}" {{ (string) old('supplier_id', $purchase->supplier_id ?? '') === (string) $supplier->id ? 'selected' : '' }}>{{ $supplier->name }} @if($supplier->phone) ({{ $supplier->phone }}) @endif</option>
+                        @endforeach
+                    </x-core::select>
+                </div>
+                <x-core::button
+                    type="button"
+                    variant="soft"
+                    color="primary"
+                    size="sm"
+                    icon="plus"
+                    class="btn-open-quick-supplier"
+                    title="নতুন সরবরাহকারী যোগ করুন"
+                    style="height: 32px; width: 32px; padding: 0; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"
+                />
+            </div>
+
         </div>
 
-        <div class="field">
-            <label class="bn">সাপ্লায়ার নাম</label><label class="en" style="display:none;">Supplier Name</label>
-            <input type="text" name="supplier_name" id="supplier-name-input" list="suppliers-datalist" value="{{ $initialSupplierName }}" placeholder="সাপ্লায়ার নাম">
-            <datalist id="suppliers-datalist">
-                @foreach ($supplierData as $s)
-                    <option value="{{ $s['name'] }}">
-                @endforeach
-            </datalist>
+
+        <div style="margin-bottom:14px;">
+            <x-core::input
+                type="text"
+                name="supplier_address"
+                id="supplier-address-input"
+                label="ঠিকানা"
+                label-en="Address"
+                size="sm"
+                placeholder="ঠিকানা"
+                placeholder-en="Address"
+                value="{{ $initialSupplierAddress }}"
+            />
         </div>
 
-        <div class="field">
-            <label class="bn">সাপ্লায়ার মোবাইল নম্বর</label><label class="en" style="display:none;">Supplier Mobile Number</label>
-            <input type="text" name="supplier_phone" id="supplier-phone-input" value="{{ $initialSupplierPhone }}" placeholder="+88 XXXXXXXXXX">
+        <div style="margin-top:16px; margin-bottom:10px;">
+            <x-core::toggle
+                id="custom-invoice-toggle"
+                label="কাস্টম ইনভয়েস নম্বর"
+                label-en="Custom Invoice Number"
+                size="sm"
+                color="primary"
+                :checked="(bool) ($initialInvoiceNo && $purchase->exists)"
+            />
+        </div>
+        <div style="margin-bottom:14px; display:{{ $initialInvoiceNo && $purchase->exists ? 'block' : 'none' }};" id="custom-invoice-field">
+            <x-core::input
+                type="text"
+                name="invoice_no"
+                id="invoice-no-input"
+                label="ইনভয়েস নম্বর"
+                label-en="Invoice Number"
+                size="sm"
+                placeholder="INV-0001"
+                value="{{ $initialInvoiceNo }}"
+            />
         </div>
 
-        <div class="field">
-            <label class="bn">ঠিকানা</label><label class="en" style="display:none;">Address</label>
-            <input type="text" name="supplier_address" id="supplier-address-input" value="{{ $initialSupplierAddress }}" placeholder="ঠিকানা">
-        </div>
-
-        <div class="tx-row" style="margin-bottom:10px;">
-            <span class="lbl bn">কাস্টম ইনভয়েস নম্বর</span><span class="lbl en" style="display:none;">Custom Invoice Number</span>
-            <label class="switch">
-                <input type="checkbox" id="custom-invoice-toggle" {{ $initialInvoiceNo && $purchase->exists ? 'checked' : '' }}>
-                <span class="slider"></span>
-            </label>
-        </div>
-        <div class="field" id="custom-invoice-field" style="display:{{ $initialInvoiceNo && $purchase->exists ? 'block' : 'none' }};">
-            <input type="text" name="invoice_no" id="invoice-no-input" value="{{ $initialInvoiceNo }}" placeholder="INV-0001">
-        </div>
-
-        <div class="tx-row" style="margin-bottom:10px;">
-            <span class="lbl bn">কর্মচারীর তথ্য</span><span class="lbl en" style="display:none;">Employee Info</span>
-            <label class="switch">
-                <input type="checkbox" id="employee-toggle" {{ $initialEmployeeName ? 'checked' : '' }}>
-                <span class="slider"></span>
-            </label>
+        <div style="margin-top:16px; margin-bottom:10px;">
+            <x-core::toggle
+                id="employee-toggle"
+                label="কর্মচারীর তথ্য"
+                label-en="Employee Info"
+                size="sm"
+                color="primary"
+                :checked="(bool) $initialEmployeeName"
+            />
         </div>
         <div id="employee-fields" style="display:{{ $initialEmployeeName ? 'block' : 'none' }};">
-            <div class="field">
-                <label class="bn">কর্মচারীর নাম</label><label class="en" style="display:none;">Employee Name</label>
-                <input type="text" name="employee_name" id="employee-name-input" list="employees-datalist" value="{{ $initialEmployeeName }}" placeholder="কর্মচারীর নাম">
+            <div style="display: flex; gap: 10px;">
+            <div style="margin-bottom:14px;">
+                <x-core::input
+                    type="text"
+                    name="employee_name"
+                    id="employee-name-input"
+                    label="কর্মচারীর নাম"
+                    label-en="Employee Name"
+                    size="sm"
+                    placeholder="কর্মচারীর নাম"
+                    placeholder-en="Employee Name"
+                    value="{{ $initialEmployeeName }}"
+                    list="employees-datalist"
+                />
             </div>
-            <div class="field">
-                <label class="bn">কর্মচারীর মোবাইল নম্বর</label><label class="en" style="display:none;">Employee Mobile Number</label>
-                <input type="text" name="employee_phone" id="employee-phone-input" value="{{ $initialEmployeePhone }}" placeholder="+88 XXXXXXXXXX">
+            <div style="margin-bottom:14px;">
+                <x-core::input
+                    type="text"
+                    name="employee_phone"
+                    id="employee-phone-input"
+                    label="কর্মচারীর মোবাইল নম্বর"
+                    label-en="Employee Mobile Number"
+                    size="sm"
+                    placeholder="+88 XXXXXXXXXX"
+                    value="{{ $initialEmployeePhone }}"
+                />
+            </div>
             </div>
         </div>
 
-        <button type="button" class="btn btn-gold" id="drawer-save-btn" style="width:100%; justify-content:center; margin-top:16px;">
-            <span class="bn">সংরক্ষণ করুন</span><span class="en">Save</span>
-        </button>
+        <div style="display: flex; gap: 10px; margin-bottom: 6px;">
+            <div style="flex: 1; min-width: 0;">
+                <x-core::input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    id="drawer-amount-input"
+                    label="টাকার পরিমান"
+                    label-en="Amount"
+                    size="sm"
+                    value="{{ $initialAmount }}"
+                />
+            </div>
+            <div style="flex: 1; min-width: 0; display: none;" id="supplier-due-alert">
+                <x-core::input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    id="total_previous_due"
+                    label="পূর্ববর্তী মোট বকেয়া"
+                    label-en="Previous Total Due"
+                    size="sm"
+                    value="0"
+                    :readonly="true"
+                />
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-bottom: 6px;">
+            <div style="flex: 1; min-width: 0;">
+                <x-core::input
+                    type="number"
+                    step="0.01"
+                    id="adjustment_cost"
+                    label="সামঞ্জস্য বিধানের ব্যয়"
+                    label-en="Adjustment Cost"
+                    size="sm"
+                    value="0"
+                />
+            </div>
+            <div style="flex: 1; min-width: 0;">
+                <x-core::input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    id="transportation_cost"
+                    label="পরিবহন খরচ"
+                    label-en="Transportation Cost"
+                    size="sm"
+                    value="0"
+                />
+            </div>
+        </div>
+        <div style="margin-bottom:14px;">
+            <x-core::input
+                type="number"
+                step="0.01"
+                min="0"
+                id="grand_total_cost"
+                label="সর্বমোট খরচ"
+                label-en="Grand Total Cost"
+                size="sm"
+                value="0"
+                :readonly="true"
+            />
+        </div>
+
+        <div style="margin-top:20px;">
+            <x-core::button
+                type="button"
+                color="primary"
+                size="sm"
+                id="drawer-save-btn"
+                style="width:100%; justify-content:center; height:38px; font-size:13.5px;"
+            >
+                <span class="bn">সংরক্ষণ করুন</span><span class="en" style="display:none;">Save</span>
+            </x-core::button>
+        </div>
     </div>
 </div>
 
@@ -276,6 +529,7 @@
     let cart = initialItems.map((row) => ({
         productId: row.product_id,
         qty: parseFloat(row.qty) || 1,
+        receivedQty: parseFloat(row.received_qty ?? row.receivedQty) || 0,
         price: parseFloat(row.price) || 0,
         salePrice: parseFloat(row.salePrice) || 0,
         unitId: row.unitId || (productData[row.product_id]?.baseUnitId ?? ''),
@@ -332,7 +586,11 @@
             return '<div class="catalog-item" data-id="' + pid + '">' +
                 '<div class="thumb"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="8" height="8" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="13" y="4" width="8" height="8" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="14" width="8" height="6" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="13" y="14" width="8" height="6" rx="1.6" stroke="currentColor" stroke-width="1.6"/></svg></div>' +
                 '<div class="info"><div class="nm">' + escapeHtml(p.name) + '</div><div class="meta">৳' + fmt(p.price) + ' | স্টক: ' + fmt(p.stock).replace(/\.00$/, '') + '</div></div>' +
-                '<div class="add-btn"><button type="button" class="add-to-cart-btn" data-id="' + pid + '">Add</button>' + (count ? '<span class="count">' + fmt(count).replace(/\.00$/, '') + '</span>' : '') + '</div>' +
+                '<div class="add-btn">' +
+                    '<button type="button" class="decrease-from-cart-btn" data-id="' + pid + '" title="পরিমাণ হ্রাস করুন"' + (count > 0 ? '' : ' disabled') + '><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>' +
+                    (count ? '<span class="count">' + fmt(count).replace(/\.00$/, '') + '</span>' : '') +
+                    '<button type="button" class="add-to-cart-btn" data-id="' + pid + '" title="পরিমাণ বৃদ্ধি করুন"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>' +
+                '</div>' +
             '</div>';
         }).join('');
     }
@@ -345,16 +603,42 @@
             existing.qty += 1;
         } else {
             cart.push({
-                productId: productId, qty: 1, price: p.price, salePrice: p.salePrice || 0,
+                productId: productId, qty: 1, receivedQty: 0, price: p.price, salePrice: p.salePrice || 0,
                 unitId: p.baseUnitId || '', batchNo: '', mfgDate: '', expiryDate: '', barcode: p.barcode || '',
             });
         }
         renderAll();
     }
 
+    function decreaseFromCart(productId) {
+        let index = -1;
+        for (let i = cart.length - 1; i >= 0; i--) {
+            if (String(cart[i].productId) === String(productId)) {
+                index = i;
+                break;
+            }
+        }
+        if (index === -1) return;
+
+        if (cart[index].qty > 1) {
+            cart[index].qty -= 1;
+        } else {
+            cart.splice(index, 1);
+        }
+        renderAll();
+    }
+
     catalogList.addEventListener('click', (e) => {
-        const btn = e.target.closest('.add-to-cart-btn');
-        if (btn) addToCart(btn.dataset.id);
+        const incBtn = e.target.closest('.add-to-cart-btn');
+        if (incBtn) {
+            addToCart(incBtn.dataset.id);
+            return;
+        }
+        const decBtn = e.target.closest('.decrease-from-cart-btn');
+        if (decBtn && !decBtn.disabled) {
+            decreaseFromCart(decBtn.dataset.id);
+            return;
+        }
     });
 
     catalogSearch.addEventListener('input', renderCatalog);
@@ -379,6 +663,11 @@
         renderCatalog();
     });
 
+    $(document).on('blur', '.ci-qty', function(){
+        renderCatalog();
+    });
+
+
     /* ---------------- Cart (right pane) ---------------- */
     const cartList = document.getElementById('cart-list');
     const cartCount = document.getElementById('cart-count');
@@ -387,7 +676,25 @@
         cartCount.textContent = cart.length;
 
         if (cart.length === 0) {
-            cartList.innerHTML = '<div class="cart-empty"><span class="bn">কার্ট খালি</span><span class="en">Cart is empty</span></div>';
+            cartList.innerHTML = '<div class="cart-empty">' +
+                '<div class="cart-empty-icon">' +
+                    '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>' +
+                    '<span class="cart-empty-badge">0</span>' +
+                '</div>' +
+                '<div class="cart-empty-title">' +
+                    '<span class="bn">কার্ট খালি রয়েছে</span>' +
+                    '<span class="en" style="display:none;">Your cart is empty</span>' +
+                '</div>' +
+                '<div class="cart-empty-desc">' +
+                    '<span class="bn">ক্রয় তালিকায় যোগ করতে ক্যাটালগ থেকে পণ্য নির্বাচন করুন</span>' +
+                    '<span class="en" style="display:none;">Select items from the catalog to add to purchase</span>' +
+                '</div>' +
+                '<div class="cart-empty-hint">' +
+                    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>' +
+                    '<span class="bn">ক্যাটালগ থেকে পণ্য যোগ করুন</span>' +
+                    '<span class="en" style="display:none;">Choose items from catalog</span>' +
+                '</div>' +
+            '</div>';
             return;
         }
 
@@ -405,10 +712,11 @@
                         '<button type="button" class="ci-remove" title="Remove">&times;</button>' +
                     '</div>' +
                 '</div>' +
-                '<div class="ci-grid ci-grid-5">' +
+                '<div class="ci-grid ci-grid-6 ci-grid-6-purchase">' +
                     '<div><label class="bn">ক্রয় মূল্য</label><label class="en" style="display:none;">Purchase Price</label><input type="number" step="0.01" min="0" class="ci-price" value="' + item.price + '"></div>' +
                     '<div><label class="bn">বিক্রয় মূল্য</label><label class="en" style="display:none;">Sale Price</label><input type="number" step="0.01" min="0" class="ci-sale-price" value="' + item.salePrice + '"></div>' +
-                    '<div><label class="bn">পরিমাণ</label><label class="en" style="display:none;">Qty</label><input type="number" step="0.01" min="0.01" class="ci-qty" value="' + item.qty + '"></div>' +
+                    '<div><label class="bn">পরিমাণ</label><label class="en" style="display:none;">Qty</label><input type="number" step="1" min="1" class="ci-qty" value="' + item.qty + '"></div>' +
+                    '<div><label class="bn">গ্রহণের পরিমাণ</label><label class="en" style="display:none;">Received Qty</label><input type="number" step="1" min="0" name="received_qty" class="ci-received-qty" value="' + (item.receivedQty !== undefined ? item.receivedQty : 0) + '"></div>' +
                     '<div><label class="bn">একক</label><label class="en" style="display:none;">Unit</label><select class="ci-unit-select">' +
                         (p.units || []).map((u) => '<option value="' + u.id + '"' + (String(u.id) === String(item.unitId) ? ' selected' : '') + '>' + escapeHtml(u.label) + '</option>').join('') +
                     '</select></div>' +
@@ -432,6 +740,7 @@
         cart.forEach((item, i) => {
             html += '<input type="hidden" name="items[' + i + '][product_id]" value="' + item.productId + '">';
             html += '<input type="hidden" name="items[' + i + '][quantity]" value="' + item.qty + '">';
+            html += '<input type="hidden" name="items[' + i + '][received_qty]" value="' + (item.receivedQty !== undefined ? item.receivedQty : 0) + '">';
             html += '<input type="hidden" name="items[' + i + '][unit_id]" value="' + (item.unitId || '') + '">';
             html += '<input type="hidden" name="items[' + i + '][purchase_price]" value="' + item.price + '">';
             html += '<input type="hidden" name="items[' + i + '][sale_price]" value="' + item.salePrice + '">';
@@ -447,24 +756,58 @@
         return cart.reduce((sum, item) => sum + item.qty * item.price, 0);
     }
 
-    function discountAmount() {
-        const raw = parseFloat(document.getElementById('discount-raw-input').value) || 0;
-        const type = document.getElementById('discount-type-select').value;
-        return type === 'percent' ? subtotal() * (raw / 100) : raw;
-    }
-
     function recalcGrand() {
-        const sub = subtotal();
-        const discount = Math.min(discountAmount(), sub);
-        const deliveryCharge = parseFloat(document.getElementById('delivery-charge-input').value) || 0;
-        const total = Math.max(sub - discount + deliveryCharge, 0);
+        const total = subtotal();
 
-        document.getElementById('subtotal-display').textContent = fmt(sub);
-        document.getElementById('total-display').textContent = fmt(total);
-        document.getElementById('discount-hidden').value = fmt(discount);
+        const subtotalEl = document.getElementById('subtotal-display');
+        if (subtotalEl) subtotalEl.textContent = fmt(total);
+        const totalEl = document.getElementById('total-display');
+        if (totalEl) totalEl.textContent = fmt(total);
+
+        const discountHidden = document.getElementById('discount-hidden');
+        if (discountHidden) discountHidden.value = '0.00';
+        const deliveryChargeHidden = document.getElementById('delivery-charge-hidden');
+        if (deliveryChargeHidden) deliveryChargeHidden.value = '0.00';
+
+        updateGrandTotalCostDisplay();
 
         return total;
     }
+
+    function calcGrandTotalCost() {
+        const itemsSubtotal = subtotal();
+        const adjVal = parseFloat($('#adjustment_cost').val()) || 0;
+        const transVal = parseFloat($('#transportation_cost').val()) || 0;
+        const prevDueVal = parseFloat($('#total_previous_due').val()) || 0;
+        return Math.max(0, itemsSubtotal + transVal + adjVal + prevDueVal);
+    }
+
+    let amountManuallyEdited = false;
+    $(document).on('input', '#drawer-amount-input', function () {
+        amountManuallyEdited = true;
+    });
+
+    function updateGrandTotalCostDisplay() {
+        const grandTotal = calcGrandTotalCost();
+        const formatted = fmt(grandTotal);
+
+        const grandEl = document.getElementById('grand_total_cost');
+        if (grandEl) grandEl.value = formatted;
+        $('#grand_total_cost').val(formatted);
+
+        const totalPayableEl = document.getElementById('drawer-total-payable');
+        if (totalPayableEl) totalPayableEl.textContent = formatted;
+
+        if (drawerMode === 'cash' && !amountManuallyEdited) {
+            const amountInput = document.getElementById('drawer-amount-input');
+            if (amountInput) amountInput.value = formatted;
+            $('#drawer-amount-input').val(formatted);
+        }
+    }
+
+    $(document).on('input change', '#adjustment_cost, #transportation_cost, #total_previous_due', function () {
+        updateGrandTotalCostDisplay();
+    });
 
     function renderAll() {
         renderCatalog();
@@ -503,6 +846,7 @@
         if (!item) return;
 
         if (e.target.classList.contains('ci-qty')) item.qty = parseFloat(e.target.value) || 0;
+        if (e.target.classList.contains('ci-received-qty')) item.receivedQty = parseFloat(e.target.value) || 0;
         if (e.target.classList.contains('ci-price')) item.price = parseFloat(e.target.value) || 0;
         if (e.target.classList.contains('ci-sale-price')) item.salePrice = parseFloat(e.target.value) || 0;
         if (e.target.classList.contains('ci-barcode-input')) item.barcode = e.target.value;
@@ -536,9 +880,6 @@
         renderAll();
     });
 
-    document.getElementById('discount-raw-input').addEventListener('input', recalcGrand);
-    document.getElementById('discount-type-select').addEventListener('change', recalcGrand);
-    document.getElementById('delivery-charge-input').addEventListener('input', recalcGrand);
 
     /* ---------------- Confirm payment drawer ---------------- */
     const drawer = document.getElementById('confirmPaymentDrawer');
@@ -550,13 +891,30 @@
             return;
         }
         drawerMode = mode;
-        const total = recalcGrand();
+        amountManuallyEdited = false;
+        recalcGrand();
+        const total = calcGrandTotalCost();
         document.getElementById('payment-method-hidden').value = 'cash';
         document.getElementById('drawer-date-display').value = document.getElementById('purchase-date-input').value;
         document.getElementById('drawer-total-banner').style.display = mode === 'due' ? 'block' : 'none';
         document.getElementById('drawer-total-payable').textContent = fmt(total);
-        document.getElementById('drawer-amount-label-bn').textContent = mode === 'due' ? 'ক্যাশ দিয়েছি' : 'টাকার পরিমান';
-        document.getElementById('drawer-amount-input').value = mode === 'due' ? 0 : fmt(total);
+        const amountLabelBn = document.getElementById('drawer-amount-label-bn');
+        if (amountLabelBn) {
+            amountLabelBn.textContent = mode === 'due' ? 'ক্যাশ দিয়েছি' : 'টাকার পরিমান';
+        } else {
+            $('#drawer-amount-input').closest('.form-input-group, .form-group').find('.form-label .bn').text(mode === 'due' ? 'ক্যাশ দিয়েছি' : 'টাকার পরিমান');
+        }
+
+        updateGrandTotalCostDisplay();
+
+        if (mode === 'due') {
+            document.getElementById('drawer-amount-input').value = '0';
+            $('#drawer-amount-input').val('0');
+        }
+
+        const currentSupplierId = $('#supplier-id-select').val();
+        updateSupplierDueNotice(currentSupplierId);
+
         drawer.classList.add('open');
     }
 
@@ -577,17 +935,242 @@
         }
     });
 
-    document.getElementById('supplier-name-input').addEventListener('change', (e) => {
-        const match = supplierData.find((s) => s.name === e.target.value);
-        document.getElementById('supplier-id-hidden').value = match ? match.id : '';
-        if (match) {
-            document.getElementById('supplier-phone-input').value = match.phone || '';
-            document.getElementById('supplier-address-input').value = match.address || '';
+    /* ---------------- Quick Add Supplier Modal ---------------- */
+    $(function () {
+        const $quickModal = $('#quickSupplierModal');
+        if ($quickModal.length && !$quickModal.parent().is('body')) {
+            $('body').append($quickModal);
         }
     });
 
+    let lastSupplierId = $('#supplier-id-select').val() || '';
+
+    function openQuickSupplierModal() {
+        const $modal = $('#quickSupplierModal');
+        if ($modal.length && !$modal.parent().is('body')) {
+            $('body').append($modal);
+        }
+        const $form = $('#quick_supplier_form');
+        if ($form.length && $form[0]) {
+            $form[0].reset();
+            $form.find('.is-invalid').removeClass('is-invalid');
+            $form.find('.dynamic-error').remove();
+            $('#quick_supplier_opening_due').val('0');
+        }
+        openModal('quickSupplierModal');
+        setTimeout(() => $('#quick_supplier_name').focus(), 150);
+    }
+
+    function revertSupplierSelectIfNeeded() {
+        if ($('#supplier-id-select').val() === '__create_new__') {
+            $('#supplier-id-select').val(lastSupplierId || '');
+        }
+    }
+
+    $(document).on('click', '.btn-open-quick-supplier', function (e) {
+        e.preventDefault();
+        openQuickSupplierModal();
+    });
+
+    $(document).on('click', '#quickSupplierModal .modal-close-btn', function (e) {
+        e.preventDefault();
+        closeModal('quickSupplierModal');
+        revertSupplierSelectIfNeeded();
+    });
+
+    $(document).on('click', '#quickSupplierModal', function (e) {
+        if ($(e.target).hasClass('modal-backdrop')) {
+            closeModal('quickSupplierModal');
+            revertSupplierSelectIfNeeded();
+        }
+    });
+
+    function submitQuickSupplier() {
+        const $form = $('#quick_supplier_form');
+        const $btn = $('#btn-save-quick-supplier');
+        const url = $form.attr('action') || '{{ route('suppliers.store') }}';
+
+        $form.find('.is-invalid').removeClass('is-invalid');
+        $form.find('.dynamic-error').remove();
+        $btn.prop('disabled', true);
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: $form.serialize(),
+            dataType: 'json',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function (response) {
+                $btn.prop('disabled', false);
+                if (response.success && response.supplier) {
+                    const s = response.supplier;
+                    const due = parseFloat(s.opening_due) || 0;
+                    supplierData.push({
+                        id: s.id,
+                        name: s.name,
+                        phone: s.phone || '',
+                        address: s.address || '',
+                        due: due
+                    });
+
+                    const phoneTxt = s.phone ? ` (${s.phone})` : '';
+                    const $newOption = $('<option></option>').val(s.id).attr('data-due', due).text(s.name + phoneTxt);
+                    $('#supplier-id-select').append($newOption);
+                    $('#supplier-id-select').val(s.id);
+                    lastSupplierId = s.id;
+
+                    const $datalistOpt = $('<option></option>').val(s.name);
+                    $('#suppliers-datalist').append($datalistOpt);
+
+                    $('#supplier-name-input').val(s.name);
+                    $('#supplier-phone-input').val(s.phone || '');
+                    $('#supplier-address-input').val(s.address || '');
+
+                    $('#supplier-id-select').trigger('change');
+
+                    closeModal('quickSupplierModal');
+                    if ($form.length && $form[0]) {
+                        $form[0].reset();
+                    }
+                    toast(response.message || 'সরবরাহকারী সফলভাবে যোগ করা হয়েছে', 'Supplier created successfully');
+                }
+            },
+            error: function (xhr) {
+                $btn.prop('disabled', false);
+                if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                    $.each(xhr.responseJSON.errors, function (field, messages) {
+                        const $field = $form.find('[name="' + field + '"]');
+                        if ($field.length) {
+                            $field.addClass('is-invalid');
+                            const $err = $('<div class="field-error dynamic-error" style="color:var(--red-600); font-size:11.5px; margin-top:3px; font-weight:600;">' + messages[0] + '</div>');
+                            $field.closest('.form-group, .field, div').append($err);
+                        }
+                    });
+                } else {
+                    toast('সরবরাহকারী যোগ করতে সমস্যা হয়েছে', 'Failed to create supplier');
+                }
+            }
+        });
+    }
+
+    $(document).on('click', '#btn-save-quick-supplier', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        submitQuickSupplier();
+        return false;
+    });
+
+    $(document).on('submit', '#quick_supplier_form', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        submitQuickSupplier();
+        return false;
+    });
+
+    $(document).on('keydown', '#quick_supplier_form input', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            e.stopPropagation();
+            submitQuickSupplier();
+            return false;
+        }
+    });
+
+    function updateSupplierDueNotice(supplierId) {
+        const alertEl = document.getElementById('supplier-due-alert');
+        const amountEl = document.getElementById('total_previous_due');
+        const $amountInput = $('#total_previous_due');
+
+        const sid = parseInt(supplierId, 10);
+        if (!sid) {
+            if (alertEl) alertEl.style.display = 'none';
+            if (amountEl) amountEl.value = '0';
+            $amountInput.val('0');
+            updateGrandTotalCostDisplay();
+            return;
+        }
+
+        const match = supplierData.find((s) => s.id === sid);
+        let due = 0;
+        if (match && match.due !== undefined) {
+            due = parseFloat(match.due) || 0;
+        } else {
+            const selectedOpt = $('#supplier-id-select option[value="' + sid + '"]');
+            if (selectedOpt.length && selectedOpt.attr('data-due') !== undefined) {
+                due = parseFloat(selectedOpt.attr('data-due')) || 0;
+            }
+        }
+
+        const formattedDue = fmt(due);
+
+        if (amountEl) {
+            amountEl.value = formattedDue;
+            amountEl.textContent = formattedDue;
+            if (due > 0) {
+                amountEl.style.color = 'var(--red-600)';
+                amountEl.style.fontWeight = '700';
+            } else {
+                amountEl.style.color = '';
+                amountEl.style.fontWeight = '';
+            }
+        }
+        $amountInput.val(formattedDue);
+
+        if (alertEl) {
+            alertEl.style.display = 'block';
+        }
+
+        updateGrandTotalCostDisplay();
+    }
+
+    const supplierSelect = document.getElementById('supplier-id-select');
+    if (supplierSelect) {
+        supplierSelect.addEventListener('change', (e) => {
+            const val = e.target.value;
+            if (val === '__create_new__') {
+                openQuickSupplierModal();
+                return;
+            }
+            lastSupplierId = val;
+            const sid = parseInt(val, 10);
+            const match = supplierData.find((s) => s.id === sid);
+            const nameInput = document.getElementById('supplier-name-input');
+            const phoneInput = document.getElementById('supplier-phone-input');
+            const addressInput = document.getElementById('supplier-address-input');
+            if (nameInput) nameInput.value = match ? match.name : '';
+            if (phoneInput) phoneInput.value = match ? (match.phone || '') : '';
+            if (addressInput) addressInput.value = match ? (match.address || '') : '';
+
+            updateSupplierDueNotice(val);
+        });
+    }
+
+    $(document).on('change', '#supplier-id-select', function () {
+        updateSupplierDueNotice($(this).val());
+    });
+
+    const supplierNameInput = document.getElementById('supplier-name-input');
+    if (supplierNameInput) {
+        supplierNameInput.addEventListener('change', (e) => {
+            const match = supplierData.find((s) => s.name === e.target.value);
+            if (supplierSelect) {
+                supplierSelect.value = match ? match.id : '';
+                lastSupplierId = match ? match.id : '';
+            }
+            if (match) {
+                const phoneInput = document.getElementById('supplier-phone-input');
+                const addressInput = document.getElementById('supplier-address-input');
+                if (phoneInput) phoneInput.value = match.phone || '';
+                if (addressInput) addressInput.value = match.address || '';
+            }
+        });
+    }
+
     document.getElementById('drawer-save-btn').addEventListener('click', () => {
-        const total = recalcGrand();
+        const total = calcGrandTotalCost();
         let amount = parseFloat(document.getElementById('drawer-amount-input').value) || 0;
         if (drawerMode === 'cash' && amount <= 0) amount = total;
         amount = Math.min(Math.max(amount, 0), total);
@@ -616,5 +1199,6 @@
     });
 
     renderAll();
+    updateSupplierDueNotice($('#supplier-id-select').val());
 })();
 </script>

@@ -5,6 +5,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Modules\Core\Http\Middleware\EnsureFeatureEnabled;
+use Modules\Purchase\Http\Middleware\EnsurePurchaseDeliveryOrdersEnabled;
 use Modules\Shop\Http\Middleware\EnsureSubscriptionActive;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
             'feature' => EnsureFeatureEnabled::class,
+            'delivery-orders.enabled' => EnsurePurchaseDeliveryOrdersEnabled::class,
         ]);
 
         $middleware->appendToGroup('web', EnsureSubscriptionActive::class);
