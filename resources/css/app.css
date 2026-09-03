@@ -2507,6 +2507,142 @@ table.pos-table{width:100%; border-collapse:collapse; min-width:820px;}
   background: var(--paper);
 }
 
+/* ==========================================================================
+   Modern Number Input & Custom Stepper
+   ========================================================================== */
+
+/* Hide native ugly browser spin buttons completely across all number inputs */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+}
+input[type="number"] {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
+}
+
+/* Custom Modern Stepper in Input Group */
+.form-input-group.has-stepper .form-control {
+  padding-right: 28px !important;
+}
+.form-input-group.has-stepper.form-input-group-xs .form-control {
+  padding-right: 22px !important;
+}
+.form-input-group.has-stepper.form-input-group-sm .form-control {
+  padding-right: 26px !important;
+}
+.form-input-group.has-stepper.form-input-group-lg .form-control {
+  padding-right: 32px !important;
+}
+
+.form-input-stepper {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  right: 1px;
+  width: 22px;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border, #cbd5e1);
+  background: var(--paper, #f8fafc);
+  border-top-right-radius: calc(var(--form-radius, 8px) - 1px);
+  border-bottom-right-radius: calc(var(--form-radius, 8px) - 1px);
+  overflow: hidden;
+  z-index: 3;
+  opacity: 0.75;
+  transition: opacity 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.form-input-group:hover .form-input-stepper,
+.form-input-group:focus-within .form-input-stepper {
+  opacity: 1;
+  border-color: var(--teal-600, #0d9488);
+}
+
+.form-stepper-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--ink-500, #64748b);
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.form-stepper-btn:hover {
+  background: var(--teal-50, #f0fdfa);
+  color: var(--teal-800, #0f766e);
+}
+
+.form-stepper-btn:active {
+  background: var(--teal-100, #ccfbf1);
+  color: var(--teal-900, #134e4a);
+}
+
+.form-stepper-up {
+  border-bottom: 1px solid var(--border, #cbd5e1);
+}
+
+.form-input-group.form-input-group-xs .form-input-stepper {
+  width: 18px;
+}
+.form-input-group.form-input-group-xs .form-stepper-btn svg {
+  width: 7px;
+  height: 7px;
+}
+
+.form-input-group.form-input-group-sm .form-input-stepper {
+  width: 20px;
+}
+.form-input-group.form-input-group-sm .form-stepper-btn svg {
+  width: 8px;
+  height: 8px;
+}
+
+.form-input-group.form-input-group-lg .form-input-stepper {
+  width: 26px;
+}
+.form-input-group.form-input-group-lg .form-stepper-btn svg {
+  width: 10px;
+  height: 10px;
+}
+
+/* Disabled & Readonly */
+.form-input-group.is-disabled .form-input-stepper,
+input[disabled] ~ .form-input-stepper,
+input[readonly] ~ .form-input-stepper {
+  display: none !important;
+}
+
+/* Dark mode */
+body.dark .form-input-stepper,
+[data-theme="dark"] .form-input-stepper {
+  background: #1e293b;
+  border-color: #334155;
+}
+body.dark .form-stepper-btn,
+[data-theme="dark"] .form-stepper-btn {
+  color: #94a3b8;
+}
+body.dark .form-stepper-btn:hover,
+[data-theme="dark"] .form-stepper-btn:hover {
+  background: rgba(13, 148, 136, 0.2);
+  color: #2dd4bf;
+}
+body.dark .form-stepper-up,
+[data-theme="dark"] .form-stepper-up {
+  border-bottom-color: #334155;
+}
+
+
 /* Select Control Custom Arrow */
 .form-select {
   padding-right: 36px !important;

@@ -28,6 +28,17 @@ class FormComponentTest extends TestCase
         $this->assertStringContainsString('form-input-btn', $rendered);
     }
 
+    public function test_renders_number_input_with_modern_stepper(): void
+    {
+        $rendered = Blade::render('<x-core::input type="number" name="quantity" value="5" min="1" max="100" />');
+
+        $this->assertStringContainsString('type="number"', $rendered);
+        $this->assertStringContainsString('has-stepper', $rendered);
+        $this->assertStringContainsString('form-input-stepper', $rendered);
+        $this->assertStringContainsString('form-stepper-up', $rendered);
+        $this->assertStringContainsString('form-stepper-down', $rendered);
+    }
+
     public function test_renders_select_component(): void
     {
         $opts = ['active' => 'Active', 'inactive' => 'Inactive'];

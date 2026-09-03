@@ -690,6 +690,7 @@ $(function () {
     initDeleteConfirmBehaviors();
     initAccordionBehaviors();
     initStatusSwitcherBehaviors();
+    initNumberStepperBehaviors();
 
     // Initialize Lucide Icons globally
     createIcons({ icons });
@@ -699,6 +700,37 @@ $(function () {
         createIcons({ icons });
     });
 });
+
+/* ---------------- Modern Number Input Stepper ---------------- */
+function initNumberStepperBehaviors() {
+    $(document).on('click', '.form-stepper-btn', function (e) {
+        e.preventDefault();
+        const isUp = $(this).hasClass('form-stepper-up');
+        const $input = $(this).closest('.form-input-group').find('input[type="number"]');
+        if (!$input.length) return;
+        const inp = $input[0];
+        if (inp.disabled || inp.readOnly) return;
+
+        try {
+            if (isUp) {
+                inp.stepUp();
+            } else {
+                inp.stepDown();
+            }
+        } catch (err) {
+            const step = parseFloat(inp.step) || 1;
+            const val = parseFloat(inp.value) || 0;
+            const min = inp.min !== '' ? parseFloat(inp.min) : -Infinity;
+            const max = inp.max !== '' ? parseFloat(inp.max) : Infinity;
+            let next = isUp ? val + step : val - step;
+            if (next < min) next = min;
+            if (next > max) next = max;
+            const decimals = (step.toString().split('.')[1] || '').length;
+            inp.value = decimals > 0 ? next.toFixed(decimals) : next;
+        }
+        $input.trigger('input').trigger('change');
+    });
+}
 
 
 
