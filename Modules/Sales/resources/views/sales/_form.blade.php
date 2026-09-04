@@ -94,7 +94,9 @@
             <label class="bn">গুদাম</label><label class="en" style="display:none;">Warehouse</label>
             <select onchange="window.location.href = '{{ route('sales.create') }}?warehouse_id=' + this.value;">
                 @foreach ($warehouses as $warehouse)
-                    <option value="{{ $warehouse->id }}" {{ (string) $warehouseId === (string) $warehouse->id ? 'selected' : '' }}>{{ $warehouse->name }} @if($warehouse->branch) ({{ $warehouse->branch->name }}) @endif</option>
+                    <option value="{{ $warehouse->id }}" {{ (string) $warehouseId === (string) $warehouse->id ? 'selected' : '' }}>
+                        {{ $warehouse->name }} @if($warehouse->is_default) [ডিফল্ট] @endif @if($warehouse->branch) ({{ $warehouse->branch->name }}) @endif
+                    </option>
                 @endforeach
             </select>
         </div>

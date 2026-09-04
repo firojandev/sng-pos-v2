@@ -90,12 +90,16 @@
                 </div>
 
                 <div style="margin-bottom:12px;">
+                    @php
+                        $defaultWarehouse = $warehouses->firstWhere('is_default', true);
+                        $selectedWarehouseId = old('warehouse_id', $order->warehouse_id ?? $defaultWarehouse?->id);
+                    @endphp
                     <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:var(--ink-700);" class="bn">গন্তব্য গুদাম *</label>
                     <select name="warehouse_id" required style="width:100%; border:1px solid var(--border); background:var(--card); color:var(--ink-900); border-radius:6px; padding:6px 10px; font-size:13px;">
                         <option value="">-- গুদাম নির্বাচন করুন --</option>
                         @foreach ($warehouses as $w)
-                            <option value="{{ $w->id }}" @selected((string) old('warehouse_id', $order->warehouse_id) === (string) $w->id)>
-                                {{ $w->name }} @if($w->branch) ({{ $w->branch->name }}) @endif
+                            <option value="{{ $w->id }}" @selected((string) $selectedWarehouseId === (string) $w->id)>
+                                {{ $w->name }} @if($w->is_default) [ডিফল্ট] @endif @if($w->branch) ({{ $w->branch->name }}) @endif
                             </option>
                         @endforeach
                     </select>

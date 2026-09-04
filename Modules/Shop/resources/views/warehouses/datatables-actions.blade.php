@@ -1,4 +1,17 @@
 <x-core::button-group size="xs" aria-label="Warehouse Actions">
+    @if (!$warehouse->is_default && $warehouse->status === 'active')
+        <x-core::button
+            type="button"
+            variant="soft"
+            color="secondary"
+            icon="check-circle"
+            icon-only
+            class="btn-set-default-warehouse"
+            data-id="{{ $warehouse->id }}"
+            data-url="{{ route('warehouses.set-default', $warehouse) }}"
+            title="ডিফল্ট হিসেবে নির্ধারণ করুন / Set as Default"
+        />
+    @endif
     <x-core::button
         type="button"
         variant="soft"

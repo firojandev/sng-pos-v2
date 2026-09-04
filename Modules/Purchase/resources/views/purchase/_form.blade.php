@@ -155,6 +155,11 @@
     </div>
 
 
+    @php
+        $defaultWarehouse = $warehouses->firstWhere('is_default', true);
+        $selectedWarehouseId = old('warehouse_id', $purchase->warehouse_id ?? $defaultWarehouse?->id);
+    @endphp
+
     <div style="width: 190px; flex-shrink: 0;">
         <x-core::select
             name="warehouse_id"
@@ -167,9 +172,11 @@
             <option value="">-- নির্বাচন করুন --</option>
             @foreach ($warehouses as $warehouse)
                 <option
-                    value="{{ $warehouse->id }}" {{ (string) old('warehouse_id', $purchase->warehouse_id ?? optional($warehouses->first())->id) === (string) $warehouse->id ? 'selected' : '' }}>{{ $warehouse->name }} @if($warehouse->branch)
+                    value="{{ $warehouse->id }}" {{ (string) $selectedWarehouseId === (string) $warehouse->id ? 'selected' : '' }}>
+                    {{ $warehouse->name }} @if($warehouse->is_default) [ডিফল্ট] @endif @if($warehouse->branch)
                         ({{ $warehouse->branch->name }})
-                    @endif</option>
+                    @endif
+                </option>
             @endforeach
         </x-core::select>
     </div>
