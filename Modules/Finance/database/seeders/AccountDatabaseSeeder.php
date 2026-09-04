@@ -17,7 +17,17 @@ class AccountDatabaseSeeder extends Seeder
         $service = app(AccountTransactionService::class);
 
         foreach (Shop::all() as $shop) {
-            $service->getDefaultAccount($shop->id);
+            Account::withoutGlobalScopes()->firstOrCreate(
+                ['shop_id' => $shop->id, 'type' => 'cash'],
+                [
+                    'name' => 'নগদ টাকা (Cash)',
+                    'opening_balance' => 0,
+                    'current_balance' => 0,
+                    'is_default' => false,
+                    'status' => 'active',
+                    'note' => 'প্রধান ক্যাশ অ্যাকাউন্ট (সিস্টেম নির্ধারিত)',
+                ]
+            );
 
             // Add demo Bank and MFS accounts for demo shop if they don't exist
             if ($shop->slug === 'rahim-general-store') {
@@ -29,7 +39,7 @@ class AccountDatabaseSeeder extends Seeder
                         'branch_name' => 'মিরপুর-১০ শাখা',
                         'opening_balance' => 50000,
                         'current_balance' => 50000,
-                        'is_default' => false,
+                        'is_default' => true,
                         'status' => 'active',
                         'note' => 'প্রধান চলতি হিসাব',
                     ]

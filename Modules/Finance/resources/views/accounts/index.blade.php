@@ -147,13 +147,15 @@
                                 <td style="text-align:center;">
                                     @if ($item->is_default)
                                         <span style="color:#16a34a; font-weight:700; font-size:18px;" title="Default Account">✓</span>
-                                    @else
+                                    @elseif ($item->type !== 'cash')
                                         <form method="POST" action="{{ route('accounts.set-default', $item) }}" style="display:inline;">
                                             @csrf
                                             <x-core::button variant="secondary" size="xs" type="submit" title="ডিফল্ট হিসেবে সেট করুন">
                                                 ডিফল্ট করুন
                                             </x-core::button>
                                         </form>
+                                    @else
+                                        <span style="color:var(--text-muted); font-size:14px;">—</span>
                                     @endif
                                 </td>
                                 <td style="text-align:center;">
@@ -166,13 +168,15 @@
                                 <td style="text-align:right;">
                                     <div class="row-actions" style="justify-content:flex-end; gap:6px;">
                                         <x-core::button variant="ghost" color="blue" size="xs" icon-only icon="file-text" href="{{ route('accounts.ledger', $item) }}" title="লেজার / স্টেটমেন্ট দেখুন" />
-                                        <x-core::button variant="ghost" color="secondary" size="xs" icon-only icon="edit" class="btn-edit-account" data-url="{{ route('accounts.edit', $item) }}" title="সম্পাদনা" />
-                                        @if (! $item->is_default)
-                                            <form method="POST" action="{{ route('accounts.destroy', $item) }}" class="delete-form" data-title="অ্যাকাউন্ট মুছে ফেলতে চান?" data-text="এই অ্যাকাউন্টটি স্থায়ীভাবে মুছে ফেলতে চান?" style="display:inline;">
-                                                @csrf
-                                                @method('DELETE')
-                                                <x-core::button variant="ghost" color="danger" size="xs" icon-only icon="trash-2" type="submit" title="মুছে ফেলুন" />
-                                            </form>
+                                        @if ($item->type !== 'cash')
+                                            <x-core::button variant="ghost" color="secondary" size="xs" icon-only icon="edit" class="btn-edit-account" data-url="{{ route('accounts.edit', $item) }}" title="সম্পাদনা" />
+                                            @if (! $item->is_default)
+                                                <form method="POST" action="{{ route('accounts.destroy', $item) }}" class="delete-form" data-title="অ্যাকাউন্ট মুছে ফেলতে চান?" data-text="এই অ্যাকাউন্টটি স্থায়ীভাবে মুছে ফেলতে চান?" style="display:inline;">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <x-core::button variant="ghost" color="danger" size="xs" icon-only icon="trash-2" type="submit" title="মুছে ফেলুন" />
+                                                </form>
+                                            @endif
                                         @endif
                                     </div>
                                 </td>
@@ -211,7 +215,7 @@
             <form method="POST" action="{{ route('accounts.store') }}" id="create_account_modal_form">
                 @csrf
                 <input type="hidden" name="modal_type" value="account">
-                @include('finance::accounts._form', ['account' => $account, 'isModal' => true])
+                @include('finance::accounts._form', ['account' => $account, 'creatableTypeLabels' => $creatableTypeLabels, 'isModal' => true])
             </form>
         </div>
     </div>
@@ -233,7 +237,7 @@
                     <div class="col-md-6">
                         @php
                             $typeOptions = [];
-                            foreach ($typeLabels as $k => $labels) {
+                            foreach ($creatableTypeLabels as $k => $labels) {
                                 $typeOptions[$k] = $labels['bn'] . ' (' . $labels['en'] . ')';
                             }
                         @endphp
@@ -407,6 +411,7 @@
                 // Open Create Account Modal
                 $('#btnOpenAccountModal').on('click', function () {
                     $('#createAccountModal').addClass('open');
+                    $('#account_type_select').trigger('change');
                 });
 
                 // Open Edit Account Modal via AJAX

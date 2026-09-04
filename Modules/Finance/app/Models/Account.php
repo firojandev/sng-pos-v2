@@ -55,6 +55,24 @@ class Account extends Model
     }
 
     /**
+     * Types that can be manually created by users.
+     *
+     * @return array<string, array{bn: string, en: string}>
+     */
+    public static function creatableTypeLabels(): array
+    {
+        return [
+            'bank' => ['bn' => 'ব্যাংক', 'en' => 'Bank'],
+            'mfs' => ['bn' => 'মোবাইল ব্যাংকিং', 'en' => 'Mobile Banking (MFS)'],
+        ];
+    }
+
+    public function isCash(): bool
+    {
+        return $this->type === 'cash';
+    }
+
+    /**
      * @return array{bn: string, en: string}
      */
     public function typeLabel(): array

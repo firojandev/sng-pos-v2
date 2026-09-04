@@ -110,26 +110,26 @@ class AccountFeatureTest extends TestCase
 
     public function test_setting_default_account_unsets_previous_default(): void
     {
-        $cash1 = Account::create([
+        $bank1 = Account::create([
             'shop_id' => $this->shop->id,
-            'name' => 'Cash 1',
-            'type' => 'cash',
+            'name' => 'Bank 1',
+            'type' => 'bank',
             'is_default' => true,
             'status' => 'active',
         ]);
 
-        $cash2 = Account::create([
+        $bank2 = Account::create([
             'shop_id' => $this->shop->id,
-            'name' => 'Cash 2',
-            'type' => 'cash',
+            'name' => 'Bank 2',
+            'type' => 'bank',
             'is_default' => false,
             'status' => 'active',
         ]);
 
-        $this->actingAs($this->user)->post(route('accounts.set-default', $cash2));
+        $this->actingAs($this->user)->post(route('accounts.set-default', $bank2));
 
-        $this->assertFalse($cash1->fresh()->is_default);
-        $this->assertTrue($cash2->fresh()->is_default);
+        $this->assertFalse($bank1->fresh()->is_default);
+        $this->assertTrue($bank2->fresh()->is_default);
     }
 
     public function test_can_transfer_funds_between_accounts_and_records_ledger(): void
@@ -490,5 +490,173 @@ class AccountFeatureTest extends TestCase
                 && is_array($data['cash_out'])
                 && is_array($data['net_change']);
         });
+    }
+
+    public function test_user_cannot_create_cash_account(): void
+    {
+        $response = $this->actingAs($this->user)->post(route('accounts.store'), [
+            'name' => 'Second Cash Account',
+            'type' => 'cash',
+            'opening_balance' => 1000,
+            'status' => 'active',
+        ]);
+
+        $response->assertSessionHasErrors('type');
+        $this->assertDatabaseMissing('accounts', [
+            'shop_id' => $this->shop->id,
+            'name' => 'Second Cash Account',
+        ]);
+    }
+
+    public function test_user_can_create_mfs_account(): void
+    {
+        $response = $this->actingAs($this->user)->post(route('accounts.store'), [
+            'name' => 'Nagad Personal',
+            'type' => 'mfs',
+            'mfs_provider' => 'nagad',
+            'mfs_type' => 'personal',
+            'account_number' => '01811223344',
+            'opening_balance' => 5000,
+            'is_default' => 0,
+            'status' => 'active',
+        ]);
+
+        $response->assertRedirect(route('accounts.index'));
+        $this->assertDatabaseHas('accounts', [
+            'shop_id' => $this->shop->id,
+            'name' => 'Nagad Personal',
+            'type' => 'mfs',
+            'mfs_provider' => 'nagad',
+            'current_balance' => 5000,
+        ]);
+    }
+
+    public function test_cash_account_cannot_be_edited_or_updated(): void
+    {
+        $cash = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Main Cash',
+            'type' => 'cash',
+            'opening_balance' => 1000,
+            'current_balance' => 1000,
+            'is_default' => true,
+            'status' => 'active',
+        ]);
+
+        // GET web request should redirect with error
+        $webResponse = $this->actingAs($this->user)->get(route('accounts.edit', $cash));
+        $webResponse->assertRedirect(route('accounts.index'));
+        $webResponse->assertSessionHasErrors('error');
+
+        // GET ajax request should return 403
+        $ajaxResponse = $this->actingAs($this->user)->getJson(route('accounts.edit', $cash));
+        $ajaxResponse->assertStatus(403);
+
+        // PUT request should be blocked
+        $updateResponse = $this->actingAs($this->user)->put(route('accounts.update', $cash), [
+            'name' => 'Hacked Cash Name',
+            'type' => 'bank',
+            'status' => 'active',
+        ]);
+
+        // Should either fail authorization (403) or redirect with error
+        $this->assertTrue($updateResponse->isForbidden() || $updateResponse->isRedirect());
+        $this->assertEquals('Main Cash', $cash->fresh()->name);
+        $this->assertEquals('cash', $cash->fresh()->type);
+    }
+
+    public function test_cash_account_cannot_be_deleted(): void
+    {
+        // Even if cash is not default, it cannot be deleted
+        $bank = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Default Bank',
+            'type' => 'bank',
+            'is_default' => true,
+            'status' => 'active',
+        ]);
+
+        $cash = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Main Cash',
+            'type' => 'cash',
+            'is_default' => false,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($this->user)->delete(route('accounts.destroy', $cash));
+        $response->assertRedirect(route('accounts.index'));
+        $response->assertSessionHasErrors('error');
+
+        $this->assertNull($cash->fresh()->deleted_at);
+        $this->assertDatabaseHas('accounts', [
+            'id' => $cash->id,
+            'type' => 'cash',
+        ]);
+    }
+
+    public function test_accounts_index_shows_only_ledger_for_cash_account(): void
+    {
+        $cash = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Main Cash Account',
+            'type' => 'cash',
+            'opening_balance' => 1000,
+            'current_balance' => 1000,
+            'is_default' => false,
+            'status' => 'active',
+        ]);
+
+        $bank = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'City Bank Current',
+            'type' => 'bank',
+            'opening_balance' => 2000,
+            'current_balance' => 2000,
+            'is_default' => false,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($this->user)->get(route('accounts.index'));
+        $response->assertOk();
+
+        // Cash has ledger link
+        $response->assertSee(route('accounts.ledger', $cash));
+        // Cash does NOT have edit url, delete form, or set-default form
+        $response->assertDontSee('data-url="'.route('accounts.edit', $cash).'"', false);
+        $response->assertDontSee('action="'.route('accounts.destroy', $cash).'"', false);
+        $response->assertDontSee('action="'.route('accounts.set-default', $cash).'"', false);
+
+        // Bank has ledger, edit, delete, and set-default links
+        $response->assertSee(route('accounts.ledger', $bank));
+        $response->assertSee('data-url="'.route('accounts.edit', $bank).'"', false);
+        $response->assertSee('action="'.route('accounts.destroy', $bank).'"', false);
+        $response->assertSee('action="'.route('accounts.set-default', $bank).'"', false);
+    }
+
+    public function test_user_cannot_set_cash_account_as_default(): void
+    {
+        $cash = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Main Cash',
+            'type' => 'cash',
+            'is_default' => false,
+            'status' => 'active',
+        ]);
+
+        $bank = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Main Bank',
+            'type' => 'bank',
+            'is_default' => true,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($this->user)->post(route('accounts.set-default', $cash));
+        $response->assertRedirect(route('accounts.index'));
+        $response->assertSessionHasErrors('error');
+
+        $this->assertFalse($cash->fresh()->is_default);
+        $this->assertTrue($bank->fresh()->is_default);
     }
 }

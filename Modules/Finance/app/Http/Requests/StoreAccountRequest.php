@@ -15,7 +15,7 @@ class StoreAccountRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'type' => ['required', 'in:cash,bank,mfs'],
+            'type' => ['required', 'in:bank,mfs'],
             'account_number' => ['nullable', 'string', 'max:100'],
             'bank_name' => ['nullable', 'string', 'max:255'],
             'branch_name' => ['nullable', 'string', 'max:255'],
@@ -25,6 +25,16 @@ class StoreAccountRequest extends FormRequest
             'is_default' => ['nullable', 'boolean'],
             'status' => ['required', 'in:active,inactive'],
             'note' => ['nullable', 'string'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'type.in' => 'ক্যাশ অ্যাকাউন্ট তৈরি করা যাবে না। কেবল ব্যাংক ও মোবাইল ব্যাংকিং (MFS) অ্যাকাউন্ট তৈরি করা সম্ভব।',
         ];
     }
 }

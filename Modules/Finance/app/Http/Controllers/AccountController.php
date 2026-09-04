@@ -57,6 +57,7 @@ class AccountController extends Controller
 
         $account = new Account;
         $typeLabels = Account::typeLabels();
+        $creatableTypeLabels = Account::creatableTypeLabels();
         $mfsTypeLabels = Account::mfsTypeLabels();
         $mfsProviders = Account::mfsProviders();
 
@@ -64,6 +65,7 @@ class AccountController extends Controller
             'accounts',
             'account',
             'typeLabels',
+            'creatableTypeLabels',
             'mfsTypeLabels',
             'mfsProviders',
             'totalBalance',
@@ -80,7 +82,7 @@ class AccountController extends Controller
     {
         return view('finance::accounts.create', [
             'account' => new Account,
-            'typeLabels' => Account::typeLabels(),
+            'typeLabels' => Account::creatableTypeLabels(),
             'mfsTypeLabels' => Account::mfsTypeLabels(),
             'mfsProviders' => Account::mfsProviders(),
         ]);
@@ -89,6 +91,10 @@ class AccountController extends Controller
     public function store(StoreAccountRequest $request): RedirectResponse
     {
         $data = $request->validated();
+        if (($data['type'] ?? '') === 'cash') {
+            return redirect()->route('accounts.index')->withErrors(['error' => 'ক্যাশ অ্যাকাউন্ট ম্যানুয়ালি তৈরি করা যাবে না। কেবল ব্যাংক ও মোবাইল ব্যাংকিং (MFS) অ্যাকাউন্ট তৈরি করা সম্ভব।']);
+        }
+
         $isDefault = (bool) ($data['is_default'] ?? false);
         $openingBalance = (float) ($data['opening_balance'] ?? 0);
 
@@ -122,8 +128,16 @@ class AccountController extends Controller
         return redirect()->route('accounts.index')->with('status', 'অ্যাকাউন্ট সফলভাবে তৈরি করা হয়েছে');
     }
 
-    public function edit(Request $request, Account $account): View|JsonResponse
+    public function edit(Request $request, Account $account): View|JsonResponse|RedirectResponse
     {
+        if ($account->isCash()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['error' => 'ক্যাশ অ্যাকাউন্ট সম্পাদনা করা যাবে না।'], 403);
+            }
+
+            return redirect()->route('accounts.index')->withErrors(['error' => 'ক্যাশ অ্যাকাউন্ট সম্পাদনা করা যাবে না।']);
+        }
+
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'id' => $account->id,
@@ -145,7 +159,7 @@ class AccountController extends Controller
 
         return view('finance::accounts.edit', [
             'account' => $account,
-            'typeLabels' => Account::typeLabels(),
+            'typeLabels' => Account::creatableTypeLabels(),
             'mfsTypeLabels' => Account::mfsTypeLabels(),
             'mfsProviders' => Account::mfsProviders(),
         ]);
@@ -153,6 +167,10 @@ class AccountController extends Controller
 
     public function update(UpdateAccountRequest $request, Account $account): RedirectResponse
     {
+        if ($account->isCash()) {
+            return redirect()->route('accounts.index')->withErrors(['error' => 'ক্যাশ অ্যাকাউন্ট সম্পাদনা করা যাবে না।']);
+        }
+
         $data = $request->validated();
         $isDefault = (bool) ($data['is_default'] ?? false);
 
@@ -169,6 +187,10 @@ class AccountController extends Controller
 
     public function destroy(Account $account): RedirectResponse
     {
+        if ($account->isCash()) {
+            return redirect()->route('accounts.index')->withErrors(['error' => 'ক্যাশ অ্যাকাউন্ট মুছে ফেলা যাবে না।']);
+        }
+
         if ($account->is_default) {
             return redirect()->route('accounts.index')->withErrors(['error' => 'ডিফল্ট অ্যাকাউন্ট মুছে ফেলা যাবে না। অন্য কোনো অ্যাকাউন্টকে ডিফল্ট হিসেবে সেট করে এটি মুছুন।']);
         }
@@ -180,6 +202,10 @@ class AccountController extends Controller
 
     public function setDefault(Account $account): RedirectResponse
     {
+        if ($account->isCash()) {
+            return redirect()->route('accounts.index')->withErrors(['error' => 'ক্যাশ অ্যাকাউন্টকে ডিফল্ট অ্যাকাউন্ট হিসেবে নির্ধারণ করা যাবে না। কেবল ব্যাংক বা মোবাইল ব্যাংকিং (MFS) অ্যাকাউন্ট ডিফল্ট করা সম্ভব।']);
+        }
+
         $this->transactionService->setDefaultAccount($account);
 
         return redirect()->route('accounts.index')->with('status', "'{$account->name}' অ্যাকাউন্টটিকে ডিফল্ট অ্যাকাউন্ট হিসেবে নির্ধারণ করা হয়েছে");

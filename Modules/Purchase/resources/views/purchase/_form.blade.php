@@ -445,7 +445,7 @@
                     type="number"
                     step="0.01"
                     min="0"
-                    id="drawer-amount-input"
+                    id="drawer-amount-input"/>
                     label="টাকার পরিমান"
                     label-en="Amount"
                     size="sm"

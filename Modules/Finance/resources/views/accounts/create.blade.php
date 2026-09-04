@@ -1,8 +1,8 @@
 <x-core::layout
     title="নতুন অ্যাকাউন্ট"
     title-en="New Account"
-    subtitle="নতুন ব্যাংক, এমএফএস বা ক্যাশ অ্যাকাউন্ট যোগ করুন"
-    subtitle-en="Add a new Bank, MFS, or Cash account"
+    subtitle="নতুন ব্যাংক বা মোবাইল ব্যাংকিং (MFS) অ্যাকাউন্ট যোগ করুন"
+    subtitle-en="Add a new Bank or Mobile Banking (MFS) account"
     active="accounts"
 >
 
