@@ -433,17 +433,43 @@ class PurchaseController extends Controller
 
             $this->applyItems($purchase, $items);
 
-            $purchase->payments()->delete();
+            foreach ($purchase->payments as $payment) {
+                $payment->delete();
+            }
             $this->applyPayments($purchase, $data['payments'] ?? []);
         });
 
         return redirect()->route('purchase.index')->with('status', 'ক্রয় হালনাগাদ করা হয়েছে');
     }
 
-    public function destroy(Purchase $purchase)
+    public function destroy(Purchase $purchase): JsonResponse|RedirectResponse
     {
+        $purchase->load(['items.batch', 'items.product', 'payments', 'receiptItems', 'returns']);
+
+        if ($reason = $purchase->cannotBeDeletedReason()) {
+            $message = $reason.' তাই ক্রয়টি মুছে ফেলা যাবে না। / Therefore, this purchase cannot be deleted.';
+
+            if (request()->wantsJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                ], 422);
+            }
+
+            return redirect()->route('purchase.ledger')->with('error', $message);
+        }
+
         DB::transaction(function () use ($purchase) {
             $this->revertItems($purchase);
+
+            foreach ($purchase->payments as $payment) {
+                $payment->delete();
+            }
+
+            if ($purchase->deliveryReceipt) {
+                $purchase->deliveryReceipt()->update(['purchase_id' => null]);
+            }
+
             $purchase->delete();
         });
 
@@ -666,9 +692,22 @@ class PurchaseController extends Controller
                         'quantity_after' => (float) $batch->quantity,
                         'reference_type' => Purchase::class,
                         'reference_id' => $purchase->id,
+                        'note' => "Purchase #{$purchase->invoice_no} deleted (Stock rolled back)",
                         'created_by' => Auth::id(),
                     ]);
                 }
+            }
+
+            $previousItem = PurchaseItem::where('product_id', $item->product_id)
+                ->where('purchase_id', '!=', $purchase->id)
+                ->whereHas('purchase', fn ($q) => $q->whereNull('deleted_at'))
+                ->latest('id')
+                ->first();
+
+            if ($previousItem) {
+                Product::where('id', $item->product_id)->update([
+                    'purchase_price' => $previousItem->purchase_price,
+                ]);
             }
         }
 

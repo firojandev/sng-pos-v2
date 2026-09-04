@@ -238,27 +238,51 @@
     </div>
 @endif
 
+@if ($purchase->hasUsedQuantity())
+    <div style="background:var(--paper-line); border:1px solid var(--border); border-left:4px solid var(--gold-500, #f59e0b); border-radius:8px; padding:10px 12px; margin-top:16px; display:flex; align-items:center; gap:8px;">
+        <x-core::icon name="info" size="16" style="color:var(--gold-ink); flex-shrink:0;" />
+        <div style="font-size:12px; color:var(--ink-700);">
+            {{ $purchase->cannotBeDeletedReason() }}
+        </div>
+    </div>
+@endif
+
 <div style="display:flex; gap:10px; margin-top:20px; flex-wrap:wrap;">
-    <form
-        method="POST"
-        action="{{ route('purchase.destroy', $purchase) }}"
-        class="delete-form"
-        data-title="এই ক্রয় মুছে ফেলতে চান?"
-        data-text="এই ক্রয় মুছে ফেললে স্টক থেকে পণ্য বিয়োগ হবে। আপনি কি নিশ্চিত?"
-        style="flex:1;"
-    >
-        @csrf
-        @method('DELETE')
-        <x-core::button
-            type="submit"
-            color="danger"
-            size="sm"
-            icon="trash-2"
-            style="width:100%; justify-content:center;"
+    @if ($purchase->canBeDeleted())
+        <form
+            method="POST"
+            action="{{ route('purchase.destroy', $purchase) }}"
+            class="delete-form"
+            data-title="এই ক্রয় মুছে ফেলতে চান?"
+            data-text="এই ক্রয় মুছে ফেললে স্টক থেকে পণ্য ও পরিশোধিত অর্থ রোলব্যাক হবে। আপনি কি নিশ্চিত?"
+            style="flex:1;"
         >
-            <span class="bn">মুছে ফেলুন</span><span class="en">Delete</span>
-        </x-core::button>
-    </form>
+            @csrf
+            @method('DELETE')
+            <x-core::button
+                type="submit"
+                color="danger"
+                size="sm"
+                icon="trash-2"
+                style="width:100%; justify-content:center;"
+            >
+                <span class="bn">মুছে ফেলুন</span><span class="en">Delete</span>
+            </x-core::button>
+        </form>
+    @else
+        <div style="flex:1; cursor:not-allowed;" title="{{ $purchase->cannotBeDeletedReason() }}">
+            <x-core::button
+                type="button"
+                variant="secondary"
+                size="sm"
+                icon="trash-2"
+                disabled
+                style="width:100%; justify-content:center; opacity:0.4; pointer-events:none;"
+            >
+                <span class="bn">মুছে ফেলা যাবে না</span><span class="en">Cannot Delete</span>
+            </x-core::button>
+        </div>
+    @endif
     <x-core::button
         variant="secondary"
         size="sm"

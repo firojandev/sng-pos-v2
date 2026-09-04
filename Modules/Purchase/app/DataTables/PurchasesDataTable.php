@@ -144,7 +144,7 @@ class PurchasesDataTable extends BaseDataTable
     public function query(Purchase $model): QueryBuilder
     {
         $query = $model->newQuery()
-            ->with(['supplier', 'items.product', 'payments'])
+            ->with(['supplier', 'items.product', 'items.batch', 'payments', 'returns'])
             ->select('purchases.*');
 
         if ($from = request('from')) {

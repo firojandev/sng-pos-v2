@@ -46,24 +46,39 @@
         size="xs"
         title="সম্পাদনা / Edit"
     />
-    <form
-        method="POST"
-        action="{{ route('purchase.destroy', $purchase) }}"
-        class="delete-form"
-        data-title="ক্রয় মুছে ফেলতে চান?"
-        data-text="এই ক্রয় মুছে ফেললে স্টক থেকে পণ্য বিয়োগ হবে। আপনি কি নিশ্চিত?"
-        style="display:inline-block;"
-    >
-        @csrf
-        @method('DELETE')
-        <x-core::button
-            type="submit"
-            variant="soft"
-            color="danger"
-            icon="trash-2"
-            icon-only
-            size="xs"
-            title="মুছুন / Delete"
-        />
-    </form>
+    @if ($purchase->canBeDeleted())
+        <form
+            method="POST"
+            action="{{ route('purchase.destroy', $purchase) }}"
+            class="delete-form"
+            data-title="ক্রয় মুছে ফেলতে চান?"
+            data-text="এই ক্রয় মুছে ফেললে স্টক থেকে পণ্য ও পরিশোধিত অর্থ রোলব্যাক হবে। আপনি কি নিশ্চিত?"
+            style="display:inline-block;"
+        >
+            @csrf
+            @method('DELETE')
+            <x-core::button
+                type="submit"
+                variant="soft"
+                color="danger"
+                icon="trash-2"
+                icon-only
+                size="xs"
+                title="মুছুন / Delete"
+            />
+        </form>
+    @else
+        <span title="{{ $purchase->cannotBeDeletedReason() }}" style="display:inline-block; cursor:not-allowed;">
+            <x-core::button
+                type="button"
+                variant="soft"
+                color="secondary"
+                icon="trash-2"
+                icon-only
+                size="xs"
+                disabled
+                style="opacity:0.4; pointer-events:none;"
+            />
+        </span>
+    @endif
 </x-core::button-group>
