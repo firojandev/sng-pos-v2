@@ -2,34 +2,39 @@
 
 namespace Modules\Purchase\Models;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Core\Concerns\BelongsToShop;
 use Modules\Product\Models\Batch;
 use Modules\Product\Models\Product;
 
-class PurchaseItem extends Model
+class PurchaseReceiptItem extends Model
 {
-    use SoftDeletes;
+    use BelongsToShop;
 
     protected $fillable = [
-        'purchase_id', 'product_id', 'batch_id', 'batch_no', 'mfg_date', 'expiry_date',
-        'quantity', 'received_quantity', 'purchase_price', 'total',
+        'shop_id',
+        'purchase_id',
+        'purchase_item_id',
+        'product_id',
+        'batch_id',
+        'received_quantity',
+        'received_by',
     ];
 
     protected $casts = [
-        'mfg_date' => 'date',
-        'expiry_date' => 'date',
-        'quantity' => 'decimal:2',
         'received_quantity' => 'decimal:2',
-        'purchase_price' => 'decimal:2',
-        'total' => 'decimal:2',
     ];
 
     public function purchase(): BelongsTo
     {
         return $this->belongsTo(Purchase::class);
+    }
+
+    public function purchaseItem(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseItem::class);
     }
 
     public function product(): BelongsTo
@@ -42,8 +47,8 @@ class PurchaseItem extends Model
         return $this->belongsTo(Batch::class);
     }
 
-    public function receiptItem(): HasOne
+    public function receiver(): BelongsTo
     {
-        return $this->hasOne(PurchaseReceiptItem::class);
+        return $this->belongsTo(User::class, 'received_by');
     }
 }

@@ -150,6 +150,8 @@ class PurchaseController extends Controller
                 'subtotal' => $subtotal,
                 'discount' => $discount,
                 'delivery_charge' => $deliveryCharge,
+                'transportation_cost' => (float) ($data['transportation_cost'] ?? 0),
+                'adjustment_cost' => (float) ($data['adjustment_cost'] ?? 0),
                 'total' => $total,
                 'paid_amount' => $paid,
                 'due_amount' => $due,
@@ -157,6 +159,10 @@ class PurchaseController extends Controller
                 'note' => $data['note'] ?? null,
                 'employee_name' => $data['employee_name'] ?? null,
                 'employee_phone' => $data['employee_phone'] ?? null,
+                'do_number' => $data['do_number'] ?? null,
+                'do_date' => $data['do_date'] ?? null,
+                'vehicle_number' => $data['vehicle_number'] ?? null,
+                'delivery_person_name' => $data['delivery_person_name'] ?? null,
             ]);
 
             $purchase->update([
@@ -203,6 +209,8 @@ class PurchaseController extends Controller
                 'subtotal' => $subtotal,
                 'discount' => $discount,
                 'delivery_charge' => $deliveryCharge,
+                'transportation_cost' => (float) ($data['transportation_cost'] ?? 0),
+                'adjustment_cost' => (float) ($data['adjustment_cost'] ?? 0),
                 'total' => $total,
                 'paid_amount' => $paid,
                 'due_amount' => $due,
@@ -210,6 +218,10 @@ class PurchaseController extends Controller
                 'note' => $data['note'] ?? null,
                 'employee_name' => $data['employee_name'] ?? null,
                 'employee_phone' => $data['employee_phone'] ?? null,
+                'do_number' => $data['do_number'] ?? null,
+                'do_date' => $data['do_date'] ?? null,
+                'vehicle_number' => $data['vehicle_number'] ?? null,
+                'delivery_person_name' => $data['delivery_person_name'] ?? null,
             ]);
 
             $this->applyItems($purchase, $items);
@@ -244,9 +256,11 @@ class PurchaseController extends Controller
     private function calculateTotals(array $items, array $data): array
     {
         $subtotal = collect($items)->sum(fn ($item) => $item['quantity'] * $item['purchase_price']);
-        $discount = $data['discount'] ?? 0;
-        $deliveryCharge = $data['delivery_charge'] ?? 0;
-        $total = max($subtotal - $discount + $deliveryCharge, 0);
+        $discount = (float) ($data['discount'] ?? 0);
+        $deliveryCharge = (float) ($data['delivery_charge'] ?? 0);
+        $transportationCost = (float) ($data['transportation_cost'] ?? 0);
+        $adjustmentCost = (float) ($data['adjustment_cost'] ?? 0);
+        $total = max($subtotal - $discount + $deliveryCharge + $transportationCost + $adjustmentCost, 0);
         $paid = collect($data['payments'] ?? [])->sum('amount');
         $due = max($total - $paid, 0);
         $status = $due <= 0 ? 'paid' : ($paid <= 0 ? 'due' : 'partial');
@@ -315,6 +329,8 @@ class PurchaseController extends Controller
 
             $conversionFactor = $this->unitConversionFactor((int) $item['product_id'], $item['unit_id'] ?? null);
             $baseQuantity = (float) $item['quantity'] * $conversionFactor;
+            $receivedQtyInput = isset($item['received_qty']) ? (float) $item['received_qty'] : (float) $item['quantity'];
+            $baseReceivedQuantity = $receivedQtyInput * $conversionFactor;
             $basePurchasePrice = (float) $item['purchase_price'] / $conversionFactor;
             $baseSalePrice = (float) $item['sale_price'] / $conversionFactor;
 
@@ -332,7 +348,7 @@ class PurchaseController extends Controller
             $before = $batch ? (float) $batch->quantity : 0.0;
 
             if ($batch) {
-                $batch->quantity += $baseQuantity;
+                $batch->quantity += $baseReceivedQuantity;
                 if (! empty($item['mfg_date'])) {
                     $batch->mfg_date = $item['mfg_date'];
                 }
@@ -342,37 +358,51 @@ class PurchaseController extends Controller
                 $batch->save();
             } else {
                 $batch = Batch::create([
+                    'shop_id' => $purchase->shop_id,
                     'product_id' => $item['product_id'],
                     'warehouse_id' => $purchase->warehouse_id,
                     'batch_no' => $batchNo,
-                    'quantity' => $baseQuantity,
+                    'quantity' => $baseReceivedQuantity,
                     'mfg_date' => $item['mfg_date'] ?? null,
                     'expiry_date' => $item['expiry_date'] ?? null,
                 ]);
             }
 
-            $purchase->items()->create([
+            $purchaseItem = $purchase->items()->create([
                 'product_id' => $item['product_id'],
                 'batch_id' => $batch->id,
                 'batch_no' => $batchNo,
                 'mfg_date' => $item['mfg_date'] ?? null,
                 'expiry_date' => $item['expiry_date'] ?? null,
                 'quantity' => $baseQuantity,
+                'received_quantity' => $baseReceivedQuantity,
                 'purchase_price' => $basePurchasePrice,
                 'total' => $baseQuantity * $basePurchasePrice,
             ]);
 
-            StockMovement::create([
+            $purchase->receiptItems()->create([
+                'shop_id' => $purchase->shop_id,
+                'purchase_item_id' => $purchaseItem->id,
                 'product_id' => $item['product_id'],
                 'batch_id' => $batch->id,
-                'type' => 'purchase',
-                'quantity_change' => $baseQuantity,
-                'quantity_before' => $before,
-                'quantity_after' => (float) $batch->quantity,
-                'reference_type' => Purchase::class,
-                'reference_id' => $purchase->id,
-                'created_by' => Auth::id(),
+                'received_quantity' => $baseReceivedQuantity,
+                'received_by' => Auth::id(),
             ]);
+
+            if ($baseReceivedQuantity > 0) {
+                StockMovement::create([
+                    'shop_id' => $purchase->shop_id,
+                    'product_id' => $item['product_id'],
+                    'batch_id' => $batch->id,
+                    'type' => 'purchase',
+                    'quantity_change' => $baseReceivedQuantity,
+                    'quantity_before' => $before,
+                    'quantity_after' => (float) $batch->quantity,
+                    'reference_type' => Purchase::class,
+                    'reference_id' => $purchase->id,
+                    'created_by' => Auth::id(),
+                ]);
+            }
         }
     }
 
@@ -406,15 +436,17 @@ class PurchaseController extends Controller
     private function revertItems(Purchase $purchase): void
     {
         foreach ($purchase->items as $item) {
-            if ($item->batch_id) {
+            $receivedQty = (float) ($item->received_quantity ?? $item->quantity);
+            if ($item->batch_id && $receivedQty > 0) {
                 $batch = Batch::where('id', $item->batch_id)->lockForUpdate()->first();
                 if ($batch) {
                     $before = (float) $batch->quantity;
-                    $reverted = min((float) $item->quantity, $before);
-                    $batch->quantity = max($batch->quantity - $item->quantity, 0);
+                    $reverted = min($receivedQty, $before);
+                    $batch->quantity = max($batch->quantity - $reverted, 0);
                     $batch->save();
 
                     StockMovement::create([
+                        'shop_id' => $purchase->shop_id,
                         'product_id' => $item->product_id,
                         'batch_id' => $batch->id,
                         'type' => 'purchase_reversal',
@@ -429,6 +461,7 @@ class PurchaseController extends Controller
             }
         }
 
+        $purchase->receiptItems()->delete();
         $purchase->items()->delete();
     }
 }

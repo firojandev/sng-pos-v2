@@ -49,6 +49,30 @@
             <span class="val">{{ $purchase->warehouse->name }}</span>
         </div>
     @endif
+    @if ($purchase->do_number)
+        <div class="tx-row">
+            <span class="lbl bn">ডিও নম্বর</span><span class="lbl en" style="display:none;">D.O. No</span>
+            <span class="val" style="font-family:var(--font-mono, monospace);">{{ $purchase->do_number }}</span>
+        </div>
+    @endif
+    @if ($purchase->do_date)
+        <div class="tx-row">
+            <span class="lbl bn">ডিও তারিখ</span><span class="lbl en" style="display:none;">D.O. Date</span>
+            <span class="val">{{ optional($purchase->do_date)->format('d M, Y') }}</span>
+        </div>
+    @endif
+    @if ($purchase->vehicle_number)
+        <div class="tx-row">
+            <span class="lbl bn">গাড়ির নম্বর</span><span class="lbl en" style="display:none;">Vehicle No</span>
+            <span class="val">{{ $purchase->vehicle_number }}</span>
+        </div>
+    @endif
+    @if ($purchase->delivery_person_name)
+        <div class="tx-row">
+            <span class="lbl bn">ডেলিভারি ব্যক্তি</span><span class="lbl en" style="display:none;">Delivery Person</span>
+            <span class="val">{{ $purchase->delivery_person_name }}</span>
+        </div>
+    @endif
 </div>
 
 <div class="tx-section">
@@ -80,6 +104,18 @@
             <span class="val" style="font-family:var(--font-mono, monospace);">৳{{ number_format($purchase->delivery_charge, 2) }}</span>
         </div>
     @endif
+    @if ((float) $purchase->transportation_cost > 0)
+        <div class="tx-row">
+            <span class="lbl bn">পরিবহন খরচ</span><span class="lbl en" style="display:none;">Transportation Cost</span>
+            <span class="val" style="font-family:var(--font-mono, monospace);">৳{{ number_format($purchase->transportation_cost, 2) }}</span>
+        </div>
+    @endif
+    @if ((float) $purchase->adjustment_cost != 0)
+        <div class="tx-row">
+            <span class="lbl bn">অ্যাডজাস্টমেন্ট</span><span class="lbl en" style="display:none;">Adjustment Cost</span>
+            <span class="val" style="font-family:var(--font-mono, monospace);">৳{{ number_format($purchase->adjustment_cost, 2) }}</span>
+        </div>
+    @endif
     <div class="tx-row strong">
         <span class="lbl bn">সর্বমোট</span><span class="lbl en" style="display:none;">Grand Total</span>
         <span class="val" style="font-family:var(--font-mono, monospace); font-weight:700;">৳{{ number_format($purchase->total, 2) }}</span>
@@ -107,8 +143,9 @@
     @foreach ($purchase->items as $item)
         <div class="tx-item">
             <div class="nm" style="font-weight:600; color:var(--ink-900);">{{ $item->product->name ?? '—' }}</div>
-            <div class="meta" style="font-size:12px; color:var(--ink-600); display:flex; gap:12px; margin-top:4px;">
-                <span>পরিমাণ: <b>{{ rtrim(rtrim(number_format($item->quantity, 2), '0'), '.') }}</b></span>
+            <div class="meta" style="font-size:12px; color:var(--ink-600); display:flex; flex-wrap:wrap; gap:12px; margin-top:4px;">
+                <span>অর্ডার: <b>{{ rtrim(rtrim(number_format($item->quantity, 2), '0'), '.') }}</b></span>
+                <span>গ্রহণ: <b style="color:var(--teal-700);">{{ rtrim(rtrim(number_format($item->received_quantity ?? $item->quantity, 2), '0'), '.') }}</b></span>
                 <span>দর: <b>৳{{ number_format($item->purchase_price, 2) }}</b></span>
                 <span>মোট: <b style="color:var(--ink-900);">৳{{ number_format($item->total, 2) }}</b></span>
                 @if ($item->batch_no)
