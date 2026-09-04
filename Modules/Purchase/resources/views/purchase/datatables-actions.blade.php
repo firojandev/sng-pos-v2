@@ -37,15 +37,30 @@
             title="ডিও দিয়ে বাকি পণ্য গ্রহণ / Receive by D.O."
         />
     @endif
-    <x-core::button
-        :href="route('purchase.edit', $purchase)"
-        variant="soft"
-        color="primary"
-        icon="edit"
-        icon-only
-        size="xs"
-        title="সম্পাদনা / Edit"
-    />
+    @if ($purchase->canBeEdited())
+        <x-core::button
+            :href="route('purchase.edit', $purchase)"
+            variant="soft"
+            color="primary"
+            icon="edit"
+            icon-only
+            size="xs"
+            title="সম্পাদনা / Edit"
+        />
+    @else
+        <span title="{{ $purchase->cannotBeEditedReason() }}" style="display:inline-block; cursor:not-allowed;">
+            <x-core::button
+                type="button"
+                variant="soft"
+                color="secondary"
+                icon="edit"
+                icon-only
+                size="xs"
+                disabled
+                style="opacity:0.4; pointer-events:none;"
+            />
+        </span>
+    @endif
     @if ($purchase->canBeDeleted())
         <form
             method="POST"

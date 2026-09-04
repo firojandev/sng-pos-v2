@@ -383,8 +383,15 @@ class PurchaseController extends Controller
         return redirect()->route('purchase.index')->with('status', 'ক্রয় সফলভাবে যোগ করা হয়েছে');
     }
 
-    public function edit(Purchase $purchase): View
+    public function edit(Purchase $purchase): View|RedirectResponse
     {
+        if ($purchase->hasUsedQuantity()) {
+            $reason = $purchase->cannotBeEditedReason();
+
+            return redirect()->route('purchase.ledger')
+                ->with('error', $reason.' তাই ক্রয়টি সম্পাদনা করা যাবে না। / Therefore, this purchase cannot be edited.');
+        }
+
         $suppliers = Supplier::where('status', 'active')
             ->withSum(['purchases' => fn ($q) => $q->where('id', '!=', $purchase->id)], 'due_amount')
             ->orderBy('name')
@@ -398,16 +405,38 @@ class PurchaseController extends Controller
         return view('purchase::purchase.edit', compact('purchase', 'suppliers', 'products', 'warehouses', 'employees', 'accounts'));
     }
 
-    public function update(UpdatePurchaseRequest $request, Purchase $purchase): RedirectResponse
+    public function update(UpdatePurchaseRequest $request, Purchase $purchase): RedirectResponse|JsonResponse
     {
+        if ($purchase->hasUsedQuantity()) {
+            $reason = $purchase->cannotBeEditedReason();
+            $message = $reason.' তাই ক্রয়টি সম্পাদনা করা যাবে না। / Therefore, this purchase cannot be edited.';
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                ], 422);
+            }
+
+            return redirect()->route('purchase.ledger')->with('error', $message);
+        }
+
         $data = $request->validated();
         $items = $data['items'];
 
         DB::transaction(function () use ($data, $items, $purchase) {
+            // 1. Rollback old stock & receipt items & old items
             $this->revertItems($purchase);
 
+            // 2. Rollback old payments (triggers PurchasePaymentAccountObserver to refund account balances)
+            foreach ($purchase->payments()->get() as $payment) {
+                $payment->delete();
+            }
+
+            // 3. Calculate new totals
             [$subtotal, $discount, $deliveryCharge, $total, $paid, $due, $status] = $this->calculateTotals($items, $data);
 
+            // 4. Update purchase record (PurchaseCashObserver::saved updates CashTransaction and supplier due adjusts dynamically)
             $purchase->update([
                 'supplier_id' => $this->resolveSupplierId($data),
                 'warehouse_id' => $data['warehouse_id'],
@@ -431,13 +460,19 @@ class PurchaseController extends Controller
                 'delivery_person_name' => $data['delivery_person_name'] ?? null,
             ]);
 
+            // 5. Apply new items (adds new stock, creates receipt items, logs stock movements)
             $this->applyItems($purchase, $items);
 
-            foreach ($purchase->payments as $payment) {
-                $payment->delete();
-            }
+            // 6. Apply new payments (triggers PurchasePaymentAccountObserver to deduct from accounts)
             $this->applyPayments($purchase, $data['payments'] ?? []);
         });
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'ক্রয় হালনাগাদ করা হয়েছে',
+            ]);
+        }
 
         return redirect()->route('purchase.index')->with('status', 'ক্রয় হালনাগাদ করা হয়েছে');
     }

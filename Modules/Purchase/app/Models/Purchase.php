@@ -193,4 +193,20 @@ class Purchase extends Model
     {
         return ! $this->hasUsedQuantity();
     }
+
+    /**
+     * Check if this purchase can be safely edited and rolled back.
+     */
+    public function canBeEdited(): bool
+    {
+        return ! $this->hasUsedQuantity();
+    }
+
+    /**
+     * Get the reason why this purchase cannot be edited, or null if editable.
+     */
+    public function cannotBeEditedReason(): ?string
+    {
+        return $this->cannotBeDeletedReason();
+    }
 }

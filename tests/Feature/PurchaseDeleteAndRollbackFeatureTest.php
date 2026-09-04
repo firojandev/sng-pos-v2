@@ -457,4 +457,180 @@ class PurchaseDeleteAndRollbackFeatureTest extends TestCase
             'deleted_at' => null,
         ]);
     }
+
+    public function test_purchase_cannot_be_edited_if_quantity_was_used(): void
+    {
+        $purchasePayload = [
+            'supplier_id' => $this->supplier->id,
+            'warehouse_id' => $this->warehouse->id,
+            'purchase_date' => now()->toDateString(),
+            'invoice_no' => 'PU-EDIT-LOCK',
+            'items' => [
+                [
+                    'product_id' => $this->product->id,
+                    'quantity' => 10,
+                    'received_qty' => 10,
+                    'purchase_price' => 100,
+                    'sale_price' => 130,
+                    'batch_no' => 'BT-EDIT-LOCK',
+                ],
+            ],
+            'payments' => [
+                [
+                    'account_id' => $this->account->id,
+                    'method' => 'bank',
+                    'amount' => 400,
+                ],
+            ],
+        ];
+
+        $this->actingAs($this->user)->post(route('purchase.store'), $purchasePayload);
+        $purchase = Purchase::where('invoice_no', 'PU-EDIT-LOCK')->firstOrFail();
+        $batch = Batch::where('batch_no', 'BT-EDIT-LOCK')->firstOrFail();
+
+        // 1. Consume 1 unit via sale
+        $salePayload = [
+            'warehouse_id' => $this->warehouse->id,
+            'sale_date' => now()->toDateString(),
+            'items' => [
+                [
+                    'product_id' => $this->product->id,
+                    'quantity' => 1,
+                    'unit_price' => 130,
+                ],
+            ],
+        ];
+        $this->actingAs($this->user)->post(route('sales.store'), $salePayload);
+
+        $this->assertTrue($purchase->hasUsedQuantity());
+        $this->assertFalse($purchase->canBeEdited());
+
+        // 2. GET edit should redirect with error
+        $editResponse = $this->actingAs($this->user)->get(route('purchase.edit', $purchase));
+        $editResponse->assertRedirect(route('purchase.ledger'));
+        $editResponse->assertSessionHas('error');
+
+        // 3. PUT update should fail with 422 JSON
+        $updateResponse = $this->actingAs($this->user)->putJson(route('purchase.update', $purchase), [
+            'supplier_id' => $this->supplier->id,
+            'warehouse_id' => $this->warehouse->id,
+            'purchase_date' => now()->toDateString(),
+            'items' => [
+                [
+                    'product_id' => $this->product->id,
+                    'quantity' => 5,
+                    'purchase_price' => 100,
+                    'sale_price' => 130,
+                ],
+            ],
+        ]);
+        $updateResponse->assertStatus(422);
+    }
+
+    public function test_purchase_edit_syncs_all_data_like_delete_and_reapply(): void
+    {
+        $secondAccount = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Secondary Account',
+            'type' => 'bank',
+            'opening_balance' => 2000,
+            'current_balance' => 2000,
+            'status' => 'active',
+        ]);
+
+        // 1. Create Purchase: 10 units @ 100 = 1000, paid 400 from primary account (balance 5000 -> 4600)
+        $purchasePayload = [
+            'supplier_id' => $this->supplier->id,
+            'warehouse_id' => $this->warehouse->id,
+            'purchase_date' => now()->toDateString(),
+            'invoice_no' => 'PU-EDIT-SYNC',
+            'items' => [
+                [
+                    'product_id' => $this->product->id,
+                    'quantity' => 10,
+                    'received_qty' => 10,
+                    'purchase_price' => 100,
+                    'sale_price' => 130,
+                    'batch_no' => 'BT-SYNC-OLD',
+                ],
+            ],
+            'payments' => [
+                [
+                    'account_id' => $this->account->id,
+                    'method' => 'bank',
+                    'amount' => 400,
+                ],
+            ],
+        ];
+
+        $this->actingAs($this->user)->post(route('purchase.store'), $purchasePayload);
+        $purchase = Purchase::where('invoice_no', 'PU-EDIT-SYNC')->firstOrFail();
+        $oldBatch = Batch::where('batch_no', 'BT-SYNC-OLD')->firstOrFail();
+
+        $this->assertEquals(10.0, (float) $oldBatch->quantity);
+        $this->account->refresh();
+        $this->assertEquals(4600.0, (float) $this->account->current_balance);
+        $this->assertEquals('600.00', $this->supplier->totalDue());
+
+        // 2. Edit Purchase: Change to 6 units @ 100 = 600, paid 200 from secondAccount
+        $updatePayload = [
+            'supplier_id' => $this->supplier->id,
+            'warehouse_id' => $this->warehouse->id,
+            'purchase_date' => now()->toDateString(),
+            'invoice_no' => 'PU-EDIT-SYNC',
+            'items' => [
+                [
+                    'product_id' => $this->product->id,
+                    'quantity' => 6,
+                    'received_qty' => 6,
+                    'purchase_price' => 100,
+                    'sale_price' => 130,
+                    'batch_no' => 'BT-SYNC-NEW',
+                ],
+            ],
+            'payments' => [
+                [
+                    'account_id' => $secondAccount->id,
+                    'method' => 'bank',
+                    'amount' => 200,
+                ],
+            ],
+        ];
+
+        $updateResponse = $this->actingAs($this->user)->put(route('purchase.update', $purchase), $updatePayload);
+        $updateResponse->assertRedirect(route('purchase.index'));
+
+        // 3. Verify ALL data synchronized:
+        // a) Old batch stock rolled back: 10 -> 0
+        $oldBatch->refresh();
+        $this->assertEquals(0.0, (float) $oldBatch->quantity);
+
+        // b) New batch stock applied: 6
+        $newBatch = Batch::where('batch_no', 'BT-SYNC-NEW')->firstOrFail();
+        $this->assertEquals(6.0, (float) $newBatch->quantity);
+
+        // c) Old account refunded: 4600 -> 5000
+        $this->account->refresh();
+        $this->assertEquals(5000.0, (float) $this->account->current_balance);
+
+        // d) New account deducted: 2000 - 200 = 1800
+        $secondAccount->refresh();
+        $this->assertEquals(1800.0, (float) $secondAccount->current_balance);
+
+        // e) Purchase total, paid, due updated
+        $purchase->refresh();
+        $this->assertEquals(600.0, (float) $purchase->total);
+        $this->assertEquals(200.0, (float) $purchase->paid_amount);
+        $this->assertEquals(400.0, (float) $purchase->due_amount);
+
+        // f) Supplier due updated: 600 -> 400
+        $this->assertEquals('400.00', $this->supplier->totalDue());
+
+        // g) Cashbox CashTransaction updated to 200
+        $cashTx = CashTransaction::where('sourceable_type', Purchase::class)
+            ->where('sourceable_id', $purchase->id)
+            ->first();
+        $this->assertNotNull($cashTx);
+        $this->assertEquals(200.0, (float) $cashTx->amount);
+    }
 }

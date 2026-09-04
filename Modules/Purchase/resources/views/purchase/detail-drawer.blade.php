@@ -318,13 +318,28 @@
             <span class="bn">পণ্য গ্রহণ</span><span class="en" style="display:none;">Receive</span>
         </x-core::button>
     @endif
-    <x-core::button
-        variant="secondary"
-        size="sm"
-        icon="edit"
-        :href="route('purchase.edit', $purchase)"
-        style="flex:1; justify-content:center;"
-    >
-        <span class="bn">কেনাকাটা এডিট</span><span class="en">Edit Purchase</span>
-    </x-core::button>
+    @if ($purchase->canBeEdited())
+        <x-core::button
+            variant="secondary"
+            size="sm"
+            icon="edit"
+            :href="route('purchase.edit', $purchase)"
+            style="flex:1; justify-content:center;"
+        >
+            <span class="bn">কেনাকাটা এডিট</span><span class="en">Edit Purchase</span>
+        </x-core::button>
+    @else
+        <div style="flex:1; cursor:not-allowed;" title="{{ $purchase->cannotBeEditedReason() }}">
+            <x-core::button
+                type="button"
+                variant="secondary"
+                size="sm"
+                icon="edit"
+                disabled
+                style="width:100%; justify-content:center; opacity:0.4; pointer-events:none;"
+            >
+                <span class="bn">এডিট করা যাবে না</span><span class="en">Cannot Edit</span>
+            </x-core::button>
+        </div>
+    @endif
 </div>
