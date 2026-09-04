@@ -15,6 +15,8 @@ Route::middleware(['auth', 'feature:purchase'])->group(function () {
     Route::get('purchase/{purchase}/receive-modal', [PurchaseController::class, 'receiveModal'])->name('purchase.receive.modal')->middleware('permission:purchase.write');
     Route::post('purchase/{purchase}/receive', [PurchaseController::class, 'storeReceive'])->name('purchase.receive.store')->middleware('permission:purchase.write');
     Route::get('purchase/{purchase}/receipt-history', [PurchaseController::class, 'receiptHistory'])->name('purchase.receipt-history')->middleware('permission:purchase.view');
+    Route::get('purchase/{purchase}/invoice-modal', [PurchaseController::class, 'invoiceModal'])->name('purchase.invoice-modal')->middleware('permission:purchase.view');
+    Route::get('purchase/{purchase}/print-invoice', [PurchaseController::class, 'printInvoice'])->name('purchase.print-invoice')->middleware('permission:purchase.view');
     Route::resource('purchase', PurchaseController::class)
         ->middlewareFor(['index', 'show'], 'permission:purchase.view')
         ->middlewareFor(['create', 'store', 'edit', 'update'], 'permission:purchase.write')

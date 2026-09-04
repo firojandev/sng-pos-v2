@@ -18,9 +18,11 @@
     size="sm"
     icon="printer"
     style="width:100%; justify-content:center; margin-bottom:16px;"
-    onclick="printSection('purchaseDetailDrawerContent')"
+    class="btn-show-purchase-invoice"
+    data-id="{{ $purchase->id }}"
+    data-url="{{ route('purchase.invoice-modal', $purchase) }}"
 >
-    <span class="bn">প্রিন্ট করুন</span><span class="en">Print</span>
+    <span class="bn">ইনভয়েস স্লিপ ও প্রিন্ট</span><span class="en">Invoice & Print</span>
 </x-core::button>
 
 <div class="tx-section">

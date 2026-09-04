@@ -156,6 +156,9 @@
     {{-- Dynamic Receipt History Modal Container --}}
     <div id="receiptHistoryModalContainer"></div>
 
+    {{-- Dynamic Purchase Invoice Modal Container --}}
+    <div id="invoiceModalContainer"></div>
+
     {{-- Quick Find Purchase by D.O. Modal --}}
     <div class="modal-backdrop" id="findPurchaseByDoModal" style="z-index:999;">
         <div class="modal-box" style="width:460px; max-width:95vw; padding:24px; border-radius:16px; background:var(--card); border:1px solid var(--border); box-shadow:var(--shadow-card);">
@@ -365,6 +368,26 @@
                         icon: 'error',
                         title: 'ত্রুটি!',
                         text: 'পণ্য গ্রহণের ইতিহাস লোড করতে সমস্যা হয়েছে।'
+                    });
+                });
+            });
+
+            // Click Purchase Invoice Button (from datatable action or drawer)
+            $(document).on('click', '.btn-show-purchase-invoice', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var url = $(this).data('url');
+                if (!url) return;
+
+                $.get(url, function (html) {
+                    $('#invoiceModalContainer').html(html);
+                    refreshLucideIcons();
+                    openModal('purchaseInvoiceModal');
+                }).fail(function () {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'ত্রুটি!',
+                        text: 'ইনভয়েস স্লিপ লোড করতে সমস্যা হয়েছে।'
                     });
                 });
             });

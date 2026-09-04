@@ -15,6 +15,18 @@
         type="button"
         variant="soft"
         color="secondary"
+        icon="printer"
+        icon-only
+        size="xs"
+        class="btn-show-purchase-invoice"
+        data-id="{{ $purchase->id }}"
+        data-url="{{ route('purchase.invoice-modal', $purchase) }}"
+        title="ইনভয়েস স্লিপ / Invoice Slip"
+    />
+    <x-core::button
+        type="button"
+        variant="soft"
+        color="secondary"
         icon="history"
         icon-only
         size="xs"

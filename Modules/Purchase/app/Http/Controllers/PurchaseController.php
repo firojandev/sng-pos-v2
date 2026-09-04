@@ -140,6 +140,20 @@ class PurchaseController extends Controller
         return view('purchase::purchase._receipt_history_modal', compact('purchase'));
     }
 
+    public function invoiceModal(Purchase $purchase): View
+    {
+        $purchase->load(['supplier', 'warehouse', 'items.product.units', 'payments']);
+
+        return view('purchase::purchase._invoice_modal', compact('purchase'));
+    }
+
+    public function printInvoice(Purchase $purchase): View
+    {
+        $purchase->load(['supplier', 'warehouse', 'items.product.units', 'payments']);
+
+        return view('purchase::purchase.print-invoice', compact('purchase'));
+    }
+
     public function storeReceive(ReceivePurchaseRemainingRequest $request, Purchase $purchase): JsonResponse|RedirectResponse
     {
         $data = $request->validated();
@@ -332,6 +346,11 @@ class PurchaseController extends Controller
         $employees = Employee::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);
         $accounts = Account::active()->orderByDesc('is_default')->orderBy('name')->get();
 
+        $invoicePurchase = null;
+        if (session('show_invoice_purchase_id')) {
+            $invoicePurchase = Purchase::with(['supplier', 'warehouse', 'items.product.units', 'payments'])->find(session('show_invoice_purchase_id'));
+        }
+
         return view('purchase::purchase.create', [
             'purchase' => new Purchase,
             'suppliers' => $suppliers,
@@ -339,6 +358,7 @@ class PurchaseController extends Controller
             'warehouses' => $warehouses,
             'employees' => $employees,
             'accounts' => $accounts,
+            'invoicePurchase' => $invoicePurchase,
         ]);
     }
 
@@ -347,7 +367,8 @@ class PurchaseController extends Controller
         $data = $request->validated();
         $items = $data['items'];
 
-        DB::transaction(function () use ($data, $items) {
+        $purchase = null;
+        DB::transaction(function () use ($data, $items, &$purchase) {
             [$subtotal, $discount, $deliveryCharge, $total, $paid, $due, $status] = $this->calculateTotals($items, $data);
 
             $purchase = Purchase::create([
@@ -380,7 +401,9 @@ class PurchaseController extends Controller
             $this->applyPayments($purchase, $data['payments'] ?? []);
         });
 
-        return redirect()->route('purchase.index')->with('status', 'ক্রয় সফলভাবে যোগ করা হয়েছে');
+        return redirect()->route('purchase.index')
+            ->with('status', 'ক্রয় সফলভাবে যোগ করা হয়েছে')
+            ->with('show_invoice_purchase_id', $purchase?->id);
     }
 
     public function edit(Purchase $purchase): View|RedirectResponse
