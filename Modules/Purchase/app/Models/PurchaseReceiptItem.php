@@ -20,11 +20,17 @@ class PurchaseReceiptItem extends Model
         'product_id',
         'batch_id',
         'received_quantity',
+        'do_number',
+        'do_date',
+        'vehicle_number',
+        'delivery_person_name',
+        'note',
         'received_by',
     ];
 
     protected $casts = [
         'received_quantity' => 'decimal:2',
+        'do_date' => 'date',
     ];
 
     public function purchase(): BelongsTo

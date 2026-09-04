@@ -12,6 +12,32 @@
         title="বিস্তারিত / Details"
     />
     <x-core::button
+        type="button"
+        variant="soft"
+        color="secondary"
+        icon="history"
+        icon-only
+        size="xs"
+        class="btn-receipt-history"
+        data-id="{{ $purchase->id }}"
+        data-url="{{ route('purchase.receipt-history', $purchase) }}"
+        title="পণ্য গ্রহণের ইতিহাস / Product Received History"
+    />
+    @if ($purchase->hasPendingItems())
+        <x-core::button
+            type="button"
+            variant="soft"
+            color="primary"
+            icon="package-check"
+            icon-only
+            size="xs"
+            class="btn-receive-purchase"
+            data-id="{{ $purchase->id }}"
+            data-url="{{ route('purchase.receive.modal', $purchase) }}"
+            title="ডিও দিয়ে বাকি পণ্য গ্রহণ / Receive by D.O."
+        />
+    @endif
+    <x-core::button
         :href="route('purchase.edit', $purchase)"
         variant="soft"
         color="primary"

@@ -3,10 +3,12 @@
 namespace Modules\Purchase\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Modules\Employee\Models\Employee;
 use Modules\Finance\Models\Account;
@@ -14,9 +16,11 @@ use Modules\Product\Models\Batch;
 use Modules\Product\Models\Product;
 use Modules\Product\Models\StockMovement;
 use Modules\Purchase\DataTables\PurchasesDataTable;
+use Modules\Purchase\Http\Requests\ReceivePurchaseRemainingRequest;
 use Modules\Purchase\Http\Requests\StorePurchaseRequest;
 use Modules\Purchase\Http\Requests\UpdatePurchaseRequest;
 use Modules\Purchase\Models\Purchase;
+use Modules\Purchase\Models\PurchaseItem;
 use Modules\Shop\Models\Warehouse;
 use Modules\Supplier\Models\Supplier;
 
@@ -69,6 +73,7 @@ class PurchaseController extends Controller
             $searchClean = ltrim($search, '#');
             $query->where(function ($q) use ($search, $searchClean) {
                 $q->where('invoice_no', 'like', "%{$searchClean}%")
+                    ->orWhere('do_number', 'like', "%{$search}%")
                     ->orWhere('note', 'like', "%{$search}%")
                     ->orWhereHas('supplier', function ($sq) use ($search) {
                         $sq->where('name', 'like', "%{$search}%")
@@ -109,9 +114,211 @@ class PurchaseController extends Controller
 
     public function show(Purchase $purchase): View
     {
-        $purchase->load(['supplier', 'warehouse', 'items.product', 'payments']);
+        $purchase->load(['supplier', 'warehouse', 'items.product.units', 'payments', 'receiptItems.receiver', 'receiptItems.product']);
 
         return view('purchase::purchase.detail-drawer', compact('purchase'));
+    }
+
+    public function receiveModal(Purchase $purchase): View
+    {
+        $purchase->load(['supplier', 'warehouse', 'items.product.units', 'receiptItems.receiver']);
+
+        return view('purchase::purchase._receive_modal', compact('purchase'));
+    }
+
+    public function receiptHistory(Purchase $purchase): View
+    {
+        $purchase->load([
+            'supplier',
+            'warehouse',
+            'items.product.units',
+            'receiptItems.product',
+            'receiptItems.batch',
+            'receiptItems.receiver',
+        ]);
+
+        return view('purchase::purchase._receipt_history_modal', compact('purchase'));
+    }
+
+    public function storeReceive(ReceivePurchaseRemainingRequest $request, Purchase $purchase): JsonResponse|RedirectResponse
+    {
+        $data = $request->validated();
+        $inputItems = collect($data['items']);
+
+        $hasReceivedQty = $inputItems->contains(fn ($item) => (float) ($item['received_qty'] ?? 0) > 0);
+        if (! $hasReceivedQty) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'কমপক্ষে একটি পণ্যের জন্য গ্রহণের পরিমাণ প্রদান করুন। / Please enter received quantity for at least one item.',
+                ], 422);
+            }
+
+            return back()->withErrors(['items' => 'কমপক্ষে একটি পণ্যের জন্য গ্রহণের পরিমাণ প্রদান করুন।']);
+        }
+
+        $purchase->load(['items.product', 'warehouse']);
+
+        DB::transaction(function () use ($data, $inputItems, $purchase) {
+            $doNumber = trim((string) $data['do_number']);
+            $doDate = $data['do_date'] ?? now()->toDateString();
+            $vehicleNumber = $data['vehicle_number'] ?? null;
+            $deliveryPersonName = $data['delivery_person_name'] ?? null;
+            $note = $data['note'] ?? null;
+
+            foreach ($inputItems as $input) {
+                $enteredQty = (float) ($input['received_qty'] ?? 0);
+                if ($enteredQty <= 0) {
+                    continue;
+                }
+
+                /** @var PurchaseItem|null $purchaseItem */
+                $purchaseItem = $purchase->items->firstWhere('id', (int) $input['purchase_item_id']);
+                if (! $purchaseItem) {
+                    continue;
+                }
+
+                $pending = $purchaseItem->pendingQuantity();
+                if ($enteredQty > $pending) {
+                    throw ValidationException::withMessages([
+                        'items' => ["{$purchaseItem->product->name}-এর জন্য গ্রহণের পরিমাণ বাকি পরিমাণের চেয়ে বেশি হতে পারবে না (বাকি: {$pending})।"],
+                    ]);
+                }
+
+                $batchNo = ! empty($input['batch_no'])
+                    ? trim((string) $input['batch_no'])
+                    : ($purchaseItem->batch_no ?: 'BT-'.now()->format('ymd').'-'.$purchaseItem->product_id.'-'.random_int(100, 999));
+
+                $batch = Batch::where('product_id', $purchaseItem->product_id)
+                    ->where('batch_no', $batchNo)
+                    ->where('warehouse_id', $purchase->warehouse_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                $before = $batch ? (float) $batch->quantity : 0.0;
+
+                if ($batch) {
+                    $batch->quantity += $enteredQty;
+                    if (! empty($input['mfg_date'])) {
+                        $batch->mfg_date = $input['mfg_date'];
+                    }
+                    if (! empty($input['expiry_date'])) {
+                        $batch->expiry_date = $input['expiry_date'];
+                    }
+                    $batch->save();
+                } else {
+                    $batch = Batch::create([
+                        'shop_id' => $purchase->shop_id,
+                        'product_id' => $purchaseItem->product_id,
+                        'warehouse_id' => $purchase->warehouse_id,
+                        'batch_no' => $batchNo,
+                        'quantity' => $enteredQty,
+                        'mfg_date' => $input['mfg_date'] ?? null,
+                        'expiry_date' => $input['expiry_date'] ?? null,
+                    ]);
+                }
+
+                $purchaseItem->received_quantity = (float) $purchaseItem->received_quantity + $enteredQty;
+                if (! $purchaseItem->batch_id) {
+                    $purchaseItem->batch_id = $batch->id;
+                    $purchaseItem->batch_no = $batchNo;
+                }
+                $purchaseItem->save();
+
+                $purchase->receiptItems()->create([
+                    'shop_id' => $purchase->shop_id,
+                    'purchase_item_id' => $purchaseItem->id,
+                    'product_id' => $purchaseItem->product_id,
+                    'batch_id' => $batch->id,
+                    'received_quantity' => $enteredQty,
+                    'do_number' => $doNumber,
+                    'do_date' => $doDate,
+                    'vehicle_number' => $vehicleNumber,
+                    'delivery_person_name' => $deliveryPersonName,
+                    'note' => $note,
+                    'received_by' => Auth::id(),
+                ]);
+
+                StockMovement::create([
+                    'shop_id' => $purchase->shop_id,
+                    'product_id' => $purchaseItem->product_id,
+                    'batch_id' => $batch->id,
+                    'type' => 'purchase',
+                    'quantity_change' => $enteredQty,
+                    'quantity_before' => $before,
+                    'quantity_after' => (float) $batch->quantity,
+                    'reference_type' => Purchase::class,
+                    'reference_id' => $purchase->id,
+                    'note' => "Received remaining items (D.O. #{$doNumber}) for Purchase #{$purchase->invoice_no}",
+                    'created_by' => Auth::id(),
+                ]);
+            }
+
+            if (empty($purchase->do_number)) {
+                $purchase->update([
+                    'do_number' => $doNumber,
+                    'do_date' => $doDate,
+                    'vehicle_number' => $vehicleNumber,
+                    'delivery_person_name' => $deliveryPersonName,
+                ]);
+            }
+        });
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'পণ্য সফলভাবে গ্রহণ করা হয়েছে এবং ইনভেন্টরি স্টক হালনাগাদ করা হয়েছে।',
+            ]);
+        }
+
+        return redirect()->route('purchase.ledger')->with('status', 'পণ্য সফলভাবে গ্রহণ করা হয়েছে এবং ইনভেন্টরি স্টক হালনাগাদ করা হয়েছে।');
+    }
+
+    public function findByDo(Request $request): JsonResponse
+    {
+        $doNumber = trim((string) $request->query('do_number', ''));
+        if ($doNumber === '') {
+            return response()->json(['success' => false, 'message' => 'দয়া করে ডিও নম্বর লিখুন। / Please enter a D.O. number.'], 422);
+        }
+
+        $clean = ltrim($doNumber, '#');
+
+        $purchase = Purchase::query()
+            ->where(function ($q) use ($doNumber, $clean) {
+                $q->where('do_number', $doNumber)
+                    ->orWhere('do_number', 'like', "%{$doNumber}%")
+                    ->orWhere('invoice_no', $clean)
+                    ->orWhere('invoice_no', 'like', "%{$clean}%")
+                    ->orWhereHas('receiptItems', function ($rq) use ($doNumber) {
+                        $rq->where('do_number', $doNumber);
+                    });
+            })
+            ->with(['supplier', 'warehouse', 'items.product'])
+            ->latest()
+            ->first();
+
+        if (! $purchase) {
+            return response()->json([
+                'success' => false,
+                'message' => 'এই ডিও বা ইনভয়েস নম্বরের কোনো ক্রয় পাওয়া যায়নি। / No purchase found for this D.O. or Invoice number.',
+            ], 404);
+        }
+
+        if (! $purchase->hasPendingItems()) {
+            return response()->json([
+                'success' => false,
+                'message' => "ইনভয়েস #{$purchase->invoice_no}-এর সকল পণ্য ইতিমধ্যে শতভাগ গ্রহণ করা হয়েছে। / All items for invoice #{$purchase->invoice_no} have already been received.",
+                'purchase_id' => $purchase->id,
+                'fully_received' => true,
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'purchase_id' => $purchase->id,
+            'invoice_no' => $purchase->invoice_no,
+            'modal_url' => route('purchase.receive.modal', $purchase),
+        ]);
     }
 
     public function create(): View
@@ -386,6 +593,10 @@ class PurchaseController extends Controller
                 'product_id' => $item['product_id'],
                 'batch_id' => $batch->id,
                 'received_quantity' => $baseReceivedQuantity,
+                'do_number' => $purchase->do_number,
+                'do_date' => $purchase->do_date,
+                'vehicle_number' => $purchase->vehicle_number,
+                'delivery_person_name' => $purchase->delivery_person_name,
                 'received_by' => Auth::id(),
             ]);
 

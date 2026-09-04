@@ -4,6 +4,7 @@ namespace Modules\Purchase\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Product\Models\Batch;
@@ -45,5 +46,20 @@ class PurchaseItem extends Model
     public function receiptItem(): HasOne
     {
         return $this->hasOne(PurchaseReceiptItem::class);
+    }
+
+    public function receiptItems(): HasMany
+    {
+        return $this->hasMany(PurchaseReceiptItem::class);
+    }
+
+    public function pendingQuantity(): float
+    {
+        return max(0.0, (float) $this->quantity - (float) ($this->received_quantity ?? $this->quantity));
+    }
+
+    public function isFullyReceived(): bool
+    {
+        return (float) ($this->received_quantity ?? $this->quantity) >= (float) $this->quantity;
     }
 }

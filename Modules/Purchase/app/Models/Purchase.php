@@ -75,4 +75,29 @@ class Purchase extends Model
     {
         return $this->hasOne(PurchaseDeliveryReceipt::class);
     }
+
+    public function hasPendingItems(): bool
+    {
+        return $this->items->contains(fn ($item) => (float) ($item->received_quantity ?? $item->quantity) < (float) $item->quantity);
+    }
+
+    public function pendingItems()
+    {
+        return $this->items->filter(fn ($item) => (float) ($item->received_quantity ?? $item->quantity) < (float) $item->quantity);
+    }
+
+    public function totalPendingQuantity(): float
+    {
+        return (float) $this->items->sum(fn ($item) => max(0.0, (float) $item->quantity - (float) ($item->received_quantity ?? $item->quantity)));
+    }
+
+    public function totalReceivedQuantity(): float
+    {
+        return (float) $this->items->sum(fn ($item) => (float) ($item->received_quantity ?? $item->quantity));
+    }
+
+    public function isFullyReceived(): bool
+    {
+        return ! $this->hasPendingItems();
+    }
 }

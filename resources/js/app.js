@@ -3,11 +3,13 @@ import DataTable from 'datatables.net';
 import Swal from 'sweetalert2';
 import { createIcons, icons } from 'lucide';
 
+const safeCreateIcons = (options = {}) => createIcons({ icons, ...options });
+
 window.$ = window.jQuery = $;
 window.DataTable = DataTable;
 window.Swal = Swal;
-window.lucide = { createIcons, icons };
-window.createIcons = (options = {}) => createIcons({ icons, ...options });
+window.lucide = { createIcons: safeCreateIcons, icons };
+window.createIcons = safeCreateIcons;
 
 
 
