@@ -1,8 +1,11 @@
 <div class="row g-3">
     <div class="col-md-6">
         @php
+            $availableLabels = $account->exists
+                ? $typeLabels
+                : ($creatableTypeLabels ?? \Modules\Finance\Models\Account::creatableTypeLabels());
             $typeOptions = [];
-            foreach ($typeLabels as $k => $labels) {
+            foreach ($availableLabels as $k => $labels) {
                 $typeOptions[$k] = $labels['bn'] . ' (' . $labels['en'] . ')';
             }
         @endphp
@@ -13,7 +16,7 @@
             label-en="Account Type"
             :required="true"
             :disabled="$account->exists"
-            :value="old('type', $account->type ?? 'cash')"
+            :value="old('type', $account->type ?? 'bank')"
             :options="$typeOptions"
         />
         @if ($account->exists)
@@ -29,8 +32,8 @@
             label-en="Account Title / Name"
             :required="true"
             :value="old('name', $account->name)"
-            placeholder="যেমন: প্রধান ক্যাশ, ডাচ বাংলা ব্যাংক, বিকাশ মার্চেন্ট"
-            placeholder-en="e.g. Main Cash, Dutch Bangla Bank, bKash Merchant"
+            placeholder="যেমন: ডাচ বাংলা ব্যাংক, বিকাশ মার্চেন্ট"
+            placeholder-en="e.g. Dutch Bangla Bank, bKash Merchant"
         />
     </div>
 

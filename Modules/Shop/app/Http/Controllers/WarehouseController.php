@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Modules\Shop\DataTables\WarehousesDataTable;
 use Modules\Shop\Http\Requests\StoreWarehouseRequest;
@@ -64,7 +65,36 @@ class WarehouseController extends Controller
             return redirect()->route('warehouses.index')->with('status', $message);
         }
 
-        $warehouse = Warehouse::create($request->validated());
+        $data = $request->validated();
+        $isDefault = (bool) ($data['is_default'] ?? false);
+
+        if (Warehouse::count() === 0) {
+            $isDefault = true;
+        }
+
+        if ($isDefault && ($data['status'] ?? '') === 'inactive') {
+            $errorMsg = 'নিষ্ক্রিয় গুদামকে ডিফল্ট হিসেবে নির্ধারণ করা যাবে না।';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMsg,
+                    'errors' => ['status' => [$errorMsg]],
+                ], 422);
+            }
+
+            return redirect()->back()->withInput()->withErrors(['status' => $errorMsg]);
+        }
+
+        $warehouse = DB::transaction(function () use ($data, $isDefault) {
+            $data['is_default'] = $isDefault;
+            $warehouse = Warehouse::create($data);
+
+            if ($isDefault) {
+                $warehouse->makeDefault();
+            }
+
+            return $warehouse;
+        });
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
@@ -86,6 +116,7 @@ class WarehouseController extends Controller
                 'name' => $warehouse->name,
                 'address' => $warehouse->address,
                 'status' => $warehouse->status,
+                'is_default' => (bool) $warehouse->is_default,
                 'update_url' => route('warehouses.update', $warehouse),
             ]);
         }
@@ -101,7 +132,44 @@ class WarehouseController extends Controller
 
     public function update(UpdateWarehouseRequest $request, Warehouse $warehouse): RedirectResponse|JsonResponse
     {
-        $warehouse->update($request->validated());
+        $data = $request->validated();
+        $isDefault = array_key_exists('is_default', $data) ? (bool) $data['is_default'] : (bool) $warehouse->is_default;
+        $newStatus = $data['status'] ?? $warehouse->status;
+
+        if ($isDefault && $newStatus === 'inactive') {
+            $errorMsg = 'নিষ্ক্রিয় গুদামকে ডিফল্ট হিসেবে নির্ধারণ করা যাবে না।';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMsg,
+                    'errors' => ['status' => [$errorMsg]],
+                ], 422);
+            }
+
+            return redirect()->back()->withInput()->withErrors(['status' => $errorMsg]);
+        }
+
+        if ($warehouse->is_default && $newStatus === 'inactive') {
+            $errorMsg = 'ডিফল্ট গুদামকে নিষ্ক্রিয় করা যাবে না। অন্য কোনো গুদামকে ডিফল্ট হিসেবে নির্ধারণ করে এটিকে নিষ্ক্রিয় করুন।';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMsg,
+                    'errors' => ['status' => [$errorMsg]],
+                ], 422);
+            }
+
+            return redirect()->back()->withInput()->withErrors(['status' => $errorMsg]);
+        }
+
+        DB::transaction(function () use ($warehouse, $data, $isDefault) {
+            $data['is_default'] = $isDefault;
+            $warehouse->update($data);
+
+            if ($isDefault) {
+                $warehouse->makeDefault();
+            }
+        });
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
@@ -116,6 +184,18 @@ class WarehouseController extends Controller
 
     public function destroy(Request $request, Warehouse $warehouse): RedirectResponse|JsonResponse
     {
+        if ($warehouse->is_default && Warehouse::where('id', '!=', $warehouse->id)->exists()) {
+            $errorMsg = 'ডিফল্ট গুদাম মুছে ফেলা যাবে না। অন্য কোনো গুদামকে ডিফল্ট হিসেবে নির্ধারণ করে এটি মুছুন।';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMsg,
+                ], 422);
+            }
+
+            return redirect()->route('warehouses.index')->withErrors(['error' => $errorMsg]);
+        }
+
         if ($warehouse->batches()->exists()) {
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
@@ -137,5 +217,34 @@ class WarehouseController extends Controller
         }
 
         return redirect()->route('warehouses.index')->with('status', 'গুদাম মুছে ফেলা হয়েছে');
+    }
+
+    public function setDefault(Request $request, Warehouse $warehouse): RedirectResponse|JsonResponse
+    {
+        if ($warehouse->status !== 'active') {
+            $errorMsg = 'নিষ্ক্রিয় গুদামকে ডিফল্ট হিসেবে নির্ধারণ করা যাবে না। প্রথমে এটিকে সক্রিয় করুন।';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMsg,
+                ], 422);
+            }
+
+            return redirect()->route('warehouses.index')->withErrors(['error' => $errorMsg]);
+        }
+
+        $warehouse->makeDefault();
+
+        $successMsg = "'{$warehouse->name}' গুদামটিকে ডিফল্ট গুদাম হিসেবে নির্ধারণ করা হয়েছে";
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $successMsg,
+                'warehouse' => $warehouse,
+            ]);
+        }
+
+        return redirect()->route('warehouses.index')->with('status', $successMsg);
     }
 }

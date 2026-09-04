@@ -23,6 +23,9 @@ Route::middleware(['auth', 'feature:branches'])->group(function () {
         ->middlewareFor(['index'], 'permission:branches.view')
         ->middlewareFor(['create', 'store', 'edit', 'update'], 'permission:branches.write')
         ->middlewareFor(['destroy'], 'permission:branches.delete');
+    Route::post('warehouses/{warehouse}/set-default', [WarehouseController::class, 'setDefault'])
+        ->name('warehouses.set-default')
+        ->middleware('permission:branches.write');
     Route::resource('warehouses', WarehouseController::class)->except(['show'])
         ->middlewareFor(['index'], 'permission:branches.view')
         ->middlewareFor(['create', 'store', 'edit', 'update'], 'permission:branches.write')

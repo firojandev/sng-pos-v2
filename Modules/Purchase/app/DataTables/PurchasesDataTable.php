@@ -59,9 +59,20 @@ class PurchasesDataTable extends BaseDataTable
                 return '<span style="font-family:var(--font-mono, monospace); font-size:12px; color:var(--ink-700);">'.e($batches->implode(', ')).'</span>';
             })
             ->addColumn('items_count', function (Purchase $purchase) {
-                $qty = $purchase->items->sum('quantity');
+                $qty = (float) $purchase->items->sum('quantity');
+                $qtyFormatted = rtrim(rtrim(number_format($qty, 2), '0'), '.');
 
-                return '<span style="font-family:var(--font-mono, monospace); color:var(--ink-700); font-weight:600;">'.rtrim(rtrim(number_format((float) $qty, 2), '0'), '.').'</span>';
+                if ($purchase->hasPendingItems()) {
+                    $pending = (float) $purchase->totalPendingQuantity();
+                    $pendingFormatted = rtrim(rtrim(number_format($pending, 2), '0'), '.');
+
+                    return '<div>'
+                        .'<span style="font-family:var(--font-mono, monospace); color:var(--ink-700); font-weight:600;">'.$qtyFormatted.'</span>'
+                        .'<div style="font-size:11px; color:var(--red-600); font-weight:700; margin-top:2px;">(বাকি: '.$pendingFormatted.')</div>'
+                        .'</div>';
+                }
+
+                return '<span style="font-family:var(--font-mono, monospace); color:var(--ink-700); font-weight:600;">'.$qtyFormatted.'</span>';
             })
             ->editColumn('total', function (Purchase $purchase) {
                 return '<span style="font-family:var(--font-mono, monospace); font-weight:700; color:var(--ink-900);">৳'.number_format((float) $purchase->total, 2).'</span>';
@@ -95,7 +106,10 @@ class PurchasesDataTable extends BaseDataTable
             })
             ->filterColumn('invoice_no', function ($query, $keyword) {
                 $clean = ltrim($keyword, '#');
-                $query->where('purchases.invoice_no', 'like', "%{$clean}%");
+                $query->where(function ($q) use ($keyword, $clean) {
+                    $q->where('purchases.invoice_no', 'like', "%{$clean}%")
+                        ->orWhere('purchases.do_number', 'like', "%{$keyword}%");
+                });
             })
             ->filterColumn('batch_no', function ($query, $keyword) {
                 $query->whereHas('items', function ($q) use ($keyword) {
@@ -130,7 +144,7 @@ class PurchasesDataTable extends BaseDataTable
     public function query(Purchase $model): QueryBuilder
     {
         $query = $model->newQuery()
-            ->with(['supplier', 'items.product', 'payments'])
+            ->with(['supplier', 'items.product', 'items.batch', 'payments', 'returns'])
             ->select('purchases.*');
 
         if ($from = request('from')) {
@@ -151,7 +165,11 @@ class PurchasesDataTable extends BaseDataTable
             $searchClean = ltrim($search, '#');
             $query->where(function ($q) use ($search, $searchClean) {
                 $q->where('purchases.invoice_no', 'like', "%{$searchClean}%")
+                    ->orWhere('purchases.do_number', 'like', "%{$search}%")
                     ->orWhere('purchases.note', 'like', "%{$search}%")
+                    ->orWhereHas('receiptItems', function ($rq) use ($search) {
+                        $rq->where('do_number', 'like', "%{$search}%");
+                    })
                     ->orWhereHas('supplier', function ($sq) use ($search) {
                         $sq->where('name', 'like', "%{$search}%")
                             ->orWhere('phone', 'like', "%{$search}%");
@@ -223,7 +241,7 @@ class PurchasesDataTable extends BaseDataTable
                 ->searchable(false)
                 ->exportable(false)
                 ->printable(false)
-                ->width(110)
+                ->width(140)
                 ->addClass('table-cell-right'),
         ];
     }

@@ -18,6 +18,16 @@ class UpdateWarehouseRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'address' => ['nullable', 'string', 'max:255'],
             'status' => ['required', 'in:active,inactive'],
+            'is_default' => ['nullable', 'boolean'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('is_default')) {
+            $this->merge([
+                'is_default' => filter_var($this->is_default, FILTER_VALIDATE_BOOLEAN),
+            ]);
+        }
     }
 }

@@ -36,9 +36,9 @@ class AccountTransactionService
                 'type' => 'cash',
                 'opening_balance' => 0,
                 'current_balance' => 0,
-                'is_default' => true,
+                'is_default' => false,
                 'status' => 'active',
-                'note' => 'স্বয়ংক্রিয়ভাবে তৈরি ডিফল্ট ক্যাশ অ্যাকাউন্ট',
+                'note' => 'প্রধান ক্যাশ অ্যাকাউন্ট (সিস্টেম নির্ধারিত)',
             ]);
         }
 
@@ -189,6 +189,10 @@ class AccountTransactionService
      */
     public function setDefaultAccount(Account $account): void
     {
+        if ($account->isCash()) {
+            throw new \InvalidArgumentException('Cash account cannot be set as default.');
+        }
+
         DB::transaction(function () use ($account) {
             Account::withoutGlobalScopes()
                 ->where('shop_id', $account->shop_id)

@@ -3,10 +3,12 @@
 namespace Modules\Purchase\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Modules\Employee\Models\Employee;
 use Modules\Finance\Models\Account;
@@ -14,9 +16,11 @@ use Modules\Product\Models\Batch;
 use Modules\Product\Models\Product;
 use Modules\Product\Models\StockMovement;
 use Modules\Purchase\DataTables\PurchasesDataTable;
+use Modules\Purchase\Http\Requests\ReceivePurchaseRemainingRequest;
 use Modules\Purchase\Http\Requests\StorePurchaseRequest;
 use Modules\Purchase\Http\Requests\UpdatePurchaseRequest;
 use Modules\Purchase\Models\Purchase;
+use Modules\Purchase\Models\PurchaseItem;
 use Modules\Shop\Models\Warehouse;
 use Modules\Supplier\Models\Supplier;
 
@@ -69,6 +73,7 @@ class PurchaseController extends Controller
             $searchClean = ltrim($search, '#');
             $query->where(function ($q) use ($search, $searchClean) {
                 $q->where('invoice_no', 'like', "%{$searchClean}%")
+                    ->orWhere('do_number', 'like', "%{$search}%")
                     ->orWhere('note', 'like', "%{$search}%")
                     ->orWhereHas('supplier', function ($sq) use ($search) {
                         $sq->where('name', 'like', "%{$search}%")
@@ -109,9 +114,225 @@ class PurchaseController extends Controller
 
     public function show(Purchase $purchase): View
     {
-        $purchase->load(['supplier', 'warehouse', 'items.product', 'payments']);
+        $purchase->load(['supplier', 'warehouse', 'items.product.units', 'payments', 'receiptItems.receiver', 'receiptItems.product']);
 
         return view('purchase::purchase.detail-drawer', compact('purchase'));
+    }
+
+    public function receiveModal(Purchase $purchase): View
+    {
+        $purchase->load(['supplier', 'warehouse', 'items.product.units', 'receiptItems.receiver']);
+
+        return view('purchase::purchase._receive_modal', compact('purchase'));
+    }
+
+    public function receiptHistory(Purchase $purchase): View
+    {
+        $purchase->load([
+            'supplier',
+            'warehouse',
+            'items.product.units',
+            'receiptItems.product',
+            'receiptItems.batch',
+            'receiptItems.receiver',
+        ]);
+
+        return view('purchase::purchase._receipt_history_modal', compact('purchase'));
+    }
+
+    public function invoiceModal(Purchase $purchase): View
+    {
+        $purchase->load(['supplier', 'warehouse', 'items.product.units', 'payments']);
+
+        return view('purchase::purchase._invoice_modal', compact('purchase'));
+    }
+
+    public function printInvoice(Purchase $purchase): View
+    {
+        $purchase->load(['supplier', 'warehouse', 'items.product.units', 'payments']);
+
+        return view('purchase::purchase.print-invoice', compact('purchase'));
+    }
+
+    public function storeReceive(ReceivePurchaseRemainingRequest $request, Purchase $purchase): JsonResponse|RedirectResponse
+    {
+        $data = $request->validated();
+        $inputItems = collect($data['items']);
+
+        $hasReceivedQty = $inputItems->contains(fn ($item) => (float) ($item['received_qty'] ?? 0) > 0);
+        if (! $hasReceivedQty) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'কমপক্ষে একটি পণ্যের জন্য গ্রহণের পরিমাণ প্রদান করুন। / Please enter received quantity for at least one item.',
+                ], 422);
+            }
+
+            return back()->withErrors(['items' => 'কমপক্ষে একটি পণ্যের জন্য গ্রহণের পরিমাণ প্রদান করুন।']);
+        }
+
+        $purchase->load(['items.product', 'warehouse']);
+
+        DB::transaction(function () use ($data, $inputItems, $purchase) {
+            $doNumber = trim((string) $data['do_number']);
+            $doDate = $data['do_date'] ?? now()->toDateString();
+            $vehicleNumber = $data['vehicle_number'] ?? null;
+            $deliveryPersonName = $data['delivery_person_name'] ?? null;
+            $note = $data['note'] ?? null;
+
+            foreach ($inputItems as $input) {
+                $enteredQty = (float) ($input['received_qty'] ?? 0);
+                if ($enteredQty <= 0) {
+                    continue;
+                }
+
+                /** @var PurchaseItem|null $purchaseItem */
+                $purchaseItem = $purchase->items->firstWhere('id', (int) $input['purchase_item_id']);
+                if (! $purchaseItem) {
+                    continue;
+                }
+
+                $pending = $purchaseItem->pendingQuantity();
+                if ($enteredQty > $pending) {
+                    throw ValidationException::withMessages([
+                        'items' => ["{$purchaseItem->product->name}-এর জন্য গ্রহণের পরিমাণ বাকি পরিমাণের চেয়ে বেশি হতে পারবে না (বাকি: {$pending})।"],
+                    ]);
+                }
+
+                $batchNo = ! empty($input['batch_no'])
+                    ? trim((string) $input['batch_no'])
+                    : ($purchaseItem->batch_no ?: 'BT-'.now()->format('ymd').'-'.$purchaseItem->product_id.'-'.random_int(100, 999));
+
+                $batch = Batch::where('product_id', $purchaseItem->product_id)
+                    ->where('batch_no', $batchNo)
+                    ->where('warehouse_id', $purchase->warehouse_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                $before = $batch ? (float) $batch->quantity : 0.0;
+
+                if ($batch) {
+                    $batch->quantity += $enteredQty;
+                    if (! empty($input['mfg_date'])) {
+                        $batch->mfg_date = $input['mfg_date'];
+                    }
+                    if (! empty($input['expiry_date'])) {
+                        $batch->expiry_date = $input['expiry_date'];
+                    }
+                    $batch->save();
+                } else {
+                    $batch = Batch::create([
+                        'shop_id' => $purchase->shop_id,
+                        'product_id' => $purchaseItem->product_id,
+                        'warehouse_id' => $purchase->warehouse_id,
+                        'batch_no' => $batchNo,
+                        'quantity' => $enteredQty,
+                        'mfg_date' => $input['mfg_date'] ?? null,
+                        'expiry_date' => $input['expiry_date'] ?? null,
+                    ]);
+                }
+
+                $purchaseItem->received_quantity = (float) $purchaseItem->received_quantity + $enteredQty;
+                if (! $purchaseItem->batch_id) {
+                    $purchaseItem->batch_id = $batch->id;
+                    $purchaseItem->batch_no = $batchNo;
+                }
+                $purchaseItem->save();
+
+                $purchase->receiptItems()->create([
+                    'shop_id' => $purchase->shop_id,
+                    'purchase_item_id' => $purchaseItem->id,
+                    'product_id' => $purchaseItem->product_id,
+                    'batch_id' => $batch->id,
+                    'received_quantity' => $enteredQty,
+                    'do_number' => $doNumber,
+                    'do_date' => $doDate,
+                    'vehicle_number' => $vehicleNumber,
+                    'delivery_person_name' => $deliveryPersonName,
+                    'note' => $note,
+                    'received_by' => Auth::id(),
+                ]);
+
+                StockMovement::create([
+                    'shop_id' => $purchase->shop_id,
+                    'product_id' => $purchaseItem->product_id,
+                    'batch_id' => $batch->id,
+                    'type' => 'purchase',
+                    'quantity_change' => $enteredQty,
+                    'quantity_before' => $before,
+                    'quantity_after' => (float) $batch->quantity,
+                    'reference_type' => Purchase::class,
+                    'reference_id' => $purchase->id,
+                    'note' => "Received remaining items (D.O. #{$doNumber}) for Purchase #{$purchase->invoice_no}",
+                    'created_by' => Auth::id(),
+                ]);
+            }
+
+            if (empty($purchase->do_number)) {
+                $purchase->update([
+                    'do_number' => $doNumber,
+                    'do_date' => $doDate,
+                    'vehicle_number' => $vehicleNumber,
+                    'delivery_person_name' => $deliveryPersonName,
+                ]);
+            }
+        });
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'পণ্য সফলভাবে গ্রহণ করা হয়েছে এবং ইনভেন্টরি স্টক হালনাগাদ করা হয়েছে।',
+            ]);
+        }
+
+        return redirect()->route('purchase.ledger')->with('status', 'পণ্য সফলভাবে গ্রহণ করা হয়েছে এবং ইনভেন্টরি স্টক হালনাগাদ করা হয়েছে।');
+    }
+
+    public function findByDo(Request $request): JsonResponse
+    {
+        $doNumber = trim((string) $request->query('do_number', ''));
+        if ($doNumber === '') {
+            return response()->json(['success' => false, 'message' => 'দয়া করে ডিও নম্বর লিখুন। / Please enter a D.O. number.'], 422);
+        }
+
+        $clean = ltrim($doNumber, '#');
+
+        $purchase = Purchase::query()
+            ->where(function ($q) use ($doNumber, $clean) {
+                $q->where('do_number', $doNumber)
+                    ->orWhere('do_number', 'like', "%{$doNumber}%")
+                    ->orWhere('invoice_no', $clean)
+                    ->orWhere('invoice_no', 'like', "%{$clean}%")
+                    ->orWhereHas('receiptItems', function ($rq) use ($doNumber) {
+                        $rq->where('do_number', $doNumber);
+                    });
+            })
+            ->with(['supplier', 'warehouse', 'items.product'])
+            ->latest()
+            ->first();
+
+        if (! $purchase) {
+            return response()->json([
+                'success' => false,
+                'message' => 'এই ডিও বা ইনভয়েস নম্বরের কোনো ক্রয় পাওয়া যায়নি। / No purchase found for this D.O. or Invoice number.',
+            ], 404);
+        }
+
+        if (! $purchase->hasPendingItems()) {
+            return response()->json([
+                'success' => false,
+                'message' => "ইনভয়েস #{$purchase->invoice_no}-এর সকল পণ্য ইতিমধ্যে শতভাগ গ্রহণ করা হয়েছে। / All items for invoice #{$purchase->invoice_no} have already been received.",
+                'purchase_id' => $purchase->id,
+                'fully_received' => true,
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'purchase_id' => $purchase->id,
+            'invoice_no' => $purchase->invoice_no,
+            'modal_url' => route('purchase.receive.modal', $purchase),
+        ]);
     }
 
     public function create(): View
@@ -125,6 +346,11 @@ class PurchaseController extends Controller
         $employees = Employee::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);
         $accounts = Account::active()->orderByDesc('is_default')->orderBy('name')->get();
 
+        $invoicePurchase = null;
+        if (session('show_invoice_purchase_id')) {
+            $invoicePurchase = Purchase::with(['supplier', 'warehouse', 'items.product.units', 'payments'])->find(session('show_invoice_purchase_id'));
+        }
+
         return view('purchase::purchase.create', [
             'purchase' => new Purchase,
             'suppliers' => $suppliers,
@@ -132,6 +358,7 @@ class PurchaseController extends Controller
             'warehouses' => $warehouses,
             'employees' => $employees,
             'accounts' => $accounts,
+            'invoicePurchase' => $invoicePurchase,
         ]);
     }
 
@@ -140,7 +367,8 @@ class PurchaseController extends Controller
         $data = $request->validated();
         $items = $data['items'];
 
-        DB::transaction(function () use ($data, $items) {
+        $purchase = null;
+        DB::transaction(function () use ($data, $items, &$purchase) {
             [$subtotal, $discount, $deliveryCharge, $total, $paid, $due, $status] = $this->calculateTotals($items, $data);
 
             $purchase = Purchase::create([
@@ -150,6 +378,8 @@ class PurchaseController extends Controller
                 'subtotal' => $subtotal,
                 'discount' => $discount,
                 'delivery_charge' => $deliveryCharge,
+                'transportation_cost' => (float) ($data['transportation_cost'] ?? 0),
+                'adjustment_cost' => (float) ($data['adjustment_cost'] ?? 0),
                 'total' => $total,
                 'paid_amount' => $paid,
                 'due_amount' => $due,
@@ -157,6 +387,10 @@ class PurchaseController extends Controller
                 'note' => $data['note'] ?? null,
                 'employee_name' => $data['employee_name'] ?? null,
                 'employee_phone' => $data['employee_phone'] ?? null,
+                'do_number' => $data['do_number'] ?? null,
+                'do_date' => $data['do_date'] ?? null,
+                'vehicle_number' => $data['vehicle_number'] ?? null,
+                'delivery_person_name' => $data['delivery_person_name'] ?? null,
             ]);
 
             $purchase->update([
@@ -167,11 +401,20 @@ class PurchaseController extends Controller
             $this->applyPayments($purchase, $data['payments'] ?? []);
         });
 
-        return redirect()->route('purchase.index')->with('status', 'ক্রয় সফলভাবে যোগ করা হয়েছে');
+        return redirect()->route('purchase.index')
+            ->with('status', 'ক্রয় সফলভাবে যোগ করা হয়েছে')
+            ->with('show_invoice_purchase_id', $purchase?->id);
     }
 
-    public function edit(Purchase $purchase): View
+    public function edit(Purchase $purchase): View|RedirectResponse
     {
+        if ($purchase->hasUsedQuantity()) {
+            $reason = $purchase->cannotBeEditedReason();
+
+            return redirect()->route('purchase.ledger')
+                ->with('error', $reason.' তাই ক্রয়টি সম্পাদনা করা যাবে না। / Therefore, this purchase cannot be edited.');
+        }
+
         $suppliers = Supplier::where('status', 'active')
             ->withSum(['purchases' => fn ($q) => $q->where('id', '!=', $purchase->id)], 'due_amount')
             ->orderBy('name')
@@ -185,16 +428,38 @@ class PurchaseController extends Controller
         return view('purchase::purchase.edit', compact('purchase', 'suppliers', 'products', 'warehouses', 'employees', 'accounts'));
     }
 
-    public function update(UpdatePurchaseRequest $request, Purchase $purchase): RedirectResponse
+    public function update(UpdatePurchaseRequest $request, Purchase $purchase): RedirectResponse|JsonResponse
     {
+        if ($purchase->hasUsedQuantity()) {
+            $reason = $purchase->cannotBeEditedReason();
+            $message = $reason.' তাই ক্রয়টি সম্পাদনা করা যাবে না। / Therefore, this purchase cannot be edited.';
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                ], 422);
+            }
+
+            return redirect()->route('purchase.ledger')->with('error', $message);
+        }
+
         $data = $request->validated();
         $items = $data['items'];
 
         DB::transaction(function () use ($data, $items, $purchase) {
+            // 1. Rollback old stock & receipt items & old items
             $this->revertItems($purchase);
 
+            // 2. Rollback old payments (triggers PurchasePaymentAccountObserver to refund account balances)
+            foreach ($purchase->payments()->get() as $payment) {
+                $payment->delete();
+            }
+
+            // 3. Calculate new totals
             [$subtotal, $discount, $deliveryCharge, $total, $paid, $due, $status] = $this->calculateTotals($items, $data);
 
+            // 4. Update purchase record (PurchaseCashObserver::saved updates CashTransaction and supplier due adjusts dynamically)
             $purchase->update([
                 'supplier_id' => $this->resolveSupplierId($data),
                 'warehouse_id' => $data['warehouse_id'],
@@ -203,6 +468,8 @@ class PurchaseController extends Controller
                 'subtotal' => $subtotal,
                 'discount' => $discount,
                 'delivery_charge' => $deliveryCharge,
+                'transportation_cost' => (float) ($data['transportation_cost'] ?? 0),
+                'adjustment_cost' => (float) ($data['adjustment_cost'] ?? 0),
                 'total' => $total,
                 'paid_amount' => $paid,
                 'due_amount' => $due,
@@ -210,21 +477,57 @@ class PurchaseController extends Controller
                 'note' => $data['note'] ?? null,
                 'employee_name' => $data['employee_name'] ?? null,
                 'employee_phone' => $data['employee_phone'] ?? null,
+                'do_number' => $data['do_number'] ?? null,
+                'do_date' => $data['do_date'] ?? null,
+                'vehicle_number' => $data['vehicle_number'] ?? null,
+                'delivery_person_name' => $data['delivery_person_name'] ?? null,
             ]);
 
+            // 5. Apply new items (adds new stock, creates receipt items, logs stock movements)
             $this->applyItems($purchase, $items);
 
-            $purchase->payments()->delete();
+            // 6. Apply new payments (triggers PurchasePaymentAccountObserver to deduct from accounts)
             $this->applyPayments($purchase, $data['payments'] ?? []);
         });
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'ক্রয় হালনাগাদ করা হয়েছে',
+            ]);
+        }
 
         return redirect()->route('purchase.index')->with('status', 'ক্রয় হালনাগাদ করা হয়েছে');
     }
 
-    public function destroy(Purchase $purchase)
+    public function destroy(Purchase $purchase): JsonResponse|RedirectResponse
     {
+        $purchase->load(['items.batch', 'items.product', 'payments', 'receiptItems', 'returns']);
+
+        if ($reason = $purchase->cannotBeDeletedReason()) {
+            $message = $reason.' তাই ক্রয়টি মুছে ফেলা যাবে না। / Therefore, this purchase cannot be deleted.';
+
+            if (request()->wantsJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                ], 422);
+            }
+
+            return redirect()->route('purchase.ledger')->with('error', $message);
+        }
+
         DB::transaction(function () use ($purchase) {
             $this->revertItems($purchase);
+
+            foreach ($purchase->payments as $payment) {
+                $payment->delete();
+            }
+
+            if ($purchase->deliveryReceipt) {
+                $purchase->deliveryReceipt()->update(['purchase_id' => null]);
+            }
+
             $purchase->delete();
         });
 
@@ -244,9 +547,11 @@ class PurchaseController extends Controller
     private function calculateTotals(array $items, array $data): array
     {
         $subtotal = collect($items)->sum(fn ($item) => $item['quantity'] * $item['purchase_price']);
-        $discount = $data['discount'] ?? 0;
-        $deliveryCharge = $data['delivery_charge'] ?? 0;
-        $total = max($subtotal - $discount + $deliveryCharge, 0);
+        $discount = (float) ($data['discount'] ?? 0);
+        $deliveryCharge = (float) ($data['delivery_charge'] ?? 0);
+        $transportationCost = (float) ($data['transportation_cost'] ?? 0);
+        $adjustmentCost = (float) ($data['adjustment_cost'] ?? 0);
+        $total = max($subtotal - $discount + $deliveryCharge + $transportationCost + $adjustmentCost, 0);
         $paid = collect($data['payments'] ?? [])->sum('amount');
         $due = max($total - $paid, 0);
         $status = $due <= 0 ? 'paid' : ($paid <= 0 ? 'due' : 'partial');
@@ -315,6 +620,8 @@ class PurchaseController extends Controller
 
             $conversionFactor = $this->unitConversionFactor((int) $item['product_id'], $item['unit_id'] ?? null);
             $baseQuantity = (float) $item['quantity'] * $conversionFactor;
+            $receivedQtyInput = isset($item['received_qty']) ? (float) $item['received_qty'] : (float) $item['quantity'];
+            $baseReceivedQuantity = $receivedQtyInput * $conversionFactor;
             $basePurchasePrice = (float) $item['purchase_price'] / $conversionFactor;
             $baseSalePrice = (float) $item['sale_price'] / $conversionFactor;
 
@@ -332,7 +639,7 @@ class PurchaseController extends Controller
             $before = $batch ? (float) $batch->quantity : 0.0;
 
             if ($batch) {
-                $batch->quantity += $baseQuantity;
+                $batch->quantity += $baseReceivedQuantity;
                 if (! empty($item['mfg_date'])) {
                     $batch->mfg_date = $item['mfg_date'];
                 }
@@ -342,37 +649,55 @@ class PurchaseController extends Controller
                 $batch->save();
             } else {
                 $batch = Batch::create([
+                    'shop_id' => $purchase->shop_id,
                     'product_id' => $item['product_id'],
                     'warehouse_id' => $purchase->warehouse_id,
                     'batch_no' => $batchNo,
-                    'quantity' => $baseQuantity,
+                    'quantity' => $baseReceivedQuantity,
                     'mfg_date' => $item['mfg_date'] ?? null,
                     'expiry_date' => $item['expiry_date'] ?? null,
                 ]);
             }
 
-            $purchase->items()->create([
+            $purchaseItem = $purchase->items()->create([
                 'product_id' => $item['product_id'],
                 'batch_id' => $batch->id,
                 'batch_no' => $batchNo,
                 'mfg_date' => $item['mfg_date'] ?? null,
                 'expiry_date' => $item['expiry_date'] ?? null,
                 'quantity' => $baseQuantity,
+                'received_quantity' => $baseReceivedQuantity,
                 'purchase_price' => $basePurchasePrice,
                 'total' => $baseQuantity * $basePurchasePrice,
             ]);
 
-            StockMovement::create([
+            $purchase->receiptItems()->create([
+                'shop_id' => $purchase->shop_id,
+                'purchase_item_id' => $purchaseItem->id,
                 'product_id' => $item['product_id'],
                 'batch_id' => $batch->id,
-                'type' => 'purchase',
-                'quantity_change' => $baseQuantity,
-                'quantity_before' => $before,
-                'quantity_after' => (float) $batch->quantity,
-                'reference_type' => Purchase::class,
-                'reference_id' => $purchase->id,
-                'created_by' => Auth::id(),
+                'received_quantity' => $baseReceivedQuantity,
+                'do_number' => $purchase->do_number,
+                'do_date' => $purchase->do_date,
+                'vehicle_number' => $purchase->vehicle_number,
+                'delivery_person_name' => $purchase->delivery_person_name,
+                'received_by' => Auth::id(),
             ]);
+
+            if ($baseReceivedQuantity > 0) {
+                StockMovement::create([
+                    'shop_id' => $purchase->shop_id,
+                    'product_id' => $item['product_id'],
+                    'batch_id' => $batch->id,
+                    'type' => 'purchase',
+                    'quantity_change' => $baseReceivedQuantity,
+                    'quantity_before' => $before,
+                    'quantity_after' => (float) $batch->quantity,
+                    'reference_type' => Purchase::class,
+                    'reference_id' => $purchase->id,
+                    'created_by' => Auth::id(),
+                ]);
+            }
         }
     }
 
@@ -406,15 +731,17 @@ class PurchaseController extends Controller
     private function revertItems(Purchase $purchase): void
     {
         foreach ($purchase->items as $item) {
-            if ($item->batch_id) {
+            $receivedQty = (float) ($item->received_quantity ?? $item->quantity);
+            if ($item->batch_id && $receivedQty > 0) {
                 $batch = Batch::where('id', $item->batch_id)->lockForUpdate()->first();
                 if ($batch) {
                     $before = (float) $batch->quantity;
-                    $reverted = min((float) $item->quantity, $before);
-                    $batch->quantity = max($batch->quantity - $item->quantity, 0);
+                    $reverted = min($receivedQty, $before);
+                    $batch->quantity = max($batch->quantity - $reverted, 0);
                     $batch->save();
 
                     StockMovement::create([
+                        'shop_id' => $purchase->shop_id,
                         'product_id' => $item->product_id,
                         'batch_id' => $batch->id,
                         'type' => 'purchase_reversal',
@@ -423,12 +750,26 @@ class PurchaseController extends Controller
                         'quantity_after' => (float) $batch->quantity,
                         'reference_type' => Purchase::class,
                         'reference_id' => $purchase->id,
+                        'note' => "Purchase #{$purchase->invoice_no} deleted (Stock rolled back)",
                         'created_by' => Auth::id(),
                     ]);
                 }
             }
+
+            $previousItem = PurchaseItem::where('product_id', $item->product_id)
+                ->where('purchase_id', '!=', $purchase->id)
+                ->whereHas('purchase', fn ($q) => $q->whereNull('deleted_at'))
+                ->latest('id')
+                ->first();
+
+            if ($previousItem) {
+                Product::where('id', $item->product_id)->update([
+                    'purchase_price' => $previousItem->purchase_price,
+                ]);
+            }
         }
 
+        $purchase->receiptItems()->delete();
         $purchase->items()->delete();
     }
 }

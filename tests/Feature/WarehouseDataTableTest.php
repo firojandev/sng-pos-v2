@@ -58,7 +58,7 @@ class WarehouseDataTableTest extends TestCase
         $html = $dataTable->html();
 
         $this->assertEquals('warehouses-data-table', $html->getTableAttribute('id'));
-        $this->assertCount(6, $dataTable->getColumns());
+        $this->assertCount(7, $dataTable->getColumns());
     }
 
     public function test_warehouses_datatable_query_returns_query_builder(): void
@@ -441,5 +441,220 @@ class WarehouseDataTableTest extends TestCase
         $response->assertOk();
         $this->assertEquals(1, $response->json('recordsFiltered'));
         $this->assertStringContainsString('Alpha Active', $response->json('data.0.name'));
+    }
+
+    public function test_first_created_warehouse_is_automatically_marked_as_default(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+
+        $branch = Branch::create([
+            'shop_id' => $shop->id,
+            'name' => 'Initial Branch',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($user)->post(route('warehouses.store'), [
+            'branch_id' => $branch->id,
+            'name' => 'First Warehouse',
+            'address' => 'Dhaka',
+            'status' => 'active',
+        ]);
+
+        $warehouse = Warehouse::where('name', 'First Warehouse')->first();
+        $this->assertNotNull($warehouse);
+        $this->assertTrue($warehouse->is_default);
+    }
+
+    public function test_setting_default_warehouse_unsets_previous_default(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+
+        $branch = Branch::create([
+            'shop_id' => $shop->id,
+            'name' => 'Main Branch',
+            'status' => 'active',
+        ]);
+
+        $wh1 = Warehouse::create([
+            'shop_id' => $shop->id,
+            'branch_id' => $branch->id,
+            'name' => 'Warehouse One',
+            'status' => 'active',
+            'is_default' => true,
+        ]);
+
+        $wh2 = Warehouse::create([
+            'shop_id' => $shop->id,
+            'branch_id' => $branch->id,
+            'name' => 'Warehouse Two',
+            'status' => 'active',
+            'is_default' => false,
+        ]);
+
+        $response = $this->actingAs($user)->post(route('warehouses.set-default', $wh2));
+
+        $response->assertRedirect(route('warehouses.index'));
+        $this->assertFalse($wh1->fresh()->is_default);
+        $this->assertTrue($wh2->fresh()->is_default);
+
+        // Also test AJAX setDefault
+        $ajaxResponse = $this->actingAs($user)->postJson(route('warehouses.set-default', $wh1));
+        $ajaxResponse->assertOk();
+        $ajaxResponse->assertJson(['success' => true]);
+        $this->assertTrue($wh1->fresh()->is_default);
+        $this->assertFalse($wh2->fresh()->is_default);
+    }
+
+    public function test_inactive_warehouse_cannot_be_set_as_default(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+
+        $branch = Branch::create([
+            'shop_id' => $shop->id,
+            'name' => 'Main Branch',
+            'status' => 'active',
+        ]);
+
+        $activeWh = Warehouse::create([
+            'shop_id' => $shop->id,
+            'branch_id' => $branch->id,
+            'name' => 'Active WH',
+            'status' => 'active',
+            'is_default' => true,
+        ]);
+
+        $inactiveWh = Warehouse::create([
+            'shop_id' => $shop->id,
+            'branch_id' => $branch->id,
+            'name' => 'Inactive WH',
+            'status' => 'inactive',
+            'is_default' => false,
+        ]);
+
+        $response = $this->actingAs($user)->post(route('warehouses.set-default', $inactiveWh));
+        $response->assertSessionHasErrors('error');
+        $this->assertFalse($inactiveWh->fresh()->is_default);
+        $this->assertTrue($activeWh->fresh()->is_default);
+
+        // Cannot create inactive warehouse as default
+        $createResponse = $this->actingAs($user)->post(route('warehouses.store'), [
+            'branch_id' => $branch->id,
+            'name' => 'Inactive Default Attempt',
+            'status' => 'inactive',
+            'is_default' => 1,
+        ]);
+        $createResponse->assertSessionHasErrors('status');
+    }
+
+    public function test_default_warehouse_cannot_be_deactivated(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+
+        $branch = Branch::create([
+            'shop_id' => $shop->id,
+            'name' => 'Main Branch',
+            'status' => 'active',
+        ]);
+
+        $defaultWh = Warehouse::create([
+            'shop_id' => $shop->id,
+            'branch_id' => $branch->id,
+            'name' => 'Default WH',
+            'status' => 'active',
+            'is_default' => true,
+        ]);
+
+        $response = $this->actingAs($user)->put(route('warehouses.update', $defaultWh), [
+            'branch_id' => $branch->id,
+            'name' => 'Default WH',
+            'status' => 'inactive',
+        ]);
+
+        $response->assertSessionHasErrors('status');
+        $this->assertEquals('active', $defaultWh->fresh()->status);
+    }
+
+    public function test_default_warehouse_cannot_be_deleted_when_other_warehouses_exist(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+
+        $branch = Branch::create([
+            'shop_id' => $shop->id,
+            'name' => 'Main Branch',
+            'status' => 'active',
+        ]);
+
+        $defaultWh = Warehouse::create([
+            'shop_id' => $shop->id,
+            'branch_id' => $branch->id,
+            'name' => 'Default WH',
+            'status' => 'active',
+            'is_default' => true,
+        ]);
+
+        $otherWh = Warehouse::create([
+            'shop_id' => $shop->id,
+            'branch_id' => $branch->id,
+            'name' => 'Other WH',
+            'status' => 'active',
+            'is_default' => false,
+        ]);
+
+        $response = $this->actingAs($user)->delete(route('warehouses.destroy', $defaultWh));
+        $response->assertSessionHasErrors('error');
+        $this->assertDatabaseHas('warehouses', ['id' => $defaultWh->id]);
+
+        $ajaxResponse = $this->actingAs($user)->deleteJson(route('warehouses.destroy', $defaultWh));
+        $ajaxResponse->assertStatus(422);
+        $this->assertDatabaseHas('warehouses', ['id' => $defaultWh->id]);
+    }
+
+    public function test_default_warehouse_is_auto_selected_in_create_purchase_and_sale(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+        $shop->update(['enabled_features' => ['branches', 'purchase', 'sales']]);
+
+        Permission::firstOrCreate(['name' => 'purchase.view', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'purchase.write', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'sales.view', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'sales.write', 'guard_name' => 'web']);
+
+        $role = Role::findByName('Shop Admin', 'web');
+        $role->givePermissionTo(['purchase.view', 'purchase.write', 'sales.view', 'sales.write']);
+
+        $branch = Branch::create([
+            'shop_id' => $shop->id,
+            'name' => 'Main Branch',
+            'status' => 'active',
+        ]);
+
+        // Create warehouse A (first alphabetically)
+        $whA = Warehouse::create([
+            'shop_id' => $shop->id,
+            'branch_id' => $branch->id,
+            'name' => 'A Central Warehouse',
+            'status' => 'active',
+            'is_default' => false,
+        ]);
+
+        // Create warehouse Z (default warehouse, comes last alphabetically)
+        $whZ = Warehouse::create([
+            'shop_id' => $shop->id,
+            'branch_id' => $branch->id,
+            'name' => 'Z Retail Warehouse',
+            'status' => 'active',
+            'is_default' => true,
+        ]);
+
+        // Test Purchase Create: Z Retail Warehouse should be selected
+        $purchaseResponse = $this->actingAs($user)->get(route('purchase.create'));
+        $purchaseResponse->assertOk();
+        $purchaseResponse->assertSee('value="'.$whZ->id.'" selected', false);
+
+        // Test Sale Create: Z Retail Warehouse should be selected
+        $saleResponse = $this->actingAs($user)->get(route('sales.create'));
+        $saleResponse->assertOk();
+        $saleResponse->assertSee('value="'.$whZ->id.'" selected', false);
+        $this->assertEquals($whZ->id, $saleResponse->viewData('warehouseId'));
     }
 }

@@ -120,6 +120,25 @@
                         value="active"
                         :required="true"
                     />
+
+                    <div style="padding:12px 14px; background:var(--paper); border:1px solid var(--border); border-radius:8px; display:flex; align-items:center; justify-content:space-between;">
+                        <div>
+                            <div style="font-weight:600; font-size:13.5px; color:var(--ink-900);">
+                                <span class="bn">ডিফল্ট গুদাম হিসেবে নির্ধারণ করুন</span>
+                                <span class="en" style="display:none;">Set as Default Warehouse</span>
+                            </div>
+                            <div style="font-size:12px; color:var(--ink-500); margin-top:2px;">
+                                <span class="bn">বিক্রয় এবং ক্রয় তৈরির সময় এই গুদামটি স্বয়ংক্রিয়ভাবে নির্বাচিত থাকবে।</span>
+                                <span class="en" style="display:none;">This warehouse will be pre-selected by default during sales and purchases.</span>
+                            </div>
+                        </div>
+                        <x-core::toggle
+                            name="is_default"
+                            id="create_warehouse_is_default"
+                            value="1"
+                            color="primary"
+                        />
+                    </div>
                 </div>
 
                 <div style="margin-top:20px; padding-top:14px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:flex-end; gap:8px;">
@@ -204,6 +223,25 @@
                         :options="['active' => 'সক্রিয় (Active)', 'inactive' => 'নিষ্ক্রিয় (Inactive)']"
                         :required="true"
                     />
+
+                    <div style="padding:12px 14px; background:var(--paper); border:1px solid var(--border); border-radius:8px; display:flex; align-items:center; justify-content:space-between;">
+                        <div>
+                            <div style="font-weight:600; font-size:13.5px; color:var(--ink-900);">
+                                <span class="bn">ডিফল্ট গুদাম হিসেবে নির্ধারণ করুন</span>
+                                <span class="en" style="display:none;">Set as Default Warehouse</span>
+                            </div>
+                            <div style="font-size:12px; color:var(--ink-500); margin-top:2px;">
+                                <span class="bn">বিক্রয় এবং ক্রয় তৈরির সময় এই গুদামটি স্বয়ংক্রিয়ভাবে নির্বাচিত থাকবে।</span>
+                                <span class="en" style="display:none;">This warehouse will be pre-selected by default during sales and purchases.</span>
+                            </div>
+                        </div>
+                        <x-core::toggle
+                            name="is_default"
+                            id="edit_warehouse_is_default"
+                            value="1"
+                            color="primary"
+                        />
+                    </div>
                 </div>
 
                 <div style="margin-top:20px; padding-top:14px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:flex-end; gap:8px;">
@@ -279,6 +317,7 @@
                     $form[0].reset();
                     clearFormErrors($form);
                     $('#create_warehouse_status').val('active');
+                    $('#create_warehouse_is_default').prop('checked', false);
                     openModal('createWarehouseModal');
                 });
 
@@ -306,6 +345,7 @@
                             $('#edit_warehouse_name').val(data.name || '');
                             $('#edit_warehouse_address').val(data.address || '');
                             $('#edit_warehouse_status').val(data.status || 'active');
+                            $('#edit_warehouse_is_default').prop('checked', !!data.is_default);
                             openModal('editWarehouseModal');
                         },
                         error: function () {
@@ -408,6 +448,48 @@
                                 if (typeof window.toast === 'function') {
                                     window.toast('গুদাম হালনাগাদ করতে সমস্যা হয়েছে', 'Failed to update warehouse');
                                 }
+                            }
+                        }
+                    });
+                });
+
+                // Set Default Warehouse Handler
+                $(document).on('click', '.btn-set-default-warehouse', function (e) {
+                    e.preventDefault();
+                    var url = $(this).data('url');
+                    if (!url) return;
+
+                    var $btn = $(this);
+                    $btn.prop('disabled', true);
+
+                    $.ajax({
+                        url: url,
+                        type: 'POST',
+                        data: {
+                            _token: $('meta[name="csrf-token"]').attr('content')
+                        },
+                        dataType: 'json',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        success: function (response) {
+                            reloadWarehouseTable();
+                            if (typeof window.toast === 'function') {
+                                window.toast(response.message || 'ডিফল্ট গুদাম সফলভাবে নির্ধারণ করা হয়েছে', 'Default warehouse updated successfully');
+                            }
+                        },
+                        error: function (xhr) {
+                            $btn.prop('disabled', false);
+                            var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'ত্রুটি হয়েছে';
+                            if (typeof window.toast === 'function') {
+                                window.toast(msg, msg);
+                            } else if (typeof window.Swal !== 'undefined') {
+                                window.Swal.fire({
+                                    icon: 'error',
+                                    title: 'ত্রুটি',
+                                    text: msg,
+                                });
                             }
                         }
                     });

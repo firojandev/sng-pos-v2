@@ -67,7 +67,8 @@ class SaleController extends Controller
     {
         $customers = Customer::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone', 'address']);
         $warehouses = Warehouse::where('status', 'active')->with('branch')->orderBy('name')->get();
-        $warehouseId = $request->query('warehouse_id', optional($warehouses->first())->id);
+        $defaultWarehouse = $warehouses->firstWhere('is_default', true);
+        $warehouseId = $request->query('warehouse_id', $defaultWarehouse?->id ?? optional($warehouses->first())->id);
         $employees = Employee::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);
         $products = Product::where('status', 'active')
             ->withSum(['batches as batches_sum_quantity' => fn ($q) => $q->where('warehouse_id', $warehouseId)], 'quantity')
@@ -81,6 +82,7 @@ class SaleController extends Controller
             'products' => $products,
             'warehouses' => $warehouses,
             'warehouseId' => $warehouseId,
+            'defaultWarehouse' => $defaultWarehouse,
             'employees' => $employees,
             'accounts' => $accounts,
         ]);

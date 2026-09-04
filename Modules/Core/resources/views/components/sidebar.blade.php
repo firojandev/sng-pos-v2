@@ -84,7 +84,7 @@ $navGroups = [
             [
                 'key' => 'due-ledger',
                 'permission' => 'customers',
-                'route' => 'due-ledger.index',
+                'route' => 'due-ledger.sales',
                 'bn' => 'বাকির খাতা',
                 'en' => 'Due Ledger',
                 'icon' => '<circle cx="12" cy="12" r="9.2" stroke="currentColor" stroke-width="1.7"/><path d="M12 7.5v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="16.5" r="1" fill="currentColor"/>',
@@ -126,6 +126,14 @@ $navGroups = [
                 'bn' => 'ক্রয় ফেরত',
                 'en' => 'Purchase Returns',
                 'icon' => '<path d="M4 12a8 8 0 1 1 2.3 5.7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M4 17v-5h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
+            ],
+            [
+                'key' => 'purchase-due-ledger',
+                'permission' => 'suppliers',
+                'route' => 'due-ledger.purchase',
+                'bn' => 'বাকির খাতা',
+                'en' => 'Due Ledger',
+                'icon' => '<circle cx="12" cy="12" r="9.2" stroke="currentColor" stroke-width="1.7"/><path d="M12 7.5v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="16.5" r="1" fill="currentColor"/>',
             ],
         ],
     ],
@@ -352,7 +360,7 @@ $isNavItemVisible = function (array $item, bool $groupGated, $user) {
                         @endif
 
                         @foreach ($visibleItems as $item)
-                            <a href="{{ route($item['route']) }}" class="nav-item {{ $active === $item['key'] ? 'active' : '' }}">
+                            <a href="{{ route($item['route']) }}" class="nav-item {{ ($active === $item['key'] || ($item['key'] === 'due-ledger' && $active === 'sales-due-ledger')) ? 'active' : '' }}">
                                 <svg viewBox="0 0 24 24" fill="none">{!! $item['icon'] !!}</svg>
                                 <span class="bn">{{ $item['bn'] }}</span>
                                 <span class="en">{{ $item['en'] }}</span>
