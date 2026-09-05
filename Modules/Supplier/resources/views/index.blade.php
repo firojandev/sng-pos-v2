@@ -5,8 +5,88 @@
     subtitle-en="Manage your shop's supplier records"
     active="suppliers"
 >
+    {{-- Summary Stat Cards --}}
+    @if (isset($metrics))
+        <div class="stat-grid" style="margin-bottom:16px;">
+            <x-core::stat-card
+                icon="truck"
+                color="gold"
+                :value="number_format($metrics['totalSuppliers'])"
+                label="মোট সরবরাহকারী"
+                label-en="Total Suppliers"
+                :subtext="'সক্রিয়: ' . number_format($metrics['activeSuppliers']) . ' জন'"
+                :subtext-en="'Active: ' . number_format($metrics['activeSuppliers'])"
+            />
+
+            <x-core::stat-card
+                icon="alert-circle"
+                color="red"
+                :value="'৳' . number_format($metrics['totalDue'], 2)"
+                value-color="red"
+                label="মোট প্রদেয় দেনা"
+                label-en="Total Payable Due"
+                :subtext="'দেনা রয়েছে: ' . number_format($metrics['dueSuppliersCount']) . ' জন'"
+                :subtext-en="'Due Suppliers: ' . number_format($metrics['dueSuppliersCount'])"
+            />
+
+            <x-core::stat-card
+                icon="package"
+                color="blue"
+                :value="'৳' . number_format($metrics['totalPurchaseAmount'], 2)"
+                label="মোট ক্রয় পরিমাণ"
+                label-en="Total Purchase Volume"
+                :subtext="number_format($metrics['totalPurchaseCount']) . ' টি বিল'"
+                :subtext-en="number_format($metrics['totalPurchaseCount']) . ' Bills'"
+            />
+
+            @php
+                $paidPurchaseTotal = max(0, $metrics['totalPurchaseAmount'] - ($metrics['totalDue'] - (float) \Modules\Supplier\Models\Supplier::sum('opening_due')));
+            @endphp
+            <x-core::stat-card
+                icon="check-circle"
+                color="green"
+                :value="'৳' . number_format($paidPurchaseTotal, 2)"
+                value-color="green"
+                label="মোট পরিশোধিত মূল্য"
+                label-en="Total Paid Amount"
+                subtext="সরবরাহকারীকে পরিশোধ"
+                subtext-en="Paid to suppliers"
+            />
+        </div>
+    @endif
+
     <div class="section-row" style="margin-bottom:16px;">
-        <div class="filters"></div>
+        <div class="filters" style="display:flex; align-items:center; flex-wrap:nowrap; gap:8px;">
+            <div style="width:160px; flex-shrink:0;">
+                <x-core::select
+                    name="filter_status"
+                    id="filter-status"
+                    size="sm"
+                    :no-margin="true"
+                    :options="['' => 'সকল অবস্থা (Status)', 'active' => 'সক্রিয় (Active)', 'inactive' => 'নিষ্ক্রিয় (Inactive)']"
+                />
+            </div>
+            <div style="width:180px; flex-shrink:0;">
+                <x-core::select
+                    name="filter_due"
+                    id="filter-due"
+                    size="sm"
+                    :no-margin="true"
+                    :options="['' => 'সকল বাকি (All)', 'has_due' => 'শুধুমাত্র দেনাদার (Has Due)', 'no_due' => 'পরিশোধিত (No Due)']"
+                />
+            </div>
+            <x-core::button
+                type="button"
+                variant="secondary"
+                size="sm"
+                icon="rotate-ccw"
+                id="btn-reset-filters"
+                title="রিসেট / Reset"
+            >
+                <span class="bn">রিসেট</span>
+                <span class="en" style="display:none;">Reset</span>
+            </x-core::button>
+        </div>
         <x-core::button
             type="button"
             variant="solid"
@@ -241,6 +321,20 @@
         </div>
     </div>
 
+    {{-- Supplier Due Detail Drawer --}}
+    <div class="drawer-backdrop" id="supplierDetailDrawer">
+        <div class="drawer" id="supplierDetailDrawerContent">
+            {{-- Loaded dynamically via AJAX --}}
+        </div>
+    </div>
+
+    {{-- Supplier Due Payment Modal --}}
+    <div class="modal-backdrop" id="supplierPaymentModal">
+        <div class="modal-box" id="supplierPaymentModalContent" style="width:760px; max-width:96vw; max-height:92vh; display:flex; flex-direction:column; padding:0; overflow:hidden; background:var(--card);">
+            {{-- Loaded dynamically via AJAX --}}
+        </div>
+    </div>
+
     @push('scripts')
         {!! $dataTable->scripts() !!}
 
@@ -429,10 +523,242 @@
                 $(this).closest('.modal-backdrop').removeClass('open');
             });
 
-            $('.modal-backdrop').on('click', function (e) {
-                if ($(e.target).hasClass('modal-backdrop')) {
+            // Filters Change
+            $('#filter-status, #filter-due').on('change', function () {
+                reloadSupplierTable();
+            });
+
+            $('#btn-reset-filters').on('click', function () {
+                $('#filter-status').val('');
+                $('#filter-due').val('');
+                reloadSupplierTable();
+            });
+
+            // Open Supplier Detail Drawer
+            $(document).on('click', '.btn-view-supplier-due', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var url = $(this).data('url');
+                if (!url) return;
+
+                var $content = $('#supplierDetailDrawerContent');
+                $content.html('<div style="display:flex; align-items:center; justify-content:center; padding:60px 20px; color:var(--ink-500);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin" style="animation:spin 1s linear infinite;"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg></div>');
+                $('#supplierDetailDrawer').addClass('open');
+
+                $.get(url, function (html) {
+                    $content.html(html);
+                }).fail(function () {
+                    $content.html('<div style="padding:24px; color:var(--red-600); text-align:center;"><div style="font-weight:600; margin-bottom:8px;">তথ্য লোড করতে সমস্যা হয়েছে</div><div style="font-size:12px; color:var(--ink-500);">Failed to load due details</div></div>');
+                });
+            });
+
+            // Close Drawer
+            $(document).on('click', '#supplierDetailDrawer .drawer-x', function () {
+                $('#supplierDetailDrawer').removeClass('open');
+            });
+
+            $('#supplierDetailDrawer').on('click', function (e) {
+                if ($(e.target).is('#supplierDetailDrawer')) {
                     $(this).removeClass('open');
                 }
+            });
+
+            // Open Payment Modal
+            $(document).on('click', '.btn-open-supplier-payment', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var url = $(this).data('url');
+                if (!url) return;
+
+                var $content = $('#supplierPaymentModalContent');
+                $content.html('<div style="display:flex; align-items:center; justify-content:center; padding:80px 20px; color:var(--ink-500);"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin" style="animation:spin 1s linear infinite;"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg></div>');
+                $('#supplierPaymentModal').addClass('open');
+
+                $.get(url, function (html) {
+                    $content.html(html);
+                }).fail(function () {
+                    $content.html('<div style="padding:30px; color:var(--red-600); text-align:center;">পেমেন্ট ফর্ম লোড করতে সমস্যা হয়েছে</div>');
+                });
+            });
+
+            // Close Payment Modal on backdrop
+            $('#supplierPaymentModal').on('click', function (e) {
+                if ($(e.target).is('#supplierPaymentModal')) {
+                    $(this).removeClass('open');
+                }
+            });
+
+            // Supplier Payment auto-allocation calculations
+            function recalculateSupplierAllocations(totalVal) {
+                var remaining = Math.max(parseFloat(totalVal) || 0, 0);
+                var totalSupplierDue = 0;
+
+                $('#supplier-allocation-tbody .allocation-row').each(function () {
+                    var rowDue = parseFloat($(this).data('due')) || 0;
+                    totalSupplierDue += rowDue;
+                    var allocate = Math.min(remaining, rowDue);
+                    $(this).find('.allocation-input').val(allocate > 0 ? allocate.toFixed(2) : '0.00');
+                    remaining = Math.max(remaining - allocate, 0);
+
+                    var rowRemain = Math.max(rowDue - allocate, 0);
+                    $(this).find('.cell-remaining').text('৳' + rowRemain.toFixed(2));
+                    var $status = $(this).find('.cell-status');
+                    if (rowRemain <= 0) {
+                        $status.html('<span style="font-size:11px; font-weight:600; padding:1px 6px; border-radius:4px; background:var(--green-100); color:var(--green-ink);">পরিশোধিত</span>');
+                    } else if (allocate > 0) {
+                        $status.html('<span style="font-size:11px; font-weight:600; padding:1px 6px; border-radius:4px; background:var(--gold-100); color:var(--gold-ink);">আংশিক</span>');
+                    } else {
+                        $status.html('<span style="font-size:11px; font-weight:600; padding:1px 6px; border-radius:4px; background:var(--red-100); color:var(--red-600);">বাকি</span>');
+                    }
+                });
+
+                var enteredTotal = Math.max(parseFloat(totalVal) || 0, 0);
+                var afterDue = Math.max(totalSupplierDue - enteredTotal, 0);
+                $('#supplier-balance-after').text('৳' + afterDue.toFixed(2));
+                $('#lbl-supplier-pay-total').text('৳' + enteredTotal.toFixed(2));
+            }
+
+            function getSupplierActiveTotal() {
+                var type = $('#supplier-payment-type-select').val() || 'cash';
+                if (type === 'cash') {
+                    return parseFloat($('#supplier-cash-amount-input').val()) || 0;
+                } else if (type === 'bank') {
+                    return parseFloat($('#supplier-bank-amount-input').val()) || 0;
+                } else if (type === 'both') {
+                    var c = parseFloat($('#supplier-both-cash-amount-input').val()) || 0;
+                    var b = parseFloat($('#supplier-both-bank-amount-input').val()) || 0;
+                    return c + b;
+                }
+                return 0;
+            }
+
+            function syncSupplierPaymentFromInputs() {
+                var total = getSupplierActiveTotal();
+                recalculateSupplierAllocations(total);
+            }
+
+            $(document).on('change', '#supplier-payment-type-select', function () {
+                var type = $(this).val();
+                $('.payment-mode-pane').hide();
+                $('#supplier-mode-' + type).show();
+                syncSupplierPaymentFromInputs();
+            });
+
+            $(document).on('input', '#supplier-cash-amount-input, #supplier-bank-amount-input, #supplier-both-cash-amount-input, #supplier-both-bank-amount-input', function () {
+                syncSupplierPaymentFromInputs();
+            });
+
+            $(document).on('input', '#supplier-allocation-tbody .allocation-input', function () {
+                var totalAllocated = 0;
+                var totalSupplierDue = 0;
+                $('#supplier-allocation-tbody .allocation-row').each(function () {
+                    var rowDue = parseFloat($(this).data('due')) || 0;
+                    totalSupplierDue += rowDue;
+                    var val = parseFloat($(this).find('.allocation-input').val()) || 0;
+                    if (val > rowDue) {
+                        val = rowDue;
+                        $(this).find('.allocation-input').val(rowDue.toFixed(2));
+                    }
+                    totalAllocated += val;
+                    var rowRemain = Math.max(rowDue - val, 0);
+                    $(this).find('.cell-remaining').text('৳' + rowRemain.toFixed(2));
+                    var $status = $(this).find('.cell-status');
+                    if (rowRemain <= 0) {
+                        $status.html('<span style="font-size:11px; font-weight:600; padding:1px 6px; border-radius:4px; background:var(--green-100); color:var(--green-ink);">পরিশোধিত</span>');
+                    } else if (val > 0) {
+                        $status.html('<span style="font-size:11px; font-weight:600; padding:1px 6px; border-radius:4px; background:var(--gold-100); color:var(--gold-ink);">আংশিক</span>');
+                    } else {
+                        $status.html('<span style="font-size:11px; font-weight:600; padding:1px 6px; border-radius:4px; background:var(--red-100); color:var(--red-600);">বাকি</span>');
+                    }
+                });
+
+                var type = $('#supplier-payment-type-select').val() || 'cash';
+                if (type === 'cash') {
+                    $('#supplier-cash-amount-input').val(totalAllocated > 0 ? totalAllocated.toFixed(2) : '');
+                } else if (type === 'bank') {
+                    $('#supplier-bank-amount-input').val(totalAllocated > 0 ? totalAllocated.toFixed(2) : '');
+                } else if (type === 'both') {
+                    var currentCash = parseFloat($('#supplier-both-cash-amount-input').val()) || 0;
+                    if (totalAllocated <= currentCash) {
+                        $('#supplier-both-cash-amount-input').val(totalAllocated > 0 ? totalAllocated.toFixed(2) : '');
+                        $('#supplier-both-bank-amount-input').val('');
+                    } else {
+                        $('#supplier-both-bank-amount-input').val((totalAllocated - currentCash).toFixed(2));
+                    }
+                }
+
+                var afterDue = Math.max(totalSupplierDue - totalAllocated, 0);
+                $('#supplier-balance-after').text('৳' + afterDue.toFixed(2));
+                $('#lbl-supplier-pay-total').text('৳' + totalAllocated.toFixed(2));
+            });
+
+            $(document).on('click', '#btn-supplier-pay-full', function () {
+                var total = parseFloat($(this).data('total')) || 0;
+                var type = $('#supplier-payment-type-select').val() || 'cash';
+                if (type === 'cash') {
+                    $('#supplier-cash-amount-input').val(total.toFixed(2));
+                } else if (type === 'bank') {
+                    $('#supplier-bank-amount-input').val(total.toFixed(2));
+                } else if (type === 'both') {
+                    var currentCash = parseFloat($('#supplier-both-cash-amount-input').val()) || 0;
+                    if (currentCash > 0 && currentCash < total) {
+                        $('#supplier-both-bank-amount-input').val((total - currentCash).toFixed(2));
+                    } else {
+                        $('#supplier-both-cash-amount-input').val(total.toFixed(2));
+                        $('#supplier-both-bank-amount-input').val('');
+                    }
+                }
+                syncSupplierPaymentFromInputs();
+            });
+
+            $(document).on('click', '#btn-supplier-pay-reset', function () {
+                $('#supplier-cash-amount-input').val('');
+                $('#supplier-bank-amount-input').val('');
+                $('#supplier-both-cash-amount-input').val('');
+                $('#supplier-both-bank-amount-input').val('');
+                syncSupplierPaymentFromInputs();
+            });
+
+            // Submit supplier payment via AJAX
+            $(document).on('submit', '#form-supplier-due-payment', function (e) {
+                e.preventDefault();
+                var $form = $(this);
+                var $btn = $('#btn-submit-supplier-payment');
+                $btn.prop('disabled', true);
+
+                $.ajax({
+                    url: $form.attr('action'),
+                    method: 'POST',
+                    data: $form.serialize(),
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                        'Accept': 'application/json'
+                    },
+                    success: function (res) {
+                        $('#supplierPaymentModal').removeClass('open');
+                        $('#supplierDetailDrawer').removeClass('open');
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'success',
+                                title: res.message || 'বাকি পরিশোধ সফল হয়েছে',
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                        }
+                        reloadSupplierTable();
+                    },
+                    error: function (xhr) {
+                        $btn.prop('disabled', false);
+                        var msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'বাকি পরিশোধ সংরক্ষণে সমস্যা হয়েছে';
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'ত্রুটি!',
+                                text: msg
+                            });
+                        }
+                    }
+                });
             });
         });
         </script>
