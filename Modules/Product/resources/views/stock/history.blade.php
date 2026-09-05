@@ -14,6 +14,9 @@
     </div>
 
     <form method="GET" action="{{ route('stock.history') }}" class="section-row">
+        @if (request('product_id'))
+            <input type="hidden" name="product_id" value="{{ request('product_id') }}">
+        @endif
         <div class="filters">
             <div class="search-inline">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#8B978F" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="#8B978F" stroke-width="2" stroke-linecap="round"/></svg>
@@ -29,6 +32,18 @@
             <span class="bn">খুঁজুন</span><span class="en">Search</span>
         </button>
     </form>
+
+    @if (isset($product) && $product)
+        <div style="margin-bottom:14px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span style="font-size:13px; color:var(--ink-600);"><span class="bn">নির্দিষ্ট পণ্য:</span><span class="en" style="display:none;">Filtered Product:</span></span>
+            <x-core::badge color="teal" size="sm" icon="package">
+                {{ $product->name }} (SKU: {{ $product->sku }})
+            </x-core::badge>
+            <x-core::button size="xs" variant="secondary" :href="route('stock.history')" icon="x" title="সকল পণ্য দেখুন / Show all products">
+                <span class="bn">সব দেখুন</span><span class="en" style="display:none;">Show All</span>
+            </x-core::button>
+        </div>
+    @endif
 
     <div class="panel" style="margin-top:0;">
         <div class="panel-body">

@@ -138,16 +138,20 @@ class StockController extends Controller
     public function history(Request $request): View
     {
         $search = trim((string) $request->query('q', ''));
+        $productId = $request->query('product_id');
         $type = $request->query('type', 'all');
 
+        $product = $productId ? Product::find($productId) : null;
+
         $movements = StockMovement::with(['product', 'batch', 'creator', 'reference'])
+            ->when($product, fn ($q) => $q->where('product_id', $product->id))
             ->when($search !== '', fn ($q) => $q->whereHas('product', fn ($p) => $p->where('name', 'like', "%{$search}%")))
             ->when(in_array($type, ['in', 'out'], true), fn ($q) => $q->where('quantity_change', $type === 'in' ? '>' : '<', 0))
             ->latest()
             ->paginate(20)
             ->withQueryString();
 
-        return view('product::stock.history', compact('movements', 'search', 'type'));
+        return view('product::stock.history', compact('movements', 'search', 'type', 'product'));
     }
 
     private function isLowStock(Product $product): bool

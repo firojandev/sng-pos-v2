@@ -183,12 +183,12 @@
                 @endif
             </div>
             <div class="meta" style="font-size:12px; color:var(--ink-600); display:flex; flex-wrap:wrap; gap:12px; margin-top:4px;">
-                <span>অর্ডার: <b>{{ rtrim(rtrim(number_format($item->quantity, 2), '0'), '.') }}</b></span>
-                <span>গ্রহণ: <b style="color:var(--teal-700);">{{ rtrim(rtrim(number_format($item->received_quantity ?? $item->quantity, 2), '0'), '.') }}</b></span>
+                <span>অর্ডার: <b>{{ rtrim(rtrim(number_format($item->quantity, 2), '0'), '.') }} {{ $item->unit?->name }}</b></span>
+                <span>গ্রহণ: <b style="color:var(--teal-700);">{{ rtrim(rtrim(number_format($item->received_quantity ?? $item->quantity, 2), '0'), '.') }} {{ $item->unit?->name }}</b></span>
                 @if ($pending > 0)
-                    <span style="color:var(--red-600); font-weight:700;">বাকি: <b>{{ rtrim(rtrim(number_format($pending, 2), '0'), '.') }}</b></span>
+                    <span style="color:var(--red-600); font-weight:700;">বাকি: <b>{{ rtrim(rtrim(number_format($pending, 2), '0'), '.') }} {{ $item->unit?->name }}</b></span>
                 @endif
-                <span>দর: <b>৳{{ number_format($item->purchase_price, 2) }}</b></span>
+                <span>দর: <b>৳{{ number_format($item->purchase_price, 2) }}{{ $item->unit ? '/'.$item->unit->name : '' }}</b></span>
                 <span>মোট: <b style="color:var(--ink-900);">৳{{ number_format($item->total, 2) }}</b></span>
                 @if ($item->batch_no)
                     <span>ব্যাচ: <code>{{ $item->batch_no }}</code></span>
@@ -207,7 +207,7 @@
                 <div style="display:flex; align-items:center; justify-content:space-between; font-size:12px;">
                     <div style="font-weight:600; color:var(--ink-900);">
                         <span>{{ $receipt->product->name ?? '—' }}</span>
-                        <span style="color:var(--teal-700); font-weight:700;">&times; {{ rtrim(rtrim(number_format($receipt->received_quantity, 2), '0'), '.') }} একক</span>
+                        <span style="color:var(--teal-700); font-weight:700;">&times; {{ rtrim(rtrim(number_format($receipt->received_quantity, 2), '0'), '.') }} {{ $receipt->purchaseItem?->unit?->name ?? 'একক' }}</span>
                     </div>
                     <div style="font-size:11px; color:var(--ink-500); font-family:var(--font-mono, monospace);">
                         {{ optional($receipt->created_at)->format('d M, Y h:i A') }}

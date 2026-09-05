@@ -24,7 +24,7 @@
             print-color-adjust: exact;
         }
         .no-print {
-            max-width: 680px;
+            max-width: 700px;
             margin: 0 auto 16px;
             display: flex;
             align-items: center;
@@ -59,7 +59,7 @@
         }
         .btn-secondary:hover { background: #f8fafc; }
         .purchase-invoice-sheet {
-            max-width: 680px !important;
+            max-width: 700px !important;
         }
         table.invoice-items-table {
             width: 100% !important;

@@ -12,6 +12,7 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Modules\Employee\Models\Employee;
 use Modules\Finance\Models\Account;
+use Modules\Finance\Services\AccountTransactionService;
 use Modules\Product\Models\Batch;
 use Modules\Product\Models\Product;
 use Modules\Product\Models\StockMovement;
@@ -26,6 +27,10 @@ use Modules\Supplier\Models\Supplier;
 
 class PurchaseController extends Controller
 {
+    public function __construct(
+        protected AccountTransactionService $accountTransactionService
+    ) {}
+
     public function index(): View
     {
         return $this->create();
@@ -114,14 +119,14 @@ class PurchaseController extends Controller
 
     public function show(Purchase $purchase): View
     {
-        $purchase->load(['supplier', 'warehouse', 'items.product.units', 'payments', 'receiptItems.receiver', 'receiptItems.product']);
+        $purchase->load(['supplier', 'warehouse', 'items.product.units', 'items.unit', 'payments', 'receiptItems.receiver', 'receiptItems.product', 'receiptItems.purchaseItem.unit']);
 
         return view('purchase::purchase.detail-drawer', compact('purchase'));
     }
 
     public function receiveModal(Purchase $purchase): View
     {
-        $purchase->load(['supplier', 'warehouse', 'items.product.units', 'receiptItems.receiver']);
+        $purchase->load(['supplier', 'warehouse', 'items.product.units', 'items.unit', 'receiptItems.receiver']);
 
         return view('purchase::purchase._receive_modal', compact('purchase'));
     }
@@ -132,8 +137,9 @@ class PurchaseController extends Controller
             'supplier',
             'warehouse',
             'items.product.units',
+            'items.unit',
             'receiptItems.product',
-            'receiptItems.batch',
+            'receiptItems.purchaseItem.unit',
             'receiptItems.receiver',
         ]);
 
@@ -142,14 +148,14 @@ class PurchaseController extends Controller
 
     public function invoiceModal(Purchase $purchase): View
     {
-        $purchase->load(['supplier', 'warehouse', 'items.product.units', 'payments']);
+        $purchase->load(['supplier', 'warehouse', 'items.product.units', 'items.unit', 'payments']);
 
         return view('purchase::purchase._invoice_modal', compact('purchase'));
     }
 
     public function printInvoice(Purchase $purchase): View
     {
-        $purchase->load(['supplier', 'warehouse', 'items.product.units', 'payments']);
+        $purchase->load(['supplier', 'warehouse', 'items.product.units', 'items.unit', 'payments']);
 
         return view('purchase::purchase.print-invoice', compact('purchase'));
     }
@@ -203,6 +209,9 @@ class PurchaseController extends Controller
                     ? trim((string) $input['batch_no'])
                     : ($purchaseItem->batch_no ?: 'BT-'.now()->format('ymd').'-'.$purchaseItem->product_id.'-'.random_int(100, 999));
 
+                $conversionFactor = $this->unitConversionFactor((int) $purchaseItem->product_id, $purchaseItem->unit_id);
+                $baseEnteredQty = $enteredQty * $conversionFactor;
+
                 $batch = Batch::where('product_id', $purchaseItem->product_id)
                     ->where('batch_no', $batchNo)
                     ->where('warehouse_id', $purchase->warehouse_id)
@@ -212,7 +221,7 @@ class PurchaseController extends Controller
                 $before = $batch ? (float) $batch->quantity : 0.0;
 
                 if ($batch) {
-                    $batch->quantity += $enteredQty;
+                    $batch->quantity += $baseEnteredQty;
                     if (! empty($input['mfg_date'])) {
                         $batch->mfg_date = $input['mfg_date'];
                     }
@@ -226,7 +235,7 @@ class PurchaseController extends Controller
                         'product_id' => $purchaseItem->product_id,
                         'warehouse_id' => $purchase->warehouse_id,
                         'batch_no' => $batchNo,
-                        'quantity' => $enteredQty,
+                        'quantity' => $baseEnteredQty,
                         'mfg_date' => $input['mfg_date'] ?? null,
                         'expiry_date' => $input['expiry_date'] ?? null,
                     ]);
@@ -258,7 +267,7 @@ class PurchaseController extends Controller
                     'product_id' => $purchaseItem->product_id,
                     'batch_id' => $batch->id,
                     'type' => 'purchase',
-                    'quantity_change' => $enteredQty,
+                    'quantity_change' => $baseEnteredQty,
                     'quantity_before' => $before,
                     'quantity_after' => (float) $batch->quantity,
                     'reference_type' => Purchase::class,
@@ -369,10 +378,44 @@ class PurchaseController extends Controller
 
         $purchase = null;
         DB::transaction(function () use ($data, $items, &$purchase) {
-            [$subtotal, $discount, $deliveryCharge, $total, $paid, $due, $status] = $this->calculateTotals($items, $data);
+            $supplierId = $this->resolveSupplierId($data);
+            $supplier = $supplierId
+                ? Supplier::where('id', $supplierId)->lockForUpdate()->first()
+                : null;
+
+            [$subtotal, $discount, $deliveryCharge, $total] = $this->calculateBaseTotals($items, $data);
+
+            $supplierPreviousDue = 0.0;
+            if ($supplier) {
+                $supplierPreviousDue = round(
+                    (float) $supplier->opening_due +
+                    (float) $supplier->purchases()->where('due_amount', '>', 0)->sum('due_amount'),
+                    2
+                );
+            }
+
+            $submittedPayments = $data['payments'] ?? [];
+            $totalSubmittedPaid = round(collect($submittedPayments)->sum(fn ($p) => (float) ($p['amount'] ?? 0)), 2);
+            $maxPayable = round($total + $supplierPreviousDue, 2);
+
+            if ($supplier && round($totalSubmittedPaid - $maxPayable, 2) > 0.01) {
+                throw ValidationException::withMessages([
+                    'payments' => 'পরিশোধের পরিমাণ মোট প্রদেয় টাকার চেয়ে বেশি হতে পারে না (সর্বোচ্চ: ৳'.number_format($maxPayable, 2).') / Payment amount cannot exceed total payable amount.',
+                ]);
+            }
+
+            if (! $supplier && round($totalSubmittedPaid - $total, 2) > 0.01) {
+                throw ValidationException::withMessages([
+                    'payments' => 'পরিশোধের পরিমাণ ক্রয়ের মোট মূল্যের চেয়ে বেশি হতে পারে না (সর্বোচ্চ: ৳'.number_format($total, 2).') / Payment amount cannot exceed purchase total.',
+                ]);
+            }
+
+            $purchasePaid = min($totalSubmittedPaid, $total);
+            $purchaseDue = round(max($total - $purchasePaid, 0), 2);
+            $purchaseStatus = $purchaseDue <= 0 ? 'paid' : ($purchasePaid <= 0 ? 'due' : 'partial');
 
             $purchase = Purchase::create([
-                'supplier_id' => $this->resolveSupplierId($data),
+                'supplier_id' => $supplierId,
                 'warehouse_id' => $data['warehouse_id'],
                 'purchase_date' => $data['purchase_date'],
                 'subtotal' => $subtotal,
@@ -381,9 +424,9 @@ class PurchaseController extends Controller
                 'transportation_cost' => (float) ($data['transportation_cost'] ?? 0),
                 'adjustment_cost' => (float) ($data['adjustment_cost'] ?? 0),
                 'total' => $total,
-                'paid_amount' => $paid,
-                'due_amount' => $due,
-                'payment_status' => $status,
+                'paid_amount' => $purchasePaid,
+                'due_amount' => $purchaseDue,
+                'payment_status' => $purchaseStatus,
                 'note' => $data['note'] ?? null,
                 'employee_name' => $data['employee_name'] ?? null,
                 'employee_phone' => $data['employee_phone'] ?? null,
@@ -398,7 +441,7 @@ class PurchaseController extends Controller
             ]);
 
             $this->applyItems($purchase, $items);
-            $this->applyPayments($purchase, $data['payments'] ?? []);
+            $this->applyPaymentsAndPreviousDue($purchase, $supplier, $submittedPayments, $total, $purchasePaid);
         });
 
         return redirect()->route('purchase.index')
@@ -456,12 +499,45 @@ class PurchaseController extends Controller
                 $payment->delete();
             }
 
-            // 3. Calculate new totals
-            [$subtotal, $discount, $deliveryCharge, $total, $paid, $due, $status] = $this->calculateTotals($items, $data);
+            $supplierId = $this->resolveSupplierId($data);
+            $supplier = $supplierId
+                ? Supplier::where('id', $supplierId)->lockForUpdate()->first()
+                : null;
+
+            [$subtotal, $discount, $deliveryCharge, $total] = $this->calculateBaseTotals($items, $data);
+
+            $supplierPreviousDue = 0.0;
+            if ($supplier) {
+                $supplierPreviousDue = round(
+                    (float) $supplier->opening_due +
+                    (float) $supplier->purchases()->where('id', '!=', $purchase->id)->where('due_amount', '>', 0)->sum('due_amount'),
+                    2
+                );
+            }
+
+            $submittedPayments = $data['payments'] ?? [];
+            $totalSubmittedPaid = round(collect($submittedPayments)->sum(fn ($p) => (float) ($p['amount'] ?? 0)), 2);
+            $maxPayable = round($total + $supplierPreviousDue, 2);
+
+            if ($supplier && round($totalSubmittedPaid - $maxPayable, 2) > 0.01) {
+                throw ValidationException::withMessages([
+                    'payments' => 'পরিশোধের পরিমাণ মোট প্রদেয় টাকার চেয়ে বেশি হতে পারে না (সর্বোচ্চ: ৳'.number_format($maxPayable, 2).') / Payment amount cannot exceed total payable amount.',
+                ]);
+            }
+
+            if (! $supplier && round($totalSubmittedPaid - $total, 2) > 0.01) {
+                throw ValidationException::withMessages([
+                    'payments' => 'পরিশোধের পরিমাণ ক্রয়ের মোট মূল্যের চেয়ে বেশি হতে পারে না (সর্বোচ্চ: ৳'.number_format($total, 2).') / Payment amount cannot exceed purchase total.',
+                ]);
+            }
+
+            $purchasePaid = min($totalSubmittedPaid, $total);
+            $purchaseDue = round(max($total - $purchasePaid, 0), 2);
+            $purchaseStatus = $purchaseDue <= 0 ? 'paid' : ($purchasePaid <= 0 ? 'due' : 'partial');
 
             // 4. Update purchase record (PurchaseCashObserver::saved updates CashTransaction and supplier due adjusts dynamically)
             $purchase->update([
-                'supplier_id' => $this->resolveSupplierId($data),
+                'supplier_id' => $supplierId,
                 'warehouse_id' => $data['warehouse_id'],
                 'purchase_date' => $data['purchase_date'],
                 'invoice_no' => $data['invoice_no'] ?? $purchase->invoice_no,
@@ -471,9 +547,9 @@ class PurchaseController extends Controller
                 'transportation_cost' => (float) ($data['transportation_cost'] ?? 0),
                 'adjustment_cost' => (float) ($data['adjustment_cost'] ?? 0),
                 'total' => $total,
-                'paid_amount' => $paid,
-                'due_amount' => $due,
-                'payment_status' => $status,
+                'paid_amount' => $purchasePaid,
+                'due_amount' => $purchaseDue,
+                'payment_status' => $purchaseStatus,
                 'note' => $data['note'] ?? null,
                 'employee_name' => $data['employee_name'] ?? null,
                 'employee_phone' => $data['employee_phone'] ?? null,
@@ -486,8 +562,8 @@ class PurchaseController extends Controller
             // 5. Apply new items (adds new stock, creates receipt items, logs stock movements)
             $this->applyItems($purchase, $items);
 
-            // 6. Apply new payments (triggers PurchasePaymentAccountObserver to deduct from accounts)
-            $this->applyPayments($purchase, $data['payments'] ?? []);
+            // 6. Apply new payments and allocate any excess to supplier's previous due
+            $this->applyPaymentsAndPreviousDue($purchase, $supplier, $submittedPayments, $total, $purchasePaid);
         });
 
         if ($request->wantsJson() || $request->ajax()) {
@@ -542,21 +618,167 @@ class PurchaseController extends Controller
     }
 
     /**
-     * @return array{0: string, 1: string, 2: string, 3: string, 4: string, 5: string, 6: string}
+     * @return array{0: float, 1: float, 2: float, 3: float}
      */
-    private function calculateTotals(array $items, array $data): array
+    private function calculateBaseTotals(array $items, array $data): array
     {
-        $subtotal = collect($items)->sum(fn ($item) => $item['quantity'] * $item['purchase_price']);
-        $discount = (float) ($data['discount'] ?? 0);
-        $deliveryCharge = (float) ($data['delivery_charge'] ?? 0);
-        $transportationCost = (float) ($data['transportation_cost'] ?? 0);
-        $adjustmentCost = (float) ($data['adjustment_cost'] ?? 0);
-        $total = max($subtotal - $discount + $deliveryCharge + $transportationCost + $adjustmentCost, 0);
-        $paid = collect($data['payments'] ?? [])->sum('amount');
-        $due = max($total - $paid, 0);
-        $status = $due <= 0 ? 'paid' : ($paid <= 0 ? 'due' : 'partial');
+        $subtotal = round((float) collect($items)->sum(fn ($item) => (float) $item['quantity'] * (float) $item['purchase_price']), 2);
+        $discount = round((float) ($data['discount'] ?? 0), 2);
+        $deliveryCharge = round((float) ($data['delivery_charge'] ?? 0), 2);
+        $transportationCost = round((float) ($data['transportation_cost'] ?? 0), 2);
+        $adjustmentCost = round((float) ($data['adjustment_cost'] ?? 0), 2);
+        $total = round(max($subtotal - $discount + $deliveryCharge + $transportationCost + $adjustmentCost, 0), 2);
 
-        return [$subtotal, $discount, $deliveryCharge, $total, $paid, $due, $status];
+        return [$subtotal, $discount, $deliveryCharge, $total];
+    }
+
+    /**
+     * @param  array<int, array{account_id?: ?int, method: string, amount: float}>  $submittedPayments
+     */
+    private function applyPaymentsAndPreviousDue(
+        Purchase $purchase,
+        ?Supplier $supplier,
+        array $submittedPayments,
+        float $purchaseTotal,
+        float $purchasePaid
+    ): void {
+        $pools = [];
+        foreach ($submittedPayments as $payment) {
+            $amt = round((float) ($payment['amount'] ?? 0), 2);
+            if ($amt <= 0) {
+                continue;
+            }
+            $pools[] = [
+                'account_id' => ! empty($payment['account_id']) ? (int) $payment['account_id'] : null,
+                'method' => $payment['method'] ?? 'cash',
+                'amount' => $amt,
+                'remaining' => $amt,
+            ];
+        }
+
+        // 1. Allocate up to $purchasePaid to this purchase
+        $neededForPurchase = $purchasePaid;
+        foreach ($pools as &$pool) {
+            if ($neededForPurchase <= 0) {
+                break;
+            }
+            if ($pool['remaining'] <= 0) {
+                continue;
+            }
+
+            $take = min($neededForPurchase, $pool['remaining']);
+            $pool['remaining'] = round($pool['remaining'] - $take, 2);
+            $neededForPurchase = round($neededForPurchase - $take, 2);
+
+            $purchase->payments()->create([
+                'account_id' => $pool['account_id'],
+                'method' => $pool['method'],
+                'amount' => $take,
+            ]);
+        }
+        unset($pool);
+
+        // 2. If there is excess payment and a supplier exists, allocate FIFO across opening_due and previous purchases
+        $totalSubmitted = round(collect($submittedPayments)->sum(fn ($p) => (float) ($p['amount'] ?? 0)), 2);
+        $excessForPreviousDue = round(max($totalSubmitted - $purchaseTotal, 0), 2);
+
+        if ($excessForPreviousDue > 0 && $supplier) {
+            $allocations = [];
+            $remainingToAllocate = $excessForPreviousDue;
+
+            // (a) First, opening due
+            if ((float) $supplier->opening_due > 0 && $remainingToAllocate > 0) {
+                $deductOpening = min($remainingToAllocate, (float) $supplier->opening_due);
+                $allocations[] = [
+                    'type' => 'opening',
+                    'needed' => $deductOpening,
+                ];
+                $remainingToAllocate = round($remainingToAllocate - $deductOpening, 2);
+            }
+
+            // (b) Second, earlier purchases with remaining due
+            if ($remainingToAllocate > 0) {
+                $previousPurchases = Purchase::where('supplier_id', $supplier->id)
+                    ->where('id', '!=', $purchase->id)
+                    ->where('due_amount', '>', 0)
+                    ->orderBy('purchase_date', 'asc')
+                    ->orderBy('id', 'asc')
+                    ->lockForUpdate()
+                    ->get();
+
+                foreach ($previousPurchases as $prevPurchase) {
+                    if ($remainingToAllocate <= 0) {
+                        break;
+                    }
+
+                    $pay = min($remainingToAllocate, (float) $prevPurchase->due_amount);
+                    $allocations[] = [
+                        'type' => 'purchase',
+                        'model' => $prevPurchase,
+                        'needed' => $pay,
+                    ];
+                    $remainingToAllocate = round($remainingToAllocate - $pay, 2);
+                }
+            }
+
+            // (c) Apply allocations from the remaining amounts in $pools
+            foreach ($allocations as $item) {
+                $needed = $item['needed'];
+
+                foreach ($pools as &$pool) {
+                    if ($needed <= 0) {
+                        break;
+                    }
+                    if ($pool['remaining'] <= 0) {
+                        continue;
+                    }
+
+                    $payPortion = min($needed, $pool['remaining']);
+                    $pool['remaining'] = round($pool['remaining'] - $payPortion, 2);
+                    $needed = round($needed - $payPortion, 2);
+
+                    $account = $pool['account_id']
+                        ? Account::withoutGlobalScopes()->find($pool['account_id'])
+                        : $this->accountTransactionService->getDefaultAccount($purchase->shop_id);
+
+                    if ($item['type'] === 'opening') {
+                        $supplier->opening_due = round(max((float) $supplier->opening_due - $payPortion, 0), 2);
+                        $supplier->save();
+
+                        if ($account) {
+                            $this->accountTransactionService->recordTransaction(
+                                account: $account,
+                                type: 'out',
+                                amount: $payPortion,
+                                source: 'purchase',
+                                sourceable: $supplier,
+                                note: 'সরবরাহকারী প্রারম্ভিক বাকি পরিশোধ: '.$supplier->name.' (ক্রয় ইনভয়েস: '.$purchase->invoice_no.' থেকে সমন্বয়কৃত)',
+                                occurredAt: $purchase->purchase_date ? $purchase->purchase_date->format('Y-m-d').' '.now()->format('H:i:s') : now(),
+                                userId: Auth::id()
+                            );
+                        }
+                    } elseif ($item['type'] === 'purchase') {
+                        /** @var Purchase $prevPurchase */
+                        $prevPurchase = $item['model'];
+                        $prevPurchase->payments()->create([
+                            'account_id' => $pool['account_id'],
+                            'method' => $pool['method'],
+                            'amount' => $payPortion,
+                            'note' => 'বাকি পরিশোধ - বিল: '.$prevPurchase->invoice_no.' (ক্রয় ইনভয়েস: '.$purchase->invoice_no.' থেকে সমন্বয়কৃত)',
+                        ]);
+
+                        $newPaid = round((float) $prevPurchase->paid_amount + $payPortion, 2);
+                        $newDue = round(max((float) $prevPurchase->due_amount - $payPortion, 0), 2);
+                        $prevPurchase->update([
+                            'paid_amount' => $newPaid,
+                            'due_amount' => $newDue,
+                            'payment_status' => $newDue <= 0 ? 'paid' : 'partial',
+                        ]);
+                    }
+                }
+                unset($pool);
+            }
+        }
     }
 
     /**
@@ -619,16 +841,23 @@ class PurchaseController extends Controller
             }
 
             $conversionFactor = $this->unitConversionFactor((int) $item['product_id'], $item['unit_id'] ?? null);
-            $baseQuantity = (float) $item['quantity'] * $conversionFactor;
-            $receivedQtyInput = isset($item['received_qty']) ? (float) $item['received_qty'] : (float) $item['quantity'];
-            $baseReceivedQuantity = $receivedQtyInput * $conversionFactor;
-            $basePurchasePrice = (float) $item['purchase_price'] / $conversionFactor;
-            $baseSalePrice = (float) $item['sale_price'] / $conversionFactor;
+            $qty = (float) $item['quantity'];
+            $receivedQtyInput = isset($item['received_qty']) ? (float) $item['received_qty'] : $qty;
+            $purchasePrice = (float) $item['purchase_price'];
+            $itemTotal = (float) ($item['total'] ?? ($qty * $purchasePrice));
 
-            Product::where('id', $item['product_id'])->update([
-                'purchase_price' => $basePurchasePrice,
-                'sale_price' => $baseSalePrice,
-            ]);
+            $baseQuantity = $qty * $conversionFactor;
+            $baseReceivedQuantity = $receivedQtyInput * $conversionFactor;
+            $basePurchasePrice = $conversionFactor > 0 ? $purchasePrice / $conversionFactor : $purchasePrice;
+            $baseSalePrice = ! empty($item['sale_price'])
+                ? ($conversionFactor > 0 ? (float) $item['sale_price'] / $conversionFactor : (float) $item['sale_price'])
+                : null;
+
+            $productUpdate = ['purchase_price' => $basePurchasePrice];
+            if ($baseSalePrice !== null) {
+                $productUpdate['sale_price'] = $baseSalePrice;
+            }
+            Product::where('id', $item['product_id'])->update($productUpdate);
 
             $batch = Batch::where('product_id', $item['product_id'])
                 ->where('batch_no', $batchNo)
@@ -661,14 +890,15 @@ class PurchaseController extends Controller
 
             $purchaseItem = $purchase->items()->create([
                 'product_id' => $item['product_id'],
+                'unit_id' => $item['unit_id'] ?? null,
                 'batch_id' => $batch->id,
                 'batch_no' => $batchNo,
                 'mfg_date' => $item['mfg_date'] ?? null,
                 'expiry_date' => $item['expiry_date'] ?? null,
-                'quantity' => $baseQuantity,
-                'received_quantity' => $baseReceivedQuantity,
-                'purchase_price' => $basePurchasePrice,
-                'total' => $baseQuantity * $basePurchasePrice,
+                'quantity' => $qty,
+                'received_quantity' => $receivedQtyInput,
+                'purchase_price' => $purchasePrice,
+                'total' => $itemTotal,
             ]);
 
             $purchase->receiptItems()->create([
@@ -676,7 +906,7 @@ class PurchaseController extends Controller
                 'purchase_item_id' => $purchaseItem->id,
                 'product_id' => $item['product_id'],
                 'batch_id' => $batch->id,
-                'received_quantity' => $baseReceivedQuantity,
+                'received_quantity' => $receivedQtyInput,
                 'do_number' => $purchase->do_number,
                 'do_date' => $purchase->do_date,
                 'vehicle_number' => $purchase->vehicle_number,
@@ -732,11 +962,14 @@ class PurchaseController extends Controller
     {
         foreach ($purchase->items as $item) {
             $receivedQty = (float) ($item->received_quantity ?? $item->quantity);
-            if ($item->batch_id && $receivedQty > 0) {
+            $conversionFactor = $item->unitConversionFactor();
+            $baseReceivedQty = $receivedQty * $conversionFactor;
+
+            if ($item->batch_id && $baseReceivedQty > 0) {
                 $batch = Batch::where('id', $item->batch_id)->lockForUpdate()->first();
                 if ($batch) {
                     $before = (float) $batch->quantity;
-                    $reverted = min($receivedQty, $before);
+                    $reverted = min($baseReceivedQty, $before);
                     $batch->quantity = max($batch->quantity - $reverted, 0);
                     $batch->save();
 
@@ -763,8 +996,10 @@ class PurchaseController extends Controller
                 ->first();
 
             if ($previousItem) {
+                $prevFactor = $previousItem->unitConversionFactor();
+                $prevBasePrice = $prevFactor > 0 ? (float) $previousItem->purchase_price / $prevFactor : (float) $previousItem->purchase_price;
                 Product::where('id', $item->product_id)->update([
-                    'purchase_price' => $previousItem->purchase_price,
+                    'purchase_price' => $prevBasePrice,
                 ]);
             }
         }

@@ -47,7 +47,7 @@
             'received_qty' => rtrim(rtrim(number_format($item->received_quantity ?? $item->quantity, 2, '.', ''), '0'), '.'),
             'price' => rtrim(rtrim(number_format($item->purchase_price, 2, '.', ''), '0'), '.'),
             'salePrice' => rtrim(rtrim(number_format($item->product->sale_price ?? 0, 2, '.', ''), '0'), '.'),
-            'unitId' => null,
+            'unitId' => $item->unit_id,
             'batchNo' => $item->batch_no,
             'mfgDate' => optional($item->mfg_date)->format('Y-m-d'),
             'expiryDate' => optional($item->expiry_date)->format('Y-m-d'),
@@ -60,10 +60,11 @@
     $initialDeliveryCharge = old('delivery_charge', $purchase->delivery_charge ?? 0);
     $initialNote = old('note', $purchase->note);
     $initialInvoiceNo = old('invoice_no', $purchase->exists ? $purchase->invoice_no : '');
-    $initialSupplierId = old('supplier_id', $purchase->supplier_id);
-    $initialSupplierName = old('supplier_name', $purchase->supplier->name ?? '');
-    $initialSupplierPhone = old('supplier_phone', $purchase->supplier->phone ?? '');
-    $initialSupplierAddress = old('supplier_address', $purchase->supplier->address ?? '');
+    $initialSupplierId = old('supplier_id', $purchase->supplier_id ?? request('supplier_id'));
+    $supplierFromReq = request('supplier_id') ? $suppliers->firstWhere('id', request('supplier_id')) : null;
+    $initialSupplierName = old('supplier_name', $purchase->supplier->name ?? $supplierFromReq?->name ?? '');
+    $initialSupplierPhone = old('supplier_phone', $purchase->supplier->phone ?? $supplierFromReq?->phone ?? '');
+    $initialSupplierAddress = old('supplier_address', $purchase->supplier->address ?? $supplierFromReq?->address ?? '');
     $initialEmployeeName = old('employee_name', $purchase->employee_name);
     $initialEmployeePhone = old('employee_phone', $purchase->employee_phone);
     $initialAmount = $purchase->exists ? $purchase->paid_amount : 0;
@@ -468,7 +469,7 @@
                                 $sDue = round((float) ($supplier->opening_due ?? 0) + (float) ($supplier->purchases_sum_due_amount ?? 0), 2);
                             @endphp
                             <option value="{{ $supplier->id }}"
-                                    data-due="{{ $sDue }}" {{ (string) old('supplier_id', $purchase->supplier_id ?? '') === (string) $supplier->id ? 'selected' : '' }}>{{ $supplier->name }} @if($supplier->phone)
+                                    data-due="{{ $sDue }}" {{ (string) $initialSupplierId === (string) $supplier->id ? 'selected' : '' }}>{{ $supplier->name }} @if($supplier->phone)
                                     ({{ $supplier->phone }})
                                 @endif</option>
                         @endforeach
@@ -621,6 +622,17 @@
                 value="{{ $initialPaymentType === 'bank' ? $initialBankAmount : ($initialPaymentType === 'cash' ? $initialCashAmount : $initialAmount) }}"
                 :stepper="false"
             />
+            <div id="drawer-single-summary"
+                style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; margin-top: 6px; padding: 6px 10px; background: var(--paper); border: 1px dashed var(--border); border-radius: 6px;">
+                <span style="color: var(--ink-700);">
+                    <span class="bn">মোট প্রদান: </span><span class="en" style="display:none;">Total Paid: </span>
+                    <strong style="color: var(--teal-800);">৳<span id="drawer-single-total-paid">0.00</span></strong>
+                </span>
+                <span style="color: var(--ink-700);">
+                    <span class="bn">বাকি: </span><span class="en" style="display:none;">Remaining Due: </span>
+                    <strong style="color: var(--red-600);">৳<span id="drawer-single-remaining-due">0.00</span></strong>
+                </span>
+            </div>
         </div>
 
         <div style="margin-bottom:14px; display:{{ $initialPaymentType === 'both' ? 'block' : 'none' }};"
@@ -690,16 +702,16 @@
 
         let cart = initialItems.map((row) => ({
             productId: row.product_id,
-            qty: parseFloat(row.qty) || 1,
+            qty: parseFloat(row.qty !== undefined ? row.qty : row.quantity) || 1,
             receivedQty: (row.received_qty !== undefined && row.received_qty !== null && row.received_qty !== '')
                 ? parseFloat(row.received_qty)
-                : (parseFloat(row.qty) || 1),
-            price: parseFloat(row.price) || 0,
-            salePrice: parseFloat(row.salePrice) || 0,
-            unitId: row.unitId || (productData[row.product_id]?.baseUnitId ?? ''),
-            batchNo: row.batchNo || '',
-            mfgDate: row.mfgDate || '',
-            expiryDate: row.expiryDate || '',
+                : (parseFloat(row.qty !== undefined ? row.qty : row.quantity) || 1),
+            price: parseFloat(row.price !== undefined ? row.price : row.purchase_price) || 0,
+            salePrice: parseFloat(row.salePrice !== undefined ? row.salePrice : row.sale_price) || 0,
+            unitId: row.unitId || row.unit_id || (productData[row.product_id]?.baseUnitId ?? ''),
+            batchNo: row.batchNo || row.batch_no || '',
+            mfgDate: row.mfgDate || row.mfg_date || '',
+            expiryDate: row.expiryDate || row.expiry_date || '',
             barcode: row.barcode || '',
         }));
 
@@ -1001,8 +1013,18 @@
             $('#drawer-both-remaining-due').text(fmt(remainingDue));
         }
 
+        function updateSingleAmountSummary() {
+            const total = calcGrandTotalCost();
+            const paidVal = parseFloat($('#drawer-amount-input').val()) || 0;
+            const remainingDue = Math.max(0, total - paidVal);
+
+            $('#drawer-single-total-paid').text(fmt(paidVal));
+            $('#drawer-single-remaining-due').text(fmt(remainingDue));
+        }
+
         $(document).on('input', '#drawer-amount-input', function () {
             amountManuallyEdited = true;
+            updateSingleAmountSummary();
         });
 
         $(document).on('input', '#drawer-cash-amount-input', function () {
@@ -1042,6 +1064,7 @@
                     if (!amountManuallyEdited) {
                         $('#drawer-amount-input').val(fmt(total));
                     }
+                    updateSingleAmountSummary();
                 }
             }
         });
@@ -1078,6 +1101,7 @@
             }
 
             updateBothAmountsSummary();
+            updateSingleAmountSummary();
         }
 
         $(document).on('input change', '#adjustment_cost, #transportation_cost, #total_previous_due', function () {
@@ -1245,10 +1269,10 @@
                 $('#drawer-bank-amount-input').val('0.00');
             }
 
-            updateGrandTotalCostDisplay();
-
             const currentSupplierId = $('#supplier-id-select').val();
             updateSupplierDueNotice(currentSupplierId);
+
+            updateGrandTotalCostDisplay();
 
             drawer.classList.add('open');
         }
@@ -1538,6 +1562,15 @@
                 let bankAmount = parseFloat(document.getElementById('drawer-bank-amount-input').value) || 0;
                 cashAmount = Math.max(0, cashAmount);
                 bankAmount = Math.max(0, bankAmount);
+
+                if (cashAmount + bankAmount > total) {
+                    if (cashAmount > total) {
+                        cashAmount = total;
+                        bankAmount = 0;
+                    } else {
+                        bankAmount = Math.max(0, total - cashAmount);
+                    }
+                }
 
                 if (cashAmount > 0) {
                     paymentsToSubmit.push({

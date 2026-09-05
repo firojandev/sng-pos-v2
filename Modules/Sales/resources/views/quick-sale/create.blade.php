@@ -71,7 +71,7 @@
 
                 <div class="field">
                     <label class="bn">কাস্টমার মোবাইল নম্বর</label><label class="en" style="display:none;">Customer Mobile Number</label>
-                    <input type="text" id="customerPhoneInput" name="customer_phone" value="{{ old('customer_phone') }}" placeholder="+৮৮ ০১XXXXXXXXX" autocomplete="off">
+                    <input type="text" id="customerPhoneInput" name="customer_phone" value="{{ old('customer_phone') }}" placeholder="+88 01XXXXXXXXX" autocomplete="off">
                 </div>
                 <input type="hidden" name="customer_id" id="customerIdInput" value="{{ old('customer_id') }}">
 

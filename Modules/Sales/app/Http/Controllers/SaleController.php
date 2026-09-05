@@ -34,7 +34,7 @@ class SaleController extends Controller
         $from = $request->query('from', now()->startOfMonth()->toDateString());
         $to = $request->query('to', now()->endOfMonth()->toDateString());
 
-        $query = Sale::with(['customer', 'items.product', 'items.batch', 'payments'])
+        $query = Sale::with(['customer', 'items.product', 'items.batch', 'items.unit', 'payments'])
             ->whereDate('sale_date', '>=', $from)
             ->whereDate('sale_date', '<=', $to);
 
@@ -320,8 +320,10 @@ class SaleController extends Controller
 
             $unitId = $item['unit_id'] ?? null;
             $conversionFactor = $this->unitConversionFactor((int) $item['product_id'], $unitId);
-            $baseQuantity = (float) $item['quantity'] * $conversionFactor;
-            $baseUnitPrice = (float) $item['unit_price'] / $conversionFactor;
+            $enteredQuantity = (float) $item['quantity'];
+            $enteredUnitPrice = (float) $item['unit_price'];
+            $baseQuantity = $enteredQuantity * $conversionFactor;
+            $baseUnitPrice = $conversionFactor > 0 ? $enteredUnitPrice / $conversionFactor : $enteredUnitPrice;
             $lineDiscount = (float) ($item['discount'] ?? 0);
 
             $remaining = $baseQuantity;
@@ -351,15 +353,16 @@ class SaleController extends Controller
                 // discount by each split's share of the line's total base quantity
                 // so the split rows' totals still sum to the intended line amount.
                 $discountShare = $baseQuantity > 0 ? $lineDiscount * ($take / $baseQuantity) : 0;
+                $itemQuantity = $conversionFactor > 0 ? ($take / $conversionFactor) : $take;
 
                 $sale->items()->create([
                     'product_id' => $item['product_id'],
                     'batch_id' => $batch->id,
                     'unit_id' => $unitId,
-                    'quantity' => $take,
-                    'unit_price' => round($baseUnitPrice, 4),
+                    'quantity' => round($itemQuantity, 4),
+                    'unit_price' => round($enteredUnitPrice, 4),
                     'discount' => round($discountShare, 2),
-                    'total' => round(($take * $baseUnitPrice) - $discountShare, 2),
+                    'total' => round(($itemQuantity * $enteredUnitPrice) - $discountShare, 2),
                     'warranty_expires_at' => $item['warranty_expires_at'] ?? null,
                 ]);
 
@@ -398,13 +401,14 @@ class SaleController extends Controller
                 $batch = Batch::where('id', $item->batch_id)->lockForUpdate()->first();
                 if ($batch) {
                     $before = (float) $batch->quantity;
-                    $batch->increment('quantity', $item->quantity);
+                    $baseQuantity = $item->baseQuantity();
+                    $batch->increment('quantity', $baseQuantity);
 
                     StockMovement::create([
                         'product_id' => $item->product_id,
                         'batch_id' => $batch->id,
                         'type' => 'sale_reversal',
-                        'quantity_change' => $item->quantity,
+                        'quantity_change' => $baseQuantity,
                         'quantity_before' => $before,
                         'quantity_after' => (float) $batch->fresh()->quantity,
                         'reference_type' => Sale::class,

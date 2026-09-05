@@ -114,6 +114,18 @@ class ProductController extends Controller
         return redirect()->route('products.index')->with('status', 'পণ্য মুছে ফেলা হয়েছে');
     }
 
+    public function stockHistory(Product $product): View
+    {
+        $movements = $product->stockMovements()
+            ->with(['batch', 'creator', 'reference'])
+            ->latest()
+            ->paginate(15);
+
+        $totalStock = (float) $product->batches()->sum('quantity');
+
+        return view('product::products._stock_history_modal', compact('product', 'movements', 'totalStock'));
+    }
+
     private function unitsPivotData(array $units): array
     {
         return collect($units)->mapWithKeys(fn (array $row) => [

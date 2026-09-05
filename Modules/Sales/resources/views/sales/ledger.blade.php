@@ -196,8 +196,8 @@
                         <div class="tx-item">
                             <div class="nm">{{ $item->product->name ?? '—' }}</div>
                             <div class="meta">
-                                <span>Qty: {{ rtrim(rtrim(number_format($item->quantity, 2), '0'), '.') }}</span>
-                                <span>Price: ৳{{ number_format($item->unit_price, 2) }}</span>
+                                <span>Qty: {{ rtrim(rtrim(number_format($item->quantity, 2), '0'), '.') }} {{ $item->unit?->name }}</span>
+                                <span>Price: ৳{{ number_format($item->unit_price, 2) }}{{ $item->unit ? '/'.$item->unit->name : '' }}</span>
                                 <span>Total: ৳{{ number_format($item->total, 2) }}</span>
                             </div>
                         </div>

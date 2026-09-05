@@ -1,5 +1,16 @@
 <x-core::button-group size="xs" aria-label="Product Actions">
     <x-core::button
+        :href="route('stock.history', ['product_id' => $product->id])"
+        variant="soft"
+        color="secondary"
+        icon="history"
+        icon-only
+        class="btn-stock-history"
+        data-id="{{ $product->id }}"
+        data-url="{{ route('products.stock-history', $product) }}"
+        title="স্টকের ইতিহাস / Stock History"
+    />
+    <x-core::button
         :href="route('products.edit', $product)"
         variant="soft"
         color="primary"

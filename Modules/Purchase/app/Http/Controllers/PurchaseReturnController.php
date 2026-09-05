@@ -106,9 +106,11 @@ class PurchaseReturnController extends Controller
                     $batch = Batch::where('id', $purchaseItem->batch_id)->lockForUpdate()->first();
 
                     if ($batch) {
+                        $factor = $purchaseItem->unitConversionFactor();
+                        $baseReturnQty = (float) $line['quantity'] * $factor;
                         $before = (float) $batch->quantity;
-                        $reverted = min((float) $line['quantity'], $before);
-                        $batch->quantity = max($batch->quantity - $line['quantity'], 0);
+                        $reverted = min($baseReturnQty, $before);
+                        $batch->quantity = max($batch->quantity - $reverted, 0);
                         $batch->save();
 
                         StockMovement::create([
