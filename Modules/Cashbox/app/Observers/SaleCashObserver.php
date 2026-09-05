@@ -2,6 +2,7 @@
 
 namespace Modules\Cashbox\Observers;
 
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Modules\Cashbox\Models\CashTransaction;
 use Modules\Sales\Models\Sale;
@@ -16,6 +17,11 @@ class SaleCashObserver
             return;
         }
 
+        $latestPayment = $sale->payments()->latest('id')->first();
+        $occurredAt = $latestPayment?->payment_date
+            ? Carbon::parse($latestPayment->payment_date)->format('Y-m-d')
+            : ($sale->sale_date ? $sale->sale_date->format('Y-m-d') : now()->toDateString());
+
         CashTransaction::updateOrCreate(
             ['sourceable_type' => Sale::class, 'sourceable_id' => $sale->id],
             [
@@ -24,7 +30,7 @@ class SaleCashObserver
                 'source' => 'sale',
                 'amount' => $sale->paid_amount,
                 'note' => $sale->invoice_no,
-                'occurred_at' => $sale->sale_date,
+                'occurred_at' => $occurredAt,
                 'created_by' => Auth::id(),
             ]
         );

@@ -12,10 +12,11 @@ class PurchasePayment extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['purchase_id', 'account_id', 'method', 'amount', 'note'];
+    protected $fillable = ['purchase_id', 'account_id', 'method', 'amount', 'payment_date', 'note'];
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'payment_date' => 'date',
     ];
 
     public function methodLabel(): array

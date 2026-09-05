@@ -329,6 +329,7 @@ class DueLedgerController extends Controller
                             'account_id' => $pool['account']->id,
                             'method' => $pool['method'],
                             'amount' => $payPortion,
+                            'payment_date' => $paymentDate,
                             'note' => $note ?? ('বাকি আদায় - ইনভয়েস: '.$sale->invoice_no),
                         ]);
 
@@ -618,6 +619,7 @@ class DueLedgerController extends Controller
                             'account_id' => $pool['account']->id,
                             'method' => $pool['method'],
                             'amount' => $payPortion,
+                            'payment_date' => $paymentDate,
                             'note' => $note ?? ('বাকি পরিশোধ - বিল: '.$purchase->invoice_no),
                         ]);
 

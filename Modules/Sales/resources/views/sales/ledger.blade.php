@@ -87,7 +87,10 @@
                                 </td>
                                 <td onclick="event.stopPropagation();">
                                     <div class="row-actions">
-                                        <button type="button" class="act" title="Details" onclick="openModal('saleDetail-{{ $sale->id }}')">
+                                        <button type="button" class="act btn-show-sale-invoice" title="ইনভয়েস ও প্রিন্ট / Invoice & Print" data-url="{{ route('sales.invoice-modal', $sale) }}" onclick="event.stopPropagation(); showSaleInvoice('{{ route('sales.invoice-modal', $sale) }}');">
+                                            <x-core::icon name="printer" size="14" />
+                                        </button>
+                                        <button type="button" class="act" title="Details" onclick="event.stopPropagation(); openModal('saleDetail-{{ $sale->id }}');">
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="5.5" r="1.6" fill="#5C6B65"/><circle cx="12" cy="12" r="1.6" fill="#5C6B65"/><circle cx="12" cy="18.5" r="1.6" fill="#5C6B65"/></svg>
                                         </button>
                                     </div>
@@ -123,9 +126,9 @@
                     <button type="button" class="drawer-x" onclick="closeModal('saleDetail-{{ $sale->id }}')">&times;</button>
                 </div>
 
-                <button type="button" class="btn btn-outline" style="width:100%; justify-content:center; margin-bottom:16px;" onclick="printSection('saleDetail-{{ $sale->id }}')">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 9V3h12v6M6 18H4a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-2" stroke="#1C2B27" stroke-width="1.7" stroke-linejoin="round"/><rect x="6" y="14" width="12" height="7" stroke="#1C2B27" stroke-width="1.7" stroke-linejoin="round"/></svg>
-                    <span class="bn">প্রিন্ট করুন</span><span class="en">Print</span>
+                <button type="button" class="btn btn-outline btn-show-sale-invoice" style="width:100%; justify-content:center; margin-bottom:16px;" data-url="{{ route('sales.invoice-modal', $sale) }}" onclick="showSaleInvoice('{{ route('sales.invoice-modal', $sale) }}', 'saleDetail-{{ $sale->id }}');">
+                    <x-core::icon name="printer" size="14" />
+                    <span class="bn">ইনভয়েস ও প্রিন্ট</span><span class="en" style="display:none;">Invoice & Print</span>
                 </button>
 
                 <div class="tx-section">
@@ -179,6 +182,20 @@
                             @endif
                         </span>
                     </div>
+                    @php
+                        $settledPreviousDue = (float) \Modules\Sales\Models\SalePayment::where('note', 'like', "%(বিক্রয় ইনভয়েস: {$sale->invoice_no} থেকে সমন্বয়কৃত)%")->sum('amount')
+                            + (float) \Modules\Finance\Models\AccountTransaction::where('source', 'sale')->where('note', 'like', "%(বিক্রয় ইনভয়েস: {$sale->invoice_no} থেকে সমন্বয়কৃত)%")->sum('amount');
+                    @endphp
+                    @if ($settledPreviousDue > 0)
+                        <div class="tx-row">
+                            <span class="lbl bn">পূর্ববর্তী বকেয়া সমন্বয়</span><span class="lbl en" style="display:none;">Previous Due Paid</span>
+                            <span class="val" style="color:var(--teal-700);">৳{{ number_format($settledPreviousDue, 2) }}</span>
+                        </div>
+                        <div class="tx-row" style="background:var(--paper-line); padding:6px 10px; border-radius:6px; margin:4px 0;">
+                            <span class="lbl bn" style="font-weight:700; color:var(--ink-900);">মোট নগদ/ব্যাংক গ্রহণ</span><span class="lbl en" style="display:none; font-weight:700;">Total Received</span>
+                            <span class="val" style="font-weight:700; color:var(--teal-800);">৳{{ number_format($sale->paid_amount + $settledPreviousDue, 2) }}</span>
+                        </div>
+                    @endif
                     <div class="tx-row">
                         <span class="lbl bn">বাকি</span><span class="lbl en" style="display:none;">Due</span>
                         <span class="val" style="{{ $sale->due_amount > 0 ? 'color:var(--red-600);' : '' }}">৳{{ number_format($sale->due_amount, 2) }}</span>
@@ -232,4 +249,51 @@
             </div>
         </div>
     @endforeach
+
+    {{-- Dynamic Sales Invoice Modal Container --}}
+    <div id="saleInvoiceModalContainer">
+        @if(isset($invoiceSale) && $invoiceSale)
+            @include('sales::sales._invoice_modal', ['sale' => $invoiceSale])
+        @endif
+    </div>
+
+    @push('scripts')
+        <script>
+            window.showSaleInvoice = function(url, closeDrawerId) {
+                if (closeDrawerId) {
+                    closeModal(closeDrawerId);
+                }
+                if (!url) return;
+
+                $.get(url, function (html) {
+                    $('#saleInvoiceModalContainer').html(html);
+                    if (typeof refreshLucideIcons === 'function') {
+                        refreshLucideIcons();
+                    }
+                    openModal('saleInvoiceModal');
+                }).fail(function () {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'ত্রুটি!',
+                        text: 'ইনভয়েস স্লিপ লোড করতে সমস্যা হয়েছে।'
+                    });
+                });
+            };
+
+            $(function() {
+                @if(isset($invoiceSale) && $invoiceSale)
+                    openModal('saleInvoiceModal');
+                @endif
+
+                $(document).on('click', '.btn-show-sale-invoice', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var url = $(this).data('url') || $(this).attr('data-url');
+                    if (url) {
+                        showSaleInvoice(url);
+                    }
+                });
+            });
+        </script>
+    @endpush
 </x-core::layout>

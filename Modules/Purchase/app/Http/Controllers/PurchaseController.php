@@ -12,6 +12,7 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Modules\Employee\Models\Employee;
 use Modules\Finance\Models\Account;
+use Modules\Finance\Models\AccountTransaction;
 use Modules\Finance\Services\AccountTransactionService;
 use Modules\Product\Models\Batch;
 use Modules\Product\Models\Product;
@@ -22,6 +23,7 @@ use Modules\Purchase\Http\Requests\StorePurchaseRequest;
 use Modules\Purchase\Http\Requests\UpdatePurchaseRequest;
 use Modules\Purchase\Models\Purchase;
 use Modules\Purchase\Models\PurchaseItem;
+use Modules\Purchase\Models\PurchasePayment;
 use Modules\Shop\Models\Warehouse;
 use Modules\Supplier\Models\Supplier;
 
@@ -562,6 +564,8 @@ class PurchaseController extends Controller
             // 5. Apply new items (adds new stock, creates receipt items, logs stock movements)
             $this->applyItems($purchase, $items);
 
+            $this->revertExcessPreviousDuePayments($purchase);
+
             // 6. Apply new payments and allocate any excess to supplier's previous due
             $this->applyPaymentsAndPreviousDue($purchase, $supplier, $submittedPayments, $total, $purchasePaid);
         });
@@ -596,6 +600,8 @@ class PurchaseController extends Controller
         DB::transaction(function () use ($purchase) {
             $this->revertItems($purchase);
 
+            $this->revertExcessPreviousDuePayments($purchase);
+
             foreach ($purchase->payments as $payment) {
                 $payment->delete();
             }
@@ -615,6 +621,38 @@ class PurchaseController extends Controller
         }
 
         return redirect()->route('purchase.ledger')->with('status', 'ক্রয় বাতিল করা হয়েছে');
+    }
+
+    /**
+     * Revert any payments on earlier purchases or supplier opening due reductions
+     * that were settled from this purchase's payment drawer.
+     */
+    private function revertExcessPreviousDuePayments(Purchase $purchase): void
+    {
+        $linkedPayments = PurchasePayment::where('note', 'like', "%(ক্রয় ইনভয়েস: {$purchase->invoice_no} থেকে সমন্বয়কৃত)%")->get();
+        foreach ($linkedPayments as $lp) {
+            $prevPurchase = $lp->purchase;
+            if ($prevPurchase) {
+                $newPaid = round(max((float) $prevPurchase->paid_amount - (float) $lp->amount, 0), 2);
+                $newDue = round(min((float) $prevPurchase->due_amount + (float) $lp->amount, (float) $prevPurchase->total), 2);
+                $prevPurchase->update([
+                    'paid_amount' => $newPaid,
+                    'due_amount' => $newDue,
+                    'payment_status' => $newDue <= 0 ? 'paid' : ($newPaid <= 0 ? 'due' : 'partial'),
+                ]);
+            }
+            $lp->delete();
+        }
+
+        $linkedOpeningTxs = AccountTransaction::where('source', 'purchase')
+            ->where('note', 'like', "%(ক্রয় ইনভয়েস: {$purchase->invoice_no} থেকে সমন্বয়কৃত)%")
+            ->get();
+        foreach ($linkedOpeningTxs as $tx) {
+            if ($tx->sourceable instanceof Supplier) {
+                $tx->sourceable->increment('opening_due', (float) $tx->amount);
+            }
+            $tx->delete();
+        }
     }
 
     /**
@@ -674,6 +712,7 @@ class PurchaseController extends Controller
                 'account_id' => $pool['account_id'],
                 'method' => $pool['method'],
                 'amount' => $take,
+                'payment_date' => $purchase->purchase_date ?? now()->toDateString(),
             ]);
         }
         unset($pool);
@@ -764,6 +803,7 @@ class PurchaseController extends Controller
                             'account_id' => $pool['account_id'],
                             'method' => $pool['method'],
                             'amount' => $payPortion,
+                            'payment_date' => $purchase->purchase_date ?? now()->toDateString(),
                             'note' => 'বাকি পরিশোধ - বিল: '.$prevPurchase->invoice_no.' (ক্রয় ইনভয়েস: '.$purchase->invoice_no.' থেকে সমন্বয়কৃত)',
                         ]);
 
