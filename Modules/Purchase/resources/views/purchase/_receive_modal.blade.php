@@ -131,7 +131,7 @@
                                         <input type="hidden" name="items[{{ $idx }}][purchase_item_id]" value="{{ $item->id }}">
                                         <div style="font-weight:600; color:var(--ink-900);">{{ $item->product->name ?? '—' }}</div>
                                         <div style="font-size:11px; color:var(--ink-400);">
-                                            SKU: {{ $item->product->sku ?? '—' }}
+                                            SKU: {{ $item->product->sku ?? '—' }}@if($item->unit) &middot; একক: <strong style="color:var(--ink-600);">{{ $item->unit->name }}</strong>@endif
                                         </div>
                                     </td>
                                     <td style="padding:8px 8px; text-align:right; font-family:var(--font-mono, monospace);">

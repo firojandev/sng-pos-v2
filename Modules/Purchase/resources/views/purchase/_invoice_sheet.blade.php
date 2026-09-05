@@ -22,7 +22,7 @@
     .purchase-invoice-sheet {
         background: #ffffff;
         width: 100%;
-        max-width: 640px;
+        max-width: 700px;
         margin: 0 auto;
         padding: 24px 28px;
         border: 1px solid #e2e8f0;
@@ -115,18 +115,22 @@
     {{-- Items Table --}}
     <table class="invoice-items-table" style="width:100%; min-width:0; max-width:100%; table-layout:fixed; border-collapse:separate !important; border-spacing:0 !important; border:1px solid #94a3b8 !important; margin-top:14px; margin-bottom:14px; font-size:11.5px;">
         <colgroup>
-            <col style="width:6%;">
-            <col style="width:44%;">
+            <col style="width:5%;">
+            <col style="width:33%;">
+            <col style="width:10%;">
+            <col style="width:10%;">
+            <col style="width:10%;">
+            <col style="width:9%;">
+            <col style="width:11%;">
             <col style="width:12%;">
-            <col style="width:12%;">
-            <col style="width:13%;">
-            <col style="width:13%;">
         </colgroup>
         <thead>
             <tr style="background:transparent;">
                 <th style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; font-weight:700;">#</th>
                 <th style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 8px; text-align:center; font-weight:700;">পণ্যের নাম</th>
-                <th style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; font-weight:700;">পরিমান</th>
+                <th style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; font-weight:700;">অর্ডার</th>
+                <th style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; font-weight:700;">গৃহীত</th>
+                <th style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; font-weight:700;">বাকি</th>
                 <th style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; font-weight:700;">ইউনিট</th>
                 <th style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 6px; text-align:center; font-weight:700;">ইউনিট মূল্য</th>
                 <th style="border-bottom:1px solid #94a3b8 !important; border-right:none; border-top:none; border-left:none; padding:6px 6px; text-align:center; font-weight:700;">মোট</th>
@@ -135,10 +139,13 @@
         <tbody>
             @foreach ($purchase->items as $idx => $item)
                 @php
-                    $unitName = $item->product?->units->firstWhere('pivot.is_base', true)?->name
+                    $unitName = $item->unit?->name
+                        ?? $item->product?->units->firstWhere('pivot.is_base', true)?->name
                         ?? $item->product?->units->first()?->name
                         ?? 'পিস';
                     $barcode = $item->product?->barcode ?: $item->product?->sku;
+                    $receivedQty = (float) ($item->received_quantity ?? $item->quantity);
+                    $pendingQty = max(0.0, (float) $item->quantity - $receivedQty);
                 @endphp
                 <tr>
                     <td style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; vertical-align:middle;">
@@ -154,6 +161,12 @@
                     </td>
                     <td style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; vertical-align:middle; white-space:nowrap;">
                         {{ BanglaNumber::toBn(rtrim(rtrim(number_format((float) $item->quantity, 2), '0'), '.')) }}
+                    </td>
+                    <td style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; vertical-align:middle; white-space:nowrap; color:#0f766e; font-weight:600;">
+                        {{ BanglaNumber::toBn(rtrim(rtrim(number_format($receivedQty, 2), '0'), '.')) }}
+                    </td>
+                    <td style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; vertical-align:middle; white-space:nowrap; {{ $pendingQty > 0 ? 'color:#dc2626; font-weight:700;' : 'color:#64748b;' }}">
+                        {{ BanglaNumber::toBn(rtrim(rtrim(number_format($pendingQty, 2), '0'), '.')) }}
                     </td>
                     <td style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; vertical-align:middle; white-space:nowrap;">
                         {{ $unitName }}
@@ -174,6 +187,12 @@
                 </td>
                 <td style="border-right:1px solid #94a3b8 !important; border-bottom:none; border-top:none; border-left:none; padding:6px 4px; text-align:center; white-space:nowrap;">
                     {{ BanglaNumber::toBn(rtrim(rtrim(number_format((float) $purchase->items->sum('quantity'), 2), '0'), '.')) }}
+                </td>
+                <td style="border-right:1px solid #94a3b8 !important; border-bottom:none; border-top:none; border-left:none; padding:6px 4px; text-align:center; white-space:nowrap; color:#0f766e;">
+                    {{ BanglaNumber::toBn(rtrim(rtrim(number_format((float) $purchase->items->sum(fn ($i) => (float) ($i->received_quantity ?? $i->quantity)), 2), '0'), '.')) }}
+                </td>
+                <td style="border-right:1px solid #94a3b8 !important; border-bottom:none; border-top:none; border-left:none; padding:6px 4px; text-align:center; white-space:nowrap; color:#dc2626;">
+                    {{ BanglaNumber::toBn(rtrim(rtrim(number_format((float) $purchase->items->sum(fn ($i) => $i->pendingQuantity()), 2), '0'), '.')) }}
                 </td>
                 <td style="border-right:1px solid #94a3b8 !important; border-bottom:none; border-top:none; border-left:none; padding:6px 4px;"></td>
                 <td style="border-right:1px solid #94a3b8 !important; border-bottom:none; border-top:none; border-left:none; padding:6px 6px;"></td>

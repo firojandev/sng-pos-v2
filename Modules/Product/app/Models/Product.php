@@ -89,4 +89,23 @@ class Product extends Model
     {
         return $this->units->firstWhere('pivot.is_base', true);
     }
+
+    public function unitConversionFactor(?int $unitId): float
+    {
+        if (! $unitId) {
+            return 1.0;
+        }
+
+        $unit = $this->relationLoaded('units')
+            ? $this->units->firstWhere('id', $unitId)
+            : $this->units()->where('units.id', $unitId)->first();
+
+        $factor = $unit ? (float) $unit->pivot->conversion_factor : 0.0;
+
+        if ($factor <= 0) {
+            return 1.0;
+        }
+
+        return $unit->pivot->is_smaller_unit ? 1 / $factor : $factor;
+    }
 }

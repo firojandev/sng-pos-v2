@@ -301,4 +301,49 @@ class PurchaseInvoiceModalFeatureTest extends TestCase
         $response->assertDontSee('ঠিকানা:');
         $response->assertSee('সাপ্লায়ার:</b> General Supplier', false);
     }
+
+    public function test_invoice_displays_received_and_remaining_quantity_columns_and_values(): void
+    {
+        $purchase = Purchase::create([
+            'shop_id' => $this->shop->id,
+            'supplier_id' => $this->supplier->id,
+            'warehouse_id' => $this->warehouse->id,
+            'purchase_date' => now()->toDateString(),
+            'invoice_no' => 'PU-PARTIAL-001',
+            'subtotal' => 81750,
+            'discount' => 0,
+            'delivery_charge' => 0,
+            'total' => 81750,
+            'paid_amount' => 50000,
+            'due_amount' => 31750,
+            'payment_status' => 'partial',
+        ]);
+
+        $purchase->items()->create([
+            'product_id' => $this->product->id,
+            'quantity' => 10,
+            'received_quantity' => 6, // 6 received, 4 remaining
+            'purchase_price' => 8175,
+            'total' => 81750,
+            'batch_no' => 'KM-20318',
+        ]);
+
+        $modalResponse = $this->actingAs($this->user)->get(route('purchase.invoice-modal', $purchase));
+        $modalResponse->assertOk();
+        $modalResponse->assertSee('অর্ডার');
+        $modalResponse->assertSee('গৃহীত');
+        $modalResponse->assertSee('বাকি');
+        $modalResponse->assertSee(BanglaNumber::toBn(10));
+        $modalResponse->assertSee(BanglaNumber::toBn(6));
+        $modalResponse->assertSee(BanglaNumber::toBn(4));
+
+        $printResponse = $this->actingAs($this->user)->get(route('purchase.print-invoice', $purchase));
+        $printResponse->assertOk();
+        $printResponse->assertSee('অর্ডার');
+        $printResponse->assertSee('গৃহীত');
+        $printResponse->assertSee('বাকি');
+        $printResponse->assertSee(BanglaNumber::toBn(10));
+        $printResponse->assertSee(BanglaNumber::toBn(6));
+        $printResponse->assertSee(BanglaNumber::toBn(4));
+    }
 }

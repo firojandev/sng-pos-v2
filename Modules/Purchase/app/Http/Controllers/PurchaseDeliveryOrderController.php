@@ -416,12 +416,14 @@ class PurchaseDeliveryOrderController extends Controller
 
                 $purchaseItemsData[] = [
                     'product_id' => $orderItem->product_id,
+                    'unit_id' => $orderItem->unit_id,
                     'batch_id' => $batch->id,
                     'batch_no' => $batchNo,
                     'mfg_date' => $input['mfg_date'] ?? null,
                     'expiry_date' => $input['expiry_date'] ?? null,
-                    'quantity' => $baseQuantity,
-                    'purchase_price' => $baseCost,
+                    'quantity' => $enteredQty,
+                    'received_quantity' => $enteredQty,
+                    'purchase_price' => (float) $orderItem->purchase_price,
                     'total' => $lineSubtotal,
                 ];
             }
