@@ -17,6 +17,7 @@ use Modules\Finance\Services\AccountTransactionService;
 use Modules\Product\Models\Batch;
 use Modules\Product\Models\Product;
 use Modules\Product\Models\StockMovement;
+use Modules\Sales\DataTables\SalesDataTable;
 use Modules\Sales\Http\Requests\StoreSaleRequest;
 use Modules\Sales\Http\Requests\UpdateSaleRequest;
 use Modules\Sales\Models\Sale;
@@ -34,31 +35,21 @@ class SaleController extends Controller
         return $this->create($request);
     }
 
-    public function ledger(Request $request): View
+    public function ledger(SalesDataTable $dataTable)
     {
-        $search = trim((string) $request->query('q', ''));
-        $status = $request->query('status', 'all');
-        $from = $request->query('from', now()->startOfMonth()->toDateString());
-        $to = $request->query('to', now()->endOfMonth()->toDateString());
+        $totals = Sale::query()
+            ->selectRaw('
+                COALESCE(SUM(total), 0) as total_amount,
+                COALESCE(SUM(paid_amount), 0) as total_paid,
+                COALESCE(SUM(due_amount), 0) as total_due,
+                COUNT(id) as total_count
+            ')
+            ->first();
 
-        $query = Sale::with(['customer', 'items.product', 'items.batch', 'items.unit', 'payments'])
-            ->whereDate('sale_date', '>=', $from)
-            ->whereDate('sale_date', '<=', $to);
-
-        if ($search !== '') {
-            $query->whereHas('customer', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%");
-            });
-        }
-
-        if (in_array($status, ['paid', 'partial', 'due'], true)) {
-            $query->where('payment_status', $status);
-        }
-
-        $totalAmount = (clone $query)->sum('total');
-
-        $sales = $query->latest('sale_date')->paginate(10)->withQueryString();
+        $totalAmount = (float) ($totals->total_amount ?? 0);
+        $totalPaid = (float) ($totals->total_paid ?? 0);
+        $totalDue = (float) ($totals->total_due ?? 0);
+        $totalCount = (int) ($totals->total_count ?? 0);
 
         $invoiceSale = null;
         if (session('show_invoice_sale_id')) {
@@ -66,15 +57,82 @@ class SaleController extends Controller
                 ->find(session('show_invoice_sale_id'));
         }
 
-        return view('sales::sales.ledger', [
-            'sales' => $sales,
-            'totalAmount' => $totalAmount,
-            'search' => $search,
-            'status' => $status,
-            'from' => $from,
-            'to' => $to,
-            'invoiceSale' => $invoiceSale,
-        ]);
+        return $dataTable->render('sales::sales.ledger', compact('totalAmount', 'totalPaid', 'totalDue', 'totalCount', 'invoiceSale'));
+    }
+
+    public function show(Sale $sale): View
+    {
+        $sale->load(['customer', 'warehouse', 'items.product.units', 'items.unit', 'items.batch', 'payments.account', 'returns.items.product']);
+
+        $settledPreviousDue = (float) SalePayment::where('note', 'like', "%(বিক্রয় ইনভয়েস: {$sale->invoice_no} থেকে সমন্বয়কৃত)%")->sum('amount')
+            + (float) AccountTransaction::where('source', 'sale')->where('note', 'like', "%(বিক্রয় ইনভয়েস: {$sale->invoice_no} থেকে সমন্বয়কৃত)%")->sum('amount');
+
+        return view('sales::sales.detail-drawer', compact('sale', 'settledPreviousDue'));
+    }
+
+    public function printLedger(Request $request): View
+    {
+        $from = $request->query('from');
+        $to = $request->query('to');
+        $status = $request->query('status');
+        $search = trim((string) $request->query('q', ''));
+
+        $query = Sale::with(['customer', 'warehouse', 'items.product', 'items.batch', 'payments', 'returns'])
+            ->latest('sale_date')
+            ->latest('id');
+
+        if ($from) {
+            $query->whereDate('sale_date', '>=', $from);
+        }
+        if ($to) {
+            $query->whereDate('sale_date', '<=', $to);
+        }
+        if ($status && in_array($status, ['paid', 'partial', 'due'], true)) {
+            $query->where('payment_status', $status);
+        }
+
+        if ($search !== '') {
+            $searchClean = ltrim($search, '#');
+            $query->where(function ($q) use ($search, $searchClean) {
+                $q->where('sales.invoice_no', 'like', "%{$searchClean}%")
+                    ->orWhere('sales.note', 'like', "%{$search}%")
+                    ->orWhere('sales.employee_name', 'like', "%{$search}%")
+                    ->orWhereHas('customer', function ($cq) use ($search) {
+                        $cq->where('name', 'like', "%{$search}%")
+                            ->orWhere('phone', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('items', function ($iq) use ($search) {
+                        $iq->whereHas('batch', function ($bq) use ($search) {
+                            $bq->where('batch_no', 'like', "%{$search}%");
+                        })->orWhereHas('product', function ($pq) use ($search) {
+                            $pq->where('name', 'like', "%{$search}%")
+                                ->orWhere('sku', 'like', "%{$search}%");
+                        });
+                    });
+            });
+        }
+
+        $sales = $query->get();
+
+        $totalAmount = (float) $sales->sum('total');
+        $totalPaid = (float) $sales->sum('paid_amount');
+        $totalDue = (float) $sales->sum('due_amount');
+        $totalCount = $sales->count();
+
+        $shop = Auth::user()?->shop;
+
+        return view('sales::sales.print-ledger', compact(
+            'sales',
+            'totalAmount',
+            'totalPaid',
+            'totalDue',
+            'totalCount',
+            'from',
+            'to',
+            'status',
+            'search',
+            'shop'
+        ));
     }
 
     public function invoiceModal(Sale $sale): View

@@ -296,9 +296,18 @@ class SaleInvoiceModalFeatureTest extends TestCase
         $response = $this->actingAs($this->user)->get(route('sales.ledger'));
 
         $response->assertOk();
+        $response->assertSee('sales-data-table');
         $response->assertSee('btn-show-sale-invoice');
-        $response->assertSee(route('sales.invoice-modal', $sale));
         $response->assertSee('id="saleInvoiceModalContainer"', false);
         $response->assertSee('showSaleInvoice', false);
+
+        $ajaxResponse = $this->actingAs($this->user)->getJson(route('sales.ledger'), [
+            'HTTP_X-Requested-With' => 'XMLHttpRequest',
+        ]);
+
+        $ajaxResponse->assertOk();
+        $json = $ajaxResponse->json();
+        $this->assertStringContainsString('btn-show-sale-invoice', $json['data'][0]['action']);
+        $this->assertStringContainsString(route('sales.invoice-modal', $sale), $json['data'][0]['action']);
     }
 }
