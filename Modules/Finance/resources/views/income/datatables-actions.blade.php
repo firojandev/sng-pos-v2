@@ -11,6 +11,7 @@
         data-amount="{{ $income->amount }}"
         data-income-date="{{ optional($income->income_date)->format('Y-m-d') }}"
         data-account-id="{{ $income->account_id }}"
+        data-payment-method="{{ $income->payment_method }}"
         data-note="{{ $income->note }}"
         data-action="{{ route('income.update', $income) }}"
         data-url="{{ route('income.edit', $income) }}"

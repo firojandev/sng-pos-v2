@@ -17,10 +17,10 @@
                 @include('finance::income._form')
 
                 <div style="display:flex; gap:10px; margin-top:20px;">
-                    <x-core::button type="submit" color="primary" icon="check" style="flex:1; justify-content:center;">
+                    <x-core::button type="submit" color="primary" size="sm" icon="check" style="flex:1; justify-content:center;">
                         <span class="bn">হালনাগাদ করুন</span><span class="en">Update</span>
                     </x-core::button>
-                    <x-core::button variant="secondary" :href="route('income.index')" style="flex:1; justify-content:center;">
+                    <x-core::button variant="secondary" size="sm" :href="route('income.index')" style="flex:1; justify-content:center;">
                         <span class="bn">বাতিল</span><span class="en">Cancel</span>
                     </x-core::button>
                 </div>

@@ -23,6 +23,7 @@ class StoreEmployeeRequest extends FormRequest
             'joining_date' => ['nullable', 'date'],
             'address' => ['nullable', 'string', 'max:255'],
             'status' => ['required', 'in:active,inactive'],
+            'user_id' => ['nullable', 'exists:users,id'],
         ];
     }
 }

@@ -1,50 +1,77 @@
 @php
     $isEdit = $user->exists;
     $currentRole = $isEdit ? $user->roles->first()?->name : null;
+
+    $roleOptions = ['' => '-- রোল নির্বাচন করুন --'];
+    foreach ($roles as $role) {
+        $roleOptions[$role->name] = $role->name;
+    }
 @endphp
 
-<div class="field">
-    <label class="bn">নাম</label><label class="en" style="display:none;">Name</label>
-    <input type="text" name="name" value="{{ old('name', $user->name) }}" placeholder="ইউজারের নাম" required>
-    @error('name') <div class="field-error">{{ $message }}</div> @enderror
-</div>
+<div style="display:flex; flex-direction:column; gap:14px;">
+    <x-core::input
+        name="name"
+        label="পুরো নাম"
+        label-en="Full Name"
+        value="{{ old('name', $user->name) }}"
+        placeholder="ইউজারের নাম লিখুন"
+        placeholder-en="Enter full name"
+        size="sm"
+        :required="true"
+    />
 
-<div class="field">
-    <label class="bn">ইমেইল</label><label class="en" style="display:none;">Email</label>
-    <input type="email" name="email" value="{{ old('email', $user->email) }}" placeholder="user@example.com" required>
-    @error('email') <div class="field-error">{{ $message }}</div> @enderror
-</div>
+    <x-core::input
+        name="email"
+        type="email"
+        label="ইমেইল অ্যাড্রেস"
+        label-en="Email Address"
+        value="{{ old('email', $user->email) }}"
+        placeholder="user@example.com"
+        placeholder-en="user@example.com"
+        size="sm"
+        :required="true"
+    />
 
-<div class="field-row">
-    <div class="field">
-        <label class="bn">পাসওয়ার্ড</label><label class="en" style="display:none;">Password</label>
-        <input type="password" name="password" placeholder="{{ $isEdit ? '••••••••' : '' }}" {{ $isEdit ? '' : 'required' }}>
-        @error('password') <div class="field-error">{{ $message }}</div> @enderror
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <x-core::input
+            name="password"
+            type="password"
+            label="{{ $isEdit ? 'নতুন পাসওয়ার্ড (ঐচ্ছিক)' : 'পাসওয়ার্ড' }}"
+            label-en="{{ $isEdit ? 'New Password (Optional)' : 'Password' }}"
+            placeholder="{{ $isEdit ? '••••••••' : 'কমপক্ষে ৮ অক্ষর' }}"
+            size="sm"
+            :required="!$isEdit"
+        />
+
+        <x-core::input
+            name="password_confirmation"
+            type="password"
+            label="পাসওয়ার্ড নিশ্চিত করুন"
+            label-en="Confirm Password"
+            placeholder="{{ $isEdit ? '••••••••' : 'পুনরায় লিখুন' }}"
+            size="sm"
+        />
     </div>
-    <div class="field">
-        <label class="bn">পাসওয়ার্ড নিশ্চিত করুন</label><label class="en" style="display:none;">Confirm Password</label>
-        <input type="password" name="password_confirmation" placeholder="{{ $isEdit ? '••••••••' : '' }}">
-    </div>
-</div>
 
-@if ($isEdit)
-    <div class="helper">
-        <span class="bn">পাসওয়ার্ড খালি রাখলে বর্তমান পাসওয়ার্ড অপরিবর্তিত থাকবে।</span>
-        <span class="en" style="display:none;">Leave password blank to keep the current password unchanged.</span>
-    </div>
-@endif
+    @if ($isEdit)
+        <div style="font-size:11.5px; color:var(--ink-500); margin-top:-6px;">
+            <span class="bn">পাসওয়ার্ড পরিবর্তন করতে না চাইলে ঘরটি খালি রাখুন।</span>
+            <span class="en" style="display:none;">Leave password blank to keep the current password unchanged.</span>
+        </div>
+    @endif
 
-<div class="field">
-    <label class="bn">রোল</label><label class="en" style="display:none;">Role</label>
-    <select name="role" required>
-        <option value="">-- নির্বাচন করুন --</option>
-        @foreach ($roles as $role)
-            <option value="{{ $role->name }}" {{ old('role', $currentRole) === $role->name ? 'selected' : '' }}>{{ $role->name }}</option>
-        @endforeach
-    </select>
-    @error('role') <div class="field-error">{{ $message }}</div> @enderror
-    <div class="helper" style="margin-top:6px;">
-        <span class="bn">কোনো উপযুক্ত রোল না পেলে আগে "রোল ও পারমিশন" ট্যাব থেকে একটি রোল তৈরি করুন।</span>
-        <span class="en" style="display:none;">If no suitable role exists, create one first from the "Roles & Permissions" tab.</span>
+    <x-core::select
+        name="role"
+        label="অ্যাক্সেস রোল"
+        label-en="Access Role"
+        size="sm"
+        :required="true"
+        :options="$roleOptions"
+        :value="old('role', $currentRole)"
+    />
+
+    <div style="font-size:11.5px; color:var(--ink-500); background:var(--paper-line); padding:8px 12px; border-radius:8px; border:1px solid var(--border);">
+        <span class="bn">কোনো উপযুক্ত রোল না পেলে আগে <strong>"রোল ও পারমিশন"</strong> ট্যাব থেকে একটি রোল তৈরি করুন।</span>
+        <span class="en" style="display:none;">If no suitable role exists, create one first from the <strong>"Roles & Permissions"</strong> tab.</span>
     </div>
 </div>

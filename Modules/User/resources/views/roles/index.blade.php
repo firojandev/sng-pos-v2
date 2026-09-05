@@ -9,36 +9,55 @@
 
     <div class="panel" style="margin-top:0;">
         <div class="panel-body">
-            <div class="section-row">
+            <div class="section-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
                 <div class="filters"></div>
-                <a class="btn btn-gold" href="{{ route('roles.create') }}">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>
-                    <span class="bn">নতুন রোল</span><span class="en">New Role</span>
-                </a>
+                <x-core::button size="sm" color="primary" icon="plus" href="{{ route('roles.create') }}">
+                    <span class="bn">নতুন রোল</span><span class="en" style="display:none;">New Role</span>
+                </x-core::button>
             </div>
 
-            <div class="helper" style="margin-top:0; margin-bottom:14px;">
-                <span class="bn">এখানে শুধু আপনার দোকানের জন্য তৈরি কাস্টম রোল দেখানো হয়। "Admin" রোলটি সব পারমিশনসহ পূর্বনির্ধারিত।</span>
-                <span class="en" style="display:none;">Only custom roles created for your shop are shown here. The "Admin" role is predefined with all permissions.</span>
+            <div class="helper" style="margin-top:0; margin-bottom:14px; color:var(--ink-600);">
+                <span class="bn">এখানে আপনার দোকানের জন্য নির্ধারিত রোলগুলো দেখানো হচ্ছে। প্রয়োজন অনুযায়ী প্রতিটি রোলের পারমিশন পরিবর্তন করতে পারেন।</span>
+                <span class="en" style="display:none;">Roles configured for your shop are listed here. You can customize permissions for each role as needed.</span>
             </div>
 
             <div class="mini-grid">
                 @forelse ($roles as $role)
-                    <div class="mini-card pm-card">
-                        <div class="mini-card-actions">
-                            <a class="act" title="Edit" href="{{ route('roles.edit', $role) }}">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" stroke="#5C6B65" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                            </a>
-                            <form method="POST" action="{{ route('roles.destroy', $role) }}" onsubmit="return confirm('এই রোলটি মুছে ফেলতে চান?');">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="act" title="Delete">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13" stroke="#C1443C" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                                </button>
-                            </form>
+                    <div class="mini-card pm-card" style="position:relative; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:14px 16px;">
+                        <div class="mini-card-actions" style="position:absolute; top:12px; right:12px; display:flex; align-items:center; gap:6px;">
+                            <x-core::button
+                                tag="a"
+                                size="sm"
+                                variant="ghost"
+                                color="secondary"
+                                icon="edit"
+                                href="{{ route('roles.edit', $role) }}"
+                                title="Edit"
+                            />
+                            @if ($role->name !== 'Admin')
+                                <form method="POST" action="{{ route('roles.destroy', $role) }}" class="delete-form" data-title="রোল মুছে ফেলতে চান?" data-text="এই রোলটি স্থায়ীভাবে মুছে ফেলা হবে।">
+                                    @csrf
+                                    @method('DELETE')
+                                    <x-core::button
+                                        type="submit"
+                                        size="sm"
+                                        variant="ghost"
+                                        color="danger"
+                                        icon="trash-2"
+                                        title="Delete"
+                                    />
+                                </form>
+                            @endif
                         </div>
-                        <div class="nm">{{ $role->name }}</div>
-                        <div class="sub">
+                        <div class="nm" style="font-weight:600; font-size:15px; color:var(--ink-900);">
+                            {{ $role->name }}
+                            @if ($role->name === 'Admin')
+                                <x-core::badge size="xs" color="primary" variant="subtle" style="margin-left:6px;">
+                                    <span class="bn">ডিফল্ট</span><span class="en" style="display:none;">Default</span>
+                                </x-core::badge>
+                            @endif
+                        </div>
+                        <div class="sub" style="color:var(--ink-600); font-size:12px; margin-top:6px;">
                             <span class="bn">{{ $role->permissions_count }}টি পারমিশন &middot; {{ $role->users_count }} জন ইউজার</span>
                             <span class="en" style="display:none;">{{ $role->permissions_count }} permissions &middot; {{ $role->users_count }} users</span>
                         </div>
@@ -47,16 +66,18 @@
                     <div style="grid-column: 1 / -1;">
                         <x-core::table.empty
                             icon="shield"
-                            title="কোনো কাস্টম রোল নেই"
-                            title-en="No custom roles found"
+                            title="কোনো রোল পাওয়া যায়নি"
+                            title-en="No roles found"
                         />
                     </div>
                 @endforelse
             </div>
 
-            <div style="margin-top:14px;">
-                {{ $roles->links() }}
-            </div>
+            @if ($roles->hasPages())
+                <div style="margin-top:14px;">
+                    {{ $roles->links() }}
+                </div>
+            @endif
         </div>
     </div>
 </x-core::layout>

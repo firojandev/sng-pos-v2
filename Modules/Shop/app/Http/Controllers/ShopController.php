@@ -107,7 +107,7 @@ class ShopController extends Controller
         return view('shop::create', [
             'shop' => new Shop,
             'nextStoreCode' => Shop::generateNextStoreCode(),
-            'roles' => Role::whereNull('shop_id')->where('name', '!=', 'Super Admin')->orderBy('name')->get(),
+            'roles' => Role::where('name', '!=', 'Super Admin')->where('guard_name', 'web')->select('name')->distinct()->orderBy('name')->get(),
             'features' => Features::all(),
             'plans' => Plan::where('is_active', true)->orWhere('status', 'active')->orderBy('sort_order')->orderBy('price')->get(),
             'existingOwners' => User::whereDoesntHave('roles', fn ($q) => $q->where('name', 'Super Admin'))
@@ -160,7 +160,15 @@ class ShopController extends Controller
             }
 
             $roleName = $request->validated('admin_role');
-            $admin->assignRole($roleName);
+            setPermissionsTeamId($shop->id);
+            $shopRole = Role::where('shop_id', $shop->id)->where('name', $roleName)->first()
+                ?? Role::firstOrCreate([
+                    'shop_id' => $shop->id,
+                    'name' => $roleName,
+                    'guard_name' => 'web',
+                ]);
+            $admin->assignRole($shopRole);
+            setPermissionsTeamId(auth()->user()?->isSuperAdmin() ? null : auth()->user()?->shop_id);
 
             $shop->users()->syncWithoutDetaching([
                 $admin->id => [
@@ -210,9 +218,21 @@ class ShopController extends Controller
 
     public function edit(Shop $shop): View
     {
+        $shopRoles = Role::where('shop_id', $shop->id)
+            ->where('name', '!=', 'Super Admin')
+            ->orderBy('name')
+            ->get();
+
+        if ($shopRoles->isEmpty()) {
+            $shopRoles = Role::whereNull('shop_id')
+                ->where('name', '!=', 'Super Admin')
+                ->orderBy('name')
+                ->get();
+        }
+
         return view('shop::edit', [
             'shop' => $shop,
-            'roles' => Role::whereNull('shop_id')->where('name', '!=', 'Super Admin')->orderBy('name')->get(),
+            'roles' => $shopRoles,
             'features' => Features::all(),
             'admins' => $shop->admins()->with('roles')->get(),
             'subscription' => $shop->subscription(),
@@ -296,7 +316,6 @@ class ShopController extends Controller
                 'email' => $email,
                 'password' => Hash::make($request->validated('password')),
             ]);
-            $admin->assignRole($request->validated('role'));
         } else {
             if (! $admin->shop_id) {
                 $admin->shop_id = $shop->id;
@@ -304,9 +323,20 @@ class ShopController extends Controller
             }
         }
 
+        $roleName = $request->validated('role');
+        setPermissionsTeamId($shop->id);
+        $role = Role::where('shop_id', $shop->id)->where('name', $roleName)->first()
+            ?? Role::firstOrCreate([
+                'shop_id' => $shop->id,
+                'name' => $roleName,
+                'guard_name' => 'web',
+            ]);
+        $admin->assignRole($role);
+        setPermissionsTeamId(auth()->user()?->isSuperAdmin() ? null : auth()->user()?->shop_id);
+
         $shop->users()->syncWithoutDetaching([
             $admin->id => [
-                'role' => $request->validated('role'),
+                'role' => $roleName,
                 'is_owner' => false,
             ],
         ]);

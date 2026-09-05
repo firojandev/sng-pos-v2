@@ -1,6 +1,6 @@
 <?php
 
-use Spatie\Permission\DefaultTeamResolver;
+use App\Support\Permissions\ShopPermissionsTeamResolver;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -110,7 +110,7 @@ return [
          * foreign key is other than `team_id`.
          */
 
-        'team_foreign_key' => 'team_id',
+        'team_foreign_key' => 'shop_id',
     ],
 
     /*
@@ -148,12 +148,12 @@ return [
      * (view the latest version of this package's migration file)
      */
 
-    'teams' => false,
+    'teams' => true,
 
     /*
      * The class to use to resolve the permissions team id
      */
-    'team_resolver' => DefaultTeamResolver::class,
+    'team_resolver' => ShopPermissionsTeamResolver::class,
 
     /*
      * Passport Client Credentials Grant

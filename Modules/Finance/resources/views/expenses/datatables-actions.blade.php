@@ -13,6 +13,7 @@
         data-category-id="{{ $expense->expense_category_id }}"
         data-subcategory-id="{{ $expense->expense_sub_category_id }}"
         data-account-id="{{ $expense->account_id }}"
+        data-payment-method="{{ $expense->payment_method }}"
         data-note="{{ $expense->note }}"
         data-action="{{ route('expense.update', $expense) }}"
         data-url="{{ route('expense.edit', $expense) }}"

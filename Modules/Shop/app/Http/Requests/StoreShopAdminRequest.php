@@ -28,7 +28,7 @@ class StoreShopAdminRequest extends FormRequest
                 'min:8',
                 'confirmed',
             ],
-            'role' => ['required', Rule::exists('roles', 'name')->where('guard_name', 'web')->whereNull('shop_id')->whereNot('name', 'Super Admin')],
+            'role' => ['required', 'string', 'max:255', Rule::notIn(['Super Admin'])],
         ];
     }
 }

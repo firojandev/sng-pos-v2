@@ -5,10 +5,13 @@ namespace Modules\Shop\Models;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Revoltify\Subscriptionify\Concerns\InteractsWithSubscriptions;
 use Revoltify\Subscriptionify\Contracts\Subscribable;
 use Revoltify\Subscriptionify\Enums\Interval;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class Shop extends Model implements Subscribable
 {
@@ -29,6 +32,29 @@ class Shop extends Model implements Subscribable
     protected $casts = [
         'enabled_features' => 'array',
     ];
+
+    protected static function booted(): void
+    {
+        static::created(function (Shop $shop) {
+            $adminRole = Role::firstOrCreate([
+                'shop_id' => $shop->id,
+                'name' => 'Admin',
+                'guard_name' => 'web',
+            ]);
+
+            $adminRole->syncPermissions(
+                Permission::where('guard_name', 'web')->get()
+            );
+        });
+    }
+
+    /**
+     * Roles belonging to this shop.
+     */
+    public function roles(): HasMany
+    {
+        return $this->hasMany(Role::class, 'shop_id');
+    }
 
     /**
      * Users/Admins associated with this shop via pivot table.

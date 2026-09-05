@@ -3,23 +3,29 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
+use Modules\Employee\Models\Employee;
 use Modules\Shop\Models\Shop;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password', 'shop_id'])]
+#[Fillable(['name', 'email', 'password', 'shop_id', 'email_verified_at'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, Notifiable;
+    use HasFactory, Notifiable;
+    use HasRoles {
+        assignRole as protected spatieAssignRole;
+        syncRoles as protected spatieSyncRoles;
+        removeRole as protected spatieRemoveRole;
+    }
 
     /**
      * Get the attributes that should be cast.
@@ -54,6 +60,14 @@ class User extends Authenticatable
     public function shop(): BelongsTo
     {
         return $this->belongsTo(Shop::class);
+    }
+
+    /**
+     * Linked employee profile for this user.
+     */
+    public function employee(): HasOne
+    {
+        return $this->hasOne(Employee::class);
     }
 
     /**
@@ -124,11 +138,56 @@ class User extends Authenticatable
 
         session(['current_shop_id' => $shopId]);
 
+        setPermissionsTeamId($shopId);
+        $this->unsetRelation('roles');
+        $this->unsetRelation('permissions');
+
         return true;
     }
 
     public function isSuperAdmin(): bool
     {
-        return $this->hasRole('Super Admin');
+        return DB::table('model_has_roles')
+            ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+            ->where('model_has_roles.model_id', $this->id)
+            ->where('model_has_roles.model_type', static::class)
+            ->where('roles.name', 'Super Admin')
+            ->exists();
+    }
+
+    public function assignRole(...$roles): static
+    {
+        $previousTeamId = getPermissionsTeamId();
+        setPermissionsTeamId($this->shop_id ?? 0);
+
+        try {
+            return $this->spatieAssignRole(...$roles);
+        } finally {
+            setPermissionsTeamId($previousTeamId);
+        }
+    }
+
+    public function syncRoles(...$roles): static
+    {
+        $previousTeamId = getPermissionsTeamId();
+        setPermissionsTeamId($this->shop_id ?? 0);
+
+        try {
+            return $this->spatieSyncRoles(...$roles);
+        } finally {
+            setPermissionsTeamId($previousTeamId);
+        }
+    }
+
+    public function removeRole($role): static
+    {
+        $previousTeamId = getPermissionsTeamId();
+        setPermissionsTeamId($this->shop_id ?? 0);
+
+        try {
+            return $this->spatieRemoveRole($role);
+        } finally {
+            setPermissionsTeamId($previousTeamId);
+        }
     }
 }
