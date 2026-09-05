@@ -56,7 +56,7 @@ class StoreShopRequest extends FormRequest
                 'min:8',
                 'confirmed',
             ],
-            'admin_role' => ['required', Rule::exists('roles', 'name')->where('guard_name', 'web')->whereNull('shop_id')->whereNot('name', 'Super Admin')],
+            'admin_role' => ['required', 'string', 'max:255', Rule::notIn(['Super Admin'])],
 
             'plan_id' => ['nullable', 'exists:plans,id'],
             'subscription_status' => ['nullable', 'string', 'in:active,trialing,trial,past_due,suspended,cancelled,expired'],

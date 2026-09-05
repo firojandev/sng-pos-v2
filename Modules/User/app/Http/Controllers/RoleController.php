@@ -64,7 +64,9 @@ class RoleController extends Controller
     {
         $this->ensureSameShop($role);
 
-        $role->update(['name' => $request->validated('name')]);
+        if ($role->name !== 'Admin') {
+            $role->update(['name' => $request->validated('name')]);
+        }
         $role->syncPermissions($request->validated('permissions', []));
 
         return redirect()->route('roles.index')->with('status', 'রোল হালনাগাদ করা হয়েছে');
@@ -73,6 +75,10 @@ class RoleController extends Controller
     public function destroy(Role $role): RedirectResponse
     {
         $this->ensureSameShop($role);
+
+        if ($role->name === 'Admin') {
+            return redirect()->route('roles.index')->with('status', 'ডিফল্ট এডমিন রোলটি মুছে ফেলা যাবে না');
+        }
 
         if ($role->users()->exists()) {
             return redirect()->route('roles.index')->with('status', 'এই রোলে ইউজার যুক্ত আছে, মুছে ফেলা যাবে না');
