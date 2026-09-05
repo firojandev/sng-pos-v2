@@ -11,12 +11,25 @@ use Modules\Customer\DataTables\CustomersDataTable;
 use Modules\Customer\Http\Requests\StoreCustomerRequest;
 use Modules\Customer\Http\Requests\UpdateCustomerRequest;
 use Modules\Customer\Models\Customer;
+use Modules\Sales\Models\Sale;
 
 class CustomerController extends Controller
 {
     public function index(CustomersDataTable $dataTable): mixed
     {
-        return $dataTable->render('customer::index');
+        $metrics = [
+            'totalCustomers' => Customer::count(),
+            'activeCustomers' => Customer::where('status', 'active')->count(),
+            'totalDue' => round((float) Customer::sum('opening_due') + (float) Sale::whereNotNull('customer_id')->sum('due_amount'), 2),
+            'dueCustomersCount' => Customer::where(function ($q) {
+                $q->where('opening_due', '>', 0)
+                    ->orWhereHas('sales', fn ($sq) => $sq->where('due_amount', '>', 0));
+            })->count(),
+            'totalSalesAmount' => round((float) Sale::whereNotNull('customer_id')->sum('total'), 2),
+            'totalSalesCount' => Sale::whereNotNull('customer_id')->count(),
+        ];
+
+        return $dataTable->render('customer::index', compact('metrics'));
     }
 
     public function create(): View

@@ -2,6 +2,7 @@
 
 namespace Modules\Finance\Observers;
 
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Modules\Finance\Models\Account;
 use Modules\Finance\Services\AccountTransactionService;
@@ -48,14 +49,20 @@ class PurchasePaymentAccountObserver
             return;
         }
 
+        $paymentDate = $payment->payment_date
+            ? Carbon::parse($payment->payment_date)->format('Y-m-d')
+            : ($purchase->purchase_date ? $purchase->purchase_date->format('Y-m-d') : now()->format('Y-m-d'));
+
+        $note = $payment->note ?: ('ক্রয় ইনভয়েস: '.$purchase->invoice_no);
+
         $this->transactionService->recordTransaction(
             account: $account,
             type: 'out',
             amount: (float) $payment->amount,
             source: 'purchase',
             sourceable: $payment,
-            note: 'ক্রয় ইনভয়েস: '.$purchase->invoice_no,
-            occurredAt: $purchase->purchase_date ? $purchase->purchase_date->format('Y-m-d').' '.now()->format('H:i:s') : now(),
+            note: $note,
+            occurredAt: $paymentDate.' '.now()->format('H:i:s'),
             userId: Auth::id()
         );
     }

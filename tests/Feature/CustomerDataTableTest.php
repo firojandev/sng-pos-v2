@@ -53,7 +53,7 @@ class CustomerDataTableTest extends TestCase
         $html = $dataTable->html();
 
         $this->assertEquals('customers-data-table', $html->getTableAttribute('id'));
-        $this->assertCount(6, $dataTable->getColumns());
+        $this->assertCount(8, $dataTable->getColumns());
     }
 
     public function test_customers_datatable_query_returns_query_builder(): void

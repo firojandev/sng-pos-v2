@@ -65,7 +65,9 @@ class QuickSaleController extends Controller
             'amount' => $amount,
         ]);
 
-        return redirect()->route('sales.index')->with('status', 'দ্রুত বেচা সফলভাবে যোগ করা হয়েছে');
+        return redirect()->route('sales.index')
+            ->with('status', 'দ্রুত বেচা সফলভাবে যোগ করা হয়েছে')
+            ->with('show_invoice_sale_id', $sale->id);
     }
 
     public function searchCustomers(Request $request): JsonResponse
