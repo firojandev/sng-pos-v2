@@ -39,6 +39,15 @@
         $inputValue = old($name);
     }
 
+    if (($type === 'number' || $type === 'tel')) {
+        if ($inputValue !== null) {
+            $inputValue = \Modules\Core\Support\BanglaNumber::toEn($inputValue);
+        }
+        if ($placeholder !== null) {
+            $placeholder = \Modules\Core\Support\BanglaNumber::toEn($placeholder);
+        }
+    }
+
     $hasError = (bool) ($error || ($name && isset($errors) && $errors->has($name)));
     $errorMessage = $error ?? ($name && isset($errors) && $errors->has($name) ? $errors->first($name) : null);
 
@@ -149,6 +158,7 @@
                 @if ($required) required @endif
                 @if ($disabled) disabled @endif
                 @if ($readonly) readonly @endif
+                @if ($type === 'number' || $type === 'tel') lang="en" dir="ltr" @endif
                 {{ $attributes->merge(['class' => implode(' ', $controlClasses)]) }}
             />
 
@@ -220,6 +230,7 @@
             @if ($required) required @endif
             @if ($disabled) disabled @endif
             @if ($readonly) readonly @endif
+            @if ($type === 'number' || $type === 'tel') lang="en" dir="ltr" @endif
             {{ $attributes->merge(['class' => implode(' ', $controlClasses)]) }}
         />
 

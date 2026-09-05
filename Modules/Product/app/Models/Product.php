@@ -85,6 +85,11 @@ class Product extends Model
         return $this->hasMany(Batch::class);
     }
 
+    public function stockMovements(): HasMany
+    {
+        return $this->hasMany(StockMovement::class);
+    }
+
     public function baseUnit(): ?Unit
     {
         return $this->units->firstWhere('pivot.is_base', true);

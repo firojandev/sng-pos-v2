@@ -152,6 +152,21 @@ class BanglaNumber
     }
 
     /**
+     * Convert Bengali numerals to English digits.
+     */
+    public static function toEn(string|int|float|null $value): string
+    {
+        if ($value === null || $value === '') {
+            return '';
+        }
+
+        $bn = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯', '।'];
+        $en = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'];
+
+        return str_replace($bn, $en, (string) $value);
+    }
+
+    /**
      * Format money with commas and Bengali digits (e.g. 81,750 => ৮১,৭৫০).
      */
     public static function toBnMoney(float|int|string|null $amount): string

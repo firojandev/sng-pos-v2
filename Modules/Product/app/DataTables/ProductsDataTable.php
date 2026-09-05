@@ -191,7 +191,7 @@ class ProductsDataTable extends BaseDataTable
                 ->searchable(false)
                 ->exportable(false)
                 ->printable(false)
-                ->width(110)
+                ->width(125)
                 ->addClass('table-cell-right'),
         ];
     }

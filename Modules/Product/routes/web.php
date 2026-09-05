@@ -12,6 +12,10 @@ use Modules\Product\Http\Controllers\SubCategoryController;
 use Modules\Product\Http\Controllers\UnitController;
 
 Route::middleware(['auth', 'feature:products'])->group(function () {
+    Route::get('products/{product}/stock-history', [ProductController::class, 'stockHistory'])
+        ->name('products.stock-history')
+        ->middleware('permission:products.view');
+
     Route::resource('products', ProductController::class)->except(['show'])
         ->middlewareFor(['index'], 'permission:products.view')
         ->middlewareFor(['create', 'store', 'edit', 'update'], 'permission:products.write')

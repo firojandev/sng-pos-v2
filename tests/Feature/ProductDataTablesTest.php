@@ -221,4 +221,92 @@ class ProductDataTablesTest extends TestCase
         $responseBatches->assertSee('batches-data-table');
         $responseBatches->assertSee('createBatchModal');
     }
+
+    public function test_products_datatable_action_column_includes_stock_history_button(): void
+    {
+        $category = Category::create(['shop_id' => $this->shop->id, 'name' => 'General']);
+        $product = Product::create([
+            'shop_id' => $this->shop->id,
+            'category_id' => $category->id,
+            'name' => 'MacBook Pro',
+            'sku' => 'MBP-14',
+            'purchase_price' => 2000,
+            'sale_price' => 2500,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->getJson(route('products.index'), [
+                'X-Requested-With' => 'XMLHttpRequest',
+            ]);
+
+        $response->assertOk();
+        $actionHtml = $response->json('data.0.action');
+
+        $this->assertStringContainsString('btn-stock-history', $actionHtml);
+        $this->assertStringContainsString(route('stock.history', ['product_id' => $product->id]), $actionHtml);
+        $this->assertStringContainsString(route('products.stock-history', $product), $actionHtml);
+    }
+
+    public function test_product_stock_history_modal_returns_modal_view_with_movements(): void
+    {
+        $category = Category::create(['shop_id' => $this->shop->id, 'name' => 'General']);
+        $product = Product::create([
+            'shop_id' => $this->shop->id,
+            'category_id' => $category->id,
+            'name' => 'iPad Air',
+            'sku' => 'IPAD-AIR',
+            'purchase_price' => 600,
+            'sale_price' => 750,
+            'status' => 'active',
+        ]);
+
+        $batch = Batch::create([
+            'shop_id' => $this->shop->id,
+            'product_id' => $product->id,
+            'batch_no' => 'BT-IPAD-01',
+            'quantity' => 15,
+        ]);
+
+        $product->stockMovements()->create([
+            'shop_id' => $this->shop->id,
+            'batch_id' => $batch->id,
+            'type' => 'adjustment_increase',
+            'quantity_change' => 15,
+            'quantity_before' => 0,
+            'quantity_after' => 15,
+            'note' => 'Initial inventory',
+            'created_by' => $this->user->id,
+        ]);
+
+        $response = $this->actingAs($this->user)->get(route('products.stock-history', $product));
+
+        $response->assertOk();
+        $response->assertSee('stockHistoryModal');
+        $response->assertSee('স্টকের ইতিহাস: iPad Air');
+        $response->assertSee('SKU: IPAD-AIR');
+        $response->assertSee('BT-IPAD-01');
+        $response->assertSee('+15');
+        $response->assertSee('Initial inventory');
+    }
+
+    public function test_stock_history_page_filters_by_product_id(): void
+    {
+        $category = Category::create(['shop_id' => $this->shop->id, 'name' => 'General']);
+        $product = Product::create([
+            'shop_id' => $this->shop->id,
+            'category_id' => $category->id,
+            'name' => 'AirPods Pro',
+            'sku' => 'APP-2',
+            'purchase_price' => 200,
+            'sale_price' => 250,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($this->user)->get(route('stock.history', ['product_id' => $product->id]));
+
+        $response->assertOk();
+        $response->assertSee('AirPods Pro');
+        $response->assertSee('SKU: APP-2');
+    }
 }

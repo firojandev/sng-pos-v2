@@ -2886,6 +2886,24 @@ body.dark .form-stepper-up,
   border-bottom-color: #334155;
 }
 
+/* ============ NUMBER INPUT ENGLISH STANDARDS ============ */
+input[type="number"],
+input[type="tel"],
+input[inputmode="numeric"],
+input[inputmode="decimal"],
+input.is-number,
+input.numeric-input,
+.ci-qty,
+.ci-price,
+.ci-discount-raw,
+.receive-qty-input {
+  font-variant-numeric: tabular-nums;
+  -webkit-font-feature-settings: "tnum";
+  font-feature-settings: "tnum";
+  unicode-bidi: plaintext;
+}
+
+
 
 /* Select Control Custom Arrow */
 .form-select {

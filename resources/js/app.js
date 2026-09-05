@@ -685,6 +685,9 @@ window.initDeleteConfirmBehaviors = initDeleteConfirmBehaviors;
 window.toggleAccordion = toggleAccordion;
 window.initAccordionBehaviors = initAccordionBehaviors;
 window.initStatusSwitcherBehaviors = initStatusSwitcherBehaviors;
+window.toEnglishDigits = toEnglishDigits;
+window.isNumberInput = isNumberInput;
+$.toEnglishDigits = toEnglishDigits;
 
 $(function () {
     initTableBehaviors();
@@ -693,6 +696,7 @@ $(function () {
     initAccordionBehaviors();
     initStatusSwitcherBehaviors();
     initNumberStepperBehaviors();
+    initEnglishNumberInputBehaviors();
 
     // Initialize Lucide Icons globally
     createIcons({ icons });
@@ -703,6 +707,212 @@ $(function () {
     });
 });
 
+/* ---------------- English Number Input Conversion & Enforcement ---------------- */
+const BN_TO_EN_DIGIT_MAP = {
+    '০': '0',
+    '১': '1',
+    '২': '2',
+    '৩': '3',
+    '৪': '4',
+    '৫': '5',
+    '৬': '6',
+    '৭': '7',
+    '৮': '8',
+    '৯': '9',
+    '।': '.', // Bengali dari/danda to decimal point
+    '٫': '.', // Arabic decimal separator
+    '٬': ',', // Arabic thousands separator
+};
+
+function toEnglishDigits(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/[০-৯।٫٬]/g, function (ch) {
+        return BN_TO_EN_DIGIT_MAP[ch] !== undefined ? BN_TO_EN_DIGIT_MAP[ch] : ch;
+    });
+}
+
+function isNumberInput(el) {
+    if (!el || el.tagName !== 'INPUT') return false;
+
+    const type = (el.getAttribute('type') || el.type || 'text').toLowerCase();
+    if (type === 'number' || type === 'tel') return true;
+
+    const inputMode = (el.getAttribute('inputmode') || el.inputMode || '').toLowerCase();
+    if (inputMode === 'numeric' || inputMode === 'decimal') return true;
+
+    if (el.dataset && (el.dataset.type === 'number' || el.dataset.numeric === 'true')) {
+        return true;
+    }
+
+    const cls = el.className || '';
+    if (/\b(is-number|numeric|form-control-number|ci-qty|ci-price|ci-discount-raw|ci-warranty-custom-n|ci-received-qty|receive-qty-input|qty-input|payment-amount|table-amount)\b/i.test(cls)) {
+        return true;
+    }
+
+    const name = (el.name || '').toLowerCase();
+    const id = (el.id || '').toLowerCase();
+    const numericPattern = /(phone|mobile|price|qty|quantity|amount|discount|tax|vat|rate|cost|charge|due|balance|total|subtotal|alert|factor|duration|opening_due|wholesale)/i;
+    if (numericPattern.test(name) || numericPattern.test(id)) {
+        return true;
+    }
+
+    return false;
+}
+
+function applyEnglishNumberAttrs(el) {
+    if (!el || el.nodeType !== 1) return;
+    if (!el.hasAttribute('lang') || el.getAttribute('lang') !== 'en') {
+        el.setAttribute('lang', 'en');
+    }
+    if (!el.hasAttribute('dir') || el.getAttribute('dir') !== 'ltr') {
+        el.setAttribute('dir', 'ltr');
+    }
+}
+
+function insertTextIntoField(input, text) {
+    if (!input) return;
+
+    let inserted = false;
+    try {
+        inserted = document.execCommand && document.execCommand('insertText', false, text);
+    } catch (e) {
+        inserted = false;
+    }
+
+    if (!inserted) {
+        try {
+            const isNumberType = input.type === 'number';
+            if (isNumberType) {
+                input.type = 'text';
+            }
+            const start = typeof input.selectionStart === 'number' ? input.selectionStart : input.value.length;
+            const end = typeof input.selectionEnd === 'number' ? input.selectionEnd : input.value.length;
+            const val = input.value || '';
+            input.value = val.slice(0, start) + text + val.slice(end);
+            const nextPos = start + text.length;
+            input.setSelectionRange(nextPos, nextPos);
+            if (isNumberType) {
+                input.type = 'number';
+            }
+        } catch (err) {
+            input.value = toEnglishDigits(input.value) + text;
+        }
+    }
+
+    $(input).trigger('input').trigger('change');
+}
+
+function initEnglishNumberInputBehaviors() {
+    // 1. Tag existing number inputs on page load
+    $('input').each(function () {
+        if (isNumberInput(this)) {
+            applyEnglishNumberAttrs(this);
+            if (this.value && /[০-৯।٫٬]/.test(this.value)) {
+                this.value = toEnglishDigits(this.value);
+            }
+        }
+    });
+
+    // 2. Intercept physical typing on Bengali keyboard / IME (Avro, Bijoy, etc.)
+    $(document).on('keydown', function (e) {
+        if (e.ctrlKey || e.altKey || e.metaKey) return;
+        if (!isNumberInput(e.target)) return;
+
+        const enDigit = BN_TO_EN_DIGIT_MAP[e.key];
+        if (enDigit !== undefined) {
+            e.preventDefault();
+            insertTextIntoField(e.target, enDigit);
+        }
+    });
+
+    // 3. Intercept input composition / virtual keyboard insertions (Mobile keyboards, Android Gboard, etc.)
+    $(document).on('beforeinput', function (e) {
+        if (!isNumberInput(e.target)) return;
+        const orig = e.originalEvent || e;
+        const data = orig.data;
+        if (data && /[০-৯।٫٬]/.test(data)) {
+            orig.preventDefault();
+            insertTextIntoField(e.target, toEnglishDigits(data));
+        }
+    });
+
+    // 4. Intercept paste events containing Bengali digits
+    $(document).on('paste', function (e) {
+        if (!isNumberInput(e.target)) return;
+        const clip = (e.originalEvent || e).clipboardData || window.clipboardData;
+        if (!clip) return;
+        const pasted = clip.getData('text');
+        if (pasted && /[০-৯।٫٬]/.test(pasted)) {
+            e.preventDefault();
+            insertTextIntoField(e.target, toEnglishDigits(pasted));
+        }
+    });
+
+    // 5. Real-time input sanitizer safeguard (autofill, drag-and-drop, voice input)
+    $(document).on('input', function (e) {
+        if (!isNumberInput(e.target)) return;
+        if (e.target.value && /[০-৯।٫٬]/.test(e.target.value)) {
+            const clean = toEnglishDigits(e.target.value);
+            if (clean !== e.target.value) {
+                const canSelect = e.target.type !== 'number' && typeof e.target.selectionStart === 'number';
+                const start = canSelect ? e.target.selectionStart : null;
+                e.target.value = clean;
+                if (start !== null) {
+                    try { e.target.setSelectionRange(start, start); } catch (err) {}
+                }
+                $(e.target).trigger('change');
+            }
+        }
+    });
+
+    // 6. Blur / Change enforcement
+    $(document).on('blur change', function (e) {
+        if (!isNumberInput(e.target)) return;
+        if (e.target.value && /[০-৯।٫٬]/.test(e.target.value)) {
+            e.target.value = toEnglishDigits(e.target.value);
+            $(e.target).trigger('input');
+        }
+    });
+
+    // 7. Focus hook to ensure lang="en" and dir="ltr" are set for keyboard hint
+    $(document).on('focus', function (e) {
+        if (isNumberInput(e.target)) {
+            applyEnglishNumberAttrs(e.target);
+        }
+    });
+
+    // 8. Observe dynamic DOM changes (modals, Ajax DataTables, dynamic rows)
+    if (window.MutationObserver) {
+        const numberInputObserver = new MutationObserver(function (mutations) {
+            for (let i = 0; i < mutations.length; i++) {
+                const added = mutations[i].addedNodes;
+                for (let j = 0; j < added.length; j++) {
+                    const node = added[j];
+                    if (node.nodeType === 1) {
+                        if (node.tagName === 'INPUT' && isNumberInput(node)) {
+                            applyEnglishNumberAttrs(node);
+                            if (node.value && /[০-৯।٫٬]/.test(node.value)) {
+                                node.value = toEnglishDigits(node.value);
+                            }
+                        } else if (node.querySelectorAll) {
+                            const inputs = node.querySelectorAll('input');
+                            for (let k = 0; k < inputs.length; k++) {
+                                if (isNumberInput(inputs[k])) {
+                                    applyEnglishNumberAttrs(inputs[k]);
+                                    if (inputs[k].value && /[০-৯।٫٬]/.test(inputs[k].value)) {
+                                        inputs[k].value = toEnglishDigits(inputs[k].value);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        numberInputObserver.observe(document.body, { childList: true, subtree: true });
+    }
+}
+
 /* ---------------- Modern Number Input Stepper ---------------- */
 function initNumberStepperBehaviors() {
     $(document).on('click', '.form-stepper-btn', function (e) {
@@ -712,6 +922,10 @@ function initNumberStepperBehaviors() {
         if (!$input.length) return;
         const inp = $input[0];
         if (inp.disabled || inp.readOnly) return;
+
+        if (inp.value && /[০-৯।٫٬]/.test(inp.value)) {
+            inp.value = toEnglishDigits(inp.value);
+        }
 
         try {
             if (isUp) {
@@ -733,6 +947,7 @@ function initNumberStepperBehaviors() {
         $input.trigger('input').trigger('change');
     });
 }
+
 
 
 

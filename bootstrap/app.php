@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Modules\Core\Http\Middleware\ConvertBengaliNumbers;
 use Modules\Core\Http\Middleware\EnsureFeatureEnabled;
 use Modules\Purchase\Http\Middleware\EnsurePurchaseDeliveryOrdersEnabled;
 use Modules\Shop\Http\Middleware\EnsureSubscriptionActive;
@@ -18,6 +19,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append(ConvertBengaliNumbers::class);
+
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
