@@ -7,6 +7,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Modules\Purchase\Models\Purchase;
 use Modules\Supplier\DataTables\SuppliersDataTable;
 use Modules\Supplier\Http\Requests\StoreSupplierRequest;
 use Modules\Supplier\Http\Requests\UpdateSupplierRequest;
@@ -16,7 +17,19 @@ class SupplierController extends Controller
 {
     public function index(SuppliersDataTable $dataTable): mixed
     {
-        return $dataTable->render('supplier::index');
+        $metrics = [
+            'totalSuppliers' => Supplier::count(),
+            'activeSuppliers' => Supplier::where('status', 'active')->count(),
+            'totalDue' => round((float) Supplier::sum('opening_due') + (float) Purchase::whereNotNull('supplier_id')->sum('due_amount'), 2),
+            'dueSuppliersCount' => Supplier::where(function ($q) {
+                $q->where('opening_due', '>', 0)
+                    ->orWhereHas('purchases', fn ($sq) => $sq->where('due_amount', '>', 0));
+            })->count(),
+            'totalPurchaseAmount' => round((float) Purchase::whereNotNull('supplier_id')->sum('total'), 2),
+            'totalPurchaseCount' => Purchase::whereNotNull('supplier_id')->count(),
+        ];
+
+        return $dataTable->render('supplier::index', compact('metrics'));
     }
 
     public function create(): View

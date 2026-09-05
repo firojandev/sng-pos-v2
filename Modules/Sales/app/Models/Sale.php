@@ -61,4 +61,32 @@ class Sale extends Model
     {
         return $this->hasMany(SaleReturn::class);
     }
+
+    public function canBeDeleted(): bool
+    {
+        return $this->cannotBeDeletedReason() === null;
+    }
+
+    public function cannotBeDeletedReason(): ?string
+    {
+        if ($this->relationLoaded('returns') ? $this->returns->isNotEmpty() : $this->returns()->exists()) {
+            return 'এই বিক্রয়ের বিপরীতে ফেরত রেকর্ড রয়েছে। প্রথমে ফেরত এন্ট্রি বাতিল করুন।';
+        }
+
+        return null;
+    }
+
+    public function canBeEdited(): bool
+    {
+        return $this->cannotBeEditedReason() === null;
+    }
+
+    public function cannotBeEditedReason(): ?string
+    {
+        if ($this->relationLoaded('returns') ? $this->returns->isNotEmpty() : $this->returns()->exists()) {
+            return 'এই বিক্রয়ের বিপরীতে ফেরত রেকর্ড রয়েছে।';
+        }
+
+        return null;
+    }
 }

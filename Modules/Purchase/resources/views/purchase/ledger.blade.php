@@ -32,46 +32,40 @@
 
     {{-- Executive Summary Stat Grid --}}
     <div class="stat-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-bottom:18px; margin-top:14px;">
-        <div class="stat-card" style="display:flex; align-items:center; gap:14px; padding:16px 18px;">
-            <div class="ic" style="margin-bottom:0; flex-shrink:0; background:var(--teal-100); color:var(--teal-800); width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center;">
-                <x-core::icon name="shopping-bag" size="20" />
-            </div>
-            <div style="min-width:0;">
-                <div class="val" id="total-purchase-amount" style="font-size:20px; line-height:1.2;">৳{{ number_format($totalAmount, 2) }}</div>
-                <div class="lbl bn" style="margin-top:2px;">মোট ক্রয়</div>
-                <div class="lbl en" style="display:none; margin-top:2px;">Total Purchases</div>
-            </div>
-        </div>
-        <div class="stat-card" style="display:flex; align-items:center; gap:14px; padding:16px 18px;">
-            <div class="ic" style="margin-bottom:0; flex-shrink:0; background:var(--green-100); color:var(--green-ink); width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center;">
-                <x-core::icon name="check-circle" size="20" />
-            </div>
-            <div style="min-width:0;">
-                <div class="val" id="total-paid-amount" style="color:var(--green-ink); font-size:20px; line-height:1.2;">৳{{ number_format($totalPaid, 2) }}</div>
-                <div class="lbl bn" style="margin-top:2px;">মোট পরিশোধিত</div>
-                <div class="lbl en" style="display:none; margin-top:2px;">Total Paid</div>
-            </div>
-        </div>
-        <div class="stat-card" style="display:flex; align-items:center; gap:14px; padding:16px 18px;">
-            <div class="ic" style="margin-bottom:0; flex-shrink:0; background:var(--red-100); color:var(--red-600); width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center;">
-                <x-core::icon name="alert-circle" size="20" />
-            </div>
-            <div style="min-width:0;">
-                <div class="val" id="total-due-amount" style="color:var(--red-600); font-size:20px; line-height:1.2;">৳{{ number_format($totalDue, 2) }}</div>
-                <div class="lbl bn" style="margin-top:2px;">মোট বাকি</div>
-                <div class="lbl en" style="display:none; margin-top:2px;">Total Due</div>
-            </div>
-        </div>
-        <div class="stat-card" style="display:flex; align-items:center; gap:14px; padding:16px 18px;">
-            <div class="ic" style="margin-bottom:0; flex-shrink:0; background:var(--blue-100); color:var(--blue-ink); width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center;">
-                <x-core::icon name="file-text" size="20" />
-            </div>
-            <div style="min-width:0;">
-                <div class="val" id="total-invoice-count" style="font-size:20px; line-height:1.2;">{{ $totalCount ?? 0 }}</div>
-                <div class="lbl bn" style="margin-top:2px;">মোট চালান</div>
-                <div class="lbl en" style="display:none; margin-top:2px;">Total Invoices</div>
-            </div>
-        </div>
+        <x-core::stat-card
+            icon="shopping-bag"
+            color="teal"
+            :value="'৳' . number_format($totalAmount, 2)"
+            value-id="total-purchase-amount"
+            label="মোট ক্রয়"
+            label-en="Total Purchases"
+        />
+        <x-core::stat-card
+            icon="check-circle"
+            color="green"
+            :value="'৳' . number_format($totalPaid, 2)"
+            value-id="total-paid-amount"
+            value-color="green"
+            label="মোট পরিশোধিত"
+            label-en="Total Paid"
+        />
+        <x-core::stat-card
+            icon="alert-circle"
+            color="red"
+            :value="'৳' . number_format($totalDue, 2)"
+            value-id="total-due-amount"
+            value-color="red"
+            label="মোট বাকি"
+            label-en="Total Due"
+        />
+        <x-core::stat-card
+            icon="file-text"
+            color="blue"
+            :value="$totalCount ?? 0"
+            value-id="total-invoice-count"
+            label="মোট চালান"
+            label-en="Total Invoices"
+        />
     </div>
 
     <div class="section-row" style="margin-bottom:16px; margin-top:16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">

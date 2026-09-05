@@ -12,60 +12,149 @@ use Illuminate\View\View;
 use Modules\Customer\Models\Customer;
 use Modules\Employee\Models\Employee;
 use Modules\Finance\Models\Account;
+use Modules\Finance\Models\AccountTransaction;
+use Modules\Finance\Services\AccountTransactionService;
 use Modules\Product\Models\Batch;
 use Modules\Product\Models\Product;
 use Modules\Product\Models\StockMovement;
+use Modules\Sales\DataTables\SalesDataTable;
 use Modules\Sales\Http\Requests\StoreSaleRequest;
 use Modules\Sales\Http\Requests\UpdateSaleRequest;
 use Modules\Sales\Models\Sale;
+use Modules\Sales\Models\SalePayment;
 use Modules\Shop\Models\Warehouse;
 
 class SaleController extends Controller
 {
+    public function __construct(
+        protected AccountTransactionService $accountTransactionService
+    ) {}
+
     public function index(Request $request): View
     {
         return $this->create($request);
     }
 
-    public function ledger(Request $request): View
+    public function ledger(SalesDataTable $dataTable)
     {
-        $search = trim((string) $request->query('q', ''));
-        $status = $request->query('status', 'all');
-        $from = $request->query('from', now()->startOfMonth()->toDateString());
-        $to = $request->query('to', now()->endOfMonth()->toDateString());
+        $totals = Sale::query()
+            ->selectRaw('
+                COALESCE(SUM(total), 0) as total_amount,
+                COALESCE(SUM(paid_amount), 0) as total_paid,
+                COALESCE(SUM(due_amount), 0) as total_due,
+                COUNT(id) as total_count
+            ')
+            ->first();
 
-        $query = Sale::with(['customer', 'items.product', 'items.batch', 'items.unit', 'payments'])
-            ->whereDate('sale_date', '>=', $from)
-            ->whereDate('sale_date', '<=', $to);
+        $totalAmount = (float) ($totals->total_amount ?? 0);
+        $totalPaid = (float) ($totals->total_paid ?? 0);
+        $totalDue = (float) ($totals->total_due ?? 0);
+        $totalCount = (int) ($totals->total_count ?? 0);
 
-        if ($search !== '') {
-            $query->whereHas('customer', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%");
-            });
+        $invoiceSale = null;
+        if (session('show_invoice_sale_id')) {
+            $invoiceSale = Sale::with(['customer', 'warehouse', 'items.product.units', 'items.unit', 'items.batch', 'payments'])
+                ->find(session('show_invoice_sale_id'));
         }
 
-        if (in_array($status, ['paid', 'partial', 'due'], true)) {
+        return $dataTable->render('sales::sales.ledger', compact('totalAmount', 'totalPaid', 'totalDue', 'totalCount', 'invoiceSale'));
+    }
+
+    public function show(Sale $sale): View
+    {
+        $sale->load(['customer', 'warehouse', 'items.product.units', 'items.unit', 'items.batch', 'payments.account', 'returns.items.product']);
+
+        $settledPreviousDue = (float) SalePayment::where('note', 'like', "%(বিক্রয় ইনভয়েস: {$sale->invoice_no} থেকে সমন্বয়কৃত)%")->sum('amount')
+            + (float) AccountTransaction::where('source', 'sale')->where('note', 'like', "%(বিক্রয় ইনভয়েস: {$sale->invoice_no} থেকে সমন্বয়কৃত)%")->sum('amount');
+
+        return view('sales::sales.detail-drawer', compact('sale', 'settledPreviousDue'));
+    }
+
+    public function printLedger(Request $request): View
+    {
+        $from = $request->query('from');
+        $to = $request->query('to');
+        $status = $request->query('status');
+        $search = trim((string) $request->query('q', ''));
+
+        $query = Sale::with(['customer', 'warehouse', 'items.product', 'items.batch', 'payments', 'returns'])
+            ->latest('sale_date')
+            ->latest('id');
+
+        if ($from) {
+            $query->whereDate('sale_date', '>=', $from);
+        }
+        if ($to) {
+            $query->whereDate('sale_date', '<=', $to);
+        }
+        if ($status && in_array($status, ['paid', 'partial', 'due'], true)) {
             $query->where('payment_status', $status);
         }
 
-        $totalAmount = (clone $query)->sum('total');
+        if ($search !== '') {
+            $searchClean = ltrim($search, '#');
+            $query->where(function ($q) use ($search, $searchClean) {
+                $q->where('sales.invoice_no', 'like', "%{$searchClean}%")
+                    ->orWhere('sales.note', 'like', "%{$search}%")
+                    ->orWhere('sales.employee_name', 'like', "%{$search}%")
+                    ->orWhereHas('customer', function ($cq) use ($search) {
+                        $cq->where('name', 'like', "%{$search}%")
+                            ->orWhere('phone', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('items', function ($iq) use ($search) {
+                        $iq->whereHas('batch', function ($bq) use ($search) {
+                            $bq->where('batch_no', 'like', "%{$search}%");
+                        })->orWhereHas('product', function ($pq) use ($search) {
+                            $pq->where('name', 'like', "%{$search}%")
+                                ->orWhere('sku', 'like', "%{$search}%");
+                        });
+                    });
+            });
+        }
 
-        $sales = $query->latest('sale_date')->paginate(10)->withQueryString();
+        $sales = $query->get();
 
-        return view('sales::sales.ledger', [
-            'sales' => $sales,
-            'totalAmount' => $totalAmount,
-            'search' => $search,
-            'status' => $status,
-            'from' => $from,
-            'to' => $to,
-        ]);
+        $totalAmount = (float) $sales->sum('total');
+        $totalPaid = (float) $sales->sum('paid_amount');
+        $totalDue = (float) $sales->sum('due_amount');
+        $totalCount = $sales->count();
+
+        $shop = Auth::user()?->shop;
+
+        return view('sales::sales.print-ledger', compact(
+            'sales',
+            'totalAmount',
+            'totalPaid',
+            'totalDue',
+            'totalCount',
+            'from',
+            'to',
+            'status',
+            'search',
+            'shop'
+        ));
+    }
+
+    public function invoiceModal(Sale $sale): View
+    {
+        $sale->load(['customer', 'warehouse', 'items.product.units', 'items.unit', 'items.batch', 'payments']);
+
+        return view('sales::sales._invoice_modal', compact('sale'));
+    }
+
+    public function printInvoice(Sale $sale): View
+    {
+        $sale->load(['customer', 'warehouse', 'items.product.units', 'items.unit', 'items.batch', 'payments']);
+
+        return view('sales::sales.print-invoice', compact('sale'));
     }
 
     public function create(Request $request): View
     {
-        $customers = Customer::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone', 'address']);
+        $customers = Customer::where('status', 'active')
+            ->withSum('sales as sales_sum_due_amount', 'due_amount')
+            ->orderBy('name')
+            ->get(['id', 'name', 'phone', 'address', 'opening_due']);
         $warehouses = Warehouse::where('status', 'active')->with('branch')->orderBy('name')->get();
         $defaultWarehouse = $warehouses->firstWhere('is_default', true);
         $warehouseId = $request->query('warehouse_id', $defaultWarehouse?->id ?? optional($warehouses->first())->id);
@@ -76,8 +165,15 @@ class SaleController extends Controller
             ->orderBy('name')->get();
         $accounts = Account::active()->orderByDesc('is_default')->orderBy('name')->get();
 
+        $invoiceSale = null;
+        if (session('show_invoice_sale_id')) {
+            $invoiceSale = Sale::with(['customer', 'warehouse', 'items.product.units', 'items.unit', 'items.batch', 'payments'])
+                ->find(session('show_invoice_sale_id'));
+        }
+
         return view('sales::sales.create', [
             'sale' => new Sale,
+            'invoiceSale' => $invoiceSale,
             'customers' => $customers,
             'products' => $products,
             'warehouses' => $warehouses,
@@ -93,22 +189,56 @@ class SaleController extends Controller
         $data = $request->validated();
         $items = $data['items'];
 
-        DB::transaction(function () use ($data, $items) {
-            [$subtotal, $discount, $deliveryCharge, $total, $paid, $due, $status] = $this->calculateTotals($items, $data);
+        $sale = DB::transaction(function () use ($data, $items) {
+            $customerId = $this->resolveCustomerId($data);
+            $customer = $customerId
+                ? Customer::where('id', $customerId)->lockForUpdate()->first()
+                : null;
+
+            [$subtotal, $discount, $deliveryCharge, $total] = $this->calculateBaseTotals($items, $data);
             $profit = $this->calculateProfit($items, $discount);
 
+            $customerPreviousDue = 0.0;
+            if ($customer) {
+                $customerPreviousDue = round(
+                    (float) $customer->opening_due +
+                    (float) $customer->sales()->where('due_amount', '>', 0)->sum('due_amount'),
+                    2
+                );
+            }
+
+            $submittedPayments = $data['payments'] ?? [];
+            $totalSubmittedPaid = round(collect($submittedPayments)->sum(fn ($p) => (float) ($p['amount'] ?? 0)), 2);
+            $maxPayable = round($total + $customerPreviousDue, 2);
+
+            if ($customer && round($totalSubmittedPaid - $maxPayable, 2) > 0.01) {
+                throw ValidationException::withMessages([
+                    'payments' => 'পরিশোধের পরিমাণ মোট প্রদেয় টাকার চেয়ে বেশি হতে পারে না (সর্বোচ্চ: ৳'.number_format($maxPayable, 2).') / Payment amount cannot exceed total payable amount.',
+                ]);
+            }
+
+            if (! $customer && round($totalSubmittedPaid - $total, 2) > 0.01) {
+                throw ValidationException::withMessages([
+                    'payments' => 'পরিশোধের পরিমাণ বিক্রয়ের মোট মূল্যের চেয়ে বেশি হতে পারে না (সর্বোচ্চ: ৳'.number_format($total, 2).') / Payment amount cannot exceed sale total.',
+                ]);
+            }
+
+            $salePaid = min($totalSubmittedPaid, $total);
+            $saleDue = round(max($total - $salePaid, 0), 2);
+            $saleStatus = $saleDue <= 0 ? 'paid' : ($salePaid <= 0 ? 'due' : 'partial');
+
             $sale = Sale::create([
-                'customer_id' => $this->resolveCustomerId($data),
+                'customer_id' => $customerId,
                 'warehouse_id' => $data['warehouse_id'],
                 'sale_date' => $data['sale_date'],
                 'subtotal' => $subtotal,
                 'discount' => $discount,
                 'delivery_charge' => $deliveryCharge,
                 'total' => $total,
-                'paid_amount' => $paid,
-                'due_amount' => $due,
+                'paid_amount' => $salePaid,
+                'due_amount' => $saleDue,
                 'profit' => $profit,
-                'payment_status' => $status,
+                'payment_status' => $saleStatus,
                 'note' => $data['note'] ?? null,
                 'employee_name' => $data['employee_name'] ?? null,
                 'employee_phone' => $data['employee_phone'] ?? null,
@@ -119,15 +249,22 @@ class SaleController extends Controller
             ]);
 
             $this->applyItems($sale, $items);
-            $this->applyPayments($sale, $data['payments'] ?? []);
+            $this->applyPaymentsAndPreviousDue($sale, $customer, $submittedPayments, $total, $salePaid);
+
+            return $sale;
         });
 
-        return redirect()->route('sales.index')->with('status', 'বিক্রয় সফলভাবে যোগ করা হয়েছে');
+        return redirect()->route('sales.index')
+            ->with('status', 'বিক্রয় সফলভাবে যোগ করা হয়েছে')
+            ->with('show_invoice_sale_id', $sale?->id);
     }
 
     public function edit(Sale $sale): View
     {
-        $customers = Customer::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone', 'address']);
+        $customers = Customer::where('status', 'active')
+            ->withSum(['sales as sales_sum_due_amount' => fn ($q) => $q->where('id', '!=', $sale->id)], 'due_amount')
+            ->orderBy('name')
+            ->get(['id', 'name', 'phone', 'address', 'opening_due']);
         $employees = Employee::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);
         $products = Product::where('status', 'active')
             ->withSum(['batches as batches_sum_quantity' => fn ($q) => $q->where('warehouse_id', $sale->warehouse_id)], 'quantity')
@@ -147,21 +284,55 @@ class SaleController extends Controller
         DB::transaction(function () use ($data, $items, $sale) {
             $this->revertItems($sale);
 
-            [$subtotal, $discount, $deliveryCharge, $total, $paid, $due, $status] = $this->calculateTotals($items, $data);
+            $customerId = $this->resolveCustomerId($data);
+            $customer = $customerId
+                ? Customer::where('id', $customerId)->lockForUpdate()->first()
+                : null;
+
+            [$subtotal, $discount, $deliveryCharge, $total] = $this->calculateBaseTotals($items, $data);
             $profit = $this->calculateProfit($items, $discount);
 
+            $customerPreviousDue = 0.0;
+            if ($customer) {
+                $customerPreviousDue = round(
+                    (float) $customer->opening_due +
+                    (float) $customer->sales()->where('id', '!=', $sale->id)->where('due_amount', '>', 0)->sum('due_amount'),
+                    2
+                );
+            }
+
+            $submittedPayments = $data['payments'] ?? [];
+            $totalSubmittedPaid = round(collect($submittedPayments)->sum(fn ($p) => (float) ($p['amount'] ?? 0)), 2);
+            $maxPayable = round($total + $customerPreviousDue, 2);
+
+            if ($customer && round($totalSubmittedPaid - $maxPayable, 2) > 0.01) {
+                throw ValidationException::withMessages([
+                    'payments' => 'পরিশোধের পরিমাণ মোট প্রদেয় টাকার চেয়ে বেশি হতে পারে না (সর্বোচ্চ: ৳'.number_format($maxPayable, 2).') / Payment amount cannot exceed total payable amount.',
+                ]);
+            }
+
+            if (! $customer && round($totalSubmittedPaid - $total, 2) > 0.01) {
+                throw ValidationException::withMessages([
+                    'payments' => 'পরিশোধের পরিমাণ বিক্রয়ের মোট মূল্যের চেয়ে বেশি হতে পারে না (সর্বোচ্চ: ৳'.number_format($total, 2).') / Payment amount cannot exceed sale total.',
+                ]);
+            }
+
+            $salePaid = min($totalSubmittedPaid, $total);
+            $saleDue = round(max($total - $salePaid, 0), 2);
+            $saleStatus = $saleDue <= 0 ? 'paid' : ($salePaid <= 0 ? 'due' : 'partial');
+
             $sale->update([
-                'customer_id' => $this->resolveCustomerId($data),
+                'customer_id' => $customerId,
                 'sale_date' => $data['sale_date'],
                 'invoice_no' => $data['invoice_no'] ?? $sale->invoice_no,
                 'subtotal' => $subtotal,
                 'discount' => $discount,
                 'delivery_charge' => $deliveryCharge,
                 'total' => $total,
-                'paid_amount' => $paid,
-                'due_amount' => $due,
+                'paid_amount' => $salePaid,
+                'due_amount' => $saleDue,
                 'profit' => $profit,
-                'payment_status' => $status,
+                'payment_status' => $saleStatus,
                 'note' => $data['note'] ?? null,
                 'employee_name' => $data['employee_name'] ?? null,
                 'employee_phone' => $data['employee_phone'] ?? null,
@@ -169,8 +340,12 @@ class SaleController extends Controller
 
             $this->applyItems($sale, $items);
 
-            $sale->payments()->delete();
-            $this->applyPayments($sale, $data['payments'] ?? []);
+            $this->revertExcessPreviousDuePayments($sale);
+
+            foreach ($sale->payments()->get() as $payment) {
+                $payment->delete();
+            }
+            $this->applyPaymentsAndPreviousDue($sale, $customer, $submittedPayments, $total, $salePaid);
         });
 
         return redirect()->route('sales.index')->with('status', 'বিক্রয় হালনাগাদ করা হয়েছে');
@@ -180,6 +355,13 @@ class SaleController extends Controller
     {
         DB::transaction(function () use ($sale) {
             $this->revertItems($sale);
+
+            $this->revertExcessPreviousDuePayments($sale);
+
+            foreach ($sale->payments()->get() as $payment) {
+                $payment->delete();
+            }
+
             $sale->delete();
         });
 
@@ -187,19 +369,48 @@ class SaleController extends Controller
     }
 
     /**
-     * @return array{0: string, 1: string, 2: string, 3: string, 4: string, 5: string, 6: string}
+     * Revert any payments on earlier sales or customer opening due reductions
+     * that were settled from this sale's payment drawer.
      */
-    private function calculateTotals(array $items, array $data): array
+    private function revertExcessPreviousDuePayments(Sale $sale): void
     {
-        $subtotal = collect($items)->sum(fn ($item) => $this->lineAmount($item));
-        $discount = $data['discount'] ?? 0;
-        $deliveryCharge = $data['delivery_charge'] ?? 0;
-        $total = max($subtotal - $discount + $deliveryCharge, 0);
-        $paid = collect($data['payments'] ?? [])->sum('amount');
-        $due = max($total - $paid, 0);
-        $status = $due <= 0 ? 'paid' : ($paid <= 0 ? 'due' : 'partial');
+        $linkedPayments = SalePayment::where('note', 'like', "%(বিক্রয় ইনভয়েস: {$sale->invoice_no} থেকে সমন্বয়কৃত)%")->get();
+        foreach ($linkedPayments as $lp) {
+            $prevSale = $lp->sale;
+            if ($prevSale) {
+                $newPaid = round(max((float) $prevSale->paid_amount - (float) $lp->amount, 0), 2);
+                $newDue = round(min((float) $prevSale->due_amount + (float) $lp->amount, (float) $prevSale->total), 2);
+                $prevSale->update([
+                    'paid_amount' => $newPaid,
+                    'due_amount' => $newDue,
+                    'payment_status' => $newDue <= 0 ? 'paid' : ($newPaid <= 0 ? 'due' : 'partial'),
+                ]);
+            }
+            $lp->delete();
+        }
 
-        return [$subtotal, $discount, $deliveryCharge, $total, $paid, $due, $status];
+        $linkedOpeningTxs = AccountTransaction::where('source', 'sale')
+            ->where('note', 'like', "%(বিক্রয় ইনভয়েস: {$sale->invoice_no} থেকে সমন্বয়কৃত)%")
+            ->get();
+        foreach ($linkedOpeningTxs as $tx) {
+            if ($tx->sourceable instanceof Customer) {
+                $tx->sourceable->increment('opening_due', (float) $tx->amount);
+            }
+            $tx->delete();
+        }
+    }
+
+    /**
+     * @return array{0: float, 1: float, 2: float, 3: float}
+     */
+    private function calculateBaseTotals(array $items, array $data): array
+    {
+        $subtotal = round((float) collect($items)->sum(fn ($item) => $this->lineAmount($item)), 2);
+        $discount = round((float) ($data['discount'] ?? 0), 2);
+        $deliveryCharge = round((float) ($data['delivery_charge'] ?? 0), 2);
+        $total = round(max($subtotal - $discount + $deliveryCharge, 0), 2);
+
+        return [$subtotal, $discount, $deliveryCharge, $total];
     }
 
     /**
@@ -293,16 +504,153 @@ class SaleController extends Controller
     }
 
     /**
-     * @param  array<int, array{account_id?: ?int, method: string, amount: float}>  $payments
+     * @param  array<int, array{account_id?: ?int, method: string, amount: float}>  $submittedPayments
      */
-    private function applyPayments(Sale $sale, array $payments): void
-    {
-        foreach ($payments as $payment) {
-            $sale->payments()->create([
-                'account_id' => $payment['account_id'] ?? null,
+    private function applyPaymentsAndPreviousDue(
+        Sale $sale,
+        ?Customer $customer,
+        array $submittedPayments,
+        float $saleTotal,
+        float $salePaid
+    ): void {
+        $pools = [];
+        foreach ($submittedPayments as $payment) {
+            $amt = round((float) ($payment['amount'] ?? 0), 2);
+            if ($amt <= 0) {
+                continue;
+            }
+            $pools[] = [
+                'account_id' => ! empty($payment['account_id']) ? (int) $payment['account_id'] : null,
                 'method' => $payment['method'] ?? 'cash',
-                'amount' => $payment['amount'],
+                'amount' => $amt,
+                'remaining' => $amt,
+            ];
+        }
+
+        // 1. Allocate up to $salePaid to this sale
+        $neededForSale = $salePaid;
+        foreach ($pools as &$pool) {
+            if ($neededForSale <= 0) {
+                break;
+            }
+            if ($pool['remaining'] <= 0) {
+                continue;
+            }
+
+            $take = min($neededForSale, $pool['remaining']);
+            $pool['remaining'] = round($pool['remaining'] - $take, 2);
+            $neededForSale = round($neededForSale - $take, 2);
+
+            $sale->payments()->create([
+                'account_id' => $pool['account_id'],
+                'method' => $pool['method'],
+                'amount' => $take,
+                'payment_date' => $sale->sale_date ?? now()->toDateString(),
             ]);
+        }
+        unset($pool);
+
+        // 2. If there is excess payment and a customer exists, allocate FIFO across opening_due and previous sales
+        $totalSubmitted = round(collect($submittedPayments)->sum(fn ($p) => (float) ($p['amount'] ?? 0)), 2);
+        $excessForPreviousDue = round(max($totalSubmitted - $saleTotal, 0), 2);
+
+        if ($excessForPreviousDue > 0 && $customer) {
+            $allocations = [];
+            $remainingToAllocate = $excessForPreviousDue;
+
+            // (a) First, opening due
+            if ((float) $customer->opening_due > 0 && $remainingToAllocate > 0) {
+                $deductOpening = min($remainingToAllocate, (float) $customer->opening_due);
+                $allocations[] = [
+                    'type' => 'opening',
+                    'needed' => $deductOpening,
+                ];
+                $remainingToAllocate = round($remainingToAllocate - $deductOpening, 2);
+            }
+
+            // (b) Second, earlier sales with remaining due
+            if ($remainingToAllocate > 0) {
+                $previousSales = Sale::where('customer_id', $customer->id)
+                    ->where('id', '!=', $sale->id)
+                    ->where('due_amount', '>', 0)
+                    ->orderBy('sale_date', 'asc')
+                    ->orderBy('id', 'asc')
+                    ->lockForUpdate()
+                    ->get();
+
+                foreach ($previousSales as $prevSale) {
+                    if ($remainingToAllocate <= 0) {
+                        break;
+                    }
+
+                    $pay = min($remainingToAllocate, (float) $prevSale->due_amount);
+                    $allocations[] = [
+                        'type' => 'sale',
+                        'model' => $prevSale,
+                        'needed' => $pay,
+                    ];
+                    $remainingToAllocate = round($remainingToAllocate - $pay, 2);
+                }
+            }
+
+            // (c) Apply allocations from the remaining amounts in $pools
+            foreach ($allocations as $item) {
+                $needed = $item['needed'];
+
+                foreach ($pools as &$pool) {
+                    if ($needed <= 0) {
+                        break;
+                    }
+                    if ($pool['remaining'] <= 0) {
+                        continue;
+                    }
+
+                    $payPortion = min($needed, $pool['remaining']);
+                    $pool['remaining'] = round($pool['remaining'] - $payPortion, 2);
+                    $needed = round($needed - $payPortion, 2);
+
+                    $account = $pool['account_id']
+                        ? Account::withoutGlobalScopes()->find($pool['account_id'])
+                        : $this->accountTransactionService->getDefaultAccount($sale->shop_id);
+
+                    if ($item['type'] === 'opening') {
+                        $customer->opening_due = round(max((float) $customer->opening_due - $payPortion, 0), 2);
+                        $customer->save();
+
+                        if ($account) {
+                            $this->accountTransactionService->recordTransaction(
+                                account: $account,
+                                type: 'in',
+                                amount: $payPortion,
+                                source: 'sale',
+                                sourceable: $customer,
+                                note: 'গ্রাহক প্রারম্ভিক বাকি পরিশোধ: '.$customer->name.' (বিক্রয় ইনভয়েস: '.$sale->invoice_no.' থেকে সমন্বয়কৃত)',
+                                occurredAt: $sale->sale_date ? $sale->sale_date->format('Y-m-d').' '.now()->format('H:i:s') : now(),
+                                userId: Auth::id()
+                            );
+                        }
+                    } elseif ($item['type'] === 'sale') {
+                        /** @var Sale $prevSale */
+                        $prevSale = $item['model'];
+                        $prevSale->payments()->create([
+                            'account_id' => $pool['account_id'],
+                            'method' => $pool['method'],
+                            'amount' => $payPortion,
+                            'payment_date' => $sale->sale_date ?? now()->toDateString(),
+                            'note' => 'বাকি পরিশোধ - বিল: '.$prevSale->invoice_no.' (বিক্রয় ইনভয়েস: '.$sale->invoice_no.' থেকে সমন্বয়কৃত)',
+                        ]);
+
+                        $newPaid = round((float) $prevSale->paid_amount + $payPortion, 2);
+                        $newDue = round(max((float) $prevSale->due_amount - $payPortion, 0), 2);
+                        $prevSale->update([
+                            'paid_amount' => $newPaid,
+                            'due_amount' => $newDue,
+                            'payment_status' => $newDue <= 0 ? 'paid' : 'partial',
+                        ]);
+                    }
+                }
+                unset($pool);
+            }
         }
     }
 
