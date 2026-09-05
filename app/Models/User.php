@@ -9,12 +9,14 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Modules\Employee\Models\Employee;
 use Modules\Shop\Models\Shop;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password', 'shop_id'])]
+#[Fillable(['name', 'email', 'password', 'shop_id', 'email_verified_at'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -54,6 +56,14 @@ class User extends Authenticatable
     public function shop(): BelongsTo
     {
         return $this->belongsTo(Shop::class);
+    }
+
+    /**
+     * Linked employee profile for this user.
+     */
+    public function employee(): HasOne
+    {
+        return $this->hasOne(Employee::class);
     }
 
     /**
