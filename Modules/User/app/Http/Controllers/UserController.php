@@ -97,6 +97,7 @@ class UserController extends Controller
             'password' => Hash::make($request->validated('password')),
         ]);
 
+        setPermissionsTeamId($user->shop_id);
         $user->assignRole($role);
 
         if ($request->ajax() || $request->wantsJson()) {
@@ -146,6 +147,7 @@ class UserController extends Controller
         }
 
         $user->save();
+        setPermissionsTeamId($user->shop_id);
         $user->syncRoles([$role]);
 
         if ($request->ajax() || $request->wantsJson()) {
@@ -202,12 +204,19 @@ class UserController extends Controller
     {
         $shopId = auth()->user()->shop_id;
 
-        return Role::where(function ($query) use ($shopId) {
-            $query->where('shop_id', $shopId)->orWhereNull('shop_id');
-        })
+        $roles = Role::where('shop_id', $shopId)
             ->where('name', '!=', 'Super Admin')
             ->orderBy('name')
             ->get();
+
+        if ($roles->isEmpty()) {
+            $roles = Role::whereNull('shop_id')
+                ->where('name', '!=', 'Super Admin')
+                ->orderBy('name')
+                ->get();
+        }
+
+        return $roles;
     }
 
     private function resolveRole(string $roleName): Role

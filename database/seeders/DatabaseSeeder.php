@@ -28,8 +28,6 @@ class DatabaseSeeder extends Seeder
         }
 
         $superAdminRole = Role::firstOrCreate(['name' => 'Super Admin', 'guard_name' => 'web']);
-        $adminRole = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
-        $adminRole->syncPermissions(Permission::where('guard_name', 'web')->get());
 
         $superAdmin = User::firstOrCreate(
             ['email' => 'superadmin@masterpos.test'],
@@ -51,6 +49,13 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        $demoAdminRole = Role::firstOrCreate([
+            'shop_id' => $demoShop->id,
+            'name' => 'Admin',
+            'guard_name' => 'web',
+        ]);
+        $demoAdminRole->syncPermissions(Permission::where('guard_name', 'web')->get());
+
         $demoAdmin = User::updateOrCreate(
             ['email' => 'admin@masterpos.test'],
             [
@@ -59,7 +64,9 @@ class DatabaseSeeder extends Seeder
                 'password' => bcrypt('password'),
             ]
         );
-        $demoAdmin->syncRoles([$adminRole]);
+        setPermissionsTeamId($demoShop->id);
+        $demoAdmin->syncRoles([$demoAdminRole]);
+        setPermissionsTeamId(null);
 
         $this->call(SubscriptionifySeeder::class);
         $this->call(AccountDatabaseSeeder::class);
