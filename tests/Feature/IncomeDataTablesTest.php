@@ -76,7 +76,7 @@ class IncomeDataTablesTest extends TestCase
         $html = $dataTable->html();
 
         $this->assertEquals('incomes-data-table', $html->getTableAttribute('id'));
-        $this->assertCount(5, $dataTable->getColumns());
+        $this->assertCount(7, $dataTable->getColumns());
     }
 
     public function test_incomes_datatable_query_returns_query_builder(): void
@@ -106,6 +106,7 @@ class IncomeDataTablesTest extends TestCase
             'source' => 'Delivery Charge',
             'amount' => 500.00,
             'income_date' => now()->toDateString(),
+            'payment_method' => 'cash',
             'note' => 'Delivery fee from customer',
         ]);
 
@@ -122,6 +123,7 @@ class IncomeDataTablesTest extends TestCase
             'data',
         ]);
         $this->assertEquals(1, $response->json('recordsTotal'));
+        $this->assertStringContainsString('#INC-', $response->json('data.0.voucher_no'));
         $this->assertStringContainsString('Delivery Charge', $response->json('data.0.source'));
         $this->assertStringContainsString('500.00', $response->json('data.0.amount'));
         $this->assertStringContainsString('Main Cash', $response->json('data.0.account'));
@@ -154,10 +156,22 @@ class IncomeDataTablesTest extends TestCase
 
         $ajaxResponse->assertOk();
         $ajaxResponse->assertJson(['success' => true]);
+        // AJAX POST with cash and null account_id
+        $cashResponse = $this->actingAs($this->user)->postJson(route('income.store'), [
+            'payment_method' => 'cash',
+            'source' => 'Direct Cash Payment',
+            'amount' => 1200,
+            'income_date' => now()->toDateString(),
+        ]);
+
+        $cashResponse->assertOk();
+        $cashResponse->assertJson(['success' => true]);
         $this->assertDatabaseHas('incomes', [
             'shop_id' => $this->shop->id,
-            'source' => 'Scrap Sale',
-            'amount' => 800,
+            'account_id' => $this->account->id, // auto-resolved to cash account
+            'payment_method' => 'cash',
+            'source' => 'Direct Cash Payment',
+            'amount' => 1200,
         ]);
     }
 
@@ -241,5 +255,49 @@ class IncomeDataTablesTest extends TestCase
         $ajaxResponse->assertOk();
         $ajaxResponse->assertJson(['success' => true]);
         $this->assertSoftDeleted('incomes', ['id' => $income2->id]);
+    }
+
+    public function test_incomes_datatable_filters_by_payment_method_and_date_range(): void
+    {
+        Income::create([
+            'shop_id' => $this->shop->id,
+            'account_id' => $this->account->id,
+            'source' => 'Cash Income Yesterday',
+            'amount' => 400.00,
+            'income_date' => now()->subDay()->toDateString(),
+            'payment_method' => 'cash',
+        ]);
+
+        Income::create([
+            'shop_id' => $this->shop->id,
+            'account_id' => $this->account->id,
+            'source' => 'bKash Income Today',
+            'amount' => 600.00,
+            'income_date' => now()->toDateString(),
+            'payment_method' => 'bkash',
+        ]);
+
+        // Filter by payment method
+        $responseMethod = $this->actingAs($this->user)
+            ->getJson(route('income.index', ['payment_method' => 'bkash']), [
+                'X-Requested-With' => 'XMLHttpRequest',
+            ]);
+
+        $responseMethod->assertOk();
+        $this->assertEquals(1, $responseMethod->json('recordsFiltered'));
+        $this->assertStringContainsString('bKash Income Today', $responseMethod->json('data.0.source'));
+
+        // Filter by date range
+        $responseDate = $this->actingAs($this->user)
+            ->getJson(route('income.index', [
+                'date_from' => now()->subDay()->toDateString(),
+                'date_to' => now()->subDay()->toDateString(),
+            ]), [
+                'X-Requested-With' => 'XMLHttpRequest',
+            ]);
+
+        $responseDate->assertOk();
+        $this->assertEquals(1, $responseDate->json('recordsFiltered'));
+        $this->assertStringContainsString('Cash Income Yesterday', $responseDate->json('data.0.source'));
     }
 }

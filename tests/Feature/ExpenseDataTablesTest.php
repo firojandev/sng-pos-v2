@@ -96,7 +96,7 @@ class ExpenseDataTablesTest extends TestCase
         $html = $dataTable->html();
 
         $this->assertEquals('expenses-data-table', $html->getTableAttribute('id'));
-        $this->assertCount(6, $dataTable->getColumns());
+        $this->assertCount(8, $dataTable->getColumns());
     }
 
     public function test_expenses_datatable_query_returns_query_builder(): void
@@ -128,6 +128,7 @@ class ExpenseDataTablesTest extends TestCase
             'title' => 'Office Notebooks',
             'amount' => 450.00,
             'expense_date' => now()->toDateString(),
+            'payment_method' => 'cash',
             'note' => 'For accounting dept',
         ]);
 
@@ -144,10 +145,12 @@ class ExpenseDataTablesTest extends TestCase
             'data',
         ]);
         $this->assertEquals(1, $response->json('recordsTotal'));
+        $this->assertStringContainsString('#EXP-', $response->json('data.0.voucher_no'));
         $this->assertStringContainsString('Office Notebooks', $response->json('data.0.title'));
         $this->assertStringContainsString('Office Expense', $response->json('data.0.category'));
         $this->assertStringContainsString('Stationery', $response->json('data.0.category'));
         $this->assertStringContainsString('450.00', $response->json('data.0.amount'));
+        $this->assertStringContainsString('Main Cash', $response->json('data.0.account'));
     }
 
     public function test_expense_can_be_created_via_post_and_ajax(): void
@@ -185,6 +188,25 @@ class ExpenseDataTablesTest extends TestCase
             'shop_id' => $this->shop->id,
             'title' => 'Electricity Bill',
             'amount' => 3500,
+        ]);
+
+        // AJAX POST with cash and null account_id (auto cash account resolution)
+        $cashResponse = $this->actingAs($this->user)->postJson(route('expense.store'), [
+            'payment_method' => 'cash',
+            'expense_category_id' => $this->category->id,
+            'title' => 'Tea and Snacks Cash',
+            'amount' => 150,
+            'expense_date' => now()->toDateString(),
+        ]);
+
+        $cashResponse->assertOk();
+        $cashResponse->assertJson(['success' => true]);
+        $this->assertDatabaseHas('expenses', [
+            'shop_id' => $this->shop->id,
+            'account_id' => $this->account->id, // auto-resolved to default cash account
+            'payment_method' => 'cash',
+            'title' => 'Tea and Snacks Cash',
+            'amount' => 150,
         ]);
     }
 
@@ -424,5 +446,51 @@ class ExpenseDataTablesTest extends TestCase
         $response = $this->actingAs($this->user)->delete(route('expense-sub-categories.destroy', $emptySub));
         $response->assertRedirect(route('expense-sub-categories.index'));
         $this->assertDatabaseMissing('categories', ['id' => $emptySub->id]);
+    }
+
+    public function test_expenses_datatable_filters_by_payment_method_and_date_range(): void
+    {
+        Expense::create([
+            'shop_id' => $this->shop->id,
+            'account_id' => $this->account->id,
+            'expense_category_id' => $this->category->id,
+            'title' => 'Cash Expense Yesterday',
+            'amount' => 400.00,
+            'expense_date' => now()->subDay()->toDateString(),
+            'payment_method' => 'cash',
+        ]);
+
+        Expense::create([
+            'shop_id' => $this->shop->id,
+            'account_id' => $this->account->id,
+            'expense_category_id' => $this->category->id,
+            'title' => 'bKash Expense Today',
+            'amount' => 600.00,
+            'expense_date' => now()->toDateString(),
+            'payment_method' => 'bkash',
+        ]);
+
+        // Filter by payment method
+        $responseMethod = $this->actingAs($this->user)
+            ->getJson(route('expense.index', ['payment_method' => 'bkash']), [
+                'X-Requested-With' => 'XMLHttpRequest',
+            ]);
+
+        $responseMethod->assertOk();
+        $this->assertEquals(1, $responseMethod->json('recordsFiltered'));
+        $this->assertStringContainsString('bKash Expense Today', $responseMethod->json('data.0.title'));
+
+        // Filter by date range
+        $responseDate = $this->actingAs($this->user)
+            ->getJson(route('expense.index', [
+                'date_from' => now()->subDay()->toDateString(),
+                'date_to' => now()->subDay()->toDateString(),
+            ]), [
+                'X-Requested-With' => 'XMLHttpRequest',
+            ]);
+
+        $responseDate->assertOk();
+        $this->assertEquals(1, $responseDate->json('recordsFiltered'));
+        $this->assertStringContainsString('Cash Expense Yesterday', $responseDate->json('data.0.title'));
     }
 }

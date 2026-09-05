@@ -16,6 +16,41 @@ use Modules\Finance\Models\ExpenseCategory;
 
 class ExpenseController extends Controller
 {
+    /**
+     * Common payment methods mapping (Cash, Bank, MFS).
+     *
+     * @return array<string, array{bn: string, en: string}>
+     */
+    protected function paymentMethods(): array
+    {
+        return [
+            'cash' => ['bn' => 'নগদ', 'en' => 'Cash'],
+            'bank' => ['bn' => 'ব্যাংক', 'en' => 'Bank'],
+            'mfs' => ['bn' => 'মোবাইল ব্যাংকিং (MFS)', 'en' => 'Mobile Banking (MFS)'],
+        ];
+    }
+
+    /**
+     * Resolve the appropriate cash account ID if payment method is cash.
+     */
+    protected function resolveCashAccountId(?int $accountId, ?string $paymentMethod): ?int
+    {
+        if ($paymentMethod === 'cash') {
+            if ($accountId && $acc = Account::find($accountId)) {
+                if ($acc->type === 'cash') {
+                    return $acc->id;
+                }
+            }
+
+            $cashAcc = Account::where('type', 'cash')->where('is_default', true)->first()
+                ?? Account::where('type', 'cash')->first();
+
+            return $cashAcc?->id ?? $accountId;
+        }
+
+        return $accountId;
+    }
+
     public function index(ExpensesDataTable $dataTable): mixed
     {
         $expenseCategories = ExpenseCategory::parents()->with('subCategories')->orderBy('name')->get();
@@ -24,24 +59,43 @@ class ExpenseController extends Controller
             fn ($category) => [$category->id => $category->subCategories->map(fn ($s) => ['id' => $s->id, 'name' => $s->name])->values()]
         );
 
-        return $dataTable->render('finance::expenses.index', compact('expenseCategories', 'accounts', 'subCategoriesByCategory'));
+        $metrics = [
+            'totalExpense' => (float) Expense::sum('amount'),
+            'todayExpense' => (float) Expense::whereDate('expense_date', today())->sum('amount'),
+            'thisMonthExpense' => (float) Expense::whereYear('expense_date', now()->year)
+                ->whereMonth('expense_date', now()->month)
+                ->sum('amount'),
+            'totalCount' => (int) Expense::count(),
+        ];
+
+        $paymentMethods = $this->paymentMethods();
+
+        return $dataTable->render('finance::expenses.index', compact('expenseCategories', 'accounts', 'subCategoriesByCategory', 'metrics', 'paymentMethods'));
     }
 
     public function create(): View
     {
         $expenseCategories = ExpenseCategory::parents()->with('subCategories')->orderBy('name')->get();
         $accounts = Account::active()->orderByDesc('is_default')->orderBy('name')->get();
+        $paymentMethods = $this->paymentMethods();
 
         return view('finance::expenses.create', [
             'expense' => new Expense,
             'expenseCategories' => $expenseCategories,
             'accounts' => $accounts,
+            'paymentMethods' => $paymentMethods,
         ]);
     }
 
     public function store(StoreExpenseRequest $request): RedirectResponse|JsonResponse
     {
-        $expense = Expense::create($request->validated());
+        $data = $request->validated();
+        $data['account_id'] = $this->resolveCashAccountId(
+            isset($data['account_id']) ? (int) $data['account_id'] : null,
+            $data['payment_method'] ?? 'cash'
+        );
+
+        $expense = Expense::create($data);
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
@@ -73,13 +127,20 @@ class ExpenseController extends Controller
 
         $expenseCategories = ExpenseCategory::parents()->with('subCategories')->orderBy('name')->get();
         $accounts = Account::active()->orderByDesc('is_default')->orderBy('name')->get();
+        $paymentMethods = $this->paymentMethods();
 
-        return view('finance::expenses.edit', compact('expense', 'expenseCategories', 'accounts'));
+        return view('finance::expenses.edit', compact('expense', 'expenseCategories', 'accounts', 'paymentMethods'));
     }
 
     public function update(UpdateExpenseRequest $request, Expense $expense): RedirectResponse|JsonResponse
     {
-        $expense->update($request->validated());
+        $data = $request->validated();
+        $data['account_id'] = $this->resolveCashAccountId(
+            isset($data['account_id']) ? (int) $data['account_id'] : null,
+            $data['payment_method'] ?? 'cash'
+        );
+
+        $expense->update($data);
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
