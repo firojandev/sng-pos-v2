@@ -27,6 +27,8 @@ class UpdateProfileRequest extends FormRequest
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             'pin' => ['nullable', 'digits:4'],
             'regenerate_support_pin' => ['nullable', 'boolean'],
+            'avatar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:2048'],
+            'remove_avatar' => ['nullable', 'boolean'],
         ];
     }
 
@@ -44,6 +46,9 @@ class UpdateProfileRequest extends FormRequest
             'username.unique' => 'এই ইউজারনেমটি ইতিমধ্যে ব্যবহৃত হয়েছে।',
             'email.unique' => 'এই ইমেইল অ্যাড্রেসটি ইতিমধ্যে ব্যবহৃত হয়েছে।',
             'phone.unique' => 'এই ফোন নম্বরটি ইতিমধ্যে ব্যবহৃত হয়েছে।',
+            'avatar.image' => 'প্রোফাইল ছবিটি একটি বৈধ ছবি ফাইল হতে হবে।',
+            'avatar.mimes' => 'ছবিটি অবশ্যই jpeg, png, jpg, webp বা gif ফরম্যাটের হতে হবে।',
+            'avatar.max' => 'ছবির সাইজ সর্বোচ্চ ২ মেগাবাইট (2MB) হতে পারবে।',
         ];
     }
 }

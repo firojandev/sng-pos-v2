@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -13,11 +14,13 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Modules\Core\Observers\AuditObserver;
 use Modules\Employee\Models\Employee;
 use Modules\Shop\Models\Shop;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'username', 'email', 'phone', 'password', 'pin', 'support_pin', 'shop_id', 'email_verified_at'])]
+#[Fillable(['name', 'username', 'email', 'phone', 'avatar', 'password', 'pin', 'support_pin', 'shop_id', 'email_verified_at'])]
 #[Hidden(['password', 'pin', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -26,6 +29,26 @@ class User extends Authenticatable
         assignRole as protected spatieAssignRole;
         syncRoles as protected spatieSyncRoles;
         removeRole as protected spatieRemoveRole;
+    }
+
+    /**
+     * Get the user's avatar URL.
+     */
+    protected function avatarUrl(): Attribute
+    {
+        return Attribute::make(
+            get: function (): ?string {
+                if (! $this->avatar) {
+                    return null;
+                }
+
+                if (str_starts_with($this->avatar, 'http://') || str_starts_with($this->avatar, 'https://')) {
+                    return $this->avatar;
+                }
+
+                return Storage::disk('public')->url($this->avatar);
+            }
+        );
     }
 
     /**
@@ -44,6 +67,8 @@ class User extends Authenticatable
 
     protected static function booted(): void
     {
+        static::observe(AuditObserver::class);
+
         static::creating(function (User $user) {
             if (empty($user->support_pin)) {
                 $user->support_pin = static::generateUniqueSupportPin();

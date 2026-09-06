@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Modules\User\Http\Requests\UpdateProfileRequest;
 
@@ -29,6 +30,18 @@ class ProfileController extends Controller
         $user->username = $request->validated('username');
         $user->email = $request->validated('email');
         $user->phone = $request->validated('phone');
+
+        if ($request->boolean('remove_avatar')) {
+            if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+            $user->avatar = null;
+        } elseif ($request->hasFile('avatar')) {
+            if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+            $user->avatar = $request->file('avatar')->store('avatars', 'public');
+        }
 
         if ($request->filled('password')) {
             $user->password = Hash::make($request->validated('password'));

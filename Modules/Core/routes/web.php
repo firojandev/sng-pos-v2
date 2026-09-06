@@ -24,8 +24,10 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/suppliers/{supplier}/payment', [DueLedgerController::class, 'storeSupplierPayment'])->name('supplier.payment.store')->middleware('permission:suppliers.payment');
     });
 
-    Route::middleware(['permission:audit.view', 'feature:audit'])
-        ->get('/audit-log', [AuditLogController::class, 'index'])->name('audit-log.index');
+    Route::middleware(['permission:audit.view', 'feature:audit'])->group(function () {
+        Route::get('/audit-log', [AuditLogController::class, 'index'])->name('audit-log.index');
+        Route::get('/audit-log/{auditLog}', [AuditLogController::class, 'show'])->name('audit-log.show');
+    });
 
     Route::middleware(['permission:sales.view', 'feature:sales'])
         ->get('/sales', [PageController::class, 'sales'])->name('sales.index');

@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class UserProfileTest extends TestCase
@@ -150,5 +152,144 @@ class UserProfileTest extends TestCase
         $this->assertTrue(Hash::check('9876', $user->pin));
         $this->assertNotSame('111222', $user->support_pin);
         $this->assertSame(6, strlen($user->support_pin));
+    }
+
+    public function test_user_can_upload_own_avatar(): void
+    {
+        Storage::fake('public');
+
+        $user = User::factory()->create([
+            'name' => 'রহিম উদ্দিন',
+            'email' => 'rahim@example.com',
+        ]);
+
+        $file = UploadedFile::fake()->image('profile_pic.png', 300, 300);
+
+        $response = $this->actingAs($user)->put(route('profile.update'), [
+            'name' => $user->name,
+            'email' => $user->email,
+            'avatar' => $file,
+        ]);
+
+        $response->assertRedirect(route('profile.edit'));
+        $response->assertSessionHas('status');
+
+        $user->refresh();
+        $this->assertNotNull($user->avatar);
+        Storage::disk('public')->assertExists($user->avatar);
+        $this->assertNotNull($user->avatar_url);
+
+        $viewResponse = $this->actingAs($user)->get(route('profile.edit'));
+        $viewResponse->assertStatus(200);
+        $viewResponse->assertSee($user->avatar_url);
+    }
+
+    public function test_user_can_remove_own_avatar(): void
+    {
+        Storage::fake('public');
+
+        $path = UploadedFile::fake()->image('old_avatar.jpg')->store('avatars', 'public');
+
+        $user = User::factory()->create([
+            'avatar' => $path,
+        ]);
+
+        Storage::disk('public')->assertExists($path);
+
+        $response = $this->actingAs($user)->put(route('profile.update'), [
+            'name' => $user->name,
+            'email' => $user->email,
+            'remove_avatar' => '1',
+        ]);
+
+        $response->assertRedirect(route('profile.edit'));
+        $response->assertSessionHas('status');
+
+        $user->refresh();
+        $this->assertNull($user->avatar);
+        $this->assertNull($user->avatar_url);
+        Storage::disk('public')->assertMissing($path);
+    }
+
+    public function test_uploading_new_avatar_deletes_previous_avatar(): void
+    {
+        Storage::fake('public');
+
+        $oldPath = UploadedFile::fake()->image('initial_pic.jpg')->store('avatars', 'public');
+
+        $user = User::factory()->create([
+            'avatar' => $oldPath,
+        ]);
+
+        Storage::disk('public')->assertExists($oldPath);
+
+        $newFile = UploadedFile::fake()->image('new_pic.png', 400, 400);
+
+        $response = $this->actingAs($user)->put(route('profile.update'), [
+            'name' => $user->name,
+            'email' => $user->email,
+            'avatar' => $newFile,
+        ]);
+
+        $response->assertRedirect(route('profile.edit'));
+
+        $user->refresh();
+        $this->assertNotSame($oldPath, $user->avatar);
+        Storage::disk('public')->assertMissing($oldPath);
+        Storage::disk('public')->assertExists($user->avatar);
+    }
+
+    public function test_user_cannot_upload_non_image_file_as_avatar(): void
+    {
+        Storage::fake('public');
+
+        $user = User::factory()->create();
+        $pdfFile = UploadedFile::fake()->create('document.pdf', 500, 'application/pdf');
+
+        $response = $this->actingAs($user)->put(route('profile.update'), [
+            'name' => $user->name,
+            'email' => $user->email,
+            'avatar' => $pdfFile,
+        ]);
+
+        $response->assertSessionHasErrors('avatar');
+
+        $user->refresh();
+        $this->assertNull($user->avatar);
+    }
+
+    public function test_user_cannot_upload_avatar_exceeding_size_limit(): void
+    {
+        Storage::fake('public');
+
+        $user = User::factory()->create();
+        // 3MB image exceeds 2MB limit
+        $largeFile = UploadedFile::fake()->image('large.jpg')->size(3000);
+
+        $response = $this->actingAs($user)->put(route('profile.update'), [
+            'name' => $user->name,
+            'email' => $user->email,
+            'avatar' => $largeFile,
+        ]);
+
+        $response->assertSessionHasErrors('avatar');
+
+        $user->refresh();
+        $this->assertNull($user->avatar);
+    }
+
+    public function test_topbar_displays_uploaded_avatar_image(): void
+    {
+        Storage::fake('public');
+
+        $path = UploadedFile::fake()->image('topbar_avatar.jpg')->store('avatars', 'public');
+        $user = User::factory()->create([
+            'avatar' => $path,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('dashboard'));
+
+        $response->assertStatus(200);
+        $response->assertSee($user->avatar_url);
     }
 }

@@ -946,6 +946,7 @@ html.sidebar-collapsed-init .side-user-card .av{
 
 /* ============ COMMON WIDGETS ============ */
 .stat-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:16px;}
+.stat-grid-5{display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px;}
 .stat-card{
   background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
   padding:16px 18px; position:relative; overflow:hidden; box-shadow:var(--shadow-card);

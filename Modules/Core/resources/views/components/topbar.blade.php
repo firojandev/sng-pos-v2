@@ -225,9 +225,13 @@
                 aria-haspopup="true"
                 title="{{ $authUser->name ?? 'User' }}"
             >
-                <div class="top-avatar">
-                    {{ mb_substr($authUser->name ?? '?', 0, 1) }}
-                </div>
+                @if ($authUser?->avatar_url)
+                    <img src="{{ $authUser->avatar_url }}" alt="{{ $authUser->name }}" class="top-avatar" style="object-fit:cover;">
+                @else
+                    <div class="top-avatar">
+                        {{ mb_substr($authUser->name ?? '?', 0, 1) }}
+                    </div>
+                @endif
                 <svg class="avatar-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="6 9 12 15 18 9"/>
                 </svg>
@@ -235,9 +239,13 @@
 
             <div class="user-menu-dropdown-panel" id="userMenuDropdown" style="display:none;">
                 <div class="user-menu-header">
-                    <div class="user-menu-avatar-large">
-                        {{ mb_substr($authUser->name ?? '?', 0, 1) }}
-                    </div>
+                    @if ($authUser?->avatar_url)
+                        <img src="{{ $authUser->avatar_url }}" alt="{{ $authUser->name }}" class="user-menu-avatar-large" style="object-fit:cover;">
+                    @else
+                        <div class="user-menu-avatar-large">
+                            {{ mb_substr($authUser->name ?? '?', 0, 1) }}
+                        </div>
+                    @endif
                     <div class="user-menu-meta">
                         <div class="user-menu-name" title="{{ $authUser->name ?? 'User' }}">
                             {{ $authUser->name ?? 'User' }}

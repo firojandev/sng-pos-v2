@@ -318,4 +318,24 @@ class UserDataTableTest extends TestCase
         $this->assertNotEquals('112233', $member->support_pin);
         $this->assertEquals(6, strlen($member->support_pin));
     }
+
+    public function test_users_datatable_renders_avatar_when_present(): void
+    {
+        $member = User::create([
+            'name' => 'Avatar Staff',
+            'email' => 'avatar_staff@usershop.test',
+            'password' => bcrypt('password123'),
+            'shop_id' => $this->shop->id,
+            'avatar' => 'avatars/sample_avatar.jpg',
+        ]);
+        $member->syncRoles([$this->cashierRole]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->getJson(route('users.index'), [
+                'X-Requested-With' => 'XMLHttpRequest',
+            ]);
+
+        $response->assertOk();
+        $this->assertStringContainsString('sample_avatar.jpg', json_encode($response->json('data')));
+    }
 }

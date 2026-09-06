@@ -40,8 +40,12 @@ class UsersDataTable extends BaseDataTable
                     $badges .= '<span style="display:inline-block; font-size:10px; font-weight:700; padding:1px 6px; border-radius:4px; background:var(--blue-100); color:var(--blue-ink); border:1px solid var(--blue-ic-bg); margin-left:4px;"><span class="bn">সুপার অ্যাডমিন</span><span class="en" style="display:none;">Super Admin</span></span>';
                 }
 
+                $avatarHtml = $user->avatar_url
+                    ? '<img src="'.e($user->avatar_url).'" alt="'.e($user->name).'" class="av" style="width:36px; height:36px; border-radius:8px; object-fit:cover; flex-shrink:0; border:1px solid var(--border);">'
+                    : '<div class="av" style="width:36px; height:36px; border-radius:8px; background:var(--teal-700); color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; flex-shrink:0;">'.e($initial).'</div>';
+
                 return '<div class="row-avatar" style="display:flex; align-items:center; gap:10px;">'
-                    .'<div class="av" style="width:36px; height:36px; border-radius:8px; background:var(--teal-700); color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; flex-shrink:0;">'.e($initial).'</div>'
+                    .$avatarHtml
                     .'<div style="min-width:0;">'
                     .'<div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">'
                     .'<span style="font-weight:700; color:var(--ink-900); font-size:13.5px;">'.e($user->name).'</span>'
@@ -186,6 +190,7 @@ class UsersDataTable extends BaseDataTable
                 'users.username',
                 'users.email',
                 'users.phone',
+                'users.avatar',
                 'users.pin',
                 'users.support_pin',
                 'users.email_verified_at',
