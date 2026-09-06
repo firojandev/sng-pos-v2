@@ -305,6 +305,9 @@ $isNavItemVisible = function (array $item, bool $groupGated, $user) {
     if (isset($item['enabled']) && ! $item['enabled']) {
         return false;
     }
+    if ($item['key'] === 'subscription') {
+        return (bool) ($user && $user->shop && $user->shop->hasFeature('subscription'));
+    }
     $gated = $item['gated'] ?? $groupGated;
     if (! $gated) {
         return true;

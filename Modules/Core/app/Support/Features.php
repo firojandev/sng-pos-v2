@@ -31,6 +31,7 @@ class Features
             'audit' => ['bn' => 'অ্যাক্টিভিটি লগ', 'en' => 'Audit Log'],
             'employees' => ['bn' => 'কর্মচারী', 'en' => 'Employees'],
             'users' => ['bn' => 'ইউজার', 'en' => 'Users'],
+            'subscription' => ['bn' => 'সাবস্ক্রিপশন ও প্ল্যান', 'en' => 'Subscription & Plan'],
         ];
     }
 

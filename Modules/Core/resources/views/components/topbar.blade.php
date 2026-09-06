@@ -216,8 +216,142 @@
             <div class="dot"></div>
         </div>
 
-        <div class="top-avatar" title="{{ auth()->user()->name ?? 'User' }}">
-            {{ mb_substr(auth()->user()->name ?? '?', 0, 1) }}
+        <div class="user-menu-dropdown">
+            <button
+                type="button"
+                class="btn-user-avatar"
+                id="userMenuBtn"
+                aria-expanded="false"
+                aria-haspopup="true"
+                title="{{ $authUser->name ?? 'User' }}"
+            >
+                <div class="top-avatar">
+                    {{ mb_substr($authUser->name ?? '?', 0, 1) }}
+                </div>
+                <svg class="avatar-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"/>
+                </svg>
+            </button>
+
+            <div class="user-menu-dropdown-panel" id="userMenuDropdown" style="display:none;">
+                <div class="user-menu-header">
+                    <div class="user-menu-avatar-large">
+                        {{ mb_substr($authUser->name ?? '?', 0, 1) }}
+                    </div>
+                    <div class="user-menu-meta">
+                        <div class="user-menu-name" title="{{ $authUser->name ?? 'User' }}">
+                            {{ $authUser->name ?? 'User' }}
+                        </div>
+                        <div class="user-menu-subtext">
+                            @if ($authUser?->username)
+                                <span class="user-menu-handle">{{ '@' . $authUser->username }}</span>
+                            @else
+                                <span class="user-menu-email">{{ $authUser?->email }}</span>
+                            @endif
+                        </div>
+                        <div class="user-menu-badges">
+                            @php
+                                $roleName = $authUser?->roles?->first()?->name ?? ($authUser?->isSuperAdmin() ? 'Super Admin' : 'User');
+                            @endphp
+                            <span class="user-role-badge">{{ $roleName }}</span>
+                            @if ($currentShop)
+                                <span class="user-shop-badge" title="{{ $currentShop->name }}">
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/></svg>
+                                    <span>{{ Str::limit($currentShop->name, 14) }}</span>
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                @if ($authUser?->support_pin)
+                    <div class="user-menu-support-pin">
+                        <div class="support-pin-label">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            <span class="bn">সাপোর্ট পিন:</span>
+                            <span class="en" style="display:none;">Support PIN:</span>
+                        </div>
+                        <span class="support-pin-code">#{{ $authUser->support_pin }}</span>
+                    </div>
+                @endif
+
+                <div class="user-menu-divider"></div>
+
+                <div class="user-menu-items">
+                    <a href="{{ route('profile.edit') }}" class="user-menu-link">
+                        <svg class="user-menu-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/>
+                        </svg>
+                        <div class="user-menu-item-text">
+                            <span class="bn">প্রোফাইল পরিচালনা</span>
+                            <span class="en" style="display:none;">Manage Profile</span>
+                        </div>
+                    </a>
+
+                    <a href="{{ route('settings.index') }}" class="user-menu-link">
+                        <svg class="user-menu-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
+                        </svg>
+                        <div class="user-menu-item-text">
+                            <span class="bn">সেটিংস</span>
+                            <span class="en" style="display:none;">Settings</span>
+                        </div>
+                    </a>
+
+                    @if (! $authUser?->isSuperAdmin() && $authUser?->shop?->hasFeature('subscription') && Route::has('subscription.show'))
+                        <a href="{{ route('subscription.show') }}" class="user-menu-link">
+                            <svg class="user-menu-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>
+                            </svg>
+                            <div class="user-menu-item-text">
+                                <span class="bn">সাবস্ক্রিপশন ও প্ল্যান</span>
+                                <span class="en" style="display:none;">Subscription & Plan</span>
+                            </div>
+                        </a>
+                    @endif
+
+                    @if ($authUser?->can('audit.view') || $authUser?->can('audit'))
+                        <a href="{{ route('audit-log.index') }}" class="user-menu-link">
+                            <svg class="user-menu-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                            </svg>
+                            <div class="user-menu-item-text">
+                                <span class="bn">অ্যাক্টিভিটি লগ</span>
+                                <span class="en" style="display:none;">Activity Log</span>
+                            </div>
+                        </a>
+                    @endif
+
+                    @if ($accessibleShops->count() > 1 && Route::has('shops.select'))
+                        <a href="{{ route('shops.select') }}" class="user-menu-link">
+                            <svg class="user-menu-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m2 9 10-7 10 7v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2Z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                            </svg>
+                            <div class="user-menu-item-text">
+                                <span class="bn">সকল দোকান</span>
+                                <span class="en" style="display:none;">All Shops</span>
+                            </div>
+                        </a>
+                    @endif
+                </div>
+
+                <div class="user-menu-divider"></div>
+
+                <div class="user-menu-footer">
+                    <form method="POST" action="{{ route('logout') }}" id="user-menu-logout-form" style="margin:0;">
+                        @csrf
+                        <button type="button" class="user-menu-link user-menu-logout-btn" id="userMenuLogoutBtn">
+                            <svg class="user-menu-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/>
+                            </svg>
+                            <div class="user-menu-item-text">
+                                <span class="bn">লগআউট করুন</span>
+                                <span class="en" style="display:none;">Log Out</span>
+                            </div>
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </header>
