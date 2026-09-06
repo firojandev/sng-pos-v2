@@ -442,4 +442,90 @@ class ShopDataTableTest extends TestCase
             'enabled_features' => ['sales', 'purchase', 'stock'],
         ]);
     }
+
+    public function test_shop_creation_auto_creates_default_cash_account(): void
+    {
+        $user = $this->createSuperAdmin();
+        Role::firstOrCreate(['name' => 'Shop Owner', 'guard_name' => 'web']);
+
+        $response = $this->actingAs($user)->post(route('shops.store'), [
+            'name' => 'Auto Cash Shop',
+            'slug' => 'auto-cash-shop',
+            'phone' => '01711223344',
+            'address' => 'Dhanmondi, Dhaka',
+            'status' => 'active',
+            'features' => ['sales', 'accounts'],
+            'admin_name' => 'Cash Admin',
+            'admin_email' => 'cashadmin@autocash.test',
+            'admin_password' => 'Secret12345!',
+            'admin_password_confirmation' => 'Secret12345!',
+            'admin_role' => 'Shop Owner',
+        ]);
+
+        $response->assertRedirect(route('shops.index'));
+
+        $shop = Shop::where('slug', 'auto-cash-shop')->firstOrFail();
+
+        $this->assertDatabaseHas('accounts', [
+            'shop_id' => $shop->id,
+            'name' => 'নগদ টাকা (Cash)',
+            'type' => 'cash',
+            'opening_balance' => 0,
+            'current_balance' => 0,
+            'is_default' => false,
+            'status' => 'active',
+        ]);
+
+        $this->assertNotNull($shop->cashAccount);
+        $this->assertEquals('নগদ টাকা (Cash)', $shop->cashAccount->name);
+        $this->assertEquals(0, (float) $shop->cashAccount->current_balance);
+        $this->assertFalse($shop->cashAccount->is_default);
+        $this->assertEquals(1, $shop->accounts()->count());
+    }
+
+    public function test_shop_creation_with_custom_cash_account_and_opening_balance(): void
+    {
+        $user = $this->createSuperAdmin();
+        Role::firstOrCreate(['name' => 'Shop Owner', 'guard_name' => 'web']);
+
+        $response = $this->actingAs($user)->post(route('shops.store'), [
+            'name' => 'Custom Cash Shop',
+            'slug' => 'custom-cash-shop',
+            'phone' => '01755667788',
+            'address' => 'Uttara, Dhaka',
+            'status' => 'active',
+            'features' => ['sales', 'accounts'],
+            'admin_name' => 'Custom Admin',
+            'admin_email' => 'customadmin@customcash.test',
+            'admin_password' => 'Secret12345!',
+            'admin_password_confirmation' => 'Secret12345!',
+            'admin_role' => 'Shop Owner',
+            'cash_account_name' => 'প্রধান ক্যাশ ড্রয়ার',
+            'cash_opening_balance' => 15000,
+        ]);
+
+        $response->assertRedirect(route('shops.index'));
+
+        $shop = Shop::where('slug', 'custom-cash-shop')->firstOrFail();
+
+        $this->assertDatabaseHas('accounts', [
+            'shop_id' => $shop->id,
+            'name' => 'প্রধান ক্যাশ ড্রয়ার',
+            'type' => 'cash',
+            'opening_balance' => 15000,
+            'current_balance' => 15000,
+            'is_default' => false,
+            'status' => 'active',
+        ]);
+
+        $this->assertDatabaseHas('account_transactions', [
+            'shop_id' => $shop->id,
+            'account_id' => $shop->cashAccount->id,
+            'type' => 'in',
+            'amount' => 15000,
+            'source' => 'opening_balance',
+        ]);
+
+        $this->assertEquals(15000, (float) $shop->cashAccount->current_balance);
+    }
 }

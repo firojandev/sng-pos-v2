@@ -152,6 +152,25 @@
             <path d="m19 12-7 7-7-7M12 19V5" />
             @break
 
+        @case('arrow-left-right')
+        @case('arrow-right-left')
+            <path d="m16 3 4 4-4 4" />
+            <path d="M20 7H4" />
+            <path d="m8 21-4-4 4-4" />
+            <path d="M4 17h16" />
+            @break
+
+        @case('rotate-ccw')
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <path d="M3 3v5h5" />
+            @break
+
+        @case('receipt')
+            <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" />
+            <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
+            <path d="M12 17.5v-11" />
+            @break
+
         @case('chevron-left')
             <path d="m15 18-6-6 6-6" />
             @break

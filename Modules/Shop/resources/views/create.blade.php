@@ -335,7 +335,52 @@
                             </div>
                         </div>
 
-                        {{-- Card 3: Subscription Package & Duration --}}
+                        {{-- Card 3: Initial Cash Account Setup --}}
+                        <div class="panel" style="margin-top:0;">
+                            <div class="panel-head" style="padding:14px 18px;">
+                                <div class="panel-title" style="display:flex; align-items:center; gap:8px; font-size:15px;">
+                                    <x-core::icon name="wallet" size="18" style="color:var(--teal-800);" />
+                                    <span class="bn">প্রাথমিক ক্যাশ অ্যাকাউন্ট</span>
+                                    <span class="en" style="display:none;">Initial Cash Account</span>
+                                </div>
+                            </div>
+                            <div class="panel-body" style="padding:18px;">
+                                <div class="helper" style="background:var(--blue-100); color:var(--blue-ink); border:1px solid var(--blue-ic-bg); margin-top:0; margin-bottom:14px; padding:10px 14px; border-radius:8px; font-size:12.5px;">
+                                    <span class="bn">দোকান তৈরির সাথে সাথে একটি প্রধান ক্যাশ অ্যাকাউন্ট স্বয়ংক্রিয়ভাবে তৈরি হবে (ব্যবহারকারী নিজে কোনো ক্যাশ অ্যাকাউন্ট তৈরি করতে পারেন না)। আপনি চাইলে নাম ও প্রারম্ভিক ক্যাশ ব্যালেন্স নির্ধারণ করতে পারেন।</span>
+                                    <span class="en" style="display:none;">A primary cash account is automatically created for this shop (users cannot create cash accounts). You can optionally configure its name and opening balance.</span>
+                                </div>
+
+                                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
+                                    <div>
+                                        <x-core::input
+                                            name="cash_account_name"
+                                            id="shop-cash-name-input"
+                                            label="ক্যাশ অ্যাকাউন্টের নাম"
+                                            label-en="Cash Account Name"
+                                            icon="wallet"
+                                            placeholder="যেমন: নগদ টাকা (Cash)"
+                                            :value="old('cash_account_name', 'নগদ টাকা (Cash)')"
+                                        />
+                                    </div>
+                                    <div>
+                                        <x-core::input
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            name="cash_opening_balance"
+                                            id="shop-cash-balance-input"
+                                            label="প্রারম্ভিক ব্যালেন্স (টাকা)"
+                                            label-en="Opening Balance (৳)"
+                                            icon="coins"
+                                            placeholder="0.00"
+                                            :value="old('cash_opening_balance', '0')"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Card 4: Subscription Package & Duration --}}
                         <div class="panel" style="margin-top:0;">
                             <div class="panel-head" style="padding:14px 18px;">
                                 <div class="panel-title" style="display:flex; align-items:center; gap:8px; font-size:15px;">
@@ -609,6 +654,27 @@
                                     </div>
                                 </div>
 
+                                {{-- Cash Account Preview section --}}
+                                <div id="preview-cash-section" style="margin-bottom:14px; padding-top:12px; border-top:1px dashed var(--border);">
+                                    <div style="font-size:11px; font-weight:700; color:var(--ink-500); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">
+                                        <span class="bn">ডিফল্ট ক্যাশ অ্যাকাউন্ট</span>
+                                        <span class="en" style="display:none;">Default Cash Account</span>
+                                    </div>
+                                    <div style="background:var(--paper); border-radius:8px; border:1px solid var(--border); padding:8px 10px; display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                                        <div style="min-width:0;">
+                                            <div id="preview-cash-name" style="font-weight:700; font-size:12.5px; color:var(--ink-900); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                                {{ old('cash_account_name', 'নগদ টাকা (Cash)') }}
+                                            </div>
+                                            <div id="preview-cash-balance" style="font-size:10.5px; color:var(--ink-500); margin-top:2px;">
+                                                প্রারম্ভিক ব্যালেন্স: ৳<span id="preview-cash-amount">{{ number_format((float) old('cash_opening_balance', 0), 2) }}</span>
+                                            </div>
+                                        </div>
+                                        <x-core::badge color="green" size="xs">
+                                            সক্রিয়
+                                        </x-core::badge>
+                                    </div>
+                                </div>
+
                                 {{-- Feature tags preview --}}
                                 <div style="font-size:11.5px; font-weight:700; color:var(--ink-700); margin-bottom:6px;">
                                     <span class="bn">সক্রিয় মডিউলসমূহ:</span>
@@ -627,7 +693,7 @@
                                 href="{{ route('shops.index') }}"
                                 variant="outline"
                                 color="secondary"
-                                size="md"
+                                size="sm"
                                 icon="arrow-left"
                                 style="flex:1; justify-content:center;"
                             >
@@ -638,8 +704,8 @@
                             <x-core::button
                                 type="submit"
                                 variant="solid"
-                                color="gold"
-                                size="md"
+                                color="primary"
+                                size="sm"
                                 icon="save"
                                 id="btn-submit-shop"
                                 style="flex:1.4; justify-content:center;"
@@ -832,6 +898,16 @@
 
             $(document).on('input', '#shop-address-input', function () {
                 $('#preview-shop-address').text($(this).val() || 'ঠিকানা দেওয়া হয়নি');
+            });
+
+            // 4.1 Live Cash Account Updates
+            $(document).on('input', '#shop-cash-name-input', function () {
+                $('#preview-cash-name').text($(this).val() || 'নগদ টাকা (Cash)');
+            });
+
+            $(document).on('input', '#shop-cash-balance-input', function () {
+                var val = parseFloat($(this).val()) || 0;
+                $('#preview-cash-amount').text(val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
             });
 
             // 5. Live Admin Info Updates

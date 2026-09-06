@@ -6,6 +6,7 @@ use App\DataTables\BaseDataTable;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Illuminate\Support\Facades\Blade;
 use Modules\Customer\Models\Customer;
+use Modules\Sales\Models\Sale;
 use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
 use Yajra\DataTables\Html\Column;
@@ -175,6 +176,25 @@ class CustomersDataTable extends BaseDataTable
                 $query->orderBy('customers.status', $order);
             })
             ->rawColumns(['name', 'contact', 'address', 'sales_summary', 'due_breakdown', 'last_sale', 'status', 'action'])
+            ->with('metrics', function () {
+                $openingDueSum = (float) Customer::sum('opening_due');
+                $salesDueSum = (float) Sale::whereNotNull('customer_id')->sum('due_amount');
+                $totalSalesAmount = round((float) Sale::whereNotNull('customer_id')->sum('total'), 2);
+                $totalSalesCount = Sale::whereNotNull('customer_id')->count();
+
+                return [
+                    'totalCustomers' => Customer::count(),
+                    'activeCustomers' => Customer::where('status', 'active')->count(),
+                    'totalDue' => round($openingDueSum + $salesDueSum, 2),
+                    'dueCustomersCount' => Customer::where(function ($q) {
+                        $q->where('opening_due', '>', 0)
+                            ->orWhereHas('sales', fn ($sq) => $sq->where('due_amount', '>', 0));
+                    })->count(),
+                    'totalSalesAmount' => $totalSalesAmount,
+                    'totalSalesCount' => $totalSalesCount,
+                    'paidTotal' => max(0, round($totalSalesAmount - $salesDueSum, 2)),
+                ];
+            })
             ->setRowId('id');
     }
 
