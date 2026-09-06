@@ -22,6 +22,9 @@ class UsersDataTable extends BaseDataTable
             ->editColumn('name', function (User $user) {
                 $initial = mb_strtoupper(mb_substr($user->name ?: 'U', 0, 1));
                 $code = '<span style="font-size:11px; font-family:var(--font-mono, monospace); color:var(--ink-400);">#USR-'.str_pad((string) $user->id, 4, '0', STR_PAD_LEFT).'</span>';
+                if ($user->username) {
+                    $code .= ' &middot; <span style="font-size:11px; font-family:var(--font-mono, monospace); font-weight:600; color:var(--teal-ink);">@'.e($user->username).'</span>';
+                }
 
                 $badges = '';
                 if ($user->id === auth()->id()) {
@@ -54,6 +57,13 @@ class UsersDataTable extends BaseDataTable
                     .'<span>'.e($user->email).'</span>'
                     .'</a>';
 
+                $phoneHtml = '';
+                if ($user->phone) {
+                    $phoneHtml = '<div style="font-size:11.5px; color:var(--ink-600); font-family:var(--font-mono, monospace); margin-top:2px; display:inline-flex; align-items:center; gap:4px;">'
+                        .'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>'
+                        .'<span>'.e($user->phone).'</span></div>';
+                }
+
                 if ($user->email_verified_at) {
                     $statusBadge = '<span style="display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; padding:1px 6px; border-radius:4px; background:var(--green-100); color:var(--green-ink); margin-top:3px;">'
                         .'<span style="width:6px; height:6px; border-radius:50%; background:currentColor;"></span>'
@@ -66,7 +76,7 @@ class UsersDataTable extends BaseDataTable
                         .'</span>';
                 }
 
-                return '<div>'.$emailLink.'<div>'.$statusBadge.'</div></div>';
+                return '<div>'.$emailLink.$phoneHtml.'<div>'.$statusBadge.'</div></div>';
             })
             ->addColumn('role', function (User $user) {
                 if ($user->roles->isEmpty()) {
@@ -120,6 +130,21 @@ class UsersDataTable extends BaseDataTable
 
                 return '<div>'.($designation ?: '<div style="font-size:12px; color:var(--ink-700);">'.e($employee->name).'</div>').$subHtml.'</div>';
             })
+            ->addColumn('auth_credentials', function (User $user) {
+                $supportPin = $user->support_pin ?: '—';
+                $supportHtml = '<div style="display:inline-flex; align-items:center; gap:5px; background:var(--paper); padding:2px 8px; border-radius:6px; border:1px solid var(--border);" title="সাপোর্ট টিম পিন (৬ ডিজিট)">'
+                    .'<span style="font-size:10.5px; font-weight:700; color:var(--gold-ink);"><span class="bn">সাপোর্ট:</span><span class="en" style="display:none;">Support:</span></span>'
+                    .'<span style="font-family:var(--font-mono, monospace); font-weight:700; font-size:12px; color:var(--ink-900); letter-spacing:1px;">'.e($supportPin).'</span>'
+                    .'</div>';
+
+                $pinHtml = $user->pin
+                    ? '<div style="margin-top:3px;"><span style="display:inline-block; font-size:10px; font-weight:600; padding:1px 6px; border-radius:4px; background:var(--teal-50); color:var(--teal-ink); border:1px solid var(--teal-100);">'
+                        .'<span class="bn">৪-ডিজিট পিন সক্রিয়</span><span class="en" style="display:none;">4-Digit PIN Active</span></span></div>'
+                    : '<div style="margin-top:3px;"><span style="display:inline-block; font-size:10px; color:var(--ink-400);">'
+                        .'<span class="bn">পিন নেই</span><span class="en" style="display:none;">No PIN</span></span></div>';
+
+                return '<div>'.$supportHtml.$pinHtml.'</div>';
+            })
             ->editColumn('created_at', function (User $user) {
                 if (! $user->created_at) {
                     return '<span style="color:var(--ink-400);">—</span>';
@@ -134,7 +159,7 @@ class UsersDataTable extends BaseDataTable
             ->addColumn('action', function (User $user) {
                 return view('user::datatables-actions', compact('user'))->render();
             })
-            ->rawColumns(['name', 'email', 'role', 'employee_info', 'created_at', 'action'])
+            ->rawColumns(['name', 'email', 'role', 'employee_info', 'auth_credentials', 'created_at', 'action'])
             ->setRowId('id');
     }
 
@@ -158,7 +183,11 @@ class UsersDataTable extends BaseDataTable
                 'users.id',
                 'users.shop_id',
                 'users.name',
+                'users.username',
                 'users.email',
+                'users.phone',
+                'users.pin',
+                'users.support_pin',
                 'users.email_verified_at',
                 'users.created_at',
                 'users.updated_at',
@@ -221,6 +250,9 @@ class UsersDataTable extends BaseDataTable
             Column::computed('employee_info')
                 ->title('<span class="bn">সংযুক্ত কর্মী</span><span class="en">Linked Employee</span>')
                 ->width(180),
+            Column::computed('auth_credentials')
+                ->title('<span class="bn">পিন ও সাপোর্ট কোড</span><span class="en">PIN & Support Code</span>')
+                ->width(170),
             Column::make('created_at')
                 ->title('<span class="bn">যোগদানের তারিখ</span><span class="en">Joined Date</span>')
                 ->width(140),

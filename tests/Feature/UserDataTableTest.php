@@ -69,7 +69,9 @@ class UserDataTableTest extends TestCase
         $html = $dataTable->html();
 
         $this->assertEquals('users-data-table', $html->getTableAttribute('id'));
-        $this->assertCount(6, $dataTable->getColumns());
+        $this->assertCount(7, $dataTable->getColumns());
+        $columnData = collect($dataTable->getColumns())->pluck('data')->all();
+        $this->assertContains('auth_credentials', $columnData);
     }
 
     public function test_users_datatable_query_returns_query_builder(): void
@@ -239,5 +241,81 @@ class UserDataTableTest extends TestCase
         $this->assertDatabaseMissing('users', [
             'id' => $member->id,
         ]);
+    }
+
+    public function test_user_store_with_username_phone_and_pin_auto_generates_support_pin(): void
+    {
+        $response = $this->actingAs($this->adminUser)
+            ->postJson(route('users.store'), [
+                'name' => 'Cashier Karim',
+                'username' => 'karim_pos',
+                'email' => 'karim@usershop.test',
+                'phone' => '01799887766',
+                'password' => 'secret1234',
+                'password_confirmation' => 'secret1234',
+                'pin' => '5678',
+                'role' => 'Admin',
+            ]);
+
+        $response->assertOk();
+        $response->assertJson(['success' => true]);
+
+        $created = User::where('email', 'karim@usershop.test')->first();
+        $this->assertNotNull($created);
+        $this->assertEquals('karim_pos', $created->username);
+        $this->assertEquals('01799887766', $created->phone);
+        $this->assertNotNull($created->support_pin);
+        $this->assertEquals(6, strlen($created->support_pin));
+        $this->assertEquals('pin', $created->verifySecret('5678'));
+        $this->assertEquals('support_pin', $created->verifySecret($created->support_pin));
+    }
+
+    public function test_user_pin_must_be_exactly_4_digits(): void
+    {
+        $response = $this->actingAs($this->adminUser)
+            ->postJson(route('users.store'), [
+                'name' => 'Invalid PIN User',
+                'email' => 'badpin@usershop.test',
+                'password' => 'secret1234',
+                'password_confirmation' => 'secret1234',
+                'pin' => '123', // 3 digits instead of 4
+                'role' => 'Admin',
+            ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['pin']);
+    }
+
+    public function test_user_update_with_new_pin_and_regenerate_support_pin(): void
+    {
+        $member = User::create([
+            'name' => 'Original Staff',
+            'email' => 'staff_orig@usershop.test',
+            'password' => bcrypt('password123'),
+            'shop_id' => $this->shop->id,
+            'pin' => '1111',
+            'support_pin' => '112233',
+        ]);
+        $member->syncRoles([$this->adminRole]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->putJson(route('users.update', $member), [
+                'name' => 'Staff Updated',
+                'username' => 'staff_new',
+                'email' => 'staff_orig@usershop.test',
+                'phone' => '01811223344',
+                'pin' => '9999',
+                'role' => 'Admin',
+                'regenerate_support_pin' => true,
+            ]);
+
+        $response->assertOk();
+
+        $member->refresh();
+        $this->assertEquals('staff_new', $member->username);
+        $this->assertEquals('01811223344', $member->phone);
+        $this->assertEquals('pin', $member->verifySecret('9999'));
+        $this->assertNotEquals('112233', $member->support_pin);
+        $this->assertEquals(6, strlen($member->support_pin));
     }
 }

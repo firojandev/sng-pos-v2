@@ -90,12 +90,20 @@ class UserController extends Controller
 
         $role = $this->resolveRole($request->validated('role'));
 
-        $user = User::create([
+        $data = [
             'shop_id' => auth()->user()->shop_id,
             'name' => $request->validated('name'),
+            'username' => $request->validated('username'),
             'email' => $request->validated('email'),
+            'phone' => $request->validated('phone'),
             'password' => Hash::make($request->validated('password')),
-        ]);
+        ];
+
+        if ($request->filled('pin')) {
+            $data['pin'] = $request->validated('pin');
+        }
+
+        $user = User::create($data);
 
         setPermissionsTeamId($user->shop_id);
         $user->assignRole($role);
@@ -122,7 +130,11 @@ class UserController extends Controller
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
+                    'username' => $user->username,
                     'email' => $user->email,
+                    'phone' => $user->phone,
+                    'has_pin' => ! empty($user->pin),
+                    'support_pin' => $user->support_pin,
                     'role' => $user->roles->first()?->name ?? '',
                 ],
                 'roles' => $this->assignableRoles()->map(fn ($r) => ['id' => $r->id, 'name' => $r->name]),
@@ -140,10 +152,20 @@ class UserController extends Controller
         $role = $this->resolveRole($request->validated('role'));
 
         $user->name = $request->validated('name');
+        $user->username = $request->validated('username');
         $user->email = $request->validated('email');
+        $user->phone = $request->validated('phone');
 
         if ($request->filled('password')) {
             $user->password = Hash::make($request->validated('password'));
+        }
+
+        if ($request->filled('pin')) {
+            $user->pin = $request->validated('pin');
+        }
+
+        if ($request->boolean('regenerate_support_pin')) {
+            $user->support_pin = User::generateUniqueSupportPin();
         }
 
         $user->save();
