@@ -21,19 +21,23 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
 Route::middleware(['auth', 'feature:branches'])->group(function () {
     Route::resource('branches', BranchController::class)->except(['show'])
         ->middlewareFor(['index'], 'permission:branches.view')
-        ->middlewareFor(['create', 'store', 'edit', 'update'], 'permission:branches.write')
+        ->middlewareFor(['create', 'store'], 'permission:branches.create')
+        ->middlewareFor(['edit', 'update'], 'permission:branches.edit')
         ->middlewareFor(['destroy'], 'permission:branches.delete');
     Route::post('warehouses/{warehouse}/set-default', [WarehouseController::class, 'setDefault'])
         ->name('warehouses.set-default')
-        ->middleware('permission:branches.write');
+        ->middleware('permission:branches.edit');
     Route::resource('warehouses', WarehouseController::class)->except(['show'])
         ->middlewareFor(['index'], 'permission:branches.view')
-        ->middlewareFor(['create', 'store', 'edit', 'update'], 'permission:branches.write')
+        ->middlewareFor(['create', 'store'], 'permission:branches.create')
+        ->middlewareFor(['edit', 'update'], 'permission:branches.edit')
         ->middlewareFor(['destroy'], 'permission:branches.delete');
 });
 
 Route::middleware(['auth'])->group(function () {
     Route::get('select-shop', [ShopSelectionController::class, 'index'])->name('shops.select');
     Route::post('select-shop/{shop}', [ShopSelectionController::class, 'select'])->name('shops.switch');
-    Route::get('subscription', [SubscriptionController::class, 'show'])->name('subscription.show');
+    Route::get('subscription', [SubscriptionController::class, 'show'])
+        ->name('subscription.show')
+        ->middleware('feature:subscription');
 });

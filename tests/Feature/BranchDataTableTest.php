@@ -34,11 +34,12 @@ class BranchDataTableTest extends TestCase
         ]);
 
         Permission::firstOrCreate(['name' => 'branches.view', 'guard_name' => 'web']);
-        Permission::firstOrCreate(['name' => 'branches.write', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'branches.create', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'branches.edit', 'guard_name' => 'web']);
         Permission::firstOrCreate(['name' => 'branches.delete', 'guard_name' => 'web']);
 
         $role = Role::firstOrCreate(['name' => 'Shop Admin', 'guard_name' => 'web']);
-        $role->givePermissionTo(['branches.view', 'branches.write', 'branches.delete']);
+        $role->givePermissionTo(['branches.view', 'branches.create', 'branches.edit', 'branches.delete']);
 
         $user = User::factory()->create([
             'shop_id' => $shop->id,

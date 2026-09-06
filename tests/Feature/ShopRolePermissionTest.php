@@ -121,7 +121,7 @@ class ShopRolePermissionTest extends TestCase
             'name' => 'Manager',
             'guard_name' => 'web',
         ]);
-        $managerB->syncPermissions(['sales.view', 'sales.write', 'sales.delete']);
+        $managerB->syncPermissions(['sales.view', 'sales.create', 'sales.delete']);
 
         $this->assertNotEquals($managerA->id, $managerB->id);
         $this->assertCount(1, $managerA->permissions);
@@ -178,7 +178,7 @@ class ShopRolePermissionTest extends TestCase
         // 1. Create custom role
         $createResponse = $this->post(route('roles.store'), [
             'name' => 'Cashier',
-            'permissions' => ['sales.view', 'sales.write'],
+            'permissions' => ['sales.view', 'sales.create'],
         ]);
         $createResponse->assertRedirect(route('roles.index'));
 
@@ -231,5 +231,43 @@ class ShopRolePermissionTest extends TestCase
 
         $deleteResponse = $this->delete(route('roles.destroy', $adminRoleB));
         $deleteResponse->assertNotFound();
+    }
+
+    public function test_shop_owner_can_view_role_create_page_with_modern_permission_ui(): void
+    {
+        $this->actingAs($this->ownerA);
+
+        $response = $this->get(route('roles.create'));
+
+        $response->assertOk();
+        $response->assertSee('পারমিশন নির্বাচন অগ্রগতি');
+        $response->assertSee('কুইক পারমিশন টেমপ্লেট');
+        $response->assertSee('বিক্রয় ও গ্রাহক সেবা');
+        $response->assertSee('পণ্য ও ইনভেন্টরি');
+        $response->assertSee('হিসাব ও অর্থায়ন');
+        $response->assertSee('প্রশাসন ও অডিট');
+        $response->assertSee('data-preset="cashier"', false);
+        $response->assertSee('data-preset="inventory"', false);
+        $response->assertSee('data-preset="accountant"', false);
+    }
+
+    public function test_shop_owner_can_view_role_edit_page_with_assigned_permissions(): void
+    {
+        $this->actingAs($this->ownerA);
+
+        $role = Role::query()->create([
+            'shop_id' => $this->shopA->id,
+            'name' => 'Manager',
+            'guard_name' => 'web',
+        ]);
+        $role->syncPermissions(['sales.view', 'sales.create']);
+
+        $response = $this->get(route('roles.edit', $role));
+
+        $response->assertOk();
+        $response->assertSee('Manager');
+        $response->assertSee('value="sales.view"', false);
+        $response->assertSee('value="sales.create"', false);
+        $response->assertSee('role-floating-footer');
     }
 }

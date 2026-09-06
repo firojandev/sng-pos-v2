@@ -44,9 +44,11 @@
                 <span class="en" style="display:none;">Reset</span>
             </x-core::button>
         </div>
-        <x-core::button :href="route('products.create')" size="sm" color="primary" icon="plus">
-            <span class="bn">নতুন পণ্য</span><span class="en">New Product</span>
-        </x-core::button>
+        @can('products.create')
+            <x-core::button :href="route('products.create')" size="sm" color="primary" icon="plus">
+                <span class="bn">নতুন পণ্য</span><span class="en">New Product</span>
+            </x-core::button>
+        @endcan
     </div>
 
     <div class="table-container table-teal">

@@ -227,9 +227,13 @@
 
     <div class="shop-select-footer">
         <div style="display:flex; align-items:center; gap:8px;">
-            <div style="width:26px; height:26px; border-radius:50%; background:var(--ink-100); color:var(--ink-700); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:11px;">
-                {{ mb_substr($user->name ?? '?', 0, 1) }}
-            </div>
+            @if ($user?->avatar_url)
+                <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" style="width:26px; height:26px; border-radius:50%; object-fit:cover; flex-shrink:0;">
+            @else
+                <div style="width:26px; height:26px; border-radius:50%; background:var(--ink-100); color:var(--ink-700); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:11px; flex-shrink:0;">
+                    {{ mb_substr($user->name ?? '?', 0, 1) }}
+                </div>
+            @endif
             <div>
                 <span style="font-weight:600; color:var(--ink-800);">{{ $user->name ?? 'User' }}</span>
                 <span style="color:var(--ink-400); font-size:11px;">({{ $user->email ?? '' }})</span>

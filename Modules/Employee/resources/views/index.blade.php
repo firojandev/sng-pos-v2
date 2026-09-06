@@ -145,16 +145,18 @@
             </x-core::button>
         </div>
 
-        <x-core::button
-            type="button"
-            color="primary"
-            size="sm"
-            icon="plus"
-            id="btn-open-create-employee-modal"
-        >
-            <span class="bn">নতুন কর্মচারী</span>
-            <span class="en" style="display:none;">New Employee</span>
-        </x-core::button>
+        @can('employees.create')
+            <x-core::button
+                type="button"
+                color="primary"
+                size="sm"
+                icon="plus"
+                id="btn-open-create-employee-modal"
+            >
+                <span class="bn">নতুন কর্মচারী</span>
+                <span class="en" style="display:none;">New Employee</span>
+            </x-core::button>
+        @endcan
     </div>
 
     {{-- DataTable Container --}}

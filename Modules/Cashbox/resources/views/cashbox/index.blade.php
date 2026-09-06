@@ -13,14 +13,18 @@
         <div class="ttl en" style="display:none;">Cashbox</div>
 
         <div class="actions">
+            @can('cashbox.cash-in')
             <button type="button" class="btn btn-green" onclick="openModal('cashInModal')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.2" stroke="#fff" stroke-width="1.7"/><path d="M12 8v8M8 12h8" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/></svg>
                 <span class="bn">ক্যাশ ইন</span><span class="en">Cash In</span>
             </button>
+            @endcan
+            @can('cashbox.cash-out')
             <button type="button" class="btn btn-red" onclick="openModal('cashOutModal')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.2" stroke="#fff" stroke-width="1.7"/><path d="M8 12h8" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/></svg>
                 <span class="bn">ক্যাশ আউট</span><span class="en">Cash Out</span>
             </button>
+            @endcan
         </div>
     </div>
 
@@ -144,6 +148,7 @@
     </div>
 
     {{-- Cash In modal --}}
+    @can('cashbox.cash-in')
     <div class="modal-backdrop @if ($errors->any() && old('cash_form') === 'in') open @endif" id="cashInModal">
         <div class="modal-box">
             <div class="modal-head">
@@ -175,8 +180,10 @@
             </form>
         </div>
     </div>
+    @endcan
 
     {{-- Cash Out modal --}}
+    @can('cashbox.cash-out')
     <div class="modal-backdrop @if ($errors->any() && old('cash_form') === 'out') open @endif" id="cashOutModal">
         <div class="modal-box">
             <div class="modal-head">
@@ -208,4 +215,5 @@
             </form>
         </div>
     </div>
+    @endcan
 </x-core::layout>

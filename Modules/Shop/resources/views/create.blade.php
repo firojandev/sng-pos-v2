@@ -24,6 +24,7 @@
             'audit' => 'shield',
             'employees' => 'user',
             'users' => 'lock',
+            'subscription' => 'sparkles',
         ];
     @endphp
 

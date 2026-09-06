@@ -29,9 +29,11 @@
                 <span class="en" style="display:none;">Reset</span>
             </x-core::button>
         </div>
-        <x-core::button color="primary" size="sm" type="button" icon="plus" id="btn-open-create-batch-modal">
-            <span class="bn">নতুন ব্যাচ</span><span class="en">New Batch</span>
-        </x-core::button>
+        @can('products.create')
+            <x-core::button color="primary" size="sm" type="button" icon="plus" id="btn-open-create-batch-modal">
+                <span class="bn">নতুন ব্যাচ</span><span class="en">New Batch</span>
+            </x-core::button>
+        @endcan
     </div>
 
     <div class="table-container table-teal">

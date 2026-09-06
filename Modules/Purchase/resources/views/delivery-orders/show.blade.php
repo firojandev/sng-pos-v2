@@ -34,16 +34,21 @@
                 <span class="bn">তালিকায় ফিরে যান</span>
             </x-core::button>
 
+            @can('purchase.print')
             <x-core::button size="sm" variant="secondary" href="{{ route('purchase-delivery-orders.print', $order) }}" target="_blank" icon="printer">
                 <span class="bn">প্রিন্ট / পিডিএফ</span>
             </x-core::button>
+            @endcan
 
+            @can('purchase.receive')
             @if ($order->canBeReceived())
                 <x-core::button size="sm" color="primary" href="{{ route('purchase-delivery-orders.receive', $order) }}" icon="package-check">
                     <span class="bn">পণ্য ডেলিভারি গ্রহণ</span>
                 </x-core::button>
             @endif
+            @endcan
 
+            @can('purchase.edit')
             @if ($order->canBeEdited())
                 <x-core::button size="sm" variant="secondary" href="{{ route('purchase-delivery-orders.edit', $order) }}" icon="edit">
                     <span class="bn">সম্পাদনা</span>
@@ -58,6 +63,7 @@
                     </x-core::button>
                 </form>
             @endif
+            @endcan
         </div>
     </div>
 
@@ -195,11 +201,13 @@
             <div style="font-weight:700; font-size:15px; color:var(--ink-900);" class="bn">
                 গৃহীত চালান ও স্টক আপডেটের ইতিহাস (Goods Receipts)
             </div>
+            @can('purchase.receive')
             @if ($order->canBeReceived())
                 <x-core::button size="sm" color="primary" href="{{ route('purchase-delivery-orders.receive', $order) }}" icon="plus">
                     <span class="bn">নতুন চালান গ্রহণ করুন</span>
                 </x-core::button>
             @endif
+            @endcan
         </div>
         <div class="panel-body">
             @if ($order->receipts->count() > 0)
@@ -239,7 +247,7 @@
                                     <td><b>৳{{ number_format($receipt->total_amount, 2) }}</b></td>
                                     <td>
                                         @if ($receipt->purchase)
-                                            <a href="{{ route('purchase.ledger', ['q' => $receipt->purchase->invoice_no]) }}" style="font-weight:600; color:#2563eb; text-decoration:underline;">
+                                            <a href="{{ route('purchase.ledger', ['q' => $receipt->purchase->invoice_no]) }}" style="font-weight:600; color:var(--blue-ink); text-decoration:underline;">
                                                 #{{ $receipt->purchase->invoice_no }}
                                             </a>
                                         @else
@@ -247,7 +255,9 @@
                                         @endif
                                     </td>
                                     <td style="text-align:right;">
+                                        @can('purchase.print')
                                         <x-core::button size="sm" variant="secondary" href="{{ route('purchase-delivery-receipts.print', $receipt) }}" target="_blank" icon="printer" title="প্রিন্ট চালান" />
+                                        @endcan
                                     </td>
                                 </tr>
                             @endforeach
@@ -259,11 +269,13 @@
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--ink-400)" stroke-width="1.5" style="margin:0 auto 10px;"><rect x="1" y="3" width="15" height="13" rx="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
                     <div style="font-weight:600; font-size:15px; color:var(--ink-700); margin-bottom:4px;" class="bn">এখনও কোনো পণ্য চালান গ্রহণ করা হয়নি</div>
                     <div style="font-size:13px; color:var(--ink-400); margin-bottom:16px;" class="bn">সরবরাহকারীর পণ্য গুদামে পৌঁছালে "পণ্য ডেলিভারি গ্রহণ" বোতামে ক্লিক করে স্টক গ্রহণ করুন।</div>
+                    @can('purchase.receive')
                     @if ($order->canBeReceived())
                         <x-core::button size="sm" color="primary" href="{{ route('purchase-delivery-orders.receive', $order) }}" icon="package-check">
                             <span class="bn">পণ্য ডেলিভারি গ্রহণ শুরু করুন</span>
                         </x-core::button>
                     @endif
+                    @endcan
                 </div>
             @endif
         </div>

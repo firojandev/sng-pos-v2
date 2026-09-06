@@ -5,10 +5,13 @@ namespace Modules\Core\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Modules\Cashbox\Models\CashTransaction;
 use Modules\Customer\Models\Customer;
+use Modules\Finance\Models\Account;
 use Modules\Finance\Models\Expense;
+use Modules\Finance\Models\Income;
 use Modules\Product\Models\Batch;
 use Modules\Purchase\Models\Purchase;
 use Modules\Sales\Models\Sale;
@@ -27,27 +30,51 @@ class PageController extends Controller
 
         [$from, $to] = $this->rangeBounds($range);
 
-        $saleTotal = Sale::query()
+        $saleTotal = (float) Sale::query()
             ->when($from, fn ($q) => $q->whereDate('sale_date', '>=', $from))
             ->when($to, fn ($q) => $q->whereDate('sale_date', '<=', $to))
             ->sum('total');
 
-        $purchaseTotal = Purchase::query()
+        $purchaseTotal = (float) Purchase::query()
             ->when($from, fn ($q) => $q->whereDate('purchase_date', '>=', $from))
             ->when($to, fn ($q) => $q->whereDate('purchase_date', '<=', $to))
             ->sum('total');
 
-        $expenseTotal = Expense::query()
+        $expenseTotal = (float) Expense::query()
             ->when($from, fn ($q) => $q->whereDate('expense_date', '>=', $from))
             ->when($to, fn ($q) => $q->whereDate('expense_date', '<=', $to))
             ->sum('amount');
 
-        $balance = CashTransaction::selectRaw("SUM(CASE WHEN type = 'in' THEN amount ELSE -amount END) as balance")->value('balance') ?? 0;
+        $incomeTotal = (float) Income::query()
+            ->when($from, fn ($q) => $q->whereDate('income_date', '>=', $from))
+            ->when($to, fn ($q) => $q->whereDate('income_date', '<=', $to))
+            ->sum('amount');
 
-        $totalStockQty = Batch::sum('quantity');
+        $productProfit = (float) Sale::query()
+            ->when($from, fn ($q) => $q->whereDate('sale_date', '>=', $from))
+            ->when($to, fn ($q) => $q->whereDate('sale_date', '<=', $to))
+            ->sum(DB::raw('COALESCE(profit, 0)'));
+
+        $totalProfit = (float) ($productProfit + $incomeTotal - $expenseTotal);
+
+        $totalStockQty = (float) Batch::sum('quantity');
+
+        $totalStockValue = (float) Batch::query()
+            ->join('products', 'batches.product_id', '=', 'products.id')
+            ->sum(DB::raw('batches.quantity * products.purchase_price'));
 
         $totalReceivable = (float) Customer::sum('opening_due') + (float) Sale::sum('due_amount');
         $totalPayable = (float) Supplier::sum('opening_due') + (float) Purchase::sum('due_amount');
+
+        $totalCash = (float) Account::where('status', 'active')->where('type', 'cash')->sum('current_balance');
+        $totalBank = (float) Account::where('status', 'active')->where('type', 'bank')->sum('current_balance');
+        $totalMfs = (float) Account::where('status', 'active')->where('type', 'mfs')->sum('current_balance');
+        $totalAccountBalance = (float) Account::where('status', 'active')->sum('current_balance');
+
+        $hasAccounts = Account::where('status', 'active')->exists();
+        $balance = $hasAccounts
+            ? $totalAccountBalance
+            : (float) (CashTransaction::selectRaw("SUM(CASE WHEN type = 'in' THEN amount ELSE -amount END) as balance")->value('balance') ?? 0);
 
         return view('core::dashboard', [
             'range' => $range,
@@ -55,9 +82,16 @@ class PageController extends Controller
             'saleTotal' => $saleTotal,
             'purchaseTotal' => $purchaseTotal,
             'expenseTotal' => $expenseTotal,
+            'productProfit' => $productProfit,
+            'totalProfit' => $totalProfit,
             'totalStockQty' => $totalStockQty,
+            'totalStockValue' => $totalStockValue,
             'totalReceivable' => $totalReceivable,
             'totalPayable' => $totalPayable,
+            'totalCash' => $totalCash,
+            'totalBank' => $totalBank,
+            'totalMfs' => $totalMfs,
+            'totalAccountBalance' => $totalAccountBalance,
         ]);
     }
 

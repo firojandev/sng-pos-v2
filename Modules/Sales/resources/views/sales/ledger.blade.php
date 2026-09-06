@@ -10,23 +10,27 @@
         <div class="ttl en" style="display:none;">Transaction History</div>
 
         <div class="actions">
-            <x-core::button
-                type="button"
-                variant="secondary"
-                size="sm"
-                icon="printer"
-                id="btn-print-ledger"
-            >
-                <span class="bn">প্রিন্ট / PDF রিপোর্ট</span><span class="en" style="display:none;">Print / PDF Report</span>
-            </x-core::button>
-            <x-core::button
-                size="sm"
-                color="primary"
-                icon="plus"
-                :href="route('sales.create')"
-            >
-                <span class="bn">নতুন বিক্রয়</span><span class="en" style="display:none;">New Sale</span>
-            </x-core::button>
+            @can('sales.print')
+                <x-core::button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    icon="printer"
+                    id="btn-print-ledger"
+                >
+                    <span class="bn">প্রিন্ট / PDF রিপোর্ট</span><span class="en" style="display:none;">Print / PDF Report</span>
+                </x-core::button>
+            @endcan
+            @can('sales.create')
+                <x-core::button
+                    size="sm"
+                    color="primary"
+                    icon="plus"
+                    :href="route('sales.create')"
+                >
+                    <span class="bn">নতুন বিক্রয়</span><span class="en" style="display:none;">New Sale</span>
+                </x-core::button>
+            @endcan
         </div>
     </div>
 

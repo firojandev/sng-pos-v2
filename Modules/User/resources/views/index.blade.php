@@ -125,16 +125,18 @@
             </x-core::button>
         </div>
 
-        <x-core::button
-            type="button"
-            color="primary"
-            size="sm"
-            icon="plus"
-            id="btn-open-create-user-modal"
-        >
-            <span class="bn">নতুন ইউজার</span>
-            <span class="en" style="display:none;">New User</span>
-        </x-core::button>
+        @can('users.create')
+            <x-core::button
+                type="button"
+                color="primary"
+                size="sm"
+                icon="plus"
+                id="btn-open-create-user-modal"
+            >
+                <span class="bn">নতুন ইউজার</span>
+                <span class="en" style="display:none;">New User</span>
+            </x-core::button>
+        @endcan
     </div>
 
     {{-- DataTable Container --}}
@@ -180,6 +182,29 @@
                         :required="true"
                     />
 
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <x-core::input
+                            name="username"
+                            id="create_user_username"
+                            label="ইউজারনেম (ঐচ্ছিক)"
+                            label-en="Username (Optional)"
+                            placeholder="যেমন: sakib101"
+                            placeholder-en="e.g. sakib101"
+                            size="sm"
+                        />
+
+                        <x-core::input
+                            name="phone"
+                            id="create_user_phone"
+                            type="text"
+                            label="ফোন নম্বর (ঐচ্ছিক)"
+                            label-en="Phone Number (Optional)"
+                            placeholder="যেমন: 017xxxxxxxx"
+                            placeholder-en="e.g. 017xxxxxxxx"
+                            size="sm"
+                        />
+                    </div>
+
                     <x-core::input
                         name="email"
                         id="create_user_email"
@@ -216,6 +241,32 @@
                             size="sm"
                             :required="true"
                         />
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:start;">
+                        <x-core::input
+                            name="pin"
+                            id="create_user_pin"
+                            type="text"
+                            maxlength="4"
+                            label="ইউজার পিন (৪ সংখ্যা)"
+                            label-en="User PIN (4 Digits)"
+                            placeholder="যেমন: 1234"
+                            placeholder-en="e.g. 1234"
+                            size="sm"
+                        />
+
+                        <div style="background:var(--paper); border:1px solid var(--border); border-radius:8px; padding:8px 12px; margin-top:20px;">
+                            <div style="font-size:11px; font-weight:700; color:var(--gold-ink); display:flex; align-items:center; gap:5px;">
+                                <x-core::icon name="headphones" size="xs" />
+                                <span class="bn">সাপোর্ট পিন (৬ ডিজিট)</span>
+                                <span class="en" style="display:none;">Support PIN (6 Digits)</span>
+                            </div>
+                            <div style="font-size:10.5px; color:var(--ink-500); margin-top:2px; line-height:1.3;">
+                                <span class="bn">ইউজার তৈরিতে স্বয়ংক্রিয় ৬-ডিজিট সাপোর্ট কোড তৈরি হবে।</span>
+                                <span class="en" style="display:none;">Auto 6-digit support code will be generated upon creation.</span>
+                            </div>
+                        </div>
                     </div>
 
                     @php
@@ -302,6 +353,29 @@
                         :required="true"
                     />
 
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <x-core::input
+                            name="username"
+                            id="edit_user_username"
+                            label="ইউজারনেম (ঐচ্ছিক)"
+                            label-en="Username (Optional)"
+                            placeholder="যেমন: sakib101"
+                            placeholder-en="e.g. sakib101"
+                            size="sm"
+                        />
+
+                        <x-core::input
+                            name="phone"
+                            id="edit_user_phone"
+                            type="text"
+                            label="ফোন নম্বর (ঐচ্ছিক)"
+                            label-en="Phone Number (Optional)"
+                            placeholder="যেমন: 017xxxxxxxx"
+                            placeholder-en="e.g. 017xxxxxxxx"
+                            size="sm"
+                        />
+                    </div>
+
                     <x-core::input
                         name="email"
                         id="edit_user_email"
@@ -338,6 +412,41 @@
                     <div style="font-size:11px; color:var(--ink-500); margin-top:-6px;">
                         <span class="bn">পাসওয়ার্ড পরিবর্তন করতে না চাইলে ঘরটি খালি রাখুন।</span>
                         <span class="en" style="display:none;">Leave blank if you do not wish to change the password.</span>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:start;">
+                        <x-core::input
+                            name="pin"
+                            id="edit_user_pin"
+                            type="text"
+                            maxlength="4"
+                            label="নতুন ইউজার পিন (৪ সংখ্যা)"
+                            label-en="New User PIN (4 Digits)"
+                            placeholder="পরিবর্তন করতে ৪ ডিজিট দিন"
+                            placeholder-en="Enter 4 digits to change"
+                            size="sm"
+                        />
+
+                        <div style="background:var(--paper); border:1px solid var(--border); border-radius:8px; padding:6px 12px; margin-top:20px;">
+                            <label class="form-label" style="font-size:11px; font-weight:700; color:var(--gold-ink); margin-bottom:2px; display:flex; align-items:center; gap:4px;">
+                                <x-core::icon name="headphones" size="xs" />
+                                <span class="bn">বর্তমান সাপোর্ট পিন (৬ ডিজিট)</span>
+                                <span class="en" style="display:none;">Support PIN (6 Digits)</span>
+                            </label>
+                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                                <span id="edit_user_support_pin" style="font-family:var(--font-mono, monospace); font-weight:700; font-size:13px; color:var(--ink-900); letter-spacing:1px;">
+                                    —
+                                </span>
+                                <x-core::checkbox
+                                    name="regenerate_support_pin"
+                                    id="edit_user_regenerate_support_pin"
+                                    value="1"
+                                    size="sm"
+                                    label="নতুন কোড"
+                                    label-en="Regenerate"
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     <x-core::select
@@ -532,9 +641,14 @@
 
                         $form.attr('action', data.update_url);
                         $('#edit_user_name').val(user.name);
+                        $('#edit_user_username').val(user.username || '');
                         $('#edit_user_email').val(user.email);
+                        $('#edit_user_phone').val(user.phone || '');
                         $('#edit_user_password').val('');
                         $('#edit_user_password_confirmation').val('');
+                        $('#edit_user_pin').val('');
+                        $('#edit_user_support_pin').text(user.support_pin || '—');
+                        $('#edit_user_regenerate_support_pin').find('input[type="checkbox"]').prop('checked', false);
                         $('#edit_user_role').val(user.role);
 
                         showModal($('#editUserModal'));

@@ -319,15 +319,60 @@ $(function () {
         setLang('en');
     });
 
-    // Topbar Shop Switcher Dropdown
+    // Topbar Dropdowns (Shop Switcher & User Menu)
     $(document).on('click', '.btn-shop-switcher', function (e) {
         e.stopPropagation();
+        $('#userMenuDropdown').hide();
+        $('#userMenuBtn').attr('aria-expanded', 'false').find('.avatar-chevron').css('transform', 'none');
         $(this).siblings('.shop-switcher-menu').fadeToggle(120);
     });
+
+    $(document).on('click', '#userMenuBtn', function (e) {
+        e.stopPropagation();
+        $('.shop-switcher-menu').hide();
+        const $dropdown = $('#userMenuDropdown');
+        $dropdown.fadeToggle(120, function () {
+            const isVisible = $dropdown.is(':visible');
+            $('#userMenuBtn').attr('aria-expanded', isVisible ? 'true' : 'false')
+                .find('.avatar-chevron').css('transform', isVisible ? 'rotate(180deg)' : 'none');
+        });
+        const willBeVisible = !$dropdown.is(':visible');
+        $(this).attr('aria-expanded', willBeVisible ? 'true' : 'false')
+            .find('.avatar-chevron').css('transform', willBeVisible ? 'rotate(180deg)' : 'none');
+    });
+
     $(document).on('click', function (e) {
         if (!$(e.target).closest('.shop-switcher-dropdown').length) {
             $('.shop-switcher-menu').hide();
         }
+        if (!$(e.target).closest('.user-menu-dropdown').length) {
+            $('#userMenuDropdown').hide();
+            $('#userMenuBtn').attr('aria-expanded', 'false').find('.avatar-chevron').css('transform', 'none');
+        }
+    });
+
+    // User Menu Logout Confirmation with SweetAlert2
+    $(document).on('click', '#userMenuLogoutBtn', function (e) {
+        e.preventDefault();
+        const isEn = $('body').hasClass('lang-en');
+        const isDark = $('html').attr('data-theme') === 'dark';
+        Swal.fire({
+            title: isEn ? 'Are you sure you want to log out?' : 'আপনি কি নিশ্চিত যে লগআউট করতে চান?',
+            text: isEn ? 'Your current active session will be ended.' : 'আপনার বর্তমান লগইন সেশনটি শেষ হয়ে যাবে।',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: isEn ? 'Yes, Log Out' : 'হ্যাঁ, লগআউট করুন',
+            cancelButtonText: isEn ? 'Cancel' : 'বাতিল',
+            reverseButtons: true,
+            background: isDark ? '#111827' : '#ffffff',
+            color: isDark ? '#f8fafc' : '#0f172a',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $('#user-menu-logout-form').submit();
+            }
+        });
     });
 
     $(document).on('keydown', function (e) {
@@ -339,9 +384,12 @@ $(function () {
                 $search.trigger('focus').trigger('select');
             }
         }
-        // Escape closes sidebars/drawers/modals
+        // Escape closes sidebars/drawers/modals/dropdowns
         if (e.key === 'Escape') {
             toggleSidebar(false);
+            $('.shop-switcher-menu').hide();
+            $('#userMenuDropdown').hide();
+            $('#userMenuBtn').attr('aria-expanded', 'false').find('.avatar-chevron').css('transform', 'none');
             $('.drawer-backdrop.open, .modal-backdrop.open, .unit-modal-backdrop.open').removeClass('open');
         }
     });

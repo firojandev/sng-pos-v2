@@ -5,11 +5,17 @@ namespace Modules\Supplier\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Concerns\BelongsToShop;
+use Modules\Core\Observers\AuditObserver;
 use Modules\Purchase\Models\Purchase;
 
 class Supplier extends Model
 {
     use BelongsToShop;
+
+    protected static function booted(): void
+    {
+        static::observe(AuditObserver::class);
+    }
 
     protected $fillable = ['shop_id', 'name', 'phone', 'email', 'address', 'opening_due', 'status'];
 

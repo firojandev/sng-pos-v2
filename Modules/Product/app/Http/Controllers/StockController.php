@@ -3,91 +3,75 @@
 namespace Modules\Product\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Modules\Product\DataTables\StockDataTable;
 use Modules\Product\Http\Requests\StoreStockAdjustmentRequest;
 use Modules\Product\Models\Batch;
+use Modules\Product\Models\Brand;
+use Modules\Product\Models\Category;
 use Modules\Product\Models\Product;
 use Modules\Product\Models\StockAdjustment;
 use Modules\Product\Models\StockMovement;
 
 class StockController extends Controller
 {
-    public function index(Request $request): View
+    public function index(StockDataTable $dataTable): mixed
     {
-        $search = trim((string) $request->query('q', ''));
-        $sort = $request->query('sort', 'newest');
-        $filter = $request->query('filter', 'all');
-        $page = max((int) $request->query('page', 1), 1);
-        $perPage = 10;
+        $categories = Category::orderBy('name')->get(['id', 'name']);
+        $brands = Brand::orderBy('name')->get(['id', 'name']);
 
-        $products = Product::withSum('batches', 'quantity')
-            ->when($search !== '', fn ($q) => $q->where('name', 'like', "%{$search}%")->orWhere('sku', 'like', "%{$search}%"))
-            ->get()
-            ->map(function (Product $product) {
-                $product->stock_qty = (float) ($product->batches_sum_quantity ?? 0);
-                $product->stock_value = round($product->stock_qty * (float) $product->purchase_price, 2);
+        $totalProducts = Product::count();
+        $totalStockQty = (float) Batch::sum('quantity');
+        $totalStockValue = (float) DB::table('batches')
+            ->join('products', 'batches.product_id', '=', 'products.id')
+            ->sum(DB::raw('batches.quantity * products.purchase_price'));
 
-                return $product;
-            });
+        $outOfStockCount = Product::whereRaw('COALESCE((SELECT SUM(quantity) FROM batches WHERE batches.product_id = products.id), 0) <= 0')
+            ->count();
 
-        $allCount = $products->count();
-        $lowCount = $products->filter($this->isLowStock(...))->count();
-        $outCount = $products->filter(fn (Product $p) => $p->stock_qty <= 0)->count();
+        $lowStockCount = Product::where('alert_qty', '>', 0)
+            ->whereRaw('COALESCE((SELECT SUM(quantity) FROM batches WHERE batches.product_id = products.id), 0) > 0')
+            ->whereRaw('COALESCE((SELECT SUM(quantity) FROM batches WHERE batches.product_id = products.id), 0) <= products.alert_qty')
+            ->count();
 
-        $filtered = match ($filter) {
-            'low' => $products->filter($this->isLowStock(...)),
-            'out' => $products->filter(fn (Product $p) => $p->stock_qty <= 0),
-            default => $products,
-        };
-
-        $sorted = (match ($sort) {
-            'oldest' => $filtered->sortBy('created_at'),
-            'qty_desc' => $filtered->sortByDesc('stock_qty'),
-            'qty_asc' => $filtered->sortBy('stock_qty'),
-            default => $filtered->sortByDesc('created_at'),
-        })->values();
-
-        $paginated = new LengthAwarePaginator(
-            $sorted->forPage($page, $perPage)->values(),
-            $sorted->count(),
-            $perPage,
-            $page,
-            ['path' => $request->url(), 'query' => $request->query()]
-        );
+        $metrics = [
+            'totalProducts' => $totalProducts,
+            'totalQty' => $totalStockQty,
+            'totalValue' => $totalStockValue,
+            'lowCount' => $lowStockCount,
+            'outCount' => $outOfStockCount,
+        ];
 
         $allProducts = Product::orderBy('name')->get(['id', 'name']);
-        $batches = Batch::whereIn('product_id', $allProducts->pluck('id'))->orderByDesc('quantity')->get(['id', 'product_id', 'batch_no', 'quantity']);
+        $batches = Batch::whereIn('product_id', $allProducts->pluck('id'))
+            ->orderByDesc('quantity')
+            ->get(['id', 'product_id', 'batch_no', 'quantity']);
 
         $batchesByProduct = [];
         foreach ($batches as $batch) {
             $batchesByProduct[$batch->product_id][] = [
                 'id' => $batch->id,
-                'label' => $batch->batch_no.' ('.rtrim(rtrim(number_format($batch->quantity, 2), '0'), '.').')',
+                'label' => $batch->batch_no.' ('.rtrim(rtrim(number_format((float) $batch->quantity, 2), '0'), '.').')',
+                'quantity' => (float) $batch->quantity,
             ];
         }
 
-        return view('product::stock.index', [
-            'products' => $paginated,
-            'totalQty' => $sorted->sum('stock_qty'),
-            'totalValue' => $sorted->sum('stock_value'),
-            'allCount' => $allCount,
-            'lowCount' => $lowCount,
-            'outCount' => $outCount,
-            'search' => $search,
-            'sort' => $sort,
-            'filter' => $filter,
-            'allProducts' => $allProducts,
-            'batchesByProduct' => $batchesByProduct,
-        ]);
+        return $dataTable->render('product::stock.index', compact(
+            'metrics',
+            'categories',
+            'brands',
+            'allProducts',
+            'batchesByProduct'
+        ));
     }
 
-    public function adjust(StoreStockAdjustmentRequest $request): RedirectResponse
+    public function adjust(StoreStockAdjustmentRequest $request): JsonResponse|RedirectResponse
     {
         $data = $request->validated();
 
@@ -100,7 +84,7 @@ class StockController extends Controller
                 $after = $before + $quantity;
             } else {
                 if ($before < $quantity) {
-                    throw ValidationException::withMessages(['quantity' => 'পর্যাপ্ত স্টক নেই']);
+                    throw ValidationException::withMessages(['quantity' => 'পর্যাপ্ত স্টক নেই / Insufficient stock available in this batch']);
                 }
                 $after = $before - $quantity;
             }
@@ -132,6 +116,14 @@ class StockController extends Controller
             ]);
         });
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'স্টক সফলভাবে সমন্বয় করা হয়েছে',
+                'message_en' => 'Stock adjusted successfully',
+            ]);
+        }
+
         return redirect()->route('stock.index')->with('status', 'স্টক সফলভাবে সমন্বয় করা হয়েছে');
     }
 
@@ -152,10 +144,5 @@ class StockController extends Controller
             ->withQueryString();
 
         return view('product::stock.history', compact('movements', 'search', 'type', 'product'));
-    }
-
-    private function isLowStock(Product $product): bool
-    {
-        return $product->alert_qty > 0 && $product->stock_qty > 0 && $product->stock_qty <= $product->alert_qty;
     }
 }

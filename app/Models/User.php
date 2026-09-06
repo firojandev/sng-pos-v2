@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -12,12 +13,15 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Modules\Core\Observers\AuditObserver;
 use Modules\Employee\Models\Employee;
 use Modules\Shop\Models\Shop;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password', 'shop_id', 'email_verified_at'])]
-#[Hidden(['password', 'remember_token'])]
+#[Fillable(['name', 'username', 'email', 'phone', 'avatar', 'password', 'pin', 'support_pin', 'shop_id', 'email_verified_at'])]
+#[Hidden(['password', 'pin', 'remember_token'])]
 class User extends Authenticatable
 {
     use HasFactory, Notifiable;
@@ -25,6 +29,26 @@ class User extends Authenticatable
         assignRole as protected spatieAssignRole;
         syncRoles as protected spatieSyncRoles;
         removeRole as protected spatieRemoveRole;
+    }
+
+    /**
+     * Get the user's avatar URL.
+     */
+    protected function avatarUrl(): Attribute
+    {
+        return Attribute::make(
+            get: function (): ?string {
+                if (! $this->avatar) {
+                    return null;
+                }
+
+                if (str_starts_with($this->avatar, 'http://') || str_starts_with($this->avatar, 'https://')) {
+                    return $this->avatar;
+                }
+
+                return Storage::disk('public')->url($this->avatar);
+            }
+        );
     }
 
     /**
@@ -37,11 +61,20 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'pin' => 'hashed',
         ];
     }
 
     protected static function booted(): void
     {
+        static::observe(AuditObserver::class);
+
+        static::creating(function (User $user) {
+            if (empty($user->support_pin)) {
+                $user->support_pin = static::generateUniqueSupportPin();
+            }
+        });
+
         static::saved(function (User $user) {
             if ($user->shop_id && ! $user->isSuperAdmin()) {
                 $user->shops()->syncWithoutDetaching([
@@ -52,6 +85,66 @@ class User extends Authenticatable
                 ]);
             }
         });
+    }
+
+    /**
+     * Generate a unique 6-digit support PIN.
+     */
+    public static function generateUniqueSupportPin(): string
+    {
+        do {
+            $pin = str_pad((string) random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
+        } while (static::where('support_pin', $pin)->exists());
+
+        return $pin;
+    }
+
+    /**
+     * Find a user by email, username, or phone number.
+     */
+    public static function findByIdentifier(string $identifier): ?static
+    {
+        $identifier = trim($identifier);
+        if ($identifier === '') {
+            return null;
+        }
+
+        $cleanPhone = preg_replace('/[^0-9]/', '', $identifier);
+
+        return static::where(function ($query) use ($identifier, $cleanPhone) {
+            $query->where('email', $identifier)
+                ->orWhere('username', $identifier);
+
+            if (! empty($cleanPhone) && strlen($cleanPhone) >= 6) {
+                $query->orWhere('phone', $identifier)
+                    ->orWhere('phone', $cleanPhone);
+            }
+        })->first();
+    }
+
+    /**
+     * Check if the given secret matches the user's password, PIN, or support PIN.
+     *
+     * @return 'password'|'pin'|'support_pin'|false
+     */
+    public function verifySecret(string $secret): string|false
+    {
+        // 1. Password verification
+        if (! empty($this->password) && Hash::check($secret, $this->password)) {
+            return 'password';
+        }
+
+        // 2. User 4-digit PIN verification
+        if (! empty($this->pin) && strlen($secret) === 4 && Hash::check($secret, $this->pin)) {
+            return 'pin';
+        }
+
+        // 3. Support Team 6-digit PIN verification
+        if (! empty($this->support_pin) && strlen($secret) === 6 && hash_equals((string) $this->support_pin, $secret)) {
+            return 'support_pin';
+        }
+
+        return false;
     }
 
     /**

@@ -16,6 +16,7 @@
                 <span class="bn">মোট গ্রাহক বাকি: </span><span class="en" style="display:none;">Total Customer Due: </span>
                 <b id="total-customer-due-amount">৳{{ number_format($customerTotalDue, 2) }}</b>
             </div>
+            @can('sales.create')
             <x-core::button
                 as="a"
                 href="{{ route('sales.create') }}"
@@ -27,6 +28,7 @@
                 <span class="bn">নতুন বিক্রয়</span>
                 <span class="en" style="display:none;">New Sale</span>
             </x-core::button>
+            @endcan
         </div>
     </div>
 
