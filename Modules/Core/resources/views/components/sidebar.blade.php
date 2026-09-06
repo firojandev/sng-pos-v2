@@ -305,6 +305,9 @@ $isNavItemVisible = function (array $item, bool $groupGated, $user) {
     if (isset($item['enabled']) && ! $item['enabled']) {
         return false;
     }
+    if ($item['key'] === 'subscription') {
+        return (bool) ($user && $user->shop && $user->shop->hasFeature('subscription'));
+    }
     $gated = $item['gated'] ?? $groupGated;
     if (! $gated) {
         return true;
@@ -374,7 +377,11 @@ $isNavItemVisible = function (array $item, bool $groupGated, $user) {
 
     <div class="side-foot">
         <div class="side-user-card">
-            <div class="av">{{ mb_substr($user->name ?? '?', 0, 1) }}</div>
+            @if ($user?->avatar_url)
+                <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="av" style="object-fit:cover;">
+            @else
+                <div class="av">{{ mb_substr($user->name ?? '?', 0, 1) }}</div>
+            @endif
             <div class="user-info">
                 <div class="nm" title="{{ $user->name ?? '' }}">{{ $user->name ?? 'User' }}</div>
                 <div class="role" title="{{ $isSuperAdmin ? 'Super Admin' : ($user->shop->name ?? '') }}">

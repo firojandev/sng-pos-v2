@@ -7,10 +7,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Concerns\BelongsToShop;
+use Modules\Core\Observers\AuditObserver;
 
 class Product extends Model
 {
     use BelongsToShop;
+
+    protected static function booted(): void
+    {
+        static::observe(AuditObserver::class);
+    }
 
     protected $fillable = [
         'shop_id',

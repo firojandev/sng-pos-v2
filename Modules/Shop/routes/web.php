@@ -37,5 +37,7 @@ Route::middleware(['auth', 'feature:branches'])->group(function () {
 Route::middleware(['auth'])->group(function () {
     Route::get('select-shop', [ShopSelectionController::class, 'index'])->name('shops.select');
     Route::post('select-shop/{shop}', [ShopSelectionController::class, 'select'])->name('shops.switch');
-    Route::get('subscription', [SubscriptionController::class, 'show'])->name('subscription.show');
+    Route::get('subscription', [SubscriptionController::class, 'show'])
+        ->name('subscription.show')
+        ->middleware('feature:subscription');
 });
