@@ -36,48 +36,83 @@
     @else
         @php
             $currentPermissions = old('permissions', $rolePermissions);
-            $actionLabels = [
+            $standardActions = [
                 'view' => ['bn' => 'দেখা', 'en' => 'View'],
-                'write' => ['bn' => 'যোগ / সম্পাদনা', 'en' => 'Write'],
+                'create' => ['bn' => 'তৈরি', 'en' => 'Create'],
+                'edit' => ['bn' => 'সম্পাদনা', 'en' => 'Edit'],
                 'delete' => ['bn' => 'মুছে ফেলা', 'en' => 'Delete'],
             ];
+            $allActionLabels = \Modules\Core\Support\Permissions::actionLabels();
         @endphp
-        <div class="table-wrap" style="border:1px solid var(--border); border-radius:8px; overflow:hidden; background:var(--card);">
+        <div class="table-wrap" style="border:1px solid var(--border); border-radius:8px; overflow-x:auto; background:var(--card);">
             <table class="data-table" style="width:100%; border-collapse:collapse;">
                 <thead>
                     <tr style="background:var(--paper); border-bottom:1px solid var(--border);">
-                        <th style="padding:10px 14px; text-align:left; font-size:12px; font-weight:600; color:var(--ink-700);">
+                        <th style="padding:10px 14px; text-align:left; font-size:12px; font-weight:600; color:var(--ink-700); min-width:160px;">
                             <span class="bn">ফিচার / মডিউল</span>
                             <span class="en" style="display:none;">Feature / Module</span>
                         </th>
-                        @foreach ($actionLabels as $action => $labels)
-                            <th style="padding:10px 14px; text-align:center; font-size:12px; font-weight:600; color:var(--ink-700);">
+                        @foreach ($standardActions as $action => $labels)
+                            <th style="padding:10px 14px; text-align:center; font-size:12px; font-weight:600; color:var(--ink-700); min-width:80px;">
                                 <span class="bn">{{ $labels['bn'] }}</span>
                                 <span class="en" style="display:none;">{{ $labels['en'] }}</span>
                             </th>
                         @endforeach
+                        <th style="padding:10px 14px; text-align:left; font-size:12px; font-weight:600; color:var(--ink-700); min-width:240px;">
+                            <span class="bn">বিশেষ অ্যাকশন</span>
+                            <span class="en" style="display:none;">Special Actions</span>
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($features as $key => $labels)
+                        @php
+                            $featureActions = \Modules\Core\Support\Permissions::actionsFor($key);
+                            $specialActions = array_diff($featureActions, array_keys($standardActions));
+                        @endphp
                         <tr style="border-bottom:1px solid var(--border);">
                             <td class="cell-main" style="padding:10px 14px; font-size:13px; font-weight:500; color:var(--ink-900);">
                                 <span class="bn">{{ $labels['bn'] }}</span>
                                 <span class="en" style="display:none;">{{ $labels['en'] }}</span>
                             </td>
-                            @foreach (array_keys($actionLabels) as $action)
+                            @foreach (array_keys($standardActions) as $action)
                                 <td style="padding:10px 14px; text-align:center;">
-                                    <div style="display:inline-flex; justify-content:center;">
-                                        <x-core::checkbox
-                                            size="sm"
-                                            color="primary"
-                                            name="permissions[]"
-                                            value="{{ $key }}.{{ $action }}"
-                                            :checked="in_array(\"{$key}.{$action}\", $currentPermissions)"
-                                        />
-                                    </div>
+                                    @if (in_array($action, $featureActions))
+                                        <div style="display:inline-flex; justify-content:center;">
+                                            <x-core::checkbox
+                                                size="sm"
+                                                color="primary"
+                                                name="permissions[]"
+                                                value="{{ $key }}.{{ $action }}"
+                                                :checked="in_array(\"{$key}.{$action}\", $currentPermissions)"
+                                            />
+                                        </div>
+                                    @else
+                                        <span style="color:var(--ink-400); font-size:13px;">&mdash;</span>
+                                    @endif
                                 </td>
                             @endforeach
+                            <td style="padding:10px 14px;">
+                                @if (count($specialActions) > 0)
+                                    <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+                                        @foreach ($specialActions as $action)
+                                            <label style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:500; color:var(--ink-800); cursor:pointer; background:var(--paper); padding:4px 8px; border-radius:6px; border:1px solid var(--border); user-select:none;">
+                                                <x-core::checkbox
+                                                    size="sm"
+                                                    color="primary"
+                                                    name="permissions[]"
+                                                    value="{{ $key }}.{{ $action }}"
+                                                    :checked="in_array(\"{$key}.{$action}\", $currentPermissions)"
+                                                />
+                                                <span class="bn">{{ $allActionLabels[$action]['bn'] ?? $action }}</span>
+                                                <span class="en" style="display:none;">{{ $allActionLabels[$action]['en'] ?? $action }}</span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <span style="color:var(--ink-400); font-size:13px;">&mdash;</span>
+                                @endif
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>

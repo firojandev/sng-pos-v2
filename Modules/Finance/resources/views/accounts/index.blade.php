@@ -86,11 +86,13 @@
                     @endif
                 </form>
 
-                <div>
-                    <x-core::button color="primary" size="sm" id="btnOpenAccountModal" icon="plus">
-                        <span class="bn">নতুন অ্যাকাউন্ট</span><span class="en" style="display:none;">New Account</span>
-                    </x-core::button>
-                </div>
+                @can('accounts.create')
+                    <div>
+                        <x-core::button color="primary" size="sm" id="btnOpenAccountModal" icon="plus">
+                            <span class="bn">নতুন অ্যাকাউন্ট</span><span class="en" style="display:none;">New Account</span>
+                        </x-core::button>
+                    </div>
+                @endcan
             </div>
 
             <div class="table-wrap">
@@ -148,12 +150,16 @@
                                     @if ($item->is_default)
                                         <span style="color:#16a34a; font-weight:700; font-size:18px;" title="Default Account">✓</span>
                                     @elseif ($item->type !== 'cash')
-                                        <form method="POST" action="{{ route('accounts.set-default', $item) }}" style="display:inline;">
-                                            @csrf
-                                            <x-core::button variant="secondary" size="xs" type="submit" title="ডিফল্ট হিসেবে সেট করুন">
-                                                ডিফল্ট করুন
-                                            </x-core::button>
-                                        </form>
+                                        @can('accounts.edit')
+                                            <form method="POST" action="{{ route('accounts.set-default', $item) }}" style="display:inline;">
+                                                @csrf
+                                                <x-core::button variant="secondary" size="xs" type="submit" title="ডিফল্ট হিসেবে সেট করুন">
+                                                    ডিফল্ট করুন
+                                                </x-core::button>
+                                            </form>
+                                        @else
+                                            <span style="color:var(--text-muted); font-size:14px;">—</span>
+                                        @endcan
                                     @else
                                         <span style="color:var(--text-muted); font-size:14px;">—</span>
                                     @endif
@@ -167,15 +173,21 @@
                                 </td>
                                 <td style="text-align:right;">
                                     <div class="row-actions" style="justify-content:flex-end; gap:6px;">
-                                        <x-core::button variant="ghost" color="blue" size="xs" icon-only icon="file-text" href="{{ route('accounts.ledger', $item) }}" title="লেজার / স্টেটমেন্ট দেখুন" />
+                                        @can('accounts.view')
+                                            <x-core::button variant="ghost" color="blue" size="xs" icon-only icon="file-text" href="{{ route('accounts.ledger', $item) }}" title="লেজার / স্টেটমেন্ট দেখুন" />
+                                        @endcan
                                         @if ($item->type !== 'cash')
-                                            <x-core::button variant="ghost" color="secondary" size="xs" icon-only icon="edit" class="btn-edit-account" data-url="{{ route('accounts.edit', $item) }}" title="সম্পাদনা" />
+                                            @can('accounts.edit')
+                                                <x-core::button variant="ghost" color="secondary" size="xs" icon-only icon="edit" class="btn-edit-account" data-url="{{ route('accounts.edit', $item) }}" title="সম্পাদনা" />
+                                            @endcan
                                             @if (! $item->is_default)
-                                                <form method="POST" action="{{ route('accounts.destroy', $item) }}" class="delete-form" data-title="অ্যাকাউন্ট মুছে ফেলতে চান?" data-text="এই অ্যাকাউন্টটি স্থায়ীভাবে মুছে ফেলতে চান?" style="display:inline;">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <x-core::button variant="ghost" color="danger" size="xs" icon-only icon="trash-2" type="submit" title="মুছে ফেলুন" />
-                                                </form>
+                                                @can('accounts.delete')
+                                                    <form method="POST" action="{{ route('accounts.destroy', $item) }}" class="delete-form" data-title="অ্যাকাউন্ট মুছে ফেলতে চান?" data-text="এই অ্যাকাউন্টটি স্থায়ীভাবে মুছে ফেলতে চান?" style="display:inline;">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <x-core::button variant="ghost" color="danger" size="xs" icon-only icon="trash-2" type="submit" title="মুছে ফেলুন" />
+                                                    </form>
+                                                @endcan
                                             @endif
                                         @endif
                                     </div>

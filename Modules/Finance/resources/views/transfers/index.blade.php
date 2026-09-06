@@ -47,11 +47,13 @@
                     @endif
                 </form>
 
+                @can('account-transfers.create')
                 <div style="display:flex; align-items:center; gap:8px;">
                     <x-core::button color="primary" size="sm" id="btnOpenTransferModal" icon="plus">
                         <span class="bn">নতুন ট্রান্সফার</span><span class="en" style="display:none;">New Transfer</span>
                     </x-core::button>
                 </div>
+                @endcan
             </div>
 
             <div class="table-wrap">
@@ -96,11 +98,13 @@
                                 </td>
                                 <td style="text-align:right;">
                                     <div class="row-actions" style="justify-content:flex-end;">
+                                        @can('account-transfers.delete')
                                         <form method="POST" action="{{ route('account-transfers.destroy', $trf) }}" class="delete-form" data-title="ট্রান্সফার বাতিল করবেন?" data-text="এই ট্রান্সফারটি বাতিল করতে চান? সংশ্লিষ্ট অ্যাকাউন্টের ব্যালেন্স আগের অবস্থায় ফিরে যাবে।" style="display:inline;">
                                             @csrf
                                             @method('DELETE')
                                             <x-core::button variant="ghost" color="danger" size="xs" icon-only icon="trash-2" type="submit" title="বাতিল করুন" />
                                         </form>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>
@@ -126,6 +130,7 @@
     </div>
 
     {{-- Fund Transfer Modal --}}
+    @can('account-transfers.create')
     <div class="modal-backdrop @if ($errors->any()) open @endif" id="createTransferModal">
         <div class="modal-box" style="width:640px; max-width:95vw; max-height:90vh; overflow-y:auto;">
             <div class="modal-head">
@@ -141,6 +146,7 @@
             </form>
         </div>
     </div>
+    @endcan
 
     @push('scripts')
     <script>

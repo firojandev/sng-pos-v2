@@ -116,6 +116,7 @@
             </x-core::button>
         </div>
 
+        @can('stock.transfer')
         <x-core::button
             :href="route('stock-transfers.create')"
             size="sm"
@@ -125,6 +126,7 @@
             <span class="bn">নতুন ট্রান্সফার</span>
             <span class="en" style="display:none;">New Transfer</span>
         </x-core::button>
+        @endcan
     </div>
 
     {{-- DataTable Container --}}

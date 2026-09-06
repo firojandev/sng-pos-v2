@@ -9,17 +9,19 @@
 
     <div class="section-row" style="margin-bottom:16px; margin-top:16px;">
         <div class="filters"></div>
-        <x-core::button
-            type="button"
-            variant="solid"
-            color="primary"
-            size="sm"
-            icon="plus"
-            id="btn-open-create-branch-modal"
-        >
-            <span class="bn">নতুন শাখা</span>
-            <span class="en" style="display:none;">New Branch</span>
-        </x-core::button>
+        @can('branches.create')
+            <x-core::button
+                type="button"
+                variant="solid"
+                color="primary"
+                size="sm"
+                icon="plus"
+                id="btn-open-create-branch-modal"
+            >
+                <span class="bn">নতুন শাখা</span>
+                <span class="en" style="display:none;">New Branch</span>
+            </x-core::button>
+        @endcan
     </div>
 
     <div class="table-container table-teal">

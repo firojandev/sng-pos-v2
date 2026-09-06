@@ -148,10 +148,12 @@
             </x-core::button>
         </div>
 
-        <x-core::button color="primary" size="sm" type="button" icon="plus" id="btn-open-create-expense-modal">
-            <span class="bn">নতুন ব্যয়</span>
-            <span class="en" style="display:none;">New Expense</span>
-        </x-core::button>
+        @can('expense.create')
+            <x-core::button color="primary" size="sm" type="button" icon="plus" id="btn-open-create-expense-modal">
+                <span class="bn">নতুন ব্যয়</span>
+                <span class="en" style="display:none;">New Expense</span>
+            </x-core::button>
+        @endcan
     </div>
 
     <div class="table-container">

@@ -178,6 +178,7 @@
         <span class="en" style="display:none;">Close</span>
     </x-core::button>
 
+    @can('stock.transfer')
     <div style="display:flex; align-items:center; gap:8px;">
         @if ($transfer->status === 'pending')
             <form method="POST" action="{{ route('stock-transfers.approve', $transfer) }}" class="inline-drawer-action-form" style="display:inline;">
@@ -244,4 +245,5 @@
             </form>
         @endif
     </div>
+    @endcan
 </div>

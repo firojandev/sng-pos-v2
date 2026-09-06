@@ -125,16 +125,18 @@
             </x-core::button>
         </div>
 
-        <x-core::button
-            type="button"
-            color="primary"
-            size="sm"
-            icon="plus"
-            id="btn-open-create-user-modal"
-        >
-            <span class="bn">নতুন ইউজার</span>
-            <span class="en" style="display:none;">New User</span>
-        </x-core::button>
+        @can('users.create')
+            <x-core::button
+                type="button"
+                color="primary"
+                size="sm"
+                icon="plus"
+                id="btn-open-create-user-modal"
+            >
+                <span class="bn">নতুন ইউজার</span>
+                <span class="en" style="display:none;">New User</span>
+            </x-core::button>
+        @endcan
     </div>
 
     {{-- DataTable Container --}}

@@ -11,15 +11,18 @@
         <div class="panel-body">
             <div class="section-row">
                 <div class="filters"></div>
+                @can('expense.create')
                 <x-core::button color="primary" type="button" icon="plus" id="btn-open-create-expense-category-modal">
                     <span class="bn">নতুন ক্যাটাগরি</span><span class="en">New Category</span>
                 </x-core::button>
+                @endcan
             </div>
 
             <div class="mini-grid">
                 @forelse ($expenseCategories as $expenseCategory)
                     <div class="mini-card pm-card">
                         <div class="mini-card-actions">
+                            @can('expense.edit')
                             <button
                                 type="button"
                                 class="act btn-edit-expense-category"
@@ -31,6 +34,8 @@
                             >
                                 <x-core::icon name="edit" size="14" />
                             </button>
+                            @endcan
+                            @can('expense.delete')
                             <form method="POST" action="{{ route('expense-categories.destroy', $expenseCategory) }}" class="delete-form">
                                 @csrf
                                 @method('DELETE')
@@ -38,6 +43,7 @@
                                     <x-core::icon name="trash-2" size="14" class="text-danger" />
                                 </button>
                             </form>
+                            @endcan
                         </div>
                         <div class="nm">{{ $expenseCategory->name }}</div>
                         <div class="sub">{{ $expenseCategory->sub_categories_count }} সাব-ক্যাটাগরি &middot; {{ $expenseCategory->expenses_count }} ব্যয়</div>
@@ -60,6 +66,7 @@
     </div>
 
     {{-- Create Expense Category Modal --}}
+    @can('expense.create')
     <div class="modal-backdrop @if ($errors->any() && old('_method') !== 'PUT') open @endif" id="createExpenseCategoryModal" style="z-index:999;">
         <div class="modal-box" style="width:480px; max-width:95vw; max-height:90vh; overflow-y:auto; padding:24px; border-radius:16px;">
             <div class="modal-head" style="margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
@@ -105,8 +112,10 @@
             </form>
         </div>
     </div>
+    @endcan
 
     {{-- Edit Expense Category Modal --}}
+    @can('expense.edit')
     <div class="modal-backdrop @if ($errors->any() && old('_method') === 'PUT') open @endif" id="editExpenseCategoryModal" style="z-index:999;">
         <div class="modal-box" style="width:480px; max-width:95vw; max-height:90vh; overflow-y:auto; padding:24px; border-radius:16px;">
             <div class="modal-head" style="margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
@@ -153,6 +162,7 @@
             </form>
         </div>
     </div>
+    @endcan
 
     @push('scripts')
     <script>

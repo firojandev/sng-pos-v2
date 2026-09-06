@@ -11,17 +11,17 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/settings', [PageController::class, 'settings'])->name('settings.index');
     Route::prefix('due-ledger')->name('due-ledger.')->group(function () {
         Route::get('/', [DueLedgerController::class, 'index'])->name('index');
-        Route::get('/sales', [DueLedgerController::class, 'sales'])->name('sales');
-        Route::get('/sell', [DueLedgerController::class, 'sales'])->name('sell');
-        Route::get('/customer', [DueLedgerController::class, 'sales'])->name('customer');
-        Route::get('/purchase', [DueLedgerController::class, 'purchase'])->name('purchase');
-        Route::get('/supplier', [DueLedgerController::class, 'purchase'])->name('supplier');
-        Route::get('/customers/{customer}/details', [DueLedgerController::class, 'customerDetails'])->name('customer.details');
-        Route::get('/suppliers/{supplier}/details', [DueLedgerController::class, 'supplierDetails'])->name('supplier.details');
-        Route::get('/customers/{customer}/payment-modal', [DueLedgerController::class, 'customerPaymentModal'])->name('customer.payment-modal');
-        Route::post('/customers/{customer}/payment', [DueLedgerController::class, 'storeCustomerPayment'])->name('customer.payment.store');
-        Route::get('/suppliers/{supplier}/payment-modal', [DueLedgerController::class, 'supplierPaymentModal'])->name('supplier.payment-modal');
-        Route::post('/suppliers/{supplier}/payment', [DueLedgerController::class, 'storeSupplierPayment'])->name('supplier.payment.store');
+        Route::get('/sales', [DueLedgerController::class, 'sales'])->name('sales')->middleware('permission:customers.view');
+        Route::get('/sell', [DueLedgerController::class, 'sales'])->name('sell')->middleware('permission:customers.view');
+        Route::get('/customer', [DueLedgerController::class, 'sales'])->name('customer')->middleware('permission:customers.view');
+        Route::get('/purchase', [DueLedgerController::class, 'purchase'])->name('purchase')->middleware('permission:suppliers.view');
+        Route::get('/supplier', [DueLedgerController::class, 'purchase'])->name('supplier')->middleware('permission:suppliers.view');
+        Route::get('/customers/{customer}/details', [DueLedgerController::class, 'customerDetails'])->name('customer.details')->middleware('permission:customers.view');
+        Route::get('/suppliers/{supplier}/details', [DueLedgerController::class, 'supplierDetails'])->name('supplier.details')->middleware('permission:suppliers.view');
+        Route::get('/customers/{customer}/payment-modal', [DueLedgerController::class, 'customerPaymentModal'])->name('customer.payment-modal')->middleware('permission:customers.payment');
+        Route::post('/customers/{customer}/payment', [DueLedgerController::class, 'storeCustomerPayment'])->name('customer.payment.store')->middleware('permission:customers.payment');
+        Route::get('/suppliers/{supplier}/payment-modal', [DueLedgerController::class, 'supplierPaymentModal'])->name('supplier.payment-modal')->middleware('permission:suppliers.payment');
+        Route::post('/suppliers/{supplier}/payment', [DueLedgerController::class, 'storeSupplierPayment'])->name('supplier.payment.store')->middleware('permission:suppliers.payment');
     });
 
     Route::middleware(['permission:audit.view', 'feature:audit'])

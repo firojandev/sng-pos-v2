@@ -121,7 +121,7 @@ class ShopRolePermissionTest extends TestCase
             'name' => 'Manager',
             'guard_name' => 'web',
         ]);
-        $managerB->syncPermissions(['sales.view', 'sales.write', 'sales.delete']);
+        $managerB->syncPermissions(['sales.view', 'sales.create', 'sales.delete']);
 
         $this->assertNotEquals($managerA->id, $managerB->id);
         $this->assertCount(1, $managerA->permissions);
@@ -178,7 +178,7 @@ class ShopRolePermissionTest extends TestCase
         // 1. Create custom role
         $createResponse = $this->post(route('roles.store'), [
             'name' => 'Cashier',
-            'permissions' => ['sales.view', 'sales.write'],
+            'permissions' => ['sales.view', 'sales.create'],
         ]);
         $createResponse->assertRedirect(route('roles.index'));
 

@@ -45,17 +45,19 @@
                 <span class="en" style="display:none;">Reset</span>
             </x-core::button>
         </div>
-        <x-core::button
-            type="button"
-            variant="solid"
-            color="primary"
-            size="sm"
-            icon="plus"
-            id="btn-open-create-warehouse-modal"
-        >
-            <span class="bn">নতুন গুদাম</span>
-            <span class="en" style="display:none;">New Warehouse</span>
-        </x-core::button>
+        @can('branches.create')
+            <x-core::button
+                type="button"
+                variant="solid"
+                color="primary"
+                size="sm"
+                icon="plus"
+                id="btn-open-create-warehouse-modal"
+            >
+                <span class="bn">নতুন গুদাম</span>
+                <span class="en" style="display:none;">New Warehouse</span>
+            </x-core::button>
+        @endcan
     </div>
 
     <div class="table-container table-teal">

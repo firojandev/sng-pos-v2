@@ -65,13 +65,16 @@ class PurchaseDeliveryOrderFeatureTest extends TestCase
             $this->shop->subscribe($standardPlan);
         }
 
+        setPermissionsTeamId($this->shop->id);
+
         $this->user = User::create([
             'name' => 'Test Admin',
             'email' => 'admin@test.com',
             'password' => Hash::make('password'),
             'shop_id' => $this->shop->id,
         ]);
-        $this->user->syncRoles([$adminRole]);
+        $shopAdminRole = Role::where('shop_id', $this->shop->id)->where('name', 'Admin')->first() ?? $adminRole;
+        $this->user->syncRoles([$shopAdminRole]);
 
         $branch = Branch::create([
             'shop_id' => $this->shop->id,

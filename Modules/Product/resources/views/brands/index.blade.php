@@ -11,33 +11,39 @@
         <div class="panel-body">
             <div class="section-row">
                 <div class="filters"></div>
-                <x-core::button color="primary" size="sm" type="button" icon="plus" id="btn-open-create-brand-modal">
-                    <span class="bn">নতুন ব্র্যান্ড</span><span class="en">New Brand</span>
-                </x-core::button>
+                @can('products.create')
+                    <x-core::button color="primary" size="sm" type="button" icon="plus" id="btn-open-create-brand-modal">
+                        <span class="bn">নতুন ব্র্যান্ড</span><span class="en">New Brand</span>
+                    </x-core::button>
+                @endcan
             </div>
 
             <div class="mini-grid">
                 @forelse ($brands as $brand)
                     <div class="mini-card pm-card">
                         <div class="mini-card-actions">
-                            <button
-                                type="button"
-                                class="act btn-edit-brand"
-                                title="Edit"
-                                data-id="{{ $brand->id }}"
-                                data-name="{{ $brand->name }}"
-                                data-description="{{ $brand->description }}"
-                                data-action="{{ route('brands.update', $brand) }}"
-                            >
-                                <x-core::icon name="edit" size="14" />
-                            </button>
-                            <form method="POST" action="{{ route('brands.destroy', $brand) }}" class="delete-form">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="act" title="Delete">
-                                    <x-core::icon name="trash-2" size="14" class="text-danger" />
+                            @can('products.edit')
+                                <button
+                                    type="button"
+                                    class="act btn-edit-brand"
+                                    title="Edit"
+                                    data-id="{{ $brand->id }}"
+                                    data-name="{{ $brand->name }}"
+                                    data-description="{{ $brand->description }}"
+                                    data-action="{{ route('brands.update', $brand) }}"
+                                >
+                                    <x-core::icon name="edit" size="14" />
                                 </button>
-                            </form>
+                            @endcan
+                            @can('products.delete')
+                                <form method="POST" action="{{ route('brands.destroy', $brand) }}" class="delete-form">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="act" title="Delete">
+                                        <x-core::icon name="trash-2" size="14" class="text-danger" />
+                                    </button>
+                                </form>
+                            @endcan
                         </div>
                         <div class="row-avatar">
                             <div class="av" style="background:var(--teal-800);">{{ mb_substr($brand->name, 0, 1) }}</div>

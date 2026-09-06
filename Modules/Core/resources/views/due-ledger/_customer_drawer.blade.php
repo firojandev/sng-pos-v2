@@ -89,6 +89,7 @@
 </div>
 
 <div style="margin-top:20px; padding-top:14px; border-top:1px solid var(--border); display:flex; align-items:center; gap:8px;">
+    @can('customers.payment')
     <x-core::button
         type="button"
         variant="solid"
@@ -102,6 +103,8 @@
         <span class="bn">বাকি আদায়</span>
         <span class="en" style="display:none;">Collect Due</span>
     </x-core::button>
+    @endcan
+    @can('sales.create')
     <x-core::button
         as="a"
         href="{{ route('sales.create') }}?customer_id={{ $customer->id }}"
@@ -114,6 +117,8 @@
         <span class="bn">নতুন বিক্রয়</span>
         <span class="en" style="display:none;">New Sale</span>
     </x-core::button>
+    @endcan
+    @can('customers.view')
     <x-core::button
         as="a"
         href="{{ route('customers.index') }}"
@@ -124,4 +129,5 @@
         <span class="bn">গ্রাহক তালিকা</span>
         <span class="en" style="display:none;">Customers</span>
     </x-core::button>
+    @endcan
 </div>

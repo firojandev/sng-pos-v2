@@ -1,29 +1,33 @@
 <x-core::button-group size="xs" aria-label="Sale Actions">
-    <x-core::button
-        type="button"
-        variant="soft"
-        color="secondary"
-        icon="eye"
-        icon-only
-        size="xs"
-        class="btn-view-sale"
-        data-id="{{ $sale->id }}"
-        data-url="{{ route('sales.show', $sale) }}"
-        title="বিস্তারিত / Details"
-    />
-    <x-core::button
-        type="button"
-        variant="soft"
-        color="secondary"
-        icon="printer"
-        icon-only
-        size="xs"
-        class="btn-show-sale-invoice"
-        data-id="{{ $sale->id }}"
-        data-url="{{ route('sales.invoice-modal', $sale) }}"
-        title="ইনভয়েস ও প্রিন্ট / Invoice & Print"
-    />
-    @can('sales.write')
+    @can('sales.view')
+        <x-core::button
+            type="button"
+            variant="soft"
+            color="secondary"
+            icon="eye"
+            icon-only
+            size="xs"
+            class="btn-view-sale"
+            data-id="{{ $sale->id }}"
+            data-url="{{ route('sales.show', $sale) }}"
+            title="বিস্তারিত / Details"
+        />
+    @endcan
+    @can('sales.print')
+        <x-core::button
+            type="button"
+            variant="soft"
+            color="secondary"
+            icon="printer"
+            icon-only
+            size="xs"
+            class="btn-show-sale-invoice"
+            data-id="{{ $sale->id }}"
+            data-url="{{ route('sales.invoice-modal', $sale) }}"
+            title="ইনভয়েস ও প্রিন্ট / Invoice & Print"
+        />
+    @endcan
+    @can('sales.return')
         <x-core::button
             :href="route('sale-returns.create', $sale)"
             variant="soft"
@@ -33,6 +37,8 @@
             size="xs"
             title="বিক্রয় ফেরত / Sale Return"
         />
+    @endcan
+    @can('sales.edit')
         @if ($sale->canBeEdited())
             <x-core::button
                 :href="route('sales.edit', $sale)"

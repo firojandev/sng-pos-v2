@@ -113,6 +113,7 @@
         </div>
 
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            @can('stock.adjust')
             <x-core::button
                 type="button"
                 variant="secondary"
@@ -123,7 +124,9 @@
                 <span class="bn">স্টক সমন্বয়</span>
                 <span class="en" style="display:none;">Adjust Stock</span>
             </x-core::button>
+            @endcan
 
+            @can('purchase.create')
             <x-core::button
                 :href="route('purchase.create')"
                 size="sm"
@@ -133,7 +136,9 @@
                 <span class="bn">নতুন ক্রয়</span>
                 <span class="en" style="display:none;">New Purchase</span>
             </x-core::button>
+            @endcan
 
+            @can('products.create')
             <x-core::button
                 :href="route('products.create')"
                 size="sm"
@@ -143,6 +148,7 @@
                 <span class="bn">নতুন পণ্য</span>
                 <span class="en" style="display:none;">Add Product</span>
             </x-core::button>
+            @endcan
         </div>
     </div>
 
@@ -154,6 +160,7 @@
     </div>
 
     {{-- Stock Adjustment Modal --}}
+    @can('stock.adjust')
     <div class="modal-backdrop" id="stockAdjustModal" style="z-index:999;">
         <div class="modal-box" style="width:480px; max-width:95vw; max-height:90vh; overflow-y:auto; padding:24px; border-radius:16px; background:var(--card); border:1px solid var(--border); box-shadow:var(--shadow-card);">
             <div class="modal-head" style="margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
@@ -268,6 +275,7 @@
             </form>
         </div>
     </div>
+    @endcan
 
     {{-- Stock History Modal Container --}}
     <div id="stockHistoryModalContainer"></div>

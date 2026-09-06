@@ -24,9 +24,11 @@
                 <span class="bn">সম্পূর্ণ গৃহীত: </span><span class="en" style="display:none;">Received: </span>
                 <b>{{ $summary['received_count'] }}</b>
             </div>
+            @can('purchase.create')
             <x-core::button size="sm" color="primary" href="{{ route('purchase-delivery-orders.create') }}" icon="plus">
                 <span class="bn">নতুন ডেলিভারি অর্ডার</span><span class="en" style="display:none;">New Delivery Order</span>
             </x-core::button>
+            @endcan
         </div>
     </div>
 
@@ -164,16 +166,21 @@
                                 </td>
                                 <td onclick="event.stopPropagation();" style="text-align:right;">
                                     <div style="display:inline-flex; gap:6px; align-items:center; justify-content:flex-end;">
+                                        @can('purchase.view')
                                         <x-core::button size="sm" variant="secondary" href="{{ route('purchase-delivery-orders.show', $order) }}" title="বিবরণ দেখুন">
                                             <span class="bn">বিবরণ</span><span class="en" style="display:none;">View</span>
                                         </x-core::button>
+                                        @endcan
 
+                                        @can('purchase.receive')
                                         @if ($order->canBeReceived())
                                             <x-core::button size="sm" color="primary" href="{{ route('purchase-delivery-orders.receive', $order) }}" title="পণ্য ডেলিভারি গ্রহণ">
                                                 <span class="bn">গ্রহণ</span><span class="en" style="display:none;">Receive</span>
                                             </x-core::button>
                                         @endif
+                                        @endcan
 
+                                        @can('purchase.edit')
                                         @if ($order->canBeEdited())
                                             <x-core::button size="sm" variant="secondary" href="{{ route('purchase-delivery-orders.edit', $order) }}" icon="edit" title="সম্পাদনা" />
                                         @endif
@@ -184,6 +191,7 @@
                                                 <x-core::button size="sm" color="danger" type="submit" icon="trash-2" title="অর্ডার বাতিল" />
                                             </form>
                                         @endif
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>
