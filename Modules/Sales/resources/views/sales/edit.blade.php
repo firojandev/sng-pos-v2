@@ -12,4 +12,6 @@
             @include('sales::sales._form')
         </form>
     </div>
+
+    @include('sales::sales._quick_customer_modal')
 </x-core::layout>

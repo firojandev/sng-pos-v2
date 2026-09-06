@@ -10,218 +10,485 @@
         <div class="ttl en" style="display:none;">Transaction History</div>
 
         <div class="actions">
-            <div class="total-pill">
-                <span class="bn">মোট ক্রয়: </span><span class="en" style="display:none;">Total Purchase: </span>
-                <b>৳{{ number_format($totalAmount, 2) }}</b>
-            </div>
-            <button type="button" class="btn btn-outline" onclick="printSection('purchase-list-print')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 9V3h12v6M6 18H4a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-2" stroke="#1C2B27" stroke-width="1.7" stroke-linejoin="round"/><rect x="6" y="14" width="12" height="7" stroke="#1C2B27" stroke-width="1.7" stroke-linejoin="round"/></svg>
-                <span class="bn">ডাউনলোড/প্রিন্ট</span><span class="en">Download/Print</span>
-            </button>
-            <a class="btn btn-gold" href="{{ route('purchase.create') }}">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>
-                <span class="bn">নতুন ক্রয়</span><span class="en">New Purchase</span>
-            </a>
+            @can('purchase.print')
+                <x-core::button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    icon="printer"
+                    id="btn-print-ledger"
+                >
+                    <span class="bn">প্রিন্ট / PDF রিপোর্ট</span><span class="en" style="display:none;">Print / PDF Report</span>
+                </x-core::button>
+            @endcan
+            @can('purchase.create')
+                <x-core::button
+                    size="sm"
+                    color="primary"
+                    icon="plus"
+                    :href="route('purchase.create')"
+                >
+                    <span class="bn">নতুন ক্রয়</span><span class="en" style="display:none;">New Purchase</span>
+                </x-core::button>
+            @endcan
         </div>
     </div>
 
-    <form method="GET" action="{{ route('purchase.ledger') }}" class="section-row">
-        <div class="filters">
-            <div class="search-inline">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#8B978F" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="#8B978F" stroke-width="2" stroke-linecap="round"/></svg>
-                <input type="text" name="q" value="{{ $search }}" placeholder="নাম অথবা মোবাইল দিয়ে খোঁজ করুন">
+    {{-- Executive Summary Stat Grid --}}
+    <div class="stat-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-bottom:18px; margin-top:14px;">
+        <x-core::stat-card
+            icon="shopping-bag"
+            color="teal"
+            :value="'৳' . number_format($totalAmount, 2)"
+            value-id="total-purchase-amount"
+            label="মোট ক্রয়"
+            label-en="Total Purchases"
+        />
+        <x-core::stat-card
+            icon="check-circle"
+            color="green"
+            :value="'৳' . number_format($totalPaid, 2)"
+            value-id="total-paid-amount"
+            value-color="green"
+            label="মোট পরিশোধিত"
+            label-en="Total Paid"
+        />
+        <x-core::stat-card
+            icon="alert-circle"
+            color="red"
+            :value="'৳' . number_format($totalDue, 2)"
+            value-id="total-due-amount"
+            value-color="red"
+            label="মোট বাকি"
+            label-en="Total Due"
+        />
+        <x-core::stat-card
+            icon="file-text"
+            color="blue"
+            :value="$totalCount ?? 0"
+            value-id="total-invoice-count"
+            label="মোট চালান"
+            label-en="Total Invoices"
+        />
+    </div>
+
+    <div class="section-row" style="margin-bottom:16px; margin-top:16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+        <div class="filters" style="display:flex; align-items:center; flex-wrap:nowrap; gap:8px;">
+            <div style="width:160px; flex-shrink:0;">
+                <x-core::input
+                    type="date"
+                    name="from"
+                    id="filter-from"
+                    size="sm"
+                    :no-margin="true"
+                    title="শুরুর তারিখ / From Date"
+                />
             </div>
-            <input type="date" name="from" value="{{ $from }}">
-            <input type="date" name="to" value="{{ $to }}">
-            <select name="status" onchange="this.form.submit()">
-                <option value="all" @selected($status === 'all')>সব</option>
-                <option value="paid" @selected($status === 'paid')>পরিশোধিত</option>
-                <option value="partial" @selected($status === 'partial')>আংশিক</option>
-                <option value="due" @selected($status === 'due')>বাকি</option>
-            </select>
+            <div style="width:160px; flex-shrink:0;">
+                <x-core::input
+                    type="date"
+                    name="to"
+                    id="filter-to"
+                    size="sm"
+                    :no-margin="true"
+                    title="শেষ তারিখ / To Date"
+                />
+            </div>
+            <div style="width:150px; flex-shrink:0;">
+                <x-core::select
+                    name="status"
+                    id="filter-status"
+                    size="sm"
+                    :no-margin="true"
+                >
+                    <option value="all" data-text-bn="সব অবস্থা" data-text-en="All Status">সব অবস্থা</option>
+                    <option value="paid" data-text-bn="পরিশোধিত" data-text-en="Paid">পরিশোধিত</option>
+                    <option value="partial" data-text-bn="আংশিক" data-text-en="Partial">আংশিক</option>
+                    <option value="due" data-text-bn="বাকি" data-text-en="Due">বাকি</option>
+                </x-core::select>
+            </div>
+            <x-core::button
+                type="button"
+                variant="secondary"
+                size="sm"
+                icon="rotate-ccw"
+                id="btn-reset-filters"
+                title="ফিল্টার রিসেট / Reset Filters"
+            >
+                <span class="bn">রিসেট</span>
+                <span class="en" style="display:none;">Reset</span>
+            </x-core::button>
         </div>
-        <button type="submit" class="btn btn-outline">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 12a8 8 0 0 1 13.7-5.7L20 8.5M20 4v4.5h-4.5M20 12a8 8 0 0 1-13.7 5.7L4 15.5M4 20v-4.5h4.5" stroke="#1C2B27" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <span class="bn">রিফ্রেশ</span><span class="en">Refresh</span>
-        </button>
-    </form>
 
-    <div class="panel" style="margin-top:0;" id="purchase-list-print">
-        <div class="panel-body">
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th class="bn">যোগাযোগ</th><th class="en" style="display:none;">Contact</th>
-                            <th class="bn">ইনভয়েস নং</th><th class="en" style="display:none;">Invoice No</th>
-                            <th class="bn">ব্যাচ নং</th><th class="en" style="display:none;">Batch No</th>
-                            <th class="bn">আইটেম</th><th class="en" style="display:none;">Item</th>
-                            <th class="bn">টাকার পরিমাণ</th><th class="en" style="display:none;">Amount</th>
-                            <th class="bn">তারিখ</th><th class="en" style="display:none;">Date</th>
-                            <th class="bn">পেমেন্ট অবস্থা</th><th class="en" style="display:none;">Payment Status</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($purchases as $purchase)
-                            <tr style="cursor:pointer;" onclick="openModal('purchaseDetail-{{ $purchase->id }}')">
-                                <td>
-                                    <div class="cell-main">{{ $purchase->supplier->name ?? '—' }}</div>
-                                    @if ($purchase->supplier?->phone)
-                                        <div class="cell-sub">{{ $purchase->supplier->phone }}</div>
-                                    @endif
-                                </td>
-                                <td>#{{ $purchase->invoice_no }}</td>
-                                <td>{{ $purchase->items->pluck('batch_no')->unique()->implode(', ') ?: '—' }}</td>
-                                <td>{{ rtrim(rtrim(number_format($purchase->items->sum('quantity'), 2), '0'), '.') }}</td>
-                                <td>৳{{ number_format($purchase->total, 2) }}</td>
-                                <td>{{ optional($purchase->purchase_date)->format('d M, Y') ?? '—' }}</td>
-                                <td>
-                                    @if ($purchase->payment_status === 'paid')
-                                        <span class="badge b-green bn">পরিশোধিত</span><span class="badge b-green en" style="display:none;">Paid</span>
-                                    @elseif ($purchase->payment_status === 'partial')
-                                        <span class="badge b-gold bn">আংশিক</span><span class="badge b-gold en" style="display:none;">Partial</span>
-                                    @else
-                                        <span class="badge b-red bn">বাকি</span><span class="badge b-red en" style="display:none;">Due</span>
-                                    @endif
-                                </td>
-                                <td onclick="event.stopPropagation();">
-                                    <div class="row-actions">
-                                        <button type="button" class="act" title="Details" onclick="openModal('purchaseDetail-{{ $purchase->id }}')">
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="5.5" r="1.6" fill="#5C6B65"/><circle cx="12" cy="12" r="1.6" fill="#5C6B65"/><circle cx="12" cy="18.5" r="1.6" fill="#5C6B65"/></svg>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="8"><div class="helper" style="margin-top:0;">কোনো ক্রয় নেই</div></td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-
-            <div style="margin-top:14px;">
-                {{ $purchases->links() }}
-            </div>
+        <div class="filter-actions" style="display:flex; align-items:center; gap:8px; margin-left:auto;">
+            <x-core::button
+                type="button"
+                variant="secondary"
+                size="sm"
+                icon="truck"
+                id="btn-quick-receive-by-do"
+                title="ডিও নম্বর দিয়ে খুঁজুন / Find D.O. Number"
+            >
+                <span class="bn">ডিও নম্বর দিয়ে খুঁজুন</span>
+                <span class="en" style="display:none;">Find D.O. Number</span>
+            </x-core::button>
         </div>
     </div>
 
-    @foreach ($purchases as $purchase)
-        <div class="drawer-backdrop" id="purchaseDetail-{{ $purchase->id }}">
-            <div class="drawer">
-                <div class="drawer-head">
-                    <div class="drawer-title bn">লেনদেনের বিস্তারিত</div>
-                    <div class="drawer-title en" style="display:none;">Transaction Details</div>
-                    <button type="button" class="drawer-x" onclick="closeModal('purchaseDetail-{{ $purchase->id }}')">&times;</button>
-                </div>
-
-                <button type="button" class="btn btn-outline" style="width:100%; justify-content:center; margin-bottom:16px;" onclick="printSection('purchaseDetail-{{ $purchase->id }}')">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 9V3h12v6M6 18H4a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-2" stroke="#1C2B27" stroke-width="1.7" stroke-linejoin="round"/><rect x="6" y="14" width="12" height="7" stroke="#1C2B27" stroke-width="1.7" stroke-linejoin="round"/></svg>
-                    <span class="bn">প্রিন্ট করুন</span><span class="en">Print</span>
-                </button>
-
-                <div class="tx-section">
-                    <div class="tx-row">
-                        <span class="lbl bn">মোট আইটেম</span><span class="lbl en" style="display:none;">Total Items</span>
-                        <span class="val">{{ rtrim(rtrim(number_format($purchase->items->sum('quantity'), 2), '0'), '.') }}</span>
-                    </div>
-                    <div class="tx-row">
-                        <span class="lbl bn">সাপ্লায়ার নাম</span><span class="lbl en" style="display:none;">Supplier Name</span>
-                        <span class="val row-avatar">
-                            <span class="av" style="background:var(--teal-700);">{{ mb_substr($purchase->supplier->name ?? '?', 0, 1) }}</span>
-                            {{ $purchase->supplier->name ?? '—' }}
-                        </span>
-                    </div>
-                    <div class="tx-row">
-                        <span class="lbl bn">ক্রয় তারিখ</span><span class="lbl en" style="display:none;">Purchase Date</span>
-                        <span class="val">{{ optional($purchase->purchase_date)->format('d M, Y') }} &middot; {{ $purchase->created_at->format('h:i A') }}</span>
-                    </div>
-                </div>
-
-                <div class="tx-section">
-                    <div class="tx-row strong">
-                        <span class="lbl bn">পেমেন্ট</span><span class="lbl en" style="display:none;">Payment</span>
-                        <span class="val">
-                            ৳{{ number_format($purchase->total, 2) }}
-                            @if ($purchase->payment_status === 'paid')
-                                <span class="badge b-green bn">পরিশোধিত</span><span class="badge b-green en" style="display:none;">Paid</span>
-                            @elseif ($purchase->payment_status === 'partial')
-                                <span class="badge b-gold bn">আংশিক</span><span class="badge b-gold en" style="display:none;">Partial</span>
-                            @else
-                                <span class="badge b-red bn">বাকি</span><span class="badge b-red en" style="display:none;">Due</span>
-                            @endif
-                        </span>
-                    </div>
-                    <div class="tx-row">
-                        <span class="lbl bn">মোট</span><span class="lbl en" style="display:none;">Subtotal</span>
-                        <span class="val">৳{{ number_format($purchase->subtotal, 2) }}</span>
-                    </div>
-                    <div class="tx-row">
-                        <span class="lbl bn">ডিস্কাউন্ট</span><span class="lbl en" style="display:none;">Discount</span>
-                        <span class="val">৳{{ number_format($purchase->discount, 2) }}</span>
-                    </div>
-                    <div class="tx-row">
-                        <span class="lbl bn">পরিশোধিত</span><span class="lbl en" style="display:none;">Paid</span>
-                        <span class="val">
-                            ৳{{ number_format($purchase->paid_amount, 2) }}
-                            @if ($purchase->payments->isNotEmpty())
-                                <div style="font-size:11px; font-weight:400; color:var(--ink-600); margin-top:2px;">
-                                    {{ $purchase->payments->map(fn ($p) => $p->methodLabel()['bn'].' ৳'.number_format($p->amount, 2))->implode(', ') }}
-                                </div>
-                            @endif
-                        </span>
-                    </div>
-                    <div class="tx-row">
-                        <span class="lbl bn">বাকি</span><span class="lbl en" style="display:none;">Due</span>
-                        <span class="val" style="{{ $purchase->due_amount > 0 ? 'color:var(--red-600);' : '' }}">৳{{ number_format($purchase->due_amount, 2) }}</span>
-                    </div>
-                    <div class="tx-row strong">
-                        <span class="lbl bn">সর্বমোট</span><span class="lbl en" style="display:none;">Grand Total</span>
-                        <span class="val">৳{{ number_format($purchase->total, 2) }}</span>
-                    </div>
-                </div>
-
-                <div class="drawer-title bn" style="font-size:14px; margin-bottom:10px;">পণ্য ক্রয়</div>
-                <div class="drawer-title en" style="display:none; font-size:14px; margin-bottom:10px;">Products Purchased</div>
-                <div class="tx-section">
-                    @foreach ($purchase->items as $item)
-                        <div class="tx-item">
-                            <div class="nm">{{ $item->product->name ?? '—' }}</div>
-                            <div class="meta">
-                                <span>Qty: {{ rtrim(rtrim(number_format($item->quantity, 2), '0'), '.') }}</span>
-                                <span>Price: ৳{{ number_format($item->purchase_price, 2) }}</span>
-                                <span>Total: ৳{{ number_format($item->total, 2) }}</span>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-
-                @if ($purchase->note)
-                    <div class="tx-section">
-                        <div class="lbl bn" style="margin-bottom:6px;">নোট</div>
-                        <div class="lbl en" style="display:none; margin-bottom:6px;">Notes</div>
-                        <div class="val" style="font-weight:400;">{{ $purchase->note }}</div>
-                    </div>
-                @endif
-
-                <div style="display:flex; gap:10px; margin-top:20px;">
-                    <form method="POST" action="{{ route('purchase.destroy', $purchase) }}" style="flex:1;" onsubmit="return confirm('এই ক্রয় মুছে ফেলতে চান? স্টক থেকে বিয়োগ হবে।');">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-red" style="width:100%; justify-content:center;">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                            <span class="bn">মুছে ফেলুন</span><span class="en">Delete</span>
-                        </button>
-                    </form>
-                    <a href="{{ route('purchase-returns.create', $purchase) }}" class="btn btn-outline" style="flex:1; justify-content:center;">
-                        <span class="bn">ফেরত</span><span class="en">Return</span>
-                    </a>
-                    <a href="{{ route('purchase.edit', $purchase) }}" class="btn btn-teal" style="flex:1; justify-content:center;">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                        <span class="bn">কেনাকাটা এডিট</span><span class="en">Edit Purchase</span>
-                    </a>
-                </div>
-            </div>
+    <div class="table-container table-teal" id="purchase-list-print">
+        <div class="table-responsive">
+            {!! $dataTable->table(['class' => 'app-table', 'id' => 'purchases-data-table']) !!}
         </div>
-    @endforeach
+    </div>
+
+    {{-- Purchase Detail Drawer --}}
+    <div class="drawer-backdrop" id="purchaseDetailDrawer">
+        <div class="drawer" id="purchaseDetailDrawerContent">
+            {{-- Loaded dynamically via AJAX --}}
+        </div>
+    </div>
+
+    {{-- Dynamic Receive Remaining Modal Container --}}
+    <div id="receiveModalContainer"></div>
+
+    {{-- Dynamic Receipt History Modal Container --}}
+    <div id="receiptHistoryModalContainer"></div>
+
+    {{-- Dynamic Purchase Invoice Modal Container --}}
+    <div id="invoiceModalContainer"></div>
+
+    {{-- Quick Find Purchase by D.O. Modal --}}
+    <div class="modal-backdrop" id="findPurchaseByDoModal" style="z-index:999;">
+        <div class="modal-box" style="width:460px; max-width:95vw; padding:24px; border-radius:16px; background:var(--card); border:1px solid var(--border); box-shadow:var(--shadow-card);">
+            <div class="modal-head" style="margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <div style="width:32px; height:32px; border-radius:8px; background:var(--teal-100); color:var(--teal-800); display:flex; align-items:center; justify-content:center;">
+                        <x-core::icon name="truck" size="18" />
+                    </div>
+                    <div class="modal-title" style="font-size:15px; font-weight:700; color:var(--ink-900);">
+                        <span class="bn">ডিও দিয়ে ক্রয় খুঁজুন</span>
+                        <span class="en" style="display:none;">Find Purchase by D.O.</span>
+                    </div>
+                </div>
+                <x-core::button type="button" variant="ghost" size="sm" icon="x" icon-only class="modal-close-btn" onclick="closeModal('findPurchaseByDoModal')" />
+            </div>
+
+            <form id="find-purchase-by-do-form" onsubmit="return false;">
+                <div style="margin-bottom:16px;">
+                    <x-core::input
+                        name="lookup_do_number"
+                        id="lookup_do_number"
+                        label="ডিও নম্বর বা ইনভয়েস নম্বর লিখুন *"
+                        label-en="Enter D.O. or Invoice No *"
+                        size="sm"
+                        :required="true"
+                        placeholder="যেমন: PD-001 বা PU-0032"
+                    />
+                    <div id="lookup-error-msg" style="color:var(--red-600); font-size:12px; margin-top:6px; display:none;"></div>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px;">
+                    <x-core::button type="button" variant="secondary" size="sm" onclick="closeModal('findPurchaseByDoModal')">
+                        <span class="bn">বাতিল</span>
+                        <span class="en" style="display:none;">Cancel</span>
+                    </x-core::button>
+                    <x-core::button type="submit" color="primary" size="sm" icon="search" id="btn-submit-find-do">
+                        <span class="bn">খুঁজুন ও গ্রহণ করুন</span>
+                        <span class="en" style="display:none;">Find & Receive</span>
+                    </x-core::button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @push('scripts')
+        {!! $dataTable->scripts() !!}
+
+        <script>
+        $(function () {
+            function reloadPurchaseTable() {
+                var tableId = 'purchases-data-table';
+                if (window.LaravelDataTables && window.LaravelDataTables[tableId]) {
+                    window.LaravelDataTables[tableId].ajax.reload(null, false);
+                } else if ($.fn.DataTable && $.fn.DataTable.isDataTable('#' + tableId)) {
+                    $('#' + tableId).DataTable().ajax.reload(null, false);
+                }
+            }
+
+            // Sync totals from AJAX response
+            $('#purchases-data-table').on('xhr.dt', function (e, settings, json) {
+                if (json) {
+                    if (json.totalAmount !== undefined) {
+                        $('#total-purchase-amount').text('৳' + json.totalAmount);
+                    }
+                    if (json.totalPaid !== undefined) {
+                        $('#total-paid-amount').text('৳' + json.totalPaid);
+                    }
+                    if (json.totalDue !== undefined) {
+                        $('#total-due-amount').text('৳' + json.totalDue);
+                    }
+                    if (json.totalCount !== undefined) {
+                        $('#total-invoice-count').text(json.totalCount);
+                    }
+                }
+            });
+
+            // Filters change triggers reload
+            $(document).on('change', '#filter-from, #filter-to, #filter-status', function () {
+                reloadPurchaseTable();
+            });
+
+            // Reset Filters
+            $(document).on('click', '#btn-reset-filters', function (e) {
+                e.preventDefault();
+                $('#filter-from').val('');
+                $('#filter-to').val('');
+                $('#filter-status').val('all');
+
+                var tableId = 'purchases-data-table';
+                if (window.LaravelDataTables && window.LaravelDataTables[tableId]) {
+                    window.LaravelDataTables[tableId].search('').draw();
+                } else if ($.fn.DataTable && $.fn.DataTable.isDataTable('#' + tableId)) {
+                    $('#' + tableId).DataTable().search('').draw();
+                } else {
+                    reloadPurchaseTable();
+                }
+            });
+
+            // Professional Print / PDF Export Handler
+            $(document).on('click', '#btn-print-ledger', function (e) {
+                e.preventDefault();
+                var tableId = 'purchases-data-table';
+                var searchVal = '';
+                if (window.LaravelDataTables && window.LaravelDataTables[tableId]) {
+                    searchVal = window.LaravelDataTables[tableId].search();
+                } else if ($.fn.DataTable && $.fn.DataTable.isDataTable('#' + tableId)) {
+                    searchVal = $('#' + tableId).DataTable().search();
+                }
+
+                var params = {
+                    from: $('#filter-from').val() || '',
+                    to: $('#filter-to').val() || '',
+                    status: $('#filter-status').val() || 'all',
+                    q: searchVal
+                };
+
+                var printUrl = '{{ route('purchase.ledger.print') }}?' + $.param(params);
+                window.open(printUrl, '_blank');
+            });
+
+            // Intercept DataTables default print button to trigger the executive print report
+            $(document).on('click', '.buttons-print', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $('#btn-print-ledger').trigger('click');
+            });
+
+            function refreshLucideIcons() {
+                if (typeof window.createIcons === 'function') {
+                    window.createIcons();
+                } else if (typeof window.lucide !== 'undefined' && typeof window.lucide.createIcons === 'function') {
+                    window.lucide.createIcons({ icons: window.lucide.icons || {} });
+                }
+            }
+
+            // Row click / View detail drawer
+            $(document).on('click', '.clickable-purchase-row td:not(:last-child), .btn-view-purchase', function (e) {
+                e.stopPropagation();
+                var $btn = $(this).closest('.btn-view-purchase');
+                var url = $btn.length ? $btn.data('url') : $(this).closest('tr').data('url');
+                if (!url) return;
+
+                var $content = $('#purchaseDetailDrawerContent');
+                $content.html('<div style="display:flex; align-items:center; justify-content:center; padding:60px 20px; color:var(--ink-500);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin" style="animation:spin 1s linear infinite;"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg></div>');
+                $('#purchaseDetailDrawer').addClass('open');
+
+                $.get(url, function (html) {
+                    $content.html(html);
+                    refreshLucideIcons();
+                }).fail(function () {
+                    $content.html('<div style="padding:24px; color:var(--red-600); text-align:center;"><div style="font-weight:600; margin-bottom:8px;">তথ্য লোড করতে সমস্যা হয়েছে</div><div style="font-size:12px; color:var(--ink-500);">Failed to load purchase details</div></div>');
+                });
+            });
+
+            // Close Drawer
+            $(document).on('click', '#purchaseDetailDrawer .drawer-x', function () {
+                $('#purchaseDetailDrawer').removeClass('open');
+            });
+
+            $('#purchaseDetailDrawer').on('click', function (e) {
+                if ($(e.target).is('#purchaseDetailDrawer')) {
+                    $(this).removeClass('open');
+                }
+            });
+
+            // Receive Modal Helper Function
+            function loadAndOpenReceiveModal(url) {
+                $.get(url, function (html) {
+                    $('#receiveModalContainer').html(html);
+                    refreshLucideIcons();
+                    openModal('receiveRemainingModal');
+                    setTimeout(function () {
+                        $('#receive_do_number').focus();
+                    }, 100);
+                }).fail(function () {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'ত্রুটি!',
+                        text: 'পণ্য গ্রহণের ফর্ম লোড করতে সমস্যা হয়েছে।'
+                    });
+                });
+            }
+
+            // Click Receive Button (from datatable action or drawer)
+            $(document).on('click', '.btn-receive-purchase', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var url = $(this).data('url');
+                if (url) {
+                    loadAndOpenReceiveModal(url);
+                }
+            });
+
+            // Click Receipt History Button (from datatable action or drawer)
+            $(document).on('click', '.btn-receipt-history', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var url = $(this).data('url');
+                if (!url) return;
+
+                $.get(url, function (html) {
+                    $('#receiptHistoryModalContainer').html(html);
+                    refreshLucideIcons();
+                    openModal('receiptHistoryModal');
+                }).fail(function () {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'ত্রুটি!',
+                        text: 'পণ্য গ্রহণের ইতিহাস লোড করতে সমস্যা হয়েছে।'
+                    });
+                });
+            });
+
+            // Click Purchase Invoice Button (from datatable action or drawer)
+            $(document).on('click', '.btn-show-purchase-invoice', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var url = $(this).data('url');
+                if (!url) return;
+
+                $.get(url, function (html) {
+                    $('#invoiceModalContainer').html(html);
+                    refreshLucideIcons();
+                    openModal('purchaseInvoiceModal');
+                }).fail(function () {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'ত্রুটি!',
+                        text: 'ইনভয়েস স্লিপ লোড করতে সমস্যা হয়েছে।'
+                    });
+                });
+            });
+
+            // Quick Receive by D.O. Button Trigger
+            $(document).on('click', '#btn-quick-receive-by-do', function (e) {
+                e.preventDefault();
+                $('#lookup_do_number').val('');
+                $('#lookup-error-msg').hide().text('');
+                openModal('findPurchaseByDoModal');
+                setTimeout(function () {
+                    $('#lookup_do_number').focus();
+                }, 100);
+            });
+
+            // Submit Find Purchase by D.O. Form
+            $(document).on('submit', '#find-purchase-by-do-form', function (e) {
+                e.preventDefault();
+                var val = $('#lookup_do_number').val().trim();
+                if (!val) {
+                    $('#lookup-error-msg').text('দয়া করে ডিও নম্বর লিখুন।').show();
+                    return;
+                }
+
+                var $btn = $('#btn-submit-find-do');
+                $btn.prop('disabled', true);
+                $('#lookup-error-msg').hide();
+
+                $.ajax({
+                    url: '{{ route("purchase.find-by-do") }}',
+                    data: { do_number: val },
+                    dataType: 'json',
+                    success: function (res) {
+                        $btn.prop('disabled', false);
+                        closeModal('findPurchaseByDoModal');
+                        loadAndOpenReceiveModal(res.modal_url);
+                    },
+                    error: function (xhr) {
+                        $btn.prop('disabled', false);
+                        var msg = 'এই ডিও নম্বরের কোনো ক্রয় পাওয়া যায়নি।';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            msg = xhr.responseJSON.message;
+                        }
+                        $('#lookup-error-msg').html(msg).show();
+                    }
+                });
+            });
+
+            // Submit Receive Remaining Form (AJAX)
+            $(document).on('submit', '#receive-remaining-form', function (e) {
+                e.preventDefault();
+                var $form = $(this);
+                var $btn = $('#btn-submit-receive-remaining');
+                $btn.prop('disabled', true);
+
+                $.ajax({
+                    url: $form.attr('action'),
+                    method: 'POST',
+                    data: $form.serialize(),
+                    dataType: 'json',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                        'Accept': 'application/json'
+                    },
+                    success: function (response) {
+                        closeModal('receiveRemainingModal');
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'সফল!',
+                            text: response.message || 'পণ্য সফলভাবে গ্রহণ করা হয়েছে!',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+
+                        reloadPurchaseTable();
+
+                        if ($('#purchaseDetailDrawer').hasClass('open')) {
+                            var match = $form.attr('action').match(/purchase\/(\d+)\/receive/);
+                            if (match && match[1]) {
+                                $.get('/purchase/' + match[1], function (html) {
+                                    $('#purchaseDetailDrawerContent').html(html);
+                                    refreshLucideIcons();
+                                });
+                            }
+                        }
+                    },
+                    error: function (xhr) {
+                        $btn.prop('disabled', false);
+                        var msg = 'পণ্য গ্রহণ করতে সমস্যা হয়েছে।';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            msg = xhr.responseJSON.message;
+                        } else if (xhr.responseJSON && xhr.responseJSON.errors) {
+                            msg = Object.values(xhr.responseJSON.errors).flat().join('<br>');
+                        }
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'ত্রুটি!',
+                            html: msg
+                        });
+                    }
+                });
+            });
+        });
+        </script>
+    @endpush
 </x-core::layout>

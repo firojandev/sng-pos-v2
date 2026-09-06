@@ -3,12 +3,14 @@
 namespace Modules\Product\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Modules\Product\DataTables\StockTransfersDataTable;
 use Modules\Product\Http\Requests\StoreStockTransferRequest;
 use Modules\Product\Models\Batch;
 use Modules\Product\Models\Product;
@@ -18,20 +20,49 @@ use Modules\Shop\Models\Warehouse;
 
 class StockTransferController extends Controller
 {
-    public function index(Request $request): View
+    public function index(StockTransfersDataTable $dataTable): mixed
     {
-        $status = $request->query('status', 'all');
+        $warehouses = Warehouse::where('status', 'active')
+            ->orderBy('name')
+            ->get(['id', 'name']);
 
-        $transfers = StockTransfer::with(['fromWarehouse', 'toWarehouse', 'items.product'])
-            ->when(array_key_exists($status, StockTransfer::statusLabels()), fn ($q) => $q->where('status', $status))
-            ->latest()
-            ->paginate(10)
-            ->withQueryString();
+        $totalTransfers = StockTransfer::count();
+        $pendingCount = StockTransfer::where('status', 'pending')->count();
+        $approvedCount = StockTransfer::where('status', 'approved')->count();
+        $dispatchedCount = StockTransfer::where('status', 'dispatched')->count();
+        $receivedCount = StockTransfer::where('status', 'received')->count();
+        $cancelledCount = StockTransfer::where('status', 'cancelled')->count();
 
-        return view('product::stock-transfers.index', [
-            'transfers' => $transfers,
-            'status' => $status,
+        $metrics = [
+            'total' => $totalTransfers,
+            'pending' => $pendingCount,
+            'approved' => $approvedCount,
+            'dispatched' => $dispatchedCount,
+            'received' => $receivedCount,
+            'cancelled' => $cancelledCount,
+        ];
+
+        return $dataTable->render('product::stock-transfers.index', compact('warehouses', 'metrics'));
+    }
+
+    public function show(StockTransfer $transfer, Request $request): View
+    {
+        $transfer->load([
+            'fromWarehouse.branch',
+            'toWarehouse.branch',
+            'items.product',
+            'items.batch',
+            'requestedBy',
+            'approvedBy',
+            'dispatchedBy',
+            'receivedBy',
         ]);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return view('product::stock-transfers._detail_drawer', compact('transfer'));
+        }
+
+        return view('product::stock-transfers.show', compact('transfer'));
     }
 
     public function create(): View
@@ -88,20 +119,36 @@ class StockTransferController extends Controller
         return redirect()->route('stock-transfers.index')->with('status', 'স্টক ট্রান্সফারের অনুরোধ তৈরি করা হয়েছে');
     }
 
-    public function approve(StockTransfer $transfer): RedirectResponse
+    public function approve(StockTransfer $transfer, Request $request): JsonResponse|RedirectResponse
     {
         if ($transfer->status !== 'pending') {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'শুধুমাত্র অপেক্ষমাণ ট্রান্সফার অনুমোদন করা যায়'], 422);
+            }
+
             return back()->with('status', 'শুধুমাত্র অপেক্ষমাণ ট্রান্সফার অনুমোদন করা যায়');
         }
 
         $transfer->update(['status' => 'approved', 'approved_by' => Auth::id(), 'approved_at' => now()]);
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'ট্রান্সফার সফলভাবে অনুমোদন করা হয়েছে',
+                'message_en' => 'Transfer approved successfully',
+            ]);
+        }
+
         return back()->with('status', 'ট্রান্সফার অনুমোদন করা হয়েছে');
     }
 
-    public function dispatch(StockTransfer $transfer): RedirectResponse
+    public function dispatch(StockTransfer $transfer, Request $request): JsonResponse|RedirectResponse
     {
         if ($transfer->status !== 'approved') {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'শুধুমাত্র অনুমোদিত ট্রান্সফার প্রেরণ করা যায়'], 422);
+            }
+
             return back()->with('status', 'শুধুমাত্র অনুমোদিত ট্রান্সফার প্রেরণ করা যায়');
         }
 
@@ -132,12 +179,24 @@ class StockTransferController extends Controller
             $transfer->update(['status' => 'dispatched', 'dispatched_by' => Auth::id(), 'dispatched_at' => now()]);
         });
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'ট্রান্সফার সফলভাবে প্রেরণ করা হয়েছে',
+                'message_en' => 'Transfer dispatched successfully',
+            ]);
+        }
+
         return back()->with('status', 'ট্রান্সফার প্রেরণ করা হয়েছে');
     }
 
-    public function receive(StockTransfer $transfer): RedirectResponse
+    public function receive(StockTransfer $transfer, Request $request): JsonResponse|RedirectResponse
     {
         if ($transfer->status !== 'dispatched') {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'শুধুমাত্র প্রেরিত ট্রান্সফার গ্রহণ করা যায়'], 422);
+            }
+
             return back()->with('status', 'শুধুমাত্র প্রেরিত ট্রান্সফার গ্রহণ করা যায়');
         }
 
@@ -182,16 +241,36 @@ class StockTransferController extends Controller
             $transfer->update(['status' => 'received', 'received_by' => Auth::id(), 'received_at' => now()]);
         });
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'ট্রান্সফার সফলভাবে গ্রহণ করা হয়েছে',
+                'message_en' => 'Transfer received successfully',
+            ]);
+        }
+
         return back()->with('status', 'ট্রান্সফার গৃহীত হয়েছে');
     }
 
-    public function cancel(StockTransfer $transfer): RedirectResponse
+    public function cancel(StockTransfer $transfer, Request $request): JsonResponse|RedirectResponse
     {
         if (! in_array($transfer->status, ['pending', 'approved'], true)) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'প্রেরিত বা গৃহীত ট্রান্সফার বাতিল করা যায় না'], 422);
+            }
+
             return back()->with('status', 'প্রেরিত বা গৃহীত ট্রান্সফার বাতিল করা যায় না');
         }
 
         $transfer->update(['status' => 'cancelled']);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'ট্রান্সফার বাতিল করা হয়েছে',
+                'message_en' => 'Transfer cancelled successfully',
+            ]);
+        }
 
         return back()->with('status', 'ট্রান্সফার বাতিল করা হয়েছে');
     }

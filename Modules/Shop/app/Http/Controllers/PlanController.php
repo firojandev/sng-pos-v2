@@ -6,17 +6,16 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Modules\Core\Support\Features;
+use Modules\Shop\DataTables\PlansDataTable;
 use Modules\Shop\Http\Requests\StorePlanRequest;
 use Modules\Shop\Http\Requests\UpdatePlanRequest;
 use Modules\Shop\Models\Plan;
 
 class PlanController extends Controller
 {
-    public function index(): View
+    public function index(PlansDataTable $dataTable)
     {
-        $plans = Plan::withCount('subscriptions')->orderBy('price')->get();
-
-        return view('shop::plans.index', compact('plans'));
+        return $dataTable->render('shop::plans.index');
     }
 
     public function create(): View

@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('roles', function (Blueprint $table) {
-            $table->foreignId('shop_id')->nullable()->after('id')->constrained()->cascadeOnDelete();
-        });
+        if (! Schema::hasColumn('roles', 'shop_id')) {
+            Schema::table('roles', function (Blueprint $table) {
+                $table->foreignId('shop_id')->nullable()->after('id')->constrained()->cascadeOnDelete();
+            });
 
-        Schema::table('roles', function (Blueprint $table) {
-            $table->dropUnique(['name', 'guard_name']);
-            $table->unique(['shop_id', 'name', 'guard_name']);
-        });
+            Schema::table('roles', function (Blueprint $table) {
+                $table->dropUnique(['name', 'guard_name']);
+                $table->unique(['shop_id', 'name', 'guard_name']);
+            });
+        }
     }
 
     /**

@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Modules\Customer\Models\Customer;
+use Modules\Finance\Models\Account;
 use Modules\Sales\Http\Requests\StoreQuickSaleRequest;
 use Modules\Sales\Models\Sale;
 
@@ -29,7 +30,9 @@ class QuickSaleController extends Controller
 
     public function create(): View
     {
-        return view('sales::quick-sale.create');
+        $accounts = Account::active()->orderByDesc('is_default')->orderBy('name')->get();
+
+        return view('sales::quick-sale.create', compact('accounts'));
     }
 
     public function store(StoreQuickSaleRequest $request): RedirectResponse
@@ -57,11 +60,14 @@ class QuickSaleController extends Controller
         $sale->update(['invoice_no' => 'SL-'.str_pad((string) $sale->id, 4, '0', STR_PAD_LEFT)]);
 
         $sale->payments()->create([
+            'account_id' => $data['account_id'] ?? null,
             'method' => $this->paymentMethodKeys()[$paymentMethodLabel] ?? 'cash',
             'amount' => $amount,
         ]);
 
-        return redirect()->route('sales.index')->with('status', 'দ্রুত বেচা সফলভাবে যোগ করা হয়েছে');
+        return redirect()->route('sales.index')
+            ->with('status', 'দ্রুত বেচা সফলভাবে যোগ করা হয়েছে')
+            ->with('show_invoice_sale_id', $sale->id);
     }
 
     public function searchCustomers(Request $request): JsonResponse

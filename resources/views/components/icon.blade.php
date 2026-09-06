@@ -1,0 +1,504 @@
+@props([
+    'name' => '',
+    'size' => null,
+    'class' => '',
+    'strokeWidth' => '2',
+])
+
+@php
+    $sizeMap = [
+        'xs' => '12',
+        'sm' => '14',
+        'md' => '16',
+        'lg' => '18',
+        'xl' => '22',
+        '2xl' => '26',
+    ];
+
+    $resolvedSize = $size ? ($sizeMap[$size] ?? $size) : null;
+    $widthHeight = $resolvedSize ? "width=\"{$resolvedSize}\" height=\"{$resolvedSize}\"" : '';
+    $normalizedName = strtolower(trim((string) $name));
+@endphp
+
+<svg
+    {!! $widthHeight !!}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="{{ $strokeWidth }}"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    data-lucide="{{ $normalizedName }}"
+    {{ $attributes->merge(['class' => 'app-icon' . ($class ? ' ' . $class : '')]) }}
+>
+    @switch($normalizedName)
+        @case('plus')
+        @case('add')
+            <path d="M12 5v14M5 12h14" />
+            @break
+
+        @case('minus')
+            <path d="M5 12h14" />
+            @break
+
+        @case('edit')
+        @case('pencil')
+            <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+            @break
+
+        @case('trash')
+        @case('trash-2')
+        @case('delete')
+        @case('remove')
+            <path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13" />
+            @break
+
+        @case('save')
+        @case('floppy')
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+            <polyline points="17 21 17 13 7 13 7 21" />
+            <polyline points="7 3 7 8 15 8" />
+            @break
+
+        @case('check')
+            <polyline points="20 6 9 17 4 12" />
+            @break
+
+        @case('check-circle')
+        @case('circle-check')
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+            <polyline points="22 4 12 14.01 9 11.01" />
+            @break
+
+        @case('x')
+        @case('close')
+        @case('times')
+            <path d="M18 6 6 18M6 6l12 12" />
+            @break
+
+        @case('x-circle')
+        @case('circle-x')
+            <circle cx="12" cy="12" r="10" />
+            <path d="m15 9-6 6M9 9l6 6" />
+            @break
+
+        @case('search')
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3" />
+            @break
+
+        @case('filter')
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+            @break
+
+        @case('download')
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+            @break
+
+        @case('upload')
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+            @break
+
+        @case('refresh')
+        @case('refresh-cw')
+        @case('sync')
+        @case('rotate')
+            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
+            @break
+
+        @case('spinner')
+        @case('loading')
+            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-dasharray="32" opacity="0.3" />
+            <path d="M12 3a9 9 0 0 1 9 9" />
+            @break
+
+        @case('eye')
+        @case('show')
+        @case('view')
+            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+            <circle cx="12" cy="12" r="3" />
+            @break
+
+        @case('eye-off')
+        @case('hide')
+            <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61M2 2l20 20" />
+            @break
+
+        @case('copy')
+            <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+            @break
+
+        @case('printer')
+        @case('print')
+            <polyline points="6 9 6 2 18 2 18 9" />
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+            <rect width="12" height="8" x="6" y="14" />
+            @break
+
+        @case('arrow-left')
+            <path d="m12 19-7-7 7-7M5 12h14" />
+            @break
+
+        @case('arrow-right')
+            <path d="m12 5 7 7-7 7M19 12H5" />
+            @break
+
+        @case('arrow-up')
+            <path d="m5 12 7-7 7 7M12 5v14" />
+            @break
+
+        @case('arrow-down')
+            <path d="m19 12-7 7-7-7M12 19V5" />
+            @break
+
+        @case('chevron-left')
+            <path d="m15 18-6-6 6-6" />
+            @break
+
+        @case('chevron-right')
+            <path d="m9 18 6-6-6-6" />
+            @break
+
+        @case('chevron-down')
+            <path d="m6 9 6 6 6-6" />
+            @break
+
+        @case('chevron-up')
+            <path d="m18 15-6-6-6 6" />
+            @break
+
+        @case('external-link')
+        @case('external')
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14 21 3" />
+            @break
+
+        @case('user')
+        @case('customer')
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+            @break
+
+        @case('users')
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+            @break
+
+        @case('user-plus')
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <line x1="19" x2="19" y1="8" y2="14" />
+            <line x1="22" x2="16" y1="11" y2="11" />
+            @break
+
+        @case('user-check')
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <polyline points="16 11 18 13 22 9" />
+            @break
+
+        @case('shopping-cart')
+        @case('cart')
+            <circle cx="8" cy="21" r="1" />
+            <circle cx="19" cy="21" r="1" />
+            <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
+            @break
+
+        @case('cash')
+        @case('money')
+            <rect width="20" height="14" x="2" y="5" rx="2" />
+            <line x1="2" x2="22" y1="10" y2="10" />
+            @break
+
+        @case('wallet')
+            <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
+            <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
+            <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
+            @break
+
+        @case('credit-card')
+            <rect width="20" height="14" x="2" y="5" rx="2" />
+            <line x1="2" x2="22" y1="10" y2="10" />
+            @break
+
+        @case('calendar')
+            <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+            <line x1="16" x2="16" y1="2" y2="6" />
+            <line x1="8" x2="8" y1="2" y2="6" />
+            <line x1="3" x2="21" y1="10" y2="10" />
+            @break
+
+        @case('clock')
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+            @break
+
+        @case('tag')
+        @case('tags')
+            <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z" />
+            <circle cx="7" cy="7" r=".5" fill="currentColor" />
+            @break
+
+        @case('box')
+        @case('package')
+            <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+            <path d="m3.3 7 8.7 5 8.7-5M12 22V12" />
+            @break
+
+        @case('barcode')
+            <path d="M3 5v14M8 5v14M12 5v14M17 5v14M21 5v14M5 5v14M15 5v14M19 5v14" />
+            @break
+
+        @case('percent')
+        @case('discount')
+            <line x1="19" x2="5" y1="5" y2="19" />
+            <circle cx="6.5" cy="6.5" r="2.5" />
+            <circle cx="17.5" cy="17.5" r="2.5" />
+            @break
+
+        @case('phone')
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+            @break
+
+        @case('mail')
+        @case('email')
+            <rect width="20" height="16" x="2" y="4" rx="2" />
+            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+            @break
+
+        @case('settings')
+        @case('gear')
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+            <circle cx="12" cy="12" r="3" />
+            @break
+
+        @case('lock')
+            <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            @break
+
+        @case('unlock')
+            <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 9.9-1" />
+            @break
+
+        @case('key')
+            <circle cx="7.5" cy="15.5" r="5.5" />
+            <path d="m21 2-9.6 9.6M15.5 7.5l3 3L22 7l-3-3" />
+            @break
+
+        @case('info')
+        @case('info-circle')
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 16v-4M12 8h.01" />
+            @break
+
+        @case('alert-triangle')
+        @case('triangle-alert')
+        @case('warning')
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+            <line x1="12" x2="12" y1="9" y2="13" />
+            <line x1="12" x2="12.01" y1="17" y2="17" />
+            @break
+
+        @case('alert-circle')
+        @case('circle-alert')
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" x2="12" y1="8" y2="12" />
+            <line x1="12" x2="12.01" y1="16" y2="16" />
+            @break
+
+        @case('help-circle')
+        @case('circle-help')
+            <circle cx="12" cy="12" r="10" />
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+            <line x1="12" x2="12.01" y1="17" y2="17" />
+            @break
+
+        @case('logout')
+        @case('log-out')
+        @case('power')
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+            @break
+
+        @case('login')
+        @case('log-in')
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" />
+            @break
+
+        @case('bell')
+        @case('notification')
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" />
+            @break
+
+        @case('moon')
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+            @break
+
+        @case('sun')
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+            @break
+
+        @case('sparkles')
+            <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" />
+            <path d="M19 3v4M21 5h-4M5 19v2M6 20H4" />
+            @break
+
+        @case('globe')
+            <circle cx="12" cy="12" r="10" />
+            <line x1="2" x2="22" y1="12" y2="12" />
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+            @break
+
+        @case('building')
+        @case('store')
+        @case('shop')
+            <rect width="16" height="20" x="4" y="2" rx="2" ry="2" />
+            <path d="M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01" />
+            @break
+
+        @case('warehouse')
+            <path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z" />
+            <path d="M6 18h12v4H6zM6 14h12v4H6zM6 10h12v4H6z" />
+            @break
+
+        @case('truck')
+            <rect width="14" height="10" x="1" y="6" rx="1" />
+            <path d="M15 9h4l3 3v4h-7V9z" />
+            <circle cx="5.5" cy="18.5" r="2.5" />
+            <circle cx="18.5" cy="18.5" r="2.5" />
+            @break
+
+        @case('trending-up')
+            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+            <polyline points="16 7 22 7 22 13" />
+            @break
+
+        @case('trending-down')
+            <polyline points="22 17 13.5 8.5 8.5 13.5 2 7" />
+            <polyline points="16 17 22 17 22 11" />
+            @break
+
+        @case('file')
+        @case('file-text')
+        @case('document')
+        @case('report')
+            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" x2="8" y1="13" y2="13" />
+            <line x1="16" x2="8" y1="17" y2="17" />
+            <line x1="10" x2="8" y1="9" y2="9" />
+            @break
+
+        @case('file-plus')
+            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+            <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+            <line x1="12" x2="12" y1="18" y2="12" />
+            <line x1="9" x2="15" y1="15" y2="15" />
+            @break
+
+        @case('shield')
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            @break
+
+        @case('shield-check')
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            <path d="m9 12 2 2 4-4" />
+            @break
+
+        @case('shopping-bag')
+            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+            <path d="M3 6h18M16 10a4 4 0 0 1-8 0" />
+            @break
+
+        @case('layers')
+            <polygon points="12 2 2 7 12 12 22 7 12 2" />
+            <polyline points="2 17 12 22 22 17" />
+            <polyline points="2 12 12 17 22 12" />
+            @break
+
+        @case('dollar')
+        @case('dollar-sign')
+            <line x1="12" x2="12" y1="2" y2="22" />
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            @break
+
+        @case('home')
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+            @break
+
+        @case('activity')
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+            @break
+
+        @case('grid')
+        @case('layout-grid')
+            <rect width="7" height="7" x="3" y="3" rx="1" />
+            <rect width="7" height="7" x="14" y="3" rx="1" />
+            <rect width="7" height="7" x="14" y="14" rx="1" />
+            <rect width="7" height="7" x="3" y="14" rx="1" />
+            @break
+
+        @case('list')
+            <line x1="8" x2="21" y1="6" y2="6" />
+            <line x1="8" x2="21" y1="12" y2="12" />
+            <line x1="8" x2="21" y1="18" y2="18" />
+            <line x1="3" x2="3.01" y1="6" y2="6" />
+            <line x1="3" x2="3.01" y1="12" y2="12" />
+            <line x1="3" x2="3.01" y1="18" y2="18" />
+            @break
+
+        @case('map-pin')
+            <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
+            <circle cx="12" cy="10" r="3" />
+            @break
+
+        @case('send')
+            <path d="m22 2-7 20-4-9-9-4Z" />
+            <path d="M22 2 11 13" />
+            @break
+
+        @case('camera')
+            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+            <circle cx="12" cy="13" r="3" />
+            @break
+
+        @case('image')
+            <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+            <circle cx="9" cy="9" r="2" />
+            <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+            @break
+
+        @case('sliders')
+        @case('sliders-horizontal')
+            <line x1="21" x2="14" y1="4" y2="4" />
+            <line x1="10" x2="3" y1="4" y2="4" />
+            <line x1="21" x2="12" y1="12" y2="12" />
+            <line x1="8" x2="3" y1="12" y2="12" />
+            <line x1="21" x2="16" y1="20" y2="20" />
+            <line x1="12" x2="3" y1="20" y2="20" />
+            <line x1="14" x2="14" y1="2" y2="6" />
+            <line x1="8" x2="8" y1="10" y2="14" />
+            <line x1="16" x2="16" y1="18" y2="22" />
+            @break
+
+        @case('pie-chart')
+        @case('chart-pie')
+            <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+            <path d="M22 12A10 10 0 0 0 12 2v10z" />
+            @break
+
+        @case('bar-chart')
+        @case('chart-bar')
+            <line x1="12" x2="12" y1="20" y2="10" />
+            <line x1="18" x2="18" y1="20" y2="4" />
+            <line x1="6" x2="6" y1="20" y2="16" />
+            @break
+
+        @default
+            {{ $slot }}
+    @endswitch
+</svg>

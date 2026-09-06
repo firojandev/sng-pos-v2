@@ -106,14 +106,16 @@ class SaleReturnController extends Controller
                     $batch = Batch::where('id', $saleItem->batch_id)->lockForUpdate()->first();
 
                     if ($batch) {
+                        $factor = $saleItem->unitConversionFactor();
+                        $baseReturnQty = (float) $line['quantity'] * $factor;
                         $before = (float) $batch->quantity;
-                        $batch->increment('quantity', $line['quantity']);
+                        $batch->increment('quantity', $baseReturnQty);
 
                         StockMovement::create([
                             'product_id' => $saleItem->product_id,
                             'batch_id' => $batch->id,
                             'type' => 'sale_return',
-                            'quantity_change' => $line['quantity'],
+                            'quantity_change' => $baseReturnQty,
                             'quantity_before' => $before,
                             'quantity_after' => (float) $batch->fresh()->quantity,
                             'reference_type' => SaleReturn::class,

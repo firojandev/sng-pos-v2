@@ -1,216 +1,500 @@
 <x-core::layout
     title="স্টক খাতা"
     title-en="Stock Ledger"
-    subtitle="মজুদ ও পণ্যের অবস্থা দেখুন"
-    subtitle-en="View inventory and stock status"
+    subtitle="মজুদ পণ্য, দর ও স্টক অবস্থা পর্যবেক্ষণ করুন"
+    subtitle-en="Monitor stock levels, valuations, and batch adjustments"
     active="stock"
 >
-    <div class="cash-page-head">
-        <a href="{{ route('dashboard') }}" class="back" title="Back">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M11 18l-6-6 6-6" stroke="#1C2B27" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </a>
-        <div class="ttl bn">স্টক খাতা</div>
-        <div class="ttl en" style="display:none;">Stock Ledger</div>
 
-        <div class="actions">
-            <a href="{{ route('stock.history') }}" class="btn btn-outline">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 12a8 8 0 1 0 2.3-5.7" stroke="#1C2B27" stroke-width="1.7" stroke-linecap="round"/><path d="M4 4v4h4M12 8v4l3 2" stroke="#1C2B27" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                <span class="bn">স্টকের ইতিহাস</span><span class="en">Stock History</span>
-            </a>
-            <button type="button" class="btn btn-outline" onclick="openAdjustModal()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" stroke="#1C2B27" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                <span class="bn">স্টক এডিট</span><span class="en">Adjust Stock</span>
-            </button>
-            <a href="{{ route('purchase.create') }}" class="btn btn-gold">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>
-                <span class="bn">নতুন ক্রয়</span><span class="en">New Purchase</span>
-            </a>
-            <a href="{{ route('products.create') }}" class="btn btn-teal">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>
-                <span class="bn">প্রোডাক্ট যুক্ত করুন</span><span class="en">Add Product</span>
-            </a>
+    {{-- Summary Metric Cards --}}
+    @if (isset($metrics))
+        <div class="stat-grid" style="margin-bottom:16px; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));">
+            <x-core::stat-card
+                icon="package"
+                color="teal"
+                :value="number_format($metrics['totalProducts'])"
+                label="মোট পণ্য"
+                label-en="Total Products"
+                subtext="ক্যাটালগ পণ্য"
+                subtext-en="Catalog items"
+            />
+
+            <x-core::stat-card
+                icon="boxes"
+                color="blue"
+                :value="rtrim(rtrim(number_format($metrics['totalQty'], 2), '0'), '.')"
+                label="মোট মজুদ একক"
+                label-en="Total Stock Units"
+                subtext="সকল ব্যাচ মিলিয়ে"
+                subtext-en="Across all batches"
+            />
+
+            <x-core::stat-card
+                icon="banknote"
+                color="green"
+                :value="'৳' . number_format($metrics['totalValue'], 2)"
+                value-color="green"
+                label="মোট মজুদ মূল্য"
+                label-en="Stock Valuation"
+                subtext="ক্রয়মূল্য অনুসারে"
+                subtext-en="At purchase cost"
+            />
+
+            <x-core::stat-card
+                icon="alert-triangle"
+                color="gold"
+                :value="number_format($metrics['lowCount'])"
+                value-color="gold"
+                label="কম মজুদ পণ্য"
+                label-en="Low Stock Alert"
+                subtext="সতর্কতা সীমার নিচে"
+                subtext-en="Below alert limit"
+            />
+
+            <x-core::stat-card
+                icon="x-circle"
+                color="red"
+                :value="number_format($metrics['outCount'])"
+                value-color="red"
+                label="স্টক আউট"
+                label-en="Out of Stock"
+                subtext="শূন্য মজুদ পণ্য"
+                subtext-en="Zero quantity left"
+            />
+        </div>
+    @endif
+
+    {{-- Filter Toolbar & Actions Row --}}
+    <div class="section-row" style="margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+        <div class="filters" style="display:flex; align-items:center; flex-wrap:nowrap; gap:8px;">
+            <div style="width:170px; flex-shrink:0;">
+                <x-core::select
+                    name="filter_stock_status"
+                    id="filter-stock-status"
+                    size="sm"
+                    :no-margin="true"
+                    :options="[
+                        '' => 'সকল স্টক অবস্থা (All)',
+                        'in' => 'মজুদ আছে (In Stock)',
+                        'low' => 'কম মজুদ (Low Stock)',
+                        'out' => 'স্টক আউট (Out of Stock)'
+                    ]"
+                />
+            </div>
+            <div style="width:170px; flex-shrink:0;">
+                <x-core::select
+                    name="filter_category"
+                    id="filter-category"
+                    size="sm"
+                    :no-margin="true"
+                    :options="['' => 'সকল ক্যাটাগরি (All)'] + $categories->pluck('name', 'id')->toArray()"
+                />
+            </div>
+            <div style="width:170px; flex-shrink:0;">
+                <x-core::select
+                    name="filter_brand"
+                    id="filter-brand"
+                    size="sm"
+                    :no-margin="true"
+                    :options="['' => 'সকল ব্র্যান্ড (All)'] + $brands->pluck('name', 'id')->toArray()"
+                />
+            </div>
+            <x-core::button
+                type="button"
+                variant="secondary"
+                size="sm"
+                icon="rotate-ccw"
+                id="btn-reset-filters"
+                title="রিসেট / Reset"
+            >
+                <span class="bn">রিসেট</span>
+                <span class="en" style="display:none;">Reset</span>
+            </x-core::button>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            @can('stock.adjust')
+            <x-core::button
+                type="button"
+                variant="secondary"
+                size="sm"
+                icon="edit"
+                id="btn-open-adjust-modal"
+            >
+                <span class="bn">স্টক সমন্বয়</span>
+                <span class="en" style="display:none;">Adjust Stock</span>
+            </x-core::button>
+            @endcan
+
+            @can('purchase.create')
+            <x-core::button
+                :href="route('purchase.create')"
+                size="sm"
+                variant="secondary"
+                icon="shopping-cart"
+            >
+                <span class="bn">নতুন ক্রয়</span>
+                <span class="en" style="display:none;">New Purchase</span>
+            </x-core::button>
+            @endcan
+
+            @can('products.create')
+            <x-core::button
+                :href="route('products.create')"
+                size="sm"
+                color="primary"
+                icon="plus"
+            >
+                <span class="bn">নতুন পণ্য</span>
+                <span class="en" style="display:none;">Add Product</span>
+            </x-core::button>
+            @endcan
         </div>
     </div>
 
-    <form method="GET" action="{{ route('stock.index') }}" class="section-row">
-        <div class="filters">
-            <div class="search-inline">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#8B978F" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="#8B978F" stroke-width="2" stroke-linecap="round"/></svg>
-                <input type="text" name="q" value="{{ $search }}" placeholder="পণ্য খুঁজে করুন">
-            </div>
-            <select name="sort" onchange="this.form.submit()">
-                <option value="newest" @selected($sort === 'newest')>নতুন থেকে পুরাতন</option>
-                <option value="oldest" @selected($sort === 'oldest')>পুরাতন থেকে নতুন</option>
-                <option value="qty_desc" @selected($sort === 'qty_desc')>মজুদ (বেশি-কম)</option>
-                <option value="qty_asc" @selected($sort === 'qty_asc')>মজুদ (কম-বেশি)</option>
-            </select>
-            <select name="filter" onchange="this.form.submit()">
-                <option value="all" @selected($filter === 'all')>All ({{ $allCount }})</option>
-                <option value="low" @selected($filter === 'low')>নিম্ন মজুদ ({{ $lowCount }})</option>
-                <option value="out" @selected($filter === 'out')>স্টক আউট ({{ $outCount }})</option>
-            </select>
-        </div>
-        <div class="total-pill">
-            <span class="bn">মোট মজুদ: </span><span class="en" style="display:none;">Total Stock: </span>
-            <b>{{ rtrim(rtrim(number_format($totalQty, 2), '0'), '.') }}</b>
-        </div>
-        <div class="total-pill" style="background:var(--green-100); color:var(--green-600);">
-            <span class="bn">মজুদ মূল্য: </span><span class="en" style="display:none;">Stock Value: </span>
-            <b>৳{{ number_format($totalValue, 2) }}</b>
-        </div>
-        <button type="submit" class="btn btn-outline">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 12a8 8 0 0 1 13.7-5.7L20 8.5M20 4v4.5h-4.5M20 12a8 8 0 0 1-13.7 5.7L4 15.5M4 20v-4.5h4.5" stroke="#1C2B27" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <span class="bn">রিফ্রেশ</span><span class="en">Refresh</span>
-        </button>
-    </form>
-
-    <div class="panel" style="margin-top:0;">
-        <div class="panel-body">
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th class="bn">পণ্যের নাম</th><th class="en" style="display:none;">Product</th>
-                            <th class="bn">বর্তমান মজুদ</th><th class="en" style="display:none;">Current Stock</th>
-                            <th class="bn">দর</th><th class="en" style="display:none;">Rate</th>
-                            <th class="bn">মোট মজুদ মূল্য</th><th class="en" style="display:none;">Total Value</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($products as $product)
-                            <tr>
-                                <td>
-                                    <div class="row-avatar">
-                                        @if ($product->image_url)
-                                            <img src="{{ $product->image_url }}" alt="" style="width:30px; height:30px; border-radius:8px; object-fit:cover; flex:0 0 auto;">
-                                        @else
-                                            <div class="av" style="background:var(--teal-800);">{{ mb_substr($product->name, 0, 1) }}</div>
-                                        @endif
-                                        <div>
-                                            <div class="cell-main">{{ $product->name }}</div>
-                                            @if ($product->stock_qty <= 0)
-                                                <span class="badge b-red bn">স্টক আউট</span><span class="badge b-red en" style="display:none;">Out of Stock</span>
-                                            @elseif ($product->alert_qty > 0 && $product->stock_qty <= $product->alert_qty)
-                                                <span class="badge b-gold bn">কম মজুদ</span><span class="badge b-gold en" style="display:none;">Low Stock</span>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>{{ rtrim(rtrim(number_format($product->stock_qty, 2), '0'), '.') }}</td>
-                                <td>৳{{ number_format($product->purchase_price, 2) }}</td>
-                                <td>৳{{ number_format($product->stock_value, 2) }}</td>
-                                <td>
-                                    <div class="row-actions">
-                                        <button type="button" class="act" title="Adjust Stock" onclick="openAdjustModal({{ $product->id }})">
-                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" stroke="#5C6B65" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="5"><div class="helper" style="margin-top:0;">কোনো পণ্য নেই</div></td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-
-            <div style="margin-top:14px;">
-                {{ $products->links() }}
-            </div>
+    {{-- DataTable Container --}}
+    <div class="table-container table-teal">
+        <div class="table-responsive">
+            {!! $dataTable->table(['class' => 'app-table', 'id' => 'stock-data-table']) !!}
         </div>
     </div>
 
-    <div class="modal-backdrop @if ($errors->any()) open @endif" id="stockAdjustModal">
-        <div class="modal-box" style="width:440px;">
-            <div class="modal-head">
-                <div class="modal-title bn">স্টক সমন্বয়</div>
-                <div class="modal-title en" style="display:none;">Stock Adjustment</div>
-                <button type="button" class="drawer-x" onclick="closeModal('stockAdjustModal')">&times;</button>
-            </div>
-            <form method="POST" action="{{ route('stock.adjust') }}">
-                @csrf
-                <div class="field">
-                    <label class="bn">পণ্য</label><label class="en" style="display:none;">Product</label>
-                    <select name="product_id" id="adjust-product" required>
-                        <option value="">-- নির্বাচন করুন --</option>
-                        @foreach ($allProducts as $p)
-                            <option value="{{ $p->id }}" {{ (string) old('product_id') === (string) $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="field">
-                    <label class="bn">ব্যাচ</label><label class="en" style="display:none;">Batch</label>
-                    <select name="batch_id" id="adjust-batch" required>
-                        <option value="">-- আগে পণ্য নির্বাচন করুন --</option>
-                    </select>
-                </div>
-                <div class="field">
-                    <label class="bn">ধরন</label><label class="en" style="display:none;">Type</label>
-                    <div class="seg" id="adjust-type-seg">
-                        <button type="button" class="active" onclick="setAdjustType(this,'increase')">
-                            <span class="bn">বৃদ্ধি (+)</span><span class="en">Increase (+)</span>
-                        </button>
-                        <button type="button" onclick="setAdjustType(this,'decrease')">
-                            <span class="bn">হ্রাস (-)</span><span class="en">Decrease (-)</span>
-                        </button>
+    {{-- Stock Adjustment Modal --}}
+    @can('stock.adjust')
+    <div class="modal-backdrop" id="stockAdjustModal" style="z-index:999;">
+        <div class="modal-box" style="width:480px; max-width:95vw; max-height:90vh; overflow-y:auto; padding:24px; border-radius:16px; background:var(--card); border:1px solid var(--border); box-shadow:var(--shadow-card);">
+            <div class="modal-head" style="margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <div style="width:34px; height:34px; border-radius:8px; background:var(--teal-100); color:var(--teal-800); display:flex; align-items:center; justify-content:center;">
+                        <x-core::icon name="edit" size="18" />
                     </div>
-                    <input type="hidden" name="type" id="adjust-type" value="increase">
+                    <div class="modal-title" style="font-size:16.5px; font-weight:700; color:var(--ink-900);">
+                        <span class="bn">স্টক সমন্বয় করুন</span>
+                        <span class="en" style="display:none;">Adjust Stock</span>
+                    </div>
                 </div>
-                <div class="field">
-                    <label class="bn">পরিমাণ</label><label class="en" style="display:none;">Quantity</label>
-                    <input type="number" step="0.01" min="0.01" name="quantity" value="{{ old('quantity') }}" required>
+                <button type="button" class="drawer-x modal-close-btn" style="width:28px; height:28px; font-size:18px; cursor:pointer; background:none; border:none; color:var(--ink-500);">&times;</button>
+            </div>
+
+            <form method="POST" action="{{ route('stock.adjust') }}" id="form-stock-adjust">
+                @csrf
+                <div style="display:flex; flex-direction:column; gap:14px;">
+                    <div>
+                        <x-core::select
+                            name="product_id"
+                            id="adjust-product"
+                            size="sm"
+                            label="পণ্য"
+                            label-en="Product"
+                            :required="true"
+                            placeholder="-- পণ্য নির্বাচন করুন --"
+                            placeholder-en="-- Select Product --"
+                            :options="$allProducts->pluck('name', 'id')->toArray()"
+                        />
+                    </div>
+
+                    <div>
+                        <x-core::select
+                            name="batch_id"
+                            id="adjust-batch"
+                            size="sm"
+                            label="ব্যাচ ও বর্তমান মজুদ"
+                            label-en="Batch & Current Stock"
+                            :required="true"
+                            placeholder="-- আগে পণ্য নির্বাচন করুন --"
+                            placeholder-en="-- Select Product First --"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="bn" style="display:block; margin-bottom:6px; font-weight:600; font-size:13px; color:var(--ink-800);">সমন্বয়ের ধরন</label>
+                        <label class="en" style="display:none; margin-bottom:6px; font-weight:600; font-size:13px; color:var(--ink-800);">Adjustment Type</label>
+                        <div class="seg-toggle-group" style="display:flex; gap:6px; background:var(--paper-line); padding:4px; border-radius:8px;">
+                            <button type="button" class="btn-seg-opt active" data-type="increase" style="flex:1; padding:7px 12px; font-size:12.5px; font-weight:600; border-radius:6px; border:none; cursor:pointer; background:var(--card); color:var(--teal-800); box-shadow:var(--shadow-sm); transition:all 0.15s ease;">
+                                <span class="bn">+ স্টক বৃদ্ধি (Increase)</span>
+                                <span class="en" style="display:none;">+ Increase</span>
+                            </button>
+                            <button type="button" class="btn-seg-opt" data-type="decrease" style="flex:1; padding:7px 12px; font-size:12.5px; font-weight:600; border-radius:6px; border:none; cursor:pointer; background:transparent; color:var(--ink-600); transition:all 0.15s ease;">
+                                <span class="bn">- স্টক হ্রাস (Decrease)</span>
+                                <span class="en" style="display:none;">- Decrease</span>
+                            </button>
+                        </div>
+                        <input type="hidden" name="type" id="adjust-type" value="increase">
+                    </div>
+
+                    <div>
+                        <x-core::input
+                            type="number"
+                            step="0.01"
+                            min="0.01"
+                            name="quantity"
+                            id="adjust-quantity"
+                            size="sm"
+                            label="সমন্বয়ের পরিমাণ"
+                            label-en="Adjustment Quantity"
+                            placeholder="0.00"
+                            :required="true"
+                        />
+                    </div>
+
+                    <div>
+                        <x-core::textarea
+                            name="reason"
+                            id="adjust-reason"
+                            size="sm"
+                            label="কারণ / মন্তব্য"
+                            label-en="Reason / Remarks"
+                            placeholder="যেমনঃ নষ্ট পণ্য, গণনা সংশোধন, স্থানান্তর ইত্যাদি"
+                            placeholder-en="e.g. Damaged item, inventory count correction"
+                            rows="2"
+                        />
+                    </div>
                 </div>
-                <div class="field">
-                    <label class="bn">কারণ</label><label class="en" style="display:none;">Reason</label>
-                    <textarea name="reason" placeholder="যেমনঃ নষ্ট, গণনা সংশোধন ইত্যাদি">{{ old('reason') }}</textarea>
+
+                <div style="margin-top:20px; padding-top:14px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:flex-end; gap:8px;">
+                    <x-core::button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        class="modal-close-btn"
+                    >
+                        <span class="bn">বাতিল</span>
+                        <span class="en" style="display:none;">Cancel</span>
+                    </x-core::button>
+                    <x-core::button
+                        type="submit"
+                        color="primary"
+                        size="sm"
+                        icon="check"
+                        id="btn-submit-stock-adjust"
+                    >
+                        <span class="bn">সংরক্ষণ করুন</span>
+                        <span class="en" style="display:none;">Save Adjustment</span>
+                    </x-core::button>
                 </div>
-                @error('quantity') <div class="field-error">{{ $message }}</div> @enderror
-                @error('batch_id') <div class="field-error">ব্যাচ নির্বাচন করুন</div> @enderror
-                <button type="submit" class="btn btn-gold" style="width:100%; justify-content:center; margin-top:16px;">
-                    <span class="bn">সংরক্ষণ করুন</span><span class="en">Save</span>
-                </button>
             </form>
         </div>
     </div>
+    @endcan
 
+    {{-- Stock History Modal Container --}}
+    <div id="stockHistoryModalContainer"></div>
+
+    {{-- Batches Data Cache --}}
     <script id="stock-batches-data" type="application/json">{!! json_encode($batchesByProduct) !!}</script>
-    <script>
-    (function () {
-        const batchesByProduct = JSON.parse(document.getElementById('stock-batches-data').textContent);
-        const productSelect = document.getElementById('adjust-product');
-        const batchSelect = document.getElementById('adjust-batch');
 
-        function populateBatches(productId) {
-            const batches = batchesByProduct[productId] || [];
-            if (!batches.length) {
-                batchSelect.innerHTML = '<option value="">কোনো ব্যাচ নেই</option>';
-                return;
+    @push('scripts')
+        {!! $dataTable->scripts() !!}
+
+        <script>
+        $(function () {
+            var batchesByProduct = {};
+            try {
+                batchesByProduct = JSON.parse(document.getElementById('stock-batches-data').textContent) || {};
+            } catch (e) {
+                batchesByProduct = {};
             }
-            batchSelect.innerHTML = '<option value="">-- নির্বাচন করুন --</option>' +
-                batches.map((b) => '<option value="'+b.id+'">'+b.label+'</option>').join('');
-        }
 
-        productSelect.addEventListener('change', () => populateBatches(productSelect.value));
-
-        window.openAdjustModal = function (productId) {
-            if (productId) {
-                productSelect.value = productId;
-                populateBatches(productId);
+            function clearFormErrors($form) {
+                $form.find('.is-invalid').removeClass('is-invalid');
+                $form.find('.field-error.dynamic-error').remove();
             }
-            openModal('stockAdjustModal');
-        };
 
-        window.setAdjustType = function (btn, type) {
-            document.getElementById('adjust-type').value = type;
-            btn.parentElement.querySelectorAll('button').forEach((b) => b.classList.remove('active'));
-            btn.classList.add('active');
-        };
+            function showFormErrors($form, errors) {
+                clearFormErrors($form);
+                $.each(errors, function (field, messages) {
+                    var $field = $form.find('[name="' + field + '"]');
+                    if ($field.length) {
+                        $field.addClass('is-invalid');
+                        var msg = messages[0];
+                        var $errorEl = $('<div class="field-error dynamic-error" style="color:var(--red-600); font-size:12px; margin-top:4px; font-weight:500;">' + msg + '</div>');
+                        var $group = $field.closest('.form-group, .field, div');
+                        $group.append($errorEl);
+                    }
+                });
+            }
 
-        @if (old('product_id'))
-            populateBatches('{{ old('product_id') }}');
-            batchSelect.value = '{{ old('batch_id') }}';
-        @endif
-    })();
-    </script>
+            function reloadStockTable() {
+                var tableId = 'stock-data-table';
+                if (window.LaravelDataTables && window.LaravelDataTables[tableId]) {
+                    window.LaravelDataTables[tableId].ajax.reload(null, false);
+                } else if ($.fn.DataTable && $.fn.DataTable.isDataTable('#' + tableId)) {
+                    $('#' + tableId).DataTable().ajax.reload(null, false);
+                }
+            }
+
+            function populateBatches(productId, selectedBatchId) {
+                var batches = batchesByProduct[productId] || [];
+                var $batchSelect = $('#adjust-batch');
+                $batchSelect.empty();
+
+                if (!batches.length) {
+                    $batchSelect.append('<option value="">কোনো ব্যাচ পাওয়া যায়নি / No batches available</option>');
+                    return;
+                }
+
+                $batchSelect.append('<option value="">-- ব্যাচ নির্বাচন করুন --</option>');
+                $.each(batches, function (i, b) {
+                    var isSel = (selectedBatchId && String(selectedBatchId) === String(b.id)) ? ' selected' : '';
+                    $batchSelect.append('<option value="' + b.id + '"' + isSel + '>' + b.label + '</option>');
+                });
+            }
+
+            function setAdjustType(type) {
+                $('#adjust-type').val(type);
+                $('.btn-seg-opt').removeClass('active').css({
+                    'background': 'transparent',
+                    'color': 'var(--ink-600)',
+                    'box-shadow': 'none'
+                });
+                var $activeBtn = $('.btn-seg-opt[data-type="' + type + '"]');
+                $activeBtn.addClass('active').css({
+                    'background': 'var(--card)',
+                    'color': type === 'increase' ? 'var(--teal-800)' : 'var(--red-600)',
+                    'box-shadow': 'var(--shadow-sm)'
+                });
+            }
+
+            function openAdjustStockModal(productId, batchId) {
+                var $form = $('#form-stock-adjust');
+                clearFormErrors($form);
+
+                if (productId) {
+                    $('#adjust-product').val(productId);
+                    populateBatches(productId, batchId);
+                } else {
+                    $('#adjust-product').val('');
+                    $('#adjust-batch').html('<option value="">-- আগে পণ্য নির্বাচন করুন --</option>');
+                }
+
+                $('#adjust-quantity').val('');
+                $('#adjust-reason').val('');
+                setAdjustType('increase');
+                openModal('stockAdjustModal');
+            }
+
+            // Expose globally
+            window.openAdjustModal = openAdjustStockModal;
+
+            // Product selection change inside Adjust Modal
+            $(document).on('change', '#adjust-product', function () {
+                populateBatches($(this).val());
+            });
+
+            // Segmented Type Button Toggle
+            $(document).on('click', '.btn-seg-opt', function (e) {
+                e.preventDefault();
+                setAdjustType($(this).data('type'));
+            });
+
+            // Open Adjust Modal from Header Button
+            $(document).on('click', '#btn-open-adjust-modal', function (e) {
+                e.preventDefault();
+                openAdjustStockModal();
+            });
+
+            // Open Adjust Modal from Table Row Action
+            $(document).on('click', '.btn-adjust-stock', function (e) {
+                e.preventDefault();
+                var productId = $(this).data('product-id');
+                openAdjustStockModal(productId);
+            });
+
+            // Close Modal Handlers
+            $(document).on('click', '.modal-close-btn', function (e) {
+                e.preventDefault();
+                $(this).closest('.modal-backdrop').removeClass('open');
+            });
+
+            $('#stockAdjustModal').on('click', function (e) {
+                if ($(e.target).is('#stockAdjustModal')) {
+                    closeModal('stockAdjustModal');
+                }
+            });
+
+            // Filters Change
+            $(document).on('change', '#filter-stock-status, #filter-category, #filter-brand', function () {
+                reloadStockTable();
+            });
+
+            $(document).on('click', '#btn-reset-filters', function (e) {
+                e.preventDefault();
+                $('#filter-stock-status').val('');
+                $('#filter-category').val('');
+                $('#filter-brand').val('');
+                reloadStockTable();
+            });
+
+            // AJAX Form Submit for Stock Adjustment
+            $('#form-stock-adjust').on('submit', function (e) {
+                e.preventDefault();
+                var $form = $(this);
+                var $btn = $('#btn-submit-stock-adjust');
+                var url = $form.attr('action');
+
+                clearFormErrors($form);
+                $btn.prop('disabled', true);
+
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: $form.serialize(),
+                    dataType: 'json',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function (res) {
+                        $btn.prop('disabled', false);
+                        closeModal('stockAdjustModal');
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'success',
+                                title: res.message || 'স্টক সফলভাবে সমন্বয় করা হয়েছে',
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                        } else if (typeof window.toast === 'function') {
+                            window.toast(res.message || 'স্টক সফলভাবে সমন্বয় করা হয়েছে', res.message_en || 'Stock adjusted successfully');
+                        }
+                        reloadStockTable();
+                    },
+                    error: function (xhr) {
+                        $btn.prop('disabled', false);
+                        if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                            showFormErrors($form, xhr.responseJSON.errors);
+                        } else {
+                            var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'স্টক সমন্বয় করতে সমস্যা হয়েছে';
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'ত্রুটি!',
+                                    text: msg
+                                });
+                            }
+                        }
+                    }
+                });
+            });
+
+            // Stock History Modal AJAX Handler
+            $(document).on('click', '.btn-stock-history', function (e) {
+                e.preventDefault();
+                var url = $(this).data('url') || $(this).attr('href');
+                if (!url) return;
+
+                $.get(url, function (html) {
+                    $('#stockHistoryModalContainer').html(html);
+                    openModal('stockHistoryModal');
+                    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                        window.lucide.createIcons();
+                    }
+                }).fail(function () {
+                    window.location.href = url;
+                });
+            });
+        });
+        </script>
+    @endpush
 </x-core::layout>

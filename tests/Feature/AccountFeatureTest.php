@@ -1,0 +1,662 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Modules\Core\Support\Features;
+use Modules\Core\Support\Permissions;
+use Modules\Finance\Models\Account;
+use Modules\Finance\Models\AccountTransfer;
+use Modules\Finance\Models\ExpenseCategory;
+use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
+use Modules\Shop\Models\Plan;
+use Modules\Shop\Models\Shop;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Tests\TestCase;
+
+class AccountFeatureTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected Shop $shop;
+
+    protected User $user;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        (new SubscriptionifySeeder)->run();
+
+        foreach (Permissions::all() as $name) {
+            Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
+        }
+
+        $adminRole = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
+        $adminRole->syncPermissions(Permission::where('guard_name', 'web')->get());
+
+        $this->shop = Shop::create([
+            'name' => 'Test Mart',
+            'slug' => 'test-mart',
+            'status' => 'active',
+            'enabled_features' => Features::keys(),
+        ]);
+
+        $standardPlan = Plan::where('slug', 'standard')->first();
+        if ($standardPlan) {
+            $this->shop->subscribe($standardPlan);
+        }
+
+        $this->user = User::create([
+            'name' => 'Test Admin',
+            'email' => 'admin@test.com',
+            'password' => Hash::make('password'),
+            'shop_id' => $this->shop->id,
+        ]);
+        $this->user->syncRoles([$adminRole]);
+    }
+
+    public function test_can_list_accounts(): void
+    {
+        $cash = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Main Cash',
+            'type' => 'cash',
+            'opening_balance' => 1000,
+            'current_balance' => 1000,
+            'is_default' => true,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($this->user)->get(route('accounts.index'));
+
+        $response->assertOk();
+        $response->assertSee('Main Cash');
+        $response->assertSee('1,000.00');
+    }
+
+    public function test_can_create_bank_account(): void
+    {
+        $response = $this->actingAs($this->user)->post(route('accounts.store'), [
+            'name' => 'City Bank Current',
+            'type' => 'bank',
+            'bank_name' => 'City Bank',
+            'account_number' => '1102993848',
+            'branch_name' => 'Gulshan Branch',
+            'opening_balance' => 50000,
+            'is_default' => 0,
+            'status' => 'active',
+            'note' => 'Main operative account',
+        ]);
+
+        $response->assertRedirect(route('accounts.index'));
+        $this->assertDatabaseHas('accounts', [
+            'shop_id' => $this->shop->id,
+            'name' => 'City Bank Current',
+            'type' => 'bank',
+            'current_balance' => 50000,
+        ]);
+
+        $this->assertDatabaseHas('account_transactions', [
+            'shop_id' => $this->shop->id,
+            'type' => 'in',
+            'amount' => 50000,
+            'source' => 'opening_balance',
+        ]);
+    }
+
+    public function test_setting_default_account_unsets_previous_default(): void
+    {
+        $bank1 = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Bank 1',
+            'type' => 'bank',
+            'is_default' => true,
+            'status' => 'active',
+        ]);
+
+        $bank2 = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Bank 2',
+            'type' => 'bank',
+            'is_default' => false,
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($this->user)->post(route('accounts.set-default', $bank2));
+
+        $this->assertFalse($bank1->fresh()->is_default);
+        $this->assertTrue($bank2->fresh()->is_default);
+    }
+
+    public function test_can_transfer_funds_between_accounts_and_records_ledger(): void
+    {
+        $cash = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Counter Cash',
+            'type' => 'cash',
+            'opening_balance' => 10000,
+            'current_balance' => 10000,
+            'is_default' => true,
+            'status' => 'active',
+        ]);
+
+        $bank = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'DBBL Bank',
+            'type' => 'bank',
+            'opening_balance' => 20000,
+            'current_balance' => 20000,
+            'is_default' => false,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($this->user)->post(route('account-transfers.store'), [
+            'from_account_id' => $cash->id,
+            'to_account_id' => $bank->id,
+            'amount' => 3000,
+            'charge' => 10,
+            'transfer_date' => now()->toDateString(),
+            'note' => 'Deposit counter cash to bank',
+        ]);
+
+        $response->assertRedirect(route('account-transfers.index'));
+
+        // Cash balance should be 10000 - 3000 - 10 = 6990
+        $this->assertEquals(6990, (float) $cash->fresh()->current_balance);
+        // Bank balance should be 20000 + 3000 = 23000
+        $this->assertEquals(23000, (float) $bank->fresh()->current_balance);
+
+        $this->assertDatabaseHas('account_transfers', [
+            'shop_id' => $this->shop->id,
+            'from_account_id' => $cash->id,
+            'to_account_id' => $bank->id,
+            'amount' => 3000,
+            'charge' => 10,
+        ]);
+
+        $this->assertDatabaseHas('account_transactions', [
+            'account_id' => $cash->id,
+            'type' => 'out',
+            'amount' => 3010,
+            'source' => 'transfer_out',
+        ]);
+
+        $this->assertDatabaseHas('account_transactions', [
+            'account_id' => $bank->id,
+            'type' => 'in',
+            'amount' => 3000,
+            'source' => 'transfer_in',
+        ]);
+    }
+
+    public function test_cannot_transfer_more_than_available_balance(): void
+    {
+        $cash = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Low Cash',
+            'type' => 'cash',
+            'opening_balance' => 500,
+            'current_balance' => 500,
+            'status' => 'active',
+        ]);
+
+        $bank = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Bank',
+            'type' => 'bank',
+            'opening_balance' => 0,
+            'current_balance' => 0,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($this->user)->post(route('account-transfers.store'), [
+            'from_account_id' => $cash->id,
+            'to_account_id' => $bank->id,
+            'amount' => 1000,
+            'transfer_date' => now()->toDateString(),
+        ]);
+
+        $response->assertSessionHasErrors('amount');
+    }
+
+    public function test_expense_deducts_account_balance_and_records_transaction(): void
+    {
+        $account = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Expense Cash',
+            'type' => 'cash',
+            'opening_balance' => 5000,
+            'current_balance' => 5000,
+            'is_default' => true,
+            'status' => 'active',
+        ]);
+
+        $category = ExpenseCategory::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Utility',
+        ]);
+
+        $this->actingAs($this->user)->post(route('expense.store'), [
+            'account_id' => $account->id,
+            'expense_category_id' => $category->id,
+            'title' => 'Electricity Bill',
+            'amount' => 1200,
+            'expense_date' => now()->toDateString(),
+        ]);
+
+        $this->assertEquals(3800, (float) $account->fresh()->current_balance);
+        $this->assertDatabaseHas('account_transactions', [
+            'account_id' => $account->id,
+            'type' => 'out',
+            'amount' => 1200,
+            'source' => 'expense',
+        ]);
+    }
+
+    public function test_income_increases_account_balance_and_records_transaction(): void
+    {
+        $account = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'bKash Merchant',
+            'type' => 'mfs',
+            'mfs_provider' => 'bkash',
+            'opening_balance' => 2000,
+            'current_balance' => 2000,
+            'is_default' => true,
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($this->user)->post(route('income.store'), [
+            'account_id' => $account->id,
+            'source' => 'Consulting fee',
+            'amount' => 3500,
+            'income_date' => now()->toDateString(),
+        ]);
+
+        $this->assertEquals(5500, (float) $account->fresh()->current_balance);
+        $this->assertDatabaseHas('account_transactions', [
+            'account_id' => $account->id,
+            'type' => 'in',
+            'amount' => 3500,
+            'source' => 'income',
+        ]);
+    }
+
+    public function test_quick_sale_credits_account(): void
+    {
+        $account = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Cash Account',
+            'type' => 'cash',
+            'opening_balance' => 1000,
+            'current_balance' => 1000,
+            'is_default' => true,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($this->user)->post(route('quick-sale.store'), [
+            'account_id' => $account->id,
+            'amount' => 1500,
+            'profit' => 300,
+            'customer_name' => 'Walk-in Customer',
+            'payment_method' => 'নগদ টাকা',
+            'sale_date' => now()->toDateString(),
+        ]);
+
+        $response->assertRedirect(route('sales.index'));
+
+        // Account balance should be 1000 + 1500 = 2500
+        $this->assertEquals(2500, (float) $account->fresh()->current_balance);
+
+        $this->assertDatabaseHas('account_transactions', [
+            'account_id' => $account->id,
+            'type' => 'in',
+            'amount' => 1500,
+            'source' => 'sale',
+        ]);
+    }
+
+    public function test_can_fetch_account_details_via_ajax_and_update(): void
+    {
+        $account = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Old Account Name',
+            'type' => 'bank',
+            'bank_name' => 'Old Bank',
+            'account_number' => '123456',
+            'opening_balance' => 5000,
+            'current_balance' => 5000,
+            'status' => 'active',
+        ]);
+
+        $ajaxResponse = $this->actingAs($this->user)->getJson(route('accounts.edit', $account));
+        $ajaxResponse->assertOk();
+        $ajaxResponse->assertJsonFragment([
+            'name' => 'Old Account Name',
+            'bank_name' => 'Old Bank',
+            'account_number' => '123456',
+            'type' => 'bank',
+        ]);
+
+        $updateResponse = $this->actingAs($this->user)->put(route('accounts.update', $account), [
+            'name' => 'Updated Bank Account',
+            'type' => 'bank',
+            'bank_name' => 'Updated Bank',
+            'account_number' => '654321',
+            'branch_name' => 'Dhanmondi',
+            'status' => 'active',
+            'is_default' => 0,
+        ]);
+
+        $updateResponse->assertRedirect(route('accounts.index'));
+        $this->assertDatabaseHas('accounts', [
+            'id' => $account->id,
+            'name' => 'Updated Bank Account',
+            'bank_name' => 'Updated Bank',
+            'account_number' => '654321',
+            'branch_name' => 'Dhanmondi',
+        ]);
+    }
+
+    public function test_can_delete_transfer_and_restore_balances(): void
+    {
+        $cash = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Cash Account',
+            'type' => 'cash',
+            'opening_balance' => 10000,
+            'current_balance' => 10000,
+            'status' => 'active',
+        ]);
+
+        $bank = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Bank Account',
+            'type' => 'bank',
+            'opening_balance' => 5000,
+            'current_balance' => 5000,
+            'status' => 'active',
+        ]);
+
+        // Perform transfer of 2000 with 50 charge
+        $this->actingAs($this->user)->post(route('account-transfers.store'), [
+            'from_account_id' => $cash->id,
+            'to_account_id' => $bank->id,
+            'amount' => 2000,
+            'charge' => 50,
+            'transfer_date' => now()->toDateString(),
+        ]);
+
+        $this->assertEquals(7950, (float) $cash->fresh()->current_balance);
+        $this->assertEquals(7000, (float) $bank->fresh()->current_balance);
+
+        $transfer = AccountTransfer::first();
+        $this->assertNotNull($transfer);
+
+        // Delete the transfer
+        $deleteResponse = $this->actingAs($this->user)->delete(route('account-transfers.destroy', $transfer));
+        $deleteResponse->assertRedirect(route('account-transfers.index'));
+
+        // Balances must be restored
+        $this->assertEquals(10000, (float) $cash->fresh()->current_balance);
+        $this->assertEquals(5000, (float) $bank->fresh()->current_balance);
+
+        // Transfer must be soft-deleted
+        $this->assertSoftDeleted('account_transfers', ['id' => $transfer->id]);
+
+        // Transactions must be removed
+        $this->assertDatabaseMissing('account_transactions', [
+            'sourceable_type' => $transfer->getMorphClass(),
+            'sourceable_id' => $transfer->id,
+        ]);
+    }
+
+    public function test_accounts_and_fund_transfers_have_separate_features_and_permissions(): void
+    {
+        // User with ONLY accounts permission
+        $accountsRole = Role::create(['name' => 'AccountsOnly', 'guard_name' => 'web']);
+        $accountsRole->givePermissionTo(['accounts.view', 'accounts.create', 'accounts.edit', 'accounts.delete']);
+
+        $accountsUser = User::create([
+            'name' => 'Accounts Manager',
+            'email' => 'accounts@test.com',
+            'password' => Hash::make('password'),
+            'shop_id' => $this->shop->id,
+        ]);
+        $accountsUser->syncRoles([$accountsRole]);
+
+        // User with ONLY account-transfers permission
+        $transferRole = Role::create(['name' => 'TransferOnly', 'guard_name' => 'web']);
+        $transferRole->givePermissionTo(['account-transfers.view', 'account-transfers.create', 'account-transfers.delete']);
+
+        $transferUser = User::create([
+            'name' => 'Transfer Manager',
+            'email' => 'transfer@test.com',
+            'password' => Hash::make('password'),
+            'shop_id' => $this->shop->id,
+        ]);
+        $transferUser->syncRoles([$transferRole]);
+
+        // Accounts user can view accounts, but forbidden from transfers
+        $this->actingAs($accountsUser)->get(route('accounts.index'))->assertOk();
+        $this->actingAs($accountsUser)->get(route('account-transfers.index'))->assertForbidden();
+
+        // Transfer user can view transfers, but forbidden from accounts
+        $this->actingAs($transferUser)->get(route('account-transfers.index'))->assertOk();
+        $this->actingAs($transferUser)->get(route('accounts.index'))->assertForbidden();
+    }
+
+    public function test_accounts_views_and_transfer_views_are_separate(): void
+    {
+        // Accounts view does not include account-tabbar or createTransferModal
+        $accountsResponse = $this->actingAs($this->user)->get(route('accounts.index'));
+        $accountsResponse->assertOk();
+        $accountsResponse->assertDontSee('createTransferModal');
+        $accountsResponse->assertDontSee('btnOpenTransferModal');
+        $accountsResponse->assertSee(route('accounts.index').'" class="nav-item active"', false);
+        $accountsResponse->assertDontSee(route('account-transfers.index').'" class="nav-item active"', false);
+
+        // Fund transfers view activates account-transfers nav item in sidebar
+        $transferResponse = $this->actingAs($this->user)->get(route('account-transfers.index'));
+        $transferResponse->assertOk();
+        $transferResponse->assertSee(route('account-transfers.index').'" class="nav-item active"', false);
+        $transferResponse->assertDontSee(route('accounts.index').'" class="nav-item active"', false);
+    }
+
+    public function test_ledger_renders_daily_cash_in_out_and_net_change_graph(): void
+    {
+        $account = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Cash Account',
+            'type' => 'cash',
+            'opening_balance' => 5000,
+            'current_balance' => 5000,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($this->user)->get(route('accounts.ledger', $account));
+
+        $response->assertOk();
+        $response->assertSee('dailyCashflowChart');
+        $response->assertSee('দৈনিক ক্যাশ ইন, আউট ও নেট পরিবর্তন গ্রাফ');
+        $response->assertViewHas('chartData', function ($data) {
+            return isset($data['labels'], $data['cash_in'], $data['cash_out'], $data['net_change'])
+                && is_array($data['labels'])
+                && is_array($data['cash_in'])
+                && is_array($data['cash_out'])
+                && is_array($data['net_change']);
+        });
+    }
+
+    public function test_user_cannot_create_cash_account(): void
+    {
+        $response = $this->actingAs($this->user)->post(route('accounts.store'), [
+            'name' => 'Second Cash Account',
+            'type' => 'cash',
+            'opening_balance' => 1000,
+            'status' => 'active',
+        ]);
+
+        $response->assertSessionHasErrors('type');
+        $this->assertDatabaseMissing('accounts', [
+            'shop_id' => $this->shop->id,
+            'name' => 'Second Cash Account',
+        ]);
+    }
+
+    public function test_user_can_create_mfs_account(): void
+    {
+        $response = $this->actingAs($this->user)->post(route('accounts.store'), [
+            'name' => 'Nagad Personal',
+            'type' => 'mfs',
+            'mfs_provider' => 'nagad',
+            'mfs_type' => 'personal',
+            'account_number' => '01811223344',
+            'opening_balance' => 5000,
+            'is_default' => 0,
+            'status' => 'active',
+        ]);
+
+        $response->assertRedirect(route('accounts.index'));
+        $this->assertDatabaseHas('accounts', [
+            'shop_id' => $this->shop->id,
+            'name' => 'Nagad Personal',
+            'type' => 'mfs',
+            'mfs_provider' => 'nagad',
+            'current_balance' => 5000,
+        ]);
+    }
+
+    public function test_cash_account_cannot_be_edited_or_updated(): void
+    {
+        $cash = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Main Cash',
+            'type' => 'cash',
+            'opening_balance' => 1000,
+            'current_balance' => 1000,
+            'is_default' => true,
+            'status' => 'active',
+        ]);
+
+        // GET web request should redirect with error
+        $webResponse = $this->actingAs($this->user)->get(route('accounts.edit', $cash));
+        $webResponse->assertRedirect(route('accounts.index'));
+        $webResponse->assertSessionHasErrors('error');
+
+        // GET ajax request should return 403
+        $ajaxResponse = $this->actingAs($this->user)->getJson(route('accounts.edit', $cash));
+        $ajaxResponse->assertStatus(403);
+
+        // PUT request should be blocked
+        $updateResponse = $this->actingAs($this->user)->put(route('accounts.update', $cash), [
+            'name' => 'Hacked Cash Name',
+            'type' => 'bank',
+            'status' => 'active',
+        ]);
+
+        // Should either fail authorization (403) or redirect with error
+        $this->assertTrue($updateResponse->isForbidden() || $updateResponse->isRedirect());
+        $this->assertEquals('Main Cash', $cash->fresh()->name);
+        $this->assertEquals('cash', $cash->fresh()->type);
+    }
+
+    public function test_cash_account_cannot_be_deleted(): void
+    {
+        // Even if cash is not default, it cannot be deleted
+        $bank = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Default Bank',
+            'type' => 'bank',
+            'is_default' => true,
+            'status' => 'active',
+        ]);
+
+        $cash = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Main Cash',
+            'type' => 'cash',
+            'is_default' => false,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($this->user)->delete(route('accounts.destroy', $cash));
+        $response->assertRedirect(route('accounts.index'));
+        $response->assertSessionHasErrors('error');
+
+        $this->assertNull($cash->fresh()->deleted_at);
+        $this->assertDatabaseHas('accounts', [
+            'id' => $cash->id,
+            'type' => 'cash',
+        ]);
+    }
+
+    public function test_accounts_index_shows_only_ledger_for_cash_account(): void
+    {
+        $cash = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Main Cash Account',
+            'type' => 'cash',
+            'opening_balance' => 1000,
+            'current_balance' => 1000,
+            'is_default' => false,
+            'status' => 'active',
+        ]);
+
+        $bank = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'City Bank Current',
+            'type' => 'bank',
+            'opening_balance' => 2000,
+            'current_balance' => 2000,
+            'is_default' => false,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($this->user)->get(route('accounts.index'));
+        $response->assertOk();
+
+        // Cash has ledger link
+        $response->assertSee(route('accounts.ledger', $cash));
+        // Cash does NOT have edit url, delete form, or set-default form
+        $response->assertDontSee('data-url="'.route('accounts.edit', $cash).'"', false);
+        $response->assertDontSee('action="'.route('accounts.destroy', $cash).'"', false);
+        $response->assertDontSee('action="'.route('accounts.set-default', $cash).'"', false);
+
+        // Bank has ledger, edit, delete, and set-default links
+        $response->assertSee(route('accounts.ledger', $bank));
+        $response->assertSee('data-url="'.route('accounts.edit', $bank).'"', false);
+        $response->assertSee('action="'.route('accounts.destroy', $bank).'"', false);
+        $response->assertSee('action="'.route('accounts.set-default', $bank).'"', false);
+    }
+
+    public function test_user_cannot_set_cash_account_as_default(): void
+    {
+        $cash = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Main Cash',
+            'type' => 'cash',
+            'is_default' => false,
+            'status' => 'active',
+        ]);
+
+        $bank = Account::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Main Bank',
+            'type' => 'bank',
+            'is_default' => true,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($this->user)->post(route('accounts.set-default', $cash));
+        $response->assertRedirect(route('accounts.index'));
+        $response->assertSessionHasErrors('error');
+
+        $this->assertFalse($cash->fresh()->is_default);
+        $this->assertTrue($bank->fresh()->is_default);
+    }
+}

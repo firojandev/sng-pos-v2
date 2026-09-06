@@ -11,4 +11,17 @@
             @include('sales::sales._form')
         </form>
     </div>
+
+    @include('sales::sales._quick_customer_modal')
+
+    @if(isset($invoiceSale) && $invoiceSale)
+        @include('sales::sales._invoice_modal', ['sale' => $invoiceSale])
+        @push('scripts')
+            <script>
+                $(function() {
+                    openModal('saleInvoiceModal');
+                });
+            </script>
+        @endpush
+    @endif
 </x-core::layout>

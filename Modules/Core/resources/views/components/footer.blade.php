@@ -4,8 +4,8 @@
         <span class="en" style="display:none;">&copy; {{ now()->year }} <b>MasterPOS</b> &middot; All rights reserved</span>
     </div>
     <div class="meta">
-        <span class="ver">v1.0.0</span>
-        <a href="#"><span class="bn">সহায়তা</span><span class="en">Support</span></a>
-        <a href="#"><span class="bn">গোপনীয়তা নীতি</span><span class="en">Privacy Policy</span></a>
+        <span class="ver">v2.0.0</span>
+        <a href="#"><span class="bn">সহায়তা</span><span class="en" style="display:none;">Support</span></a>
+        <a href="#"><span class="bn">গোপনীয়তা নীতি</span><span class="en" style="display:none;">Privacy Policy</span></a>
     </div>
 </footer>

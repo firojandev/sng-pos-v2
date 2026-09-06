@@ -7,10 +7,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Concerns\BelongsToShop;
+use Modules\Core\Observers\AuditObserver;
 
 class Product extends Model
 {
     use BelongsToShop;
+
+    protected static function booted(): void
+    {
+        static::observe(AuditObserver::class);
+    }
 
     protected $fillable = [
         'shop_id',
@@ -85,8 +91,32 @@ class Product extends Model
         return $this->hasMany(Batch::class);
     }
 
+    public function stockMovements(): HasMany
+    {
+        return $this->hasMany(StockMovement::class);
+    }
+
     public function baseUnit(): ?Unit
     {
         return $this->units->firstWhere('pivot.is_base', true);
+    }
+
+    public function unitConversionFactor(?int $unitId): float
+    {
+        if (! $unitId) {
+            return 1.0;
+        }
+
+        $unit = $this->relationLoaded('units')
+            ? $this->units->firstWhere('id', $unitId)
+            : $this->units()->where('units.id', $unitId)->first();
+
+        $factor = $unit ? (float) $unit->pivot->conversion_factor : 0.0;
+
+        if ($factor <= 0) {
+            return 1.0;
+        }
+
+        return $unit->pivot->is_smaller_unit ? 1 / $factor : $factor;
     }
 }

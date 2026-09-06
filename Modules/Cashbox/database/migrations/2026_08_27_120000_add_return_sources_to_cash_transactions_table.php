@@ -10,9 +10,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement("ALTER TABLE cash_transactions MODIFY source ENUM(
-            'manual', 'sale', 'purchase', 'income', 'expense', 'sale_return', 'purchase_return'
-        ) NOT NULL");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE cash_transactions MODIFY source ENUM(
+                'manual', 'sale', 'purchase', 'income', 'expense', 'sale_return', 'purchase_return'
+            ) NOT NULL");
+        }
     }
 
     /**
@@ -20,8 +22,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement("ALTER TABLE cash_transactions MODIFY source ENUM(
-            'manual', 'sale', 'purchase', 'income', 'expense'
-        ) NOT NULL");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE cash_transactions MODIFY source ENUM(
+                'manual', 'sale', 'purchase', 'income', 'expense'
+            ) NOT NULL");
+        }
     }
 };

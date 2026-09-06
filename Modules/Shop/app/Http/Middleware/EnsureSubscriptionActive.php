@@ -26,7 +26,7 @@ class EnsureSubscriptionActive
             return $next($request);
         }
 
-        $subscription = $user->shop?->subscription;
+        $subscription = $user->shop?->subscription();
 
         if (! $subscription || $subscription->isUsable()) {
             return $next($request);

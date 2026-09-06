@@ -13,27 +13,31 @@
         <div class="ttl en" style="display:none;">Cashbox</div>
 
         <div class="actions">
+            @can('cashbox.cash-in')
             <button type="button" class="btn btn-green" onclick="openModal('cashInModal')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.2" stroke="#fff" stroke-width="1.7"/><path d="M12 8v8M8 12h8" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/></svg>
                 <span class="bn">ক্যাশ ইন</span><span class="en">Cash In</span>
             </button>
+            @endcan
+            @can('cashbox.cash-out')
             <button type="button" class="btn btn-red" onclick="openModal('cashOutModal')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.2" stroke="#fff" stroke-width="1.7"/><path d="M8 12h8" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/></svg>
                 <span class="bn">ক্যাশ আউট</span><span class="en">Cash Out</span>
             </button>
+            @endcan
         </div>
     </div>
 
     <form method="GET" action="{{ route('cashbox.index') }}" class="section-row" style="margin-bottom:16px;">
         <div class="filters">
             <select name="type" onchange="this.form.submit()">
-                <option value="all" @selected($type === 'all')>সব লেনদেন</option>
-                <option value="cash_in" @selected($type === 'cash_in')>ক্যাশ ইন</option>
-                <option value="cash_out" @selected($type === 'cash_out')>ক্যাশ আউট</option>
-                <option value="sale" @selected($type === 'sale')>বেচা</option>
-                <option value="purchase" @selected($type === 'purchase')>কেনা</option>
-                <option value="income" @selected($type === 'income')>আয়</option>
-                <option value="expense" @selected($type === 'expense')>ব্যয়</option>
+                <option value="all" data-text-bn="সব লেনদেন" data-text-en="All Transactions" @selected($type === 'all')>সব লেনদেন</option>
+                <option value="cash_in" data-text-bn="ক্যাশ ইন" data-text-en="Cash In" @selected($type === 'cash_in')>ক্যাশ ইন</option>
+                <option value="cash_out" data-text-bn="ক্যাশ আউট" data-text-en="Cash Out" @selected($type === 'cash_out')>ক্যাশ আউট</option>
+                <option value="sale" data-text-bn="বেচা" data-text-en="Sales" @selected($type === 'sale')>বেচা</option>
+                <option value="purchase" data-text-bn="কেনা" data-text-en="Purchases" @selected($type === 'purchase')>কেনা</option>
+                <option value="income" data-text-bn="আয়" data-text-en="Income" @selected($type === 'income')>আয়</option>
+                <option value="expense" data-text-bn="ব্যয়" data-text-en="Expense" @selected($type === 'expense')>ব্যয়</option>
             </select>
 
             <input type="date" name="from" value="{{ $from }}">
@@ -41,7 +45,7 @@
 
             @if ($creators->count())
                 <select name="creator" onchange="this.form.submit()">
-                    <option value="">সব ({{ $creators->count() }})</option>
+                    <option value="" data-text-bn="সব ({{ $creators->count() }})" data-text-en="All ({{ $creators->count() }})">সব ({{ $creators->count() }})</option>
                     @foreach ($creators as $user)
                         <option value="{{ $user->id }}" @selected((string) $creator === (string) $user->id)>{{ $user->name }}</option>
                     @endforeach
@@ -123,7 +127,15 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="5"><div class="helper" style="margin-top:0;">কোনো লেনদেন নেই</div></td></tr>
+                            <tr>
+                                <td colspan="5">
+                                    <x-core::table.empty
+                                        icon="coins"
+                                        title="কোনো লেনদেন নেই"
+                                        title-en="No cash transactions found"
+                                    />
+                                </td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -136,6 +148,7 @@
     </div>
 
     {{-- Cash In modal --}}
+    @can('cashbox.cash-in')
     <div class="modal-backdrop @if ($errors->any() && old('cash_form') === 'in') open @endif" id="cashInModal">
         <div class="modal-box">
             <div class="modal-head">
@@ -167,8 +180,10 @@
             </form>
         </div>
     </div>
+    @endcan
 
     {{-- Cash Out modal --}}
+    @can('cashbox.cash-out')
     <div class="modal-backdrop @if ($errors->any() && old('cash_form') === 'out') open @endif" id="cashOutModal">
         <div class="modal-box">
             <div class="modal-head">
@@ -200,4 +215,5 @@
             </form>
         </div>
     </div>
+    @endcan
 </x-core::layout>

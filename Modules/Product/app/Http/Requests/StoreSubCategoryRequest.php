@@ -14,7 +14,8 @@ class StoreSubCategoryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'category_id' => ['required', 'exists:categories,id'],
+            'category_id' => ['required_without:parent_id', 'nullable', 'exists:categories,id'],
+            'parent_id' => ['required_without:category_id', 'nullable', 'exists:categories,id'],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
         ];

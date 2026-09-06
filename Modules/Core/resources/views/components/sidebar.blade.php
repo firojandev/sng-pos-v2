@@ -41,7 +41,7 @@ $navGroups = [
         ],
     ],
     [
-        'label' => ['bn' => 'বিক্রয় ও ক্রয়', 'en' => 'Sales & Purchase'],
+        'label' => ['bn' => 'বিক্রয়', 'en' => 'Sales'],
         'gated' => true,
         'items' => [
             [
@@ -52,11 +52,11 @@ $navGroups = [
                 'icon' => '<path d="M4 4h2l2.2 11.5a2 2 0 0 0 2 1.6h6.6a2 2 0 0 0 2-1.6L20 8H7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="20" r="1.4" stroke="currentColor" stroke-width="1.6"/><circle cx="17" cy="20" r="1.4" stroke="currentColor" stroke-width="1.6"/>',
             ],
             [
-                'key' => 'purchase',
-                'route' => 'purchase.index',
-                'bn' => 'ক্রয়',
-                'en' => 'Purchase',
-                'icon' => '<path d="M3 7h18l-1.5 10.5a2 2 0 0 1-2 1.5H6.5a2 2 0 0 1-2-1.5L3 7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8 7V5.5A3.5 3.5 0 0 1 11.5 2h1A3.5 3.5 0 0 1 16 5.5V7" stroke="currentColor" stroke-width="1.7"/>',
+                'key' => 'quick-sale',
+                'route' => 'quick-sale.create',
+                'bn' => 'দ্রুত বেচা',
+                'en' => 'Quick Sale',
+                'icon' => '<circle cx="12" cy="12" r="9.2" stroke="currentColor" stroke-width="1.7"/><path d="M12 7.5v9M8.7 15.3c0 1.2 1.2 2.1 3.3 2.1s3.3-.9 3.3-2.1c0-3-6.6-1.2-6.6-4.1 0-1.2 1.2-2.1 3.3-2.1s3.3.9 3.3 2.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
             ],
             [
                 'key' => 'cashbox',
@@ -66,35 +66,12 @@ $navGroups = [
                 'icon' => '<rect x="2.5" y="6" width="19" height="13" rx="2" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12.5" r="3" stroke="currentColor" stroke-width="1.6"/><path d="M2.5 9.5h3M18.5 15.5h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
             ],
             [
-                'key' => 'quick-sale',
-                'route' => 'quick-sale.create',
-                'bn' => 'দ্রুত বেচা',
-                'en' => 'Quick Sale',
-                'icon' => '<circle cx="12" cy="12" r="9.2" stroke="currentColor" stroke-width="1.7"/><path d="M12 7.5v9M8.7 15.3c0 1.2 1.2 2.1 3.3 2.1s3.3-.9 3.3-2.1c0-3-6.6-1.2-6.6-4.1 0-1.2 1.2-2.1 3.3-2.1s3.3.9 3.3 2.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
-            ],
-            [
-                'key' => 'purchase-ledger',
-                'permission' => 'purchase',
-                'route' => 'purchase.ledger',
-                'bn' => 'কেনার খাতা',
-                'en' => 'Purchase Ledger',
-                'icon' => '<path d="M4 4h16v16H4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 9h8M8 13h8M8 17h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
-            ],
-            [
                 'key' => 'sales-ledger',
                 'permission' => 'sales',
                 'route' => 'sales.ledger',
                 'bn' => 'বেচার খাতা',
                 'en' => 'Sales Ledger',
                 'icon' => '<path d="M4 4h16v16H4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 9h8M8 13h8M8 17h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
-            ],
-            [
-                'key' => 'purchase-returns',
-                'permission' => 'purchase',
-                'route' => 'purchase-returns.index',
-                'bn' => 'ক্রয় ফেরত',
-                'en' => 'Purchase Returns',
-                'icon' => '<path d="M4 12a8 8 0 1 1 2.3 5.7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M4 17v-5h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
             ],
             [
                 'key' => 'sale-returns',
@@ -107,7 +84,53 @@ $navGroups = [
             [
                 'key' => 'due-ledger',
                 'permission' => 'customers',
-                'route' => 'due-ledger.index',
+                'route' => 'due-ledger.sales',
+                'bn' => 'বাকির খাতা',
+                'en' => 'Due Ledger',
+                'icon' => '<circle cx="12" cy="12" r="9.2" stroke="currentColor" stroke-width="1.7"/><path d="M12 7.5v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="16.5" r="1" fill="currentColor"/>',
+            ],
+        ],
+    ],
+    [
+        'label' => ['bn' => 'ক্রয়', 'en' => 'Purchase'],
+        'gated' => true,
+        'items' => [
+            [
+                'key' => 'purchase',
+                'route' => 'purchase.index',
+                'bn' => 'ক্রয়',
+                'en' => 'Purchase',
+                'icon' => '<path d="M3 7h18l-1.5 10.5a2 2 0 0 1-2 1.5H6.5a2 2 0 0 1-2-1.5L3 7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8 7V5.5A3.5 3.5 0 0 1 11.5 2h1A3.5 3.5 0 0 1 16 5.5V7" stroke="currentColor" stroke-width="1.7"/>',
+            ],
+            [
+                'key' => 'purchase-ledger',
+                'permission' => 'purchase',
+                'route' => 'purchase.ledger',
+                'bn' => 'কেনার খাতা',
+                'en' => 'Purchase Ledger',
+                'icon' => '<path d="M4 4h16v16H4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 9h8M8 13h8M8 17h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+            ],
+            [
+                'key' => 'purchase-delivery-orders',
+                'permission' => 'purchase',
+                'route' => 'purchase-delivery-orders.index',
+                'bn' => 'ডেলিভারি অর্ডার',
+                'en' => 'Delivery Orders',
+                'icon' => '<rect x="1" y="3" width="15" height="13" rx="2" stroke="currentColor" stroke-width="1.6"/><polygon points="16 8 20 8 23 11 23 16 16 16 8" stroke="currentColor" stroke-width="1.6"/><circle cx="5.5" cy="18.5" r="2.5" stroke="currentColor" stroke-width="1.6"/><circle cx="18.5" cy="18.5" r="2.5" stroke="currentColor" stroke-width="1.6"/>',
+                'enabled' => (bool) config('purchase.delivery_orders_enabled', false),
+            ],
+            [
+                'key' => 'purchase-returns',
+                'permission' => 'purchase',
+                'route' => 'purchase-returns.index',
+                'bn' => 'ক্রয় ফেরত',
+                'en' => 'Purchase Returns',
+                'icon' => '<path d="M4 12a8 8 0 1 1 2.3 5.7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M4 17v-5h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
+            ],
+            [
+                'key' => 'purchase-due-ledger',
+                'permission' => 'suppliers',
+                'route' => 'due-ledger.purchase',
                 'bn' => 'বাকির খাতা',
                 'en' => 'Due Ledger',
                 'icon' => '<circle cx="12" cy="12" r="9.2" stroke="currentColor" stroke-width="1.7"/><path d="M12 7.5v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="16.5" r="1" fill="currentColor"/>',
@@ -166,6 +189,20 @@ $navGroups = [
         'label' => ['bn' => 'হিসাব', 'en' => 'Accounts'],
         'gated' => true,
         'items' => [
+            [
+                'key' => 'accounts',
+                'route' => 'accounts.index',
+                'bn' => 'অ্যাকাউন্ট',
+                'en' => 'Accounts',
+                'icon' => '<rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3 10h18M7 15h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+            ],
+            [
+                'key' => 'account-transfers',
+                'route' => 'account-transfers.index',
+                'bn' => 'ফান্ড ট্রান্সফার',
+                'en' => 'Fund Transfer',
+                'icon' => '<path d="M7 10h14l-4-4M17 14H3l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+            ],
             [
                 'key' => 'income',
                 'route' => 'income.index',
@@ -245,6 +282,14 @@ $navGroups = [
                 'gated' => false,
             ],
             [
+                'key' => 'styleguide',
+                'route' => 'styleguide',
+                'bn' => 'কম্পোনেন্ট গাইড',
+                'en' => 'UI Style Guide',
+                'icon' => '<rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.6"/><rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.6"/><rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.6"/>',
+                'gated' => false,
+            ],
+            [
                 'key' => 'subscription',
                 'route' => 'subscription.show',
                 'bn' => 'সাবস্ক্রিপশন',
@@ -257,6 +302,12 @@ $navGroups = [
 ];
 
 $isNavItemVisible = function (array $item, bool $groupGated, $user) {
+    if (isset($item['enabled']) && ! $item['enabled']) {
+        return false;
+    }
+    if ($item['key'] === 'subscription') {
+        return (bool) ($user && $user->shop && $user->shop->hasFeature('subscription'));
+    }
     $gated = $item['gated'] ?? $groupGated;
     if (! $gated) {
         return true;
@@ -268,45 +319,29 @@ $isNavItemVisible = function (array $item, bool $groupGated, $user) {
 
 <aside class="sidebar" id="sidebar">
     <div class="side-head">
-        <div class="mark">ম</div>
-        <div class="nm">
-            মাস্টারপস
-            <span class="bn">ব্যবসা ব্যবস্থাপনা</span>
-            <span class="en">Business Management</span>
+        <div class="mark">
+            <span class="bn">ম</span>
+            <span class="en">M</span>
         </div>
-        <button class="side-close" onclick="toggleSidebar(false)">&times;</button>
+        <div class="nm">
+            <span class="brand-title bn">মাস্টার<span class="brand-accent">পস</span></span>
+            <span class="brand-title en">Master<span class="brand-accent">POS</span></span>
+            <span class="brand-tagline bn">ব্যবসা ব্যবস্থাপনা</span>
+            <span class="brand-tagline en">Business Management</span>
+        </div>
+        <button class="side-close" onclick="toggleSidebar(false)" aria-label="Close sidebar">&times;</button>
     </div>
 
-    @if ($isSuperAdmin)
-        @foreach ($superAdminGroups as $group)
-            <div class="nav-group">
-                @if ($group['label'])
-                    <div class="nav-group-label bn">{{ $group['label']['bn'] }}</div>
-                    <div class="nav-group-label en" style="display:none;">{{ $group['label']['en'] }}</div>
-                @endif
-
-                @foreach ($group['items'] as $item)
-                    <a href="{{ route($item['route']) }}" class="nav-item {{ $active === $item['key'] ? 'active' : '' }}">
-                        <svg viewBox="0 0 24 24" fill="none">{!! $item['icon'] !!}</svg>
-                        <span class="bn">{{ $item['bn'] }}</span>
-                        <span class="en">{{ $item['en'] }}</span>
-                    </a>
-                @endforeach
-            </div>
-        @endforeach
-    @else
-        @foreach ($navGroups as $group)
-            @php
-                $visibleItems = array_filter($group['items'], fn ($item) => $isNavItemVisible($item, $group['gated'], $user));
-            @endphp
-            @if (count($visibleItems))
+    <div class="side-nav-wrapper">
+        @if ($isSuperAdmin)
+            @foreach ($superAdminGroups as $group)
                 <div class="nav-group">
                     @if ($group['label'])
                         <div class="nav-group-label bn">{{ $group['label']['bn'] }}</div>
-                        <div class="nav-group-label en" style="display:none;">{{ $group['label']['en'] }}</div>
+                        <div class="nav-group-label en">{{ $group['label']['en'] }}</div>
                     @endif
 
-                    @foreach ($visibleItems as $item)
+                    @foreach ($group['items'] as $item)
                         <a href="{{ route($item['route']) }}" class="nav-item {{ $active === $item['key'] ? 'active' : '' }}">
                             <svg viewBox="0 0 24 24" fill="none">{!! $item['icon'] !!}</svg>
                             <span class="bn">{{ $item['bn'] }}</span>
@@ -314,19 +349,62 @@ $isNavItemVisible = function (array $item, bool $groupGated, $user) {
                         </a>
                     @endforeach
                 </div>
-            @endif
-        @endforeach
-    @endif
+            @endforeach
+        @else
+            @foreach ($navGroups as $group)
+                @php
+                    $visibleItems = array_filter($group['items'], fn ($item) => $isNavItemVisible($item, $group['gated'], $user));
+                @endphp
+                @if (count($visibleItems))
+                    <div class="nav-group">
+                        @if ($group['label'])
+                            <div class="nav-group-label bn">{{ $group['label']['bn'] }}</div>
+                            <div class="nav-group-label en">{{ $group['label']['en'] }}</div>
+                        @endif
+
+                        @foreach ($visibleItems as $item)
+                            <a href="{{ route($item['route']) }}" class="nav-item {{ ($active === $item['key'] || ($item['key'] === 'due-ledger' && $active === 'sales-due-ledger')) ? 'active' : '' }}">
+                                <svg viewBox="0 0 24 24" fill="none">{!! $item['icon'] !!}</svg>
+                                <span class="bn">{{ $item['bn'] }}</span>
+                                <span class="en">{{ $item['en'] }}</span>
+                            </a>
+                        @endforeach
+                    </div>
+                @endif
+            @endforeach
+        @endif
+    </div>
 
     <div class="side-foot">
-        <div class="av">{{ mb_substr($user->name ?? '?', 0, 1) }}</div>
-        <div>
-            <div class="nm">{{ $user->name ?? '' }}</div>
-            <div class="role" style="color:#9FC4B7;">{{ $isSuperAdmin ? 'Super Admin' : ($user->shop->name ?? '') }}</div>
-            <form method="POST" action="{{ route('logout') }}">
+        <div class="side-user-card">
+            @if ($user?->avatar_url)
+                <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="av" style="object-fit:cover;">
+            @else
+                <div class="av">{{ mb_substr($user->name ?? '?', 0, 1) }}</div>
+            @endif
+            <div class="user-info">
+                <div class="nm" title="{{ $user->name ?? '' }}">{{ $user->name ?? 'User' }}</div>
+                <div class="role" title="{{ $isSuperAdmin ? 'Super Admin' : ($user->shop->name ?? '') }}">
+                    @if ($isSuperAdmin)
+                        Super Admin
+                    @elseif ($user && $user->activeShops()->count() > 1)
+                        <a href="{{ route('shops.select') }}" style="color:inherit; text-decoration:none; display:inline-flex; align-items:center; gap:4px;" title="দোকান পরিবর্তন করুন / Switch Shop">
+                            <span>{{ $user->shop->name ?? 'দোকান' }}</span>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                        </a>
+                    @else
+                        {{ $user->shop->name ?? 'Staff' }}
+                    @endif
+                </div>
+            </div>
+            <form method="POST" action="{{ route('logout') }}" class="logout-form">
                 @csrf
-                <button type="submit" class="role" style="background:none; border:none; padding:0; color:#9FC4B7; cursor:pointer; text-decoration:underline;">
-                    <span class="bn">লগ আউট</span><span class="en">Logout</span>
+                <button type="submit" class="logout-btn" title="লগ আউট / Logout">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
                 </button>
             </form>
         </div>

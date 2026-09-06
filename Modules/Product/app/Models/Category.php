@@ -2,23 +2,32 @@
 
 namespace Modules\Product\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Modules\Core\Concerns\BelongsToShop;
+use Modules\Core\Models\Category as BaseCategory;
 
-class Category extends Model
+class Category extends BaseCategory
 {
-    use BelongsToShop;
+    protected static function booted(): void
+    {
+        static::addGlobalScope('product_type', function (Builder $builder) {
+            $builder->where('categories.type', 'product');
+        });
 
-    protected $fillable = ['shop_id', 'name', 'description'];
+        static::creating(function ($model) {
+            if (empty($model->type)) {
+                $model->type = 'product';
+            }
+        });
+    }
 
     public function subCategories(): HasMany
     {
-        return $this->hasMany(SubCategory::class);
+        return $this->hasMany(static::class, 'parent_id');
     }
 
     public function products(): HasMany
     {
-        return $this->hasMany(Product::class);
+        return $this->hasMany(Product::class, 'category_id');
     }
 }

@@ -45,4 +45,18 @@ class SaleItem extends Model
     {
         return $this->belongsTo(Unit::class);
     }
+
+    public function unitConversionFactor(): float
+    {
+        if (! $this->unit_id) {
+            return 1.0;
+        }
+
+        return $this->product?->unitConversionFactor($this->unit_id) ?? 1.0;
+    }
+
+    public function baseQuantity(): float
+    {
+        return (float) $this->quantity * $this->unitConversionFactor();
+    }
 }

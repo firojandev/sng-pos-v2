@@ -16,12 +16,12 @@
                 @include('customer::_form')
 
                 <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button type="submit" class="btn btn-gold" style="flex:1; justify-content:center;">
-                        <span class="bn">সংরক্ষণ করুন</span><span class="en">Save</span>
-                    </button>
-                    <a href="{{ route('customers.index') }}" class="btn btn-outline" style="flex:1; justify-content:center;">
-                        <span class="bn">বাতিল</span><span class="en">Cancel</span>
-                    </a>
+                    <x-core::button type="submit" color="primary" icon="check" style="flex:1; justify-content:center;">
+                        <span class="bn">সংরক্ষণ করুন</span><span class="en" style="display:none;">Save Customer</span>
+                    </x-core::button>
+                    <x-core::button type="button" variant="secondary" :href="route('customers.index')" style="flex:1; justify-content:center;">
+                        <span class="bn">বাতিল</span><span class="en" style="display:none;">Cancel</span>
+                    </x-core::button>
                 </div>
             </form>
         </div>

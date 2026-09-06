@@ -16,7 +16,12 @@ return new class extends Migration
             $table->foreignId('shop_id')->nullable()->constrained()->cascadeOnDelete();
             $table->foreignId('product_id')->constrained()->cascadeOnDelete();
             $table->foreignId('batch_id')->constrained()->cascadeOnDelete();
-            $table->enum('type', ['purchase', 'purchase_reversal', 'sale', 'sale_reversal', 'adjustment_increase', 'adjustment_decrease']);
+            $table->enum('type', [
+                'purchase', 'purchase_reversal', 'sale', 'sale_reversal',
+                'adjustment_increase', 'adjustment_decrease',
+                'transfer_out', 'transfer_in',
+                'sale_return', 'purchase_return',
+            ]);
             $table->decimal('quantity_change', 12, 2);
             $table->decimal('quantity_before', 12, 2);
             $table->decimal('quantity_after', 12, 2);

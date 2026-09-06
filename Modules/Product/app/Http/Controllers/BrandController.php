@@ -20,7 +20,7 @@ class BrandController extends Controller
 
     public function create(): View
     {
-        return view('product::brands.create', ['brand' => new Brand()]);
+        return view('product::brands.create', ['brand' => new Brand]);
     }
 
     public function store(StoreBrandRequest $request): RedirectResponse

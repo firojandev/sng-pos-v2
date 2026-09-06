@@ -1,11 +1,12 @@
 <div class="field" style="margin-top:0;">
     <label class="bn">মূল ক্যাটাগরি</label><label class="en" style="display:none;">Parent Category</label>
-    <select name="category_id" required>
+    <select name="parent_id" required>
         <option value="">-- নির্বাচন করুন --</option>
         @foreach ($categories as $category)
-            <option value="{{ $category->id }}" {{ (int) old('category_id', $subCategory->category_id) === $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
+            <option value="{{ $category->id }}" {{ (int) old('parent_id', $subCategory->parent_id ?? $subCategory->category_id) === $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
         @endforeach
     </select>
+    @error('parent_id') <div class="field-error">{{ $message }}</div> @enderror
     @error('category_id') <div class="field-error">{{ $message }}</div> @enderror
 </div>
 

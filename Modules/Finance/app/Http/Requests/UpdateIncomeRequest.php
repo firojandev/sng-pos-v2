@@ -14,6 +14,7 @@ class UpdateIncomeRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'account_id' => ['nullable', 'exists:accounts,id'],
             'source' => ['required', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'min:0'],
             'income_date' => ['required', 'date'],

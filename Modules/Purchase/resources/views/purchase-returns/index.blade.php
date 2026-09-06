@@ -48,7 +48,15 @@
                                 <td>{{ $return->return_date->format('d M, Y') }}</td>
                             </tr>
                         @empty
-                            <tr><td colspan="7"><div class="helper" style="margin-top:0;">কোনো ক্রয় ফেরত নেই</div></td></tr>
+                            <tr>
+                                <td colspan="7">
+                                    <x-core::table.empty
+                                        icon="rotate-ccw"
+                                        title="কোনো ক্রয় ফেরত নেই"
+                                        title-en="No purchase returns found"
+                                    />
+                                </td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>

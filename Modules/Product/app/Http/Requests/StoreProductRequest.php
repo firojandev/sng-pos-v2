@@ -22,7 +22,7 @@ class StoreProductRequest extends FormRequest
             'sale_price' => ['required', 'numeric', 'min:0'],
             'image' => ['nullable', 'image', 'max:2048'],
             'category_id' => ['required', 'exists:categories,id'],
-            'sub_category_id' => ['nullable', 'exists:sub_categories,id'],
+            'sub_category_id' => ['nullable', 'exists:categories,id'],
             'brand_id' => ['nullable', 'exists:brands,id'],
             'short_description' => ['nullable', 'string'],
             'alert_qty' => ['required', 'integer', 'min:0'],
