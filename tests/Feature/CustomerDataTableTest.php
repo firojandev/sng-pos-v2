@@ -33,11 +33,12 @@ class CustomerDataTableTest extends TestCase
         ]);
 
         Permission::firstOrCreate(['name' => 'customers.view', 'guard_name' => 'web']);
-        Permission::firstOrCreate(['name' => 'customers.write', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'customers.create', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'customers.edit', 'guard_name' => 'web']);
         Permission::firstOrCreate(['name' => 'customers.delete', 'guard_name' => 'web']);
 
         $role = Role::firstOrCreate(['name' => 'Shop Admin', 'guard_name' => 'web']);
-        $role->givePermissionTo(['customers.view', 'customers.write', 'customers.delete']);
+        $role->givePermissionTo(['customers.view', 'customers.create', 'customers.edit', 'customers.delete']);
 
         $user = User::factory()->create([
             'shop_id' => $shop->id,

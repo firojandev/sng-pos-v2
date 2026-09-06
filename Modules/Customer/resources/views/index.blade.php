@@ -87,17 +87,19 @@
                 <span class="en" style="display:none;">Reset</span>
             </x-core::button>
         </div>
-        <x-core::button
-            type="button"
-            variant="solid"
-            color="primary"
-            size="sm"
-            icon="plus"
-            id="btn-open-create-customer-modal"
-        >
-            <span class="bn">নতুন গ্রাহক</span>
-            <span class="en" style="display:none;">New Customer</span>
-        </x-core::button>
+        @can('customers.create')
+            <x-core::button
+                type="button"
+                variant="solid"
+                color="primary"
+                size="sm"
+                icon="plus"
+                id="btn-open-create-customer-modal"
+            >
+                <span class="bn">নতুন গ্রাহক</span>
+                <span class="en" style="display:none;">New Customer</span>
+            </x-core::button>
+        @endcan
     </div>
 
     <div class="table-container table-teal">

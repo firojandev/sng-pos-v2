@@ -87,17 +87,19 @@
                 <span class="en" style="display:none;">Reset</span>
             </x-core::button>
         </div>
-        <x-core::button
-            type="button"
-            variant="solid"
-            color="primary"
-            size="sm"
-            icon="plus"
-            id="btn-open-create-supplier-modal"
-        >
-            <span class="bn">নতুন সরবরাহকারী</span>
-            <span class="en" style="display:none;">New Supplier</span>
-        </x-core::button>
+        @can('suppliers.create')
+            <x-core::button
+                type="button"
+                variant="solid"
+                color="primary"
+                size="sm"
+                icon="plus"
+                id="btn-open-create-supplier-modal"
+            >
+                <span class="bn">নতুন সরবরাহকারী</span>
+                <span class="en" style="display:none;">New Supplier</span>
+            </x-core::button>
+        @endcan
     </div>
 
     <div class="table-container table-teal">

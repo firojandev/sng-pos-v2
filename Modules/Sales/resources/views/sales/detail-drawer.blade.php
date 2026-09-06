@@ -206,11 +206,13 @@
         @endif
     @endcan
 
-    @can('sales.write')
+    @can('sales.return')
         <x-core::button :href="route('sale-returns.create', $sale)" variant="secondary" size="sm" icon="rotate-ccw" style="flex:1; justify-content:center;">
             <span class="bn">ফেরত</span><span class="en" style="display:none;">Return</span>
         </x-core::button>
+    @endcan
 
+    @can('sales.edit')
         @if ($sale->canBeEdited())
             <x-core::button :href="route('sales.edit', $sale)" color="primary" size="sm" icon="edit" style="flex:1; justify-content:center;">
                 <span class="bn">এডিট</span><span class="en" style="display:none;">Edit</span>

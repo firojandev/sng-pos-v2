@@ -29,9 +29,11 @@
                 <span class="en" style="display:none;">Reset</span>
             </x-core::button>
         </div>
-        <x-core::button color="primary" size="sm" type="button" icon="plus" id="btn-open-create-subcategory-modal">
-            <span class="bn">নতুন সাব-ক্যাটাগরি</span><span class="en">New Sub-category</span>
-        </x-core::button>
+        @can('products.create')
+            <x-core::button color="primary" size="sm" type="button" icon="plus" id="btn-open-create-subcategory-modal">
+                <span class="bn">নতুন সাব-ক্যাটাগরি</span><span class="en">New Sub-category</span>
+            </x-core::button>
+        @endcan
     </div>
 
     <div class="table-container table-teal">

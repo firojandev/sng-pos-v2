@@ -16,6 +16,7 @@
                 <span class="bn">মোট সরবরাহকারী বাকি: </span><span class="en" style="display:none;">Total Supplier Due: </span>
                 <b id="total-supplier-due-amount">৳{{ number_format($supplierTotalDue, 2) }}</b>
             </div>
+            @can('purchase.create')
             <x-core::button
                 as="a"
                 href="{{ route('purchase.create') }}"
@@ -27,6 +28,7 @@
                 <span class="bn">নতুন ক্রয়</span>
                 <span class="en" style="display:none;">New Purchase</span>
             </x-core::button>
+            @endcan
         </div>
     </div>
 

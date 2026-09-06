@@ -11,9 +11,11 @@
         <div class="panel-body">
             <div class="section-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
                 <div class="filters"></div>
-                <x-core::button size="sm" color="primary" icon="plus" href="{{ route('roles.create') }}">
-                    <span class="bn">নতুন রোল</span><span class="en" style="display:none;">New Role</span>
-                </x-core::button>
+                @can('users.create')
+                    <x-core::button size="sm" color="primary" icon="plus" href="{{ route('roles.create') }}">
+                        <span class="bn">নতুন রোল</span><span class="en" style="display:none;">New Role</span>
+                    </x-core::button>
+                @endcan
             </div>
 
             <div class="helper" style="margin-top:0; margin-bottom:14px; color:var(--ink-600);">
@@ -25,28 +27,32 @@
                 @forelse ($roles as $role)
                     <div class="mini-card pm-card" style="position:relative; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:14px 16px;">
                         <div class="mini-card-actions" style="position:absolute; top:12px; right:12px; display:flex; align-items:center; gap:6px;">
-                            <x-core::button
-                                tag="a"
-                                size="sm"
-                                variant="ghost"
-                                color="secondary"
-                                icon="edit"
-                                href="{{ route('roles.edit', $role) }}"
-                                title="Edit"
-                            />
+                            @can('users.edit')
+                                <x-core::button
+                                    tag="a"
+                                    size="sm"
+                                    variant="ghost"
+                                    color="secondary"
+                                    icon="edit"
+                                    href="{{ route('roles.edit', $role) }}"
+                                    title="Edit"
+                                />
+                            @endcan
                             @if ($role->name !== 'Admin')
-                                <form method="POST" action="{{ route('roles.destroy', $role) }}" class="delete-form" data-title="রোল মুছে ফেলতে চান?" data-text="এই রোলটি স্থায়ীভাবে মুছে ফেলা হবে।">
-                                    @csrf
-                                    @method('DELETE')
-                                    <x-core::button
-                                        type="submit"
-                                        size="sm"
-                                        variant="ghost"
-                                        color="danger"
-                                        icon="trash-2"
-                                        title="Delete"
-                                    />
-                                </form>
+                                @can('users.delete')
+                                    <form method="POST" action="{{ route('roles.destroy', $role) }}" class="delete-form" data-title="রোল মুছে ফেলতে চান?" data-text="এই রোলটি স্থায়ীভাবে মুছে ফেলা হবে।">
+                                        @csrf
+                                        @method('DELETE')
+                                        <x-core::button
+                                            type="submit"
+                                            size="sm"
+                                            variant="ghost"
+                                            color="danger"
+                                            icon="trash-2"
+                                            title="Delete"
+                                        />
+                                    </form>
+                                @endcan
                             @endif
                         </div>
                         <div class="nm" style="font-weight:600; font-size:15px; color:var(--ink-900);">

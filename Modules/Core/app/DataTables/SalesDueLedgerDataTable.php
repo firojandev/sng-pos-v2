@@ -122,24 +122,34 @@ class SalesDueLedgerDataTable extends BaseDataTable
                 return Blade::render('<x-core::badge color="grey" size="xs" label="নিষ্ক্রিয়" label-en="Inactive" />');
             })
             ->addColumn('action', function (Customer $customer) {
-                $detailUrl = route('due-ledger.customer.details', $customer);
-                $paymentModalUrl = route('due-ledger.customer.payment-modal', $customer);
-                $newSaleUrl = route('sales.create').'?customer_id='.$customer->id;
+                $user = auth()->user();
+                $buttons = '';
 
-                return '<div class="row-actions" style="display:flex; align-items:center; justify-content:flex-end; gap:6px;">'
-                    .'<button type="button" class="btn btn-soft-green btn-xs btn-open-customer-payment" data-url="'.e($paymentModalUrl).'" title="বাকি আদায় / Collect Due">'
-                    .'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="app-icon"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>'
-                    .'<span class="bn">জমা</span><span class="en" style="display:none;">Collect</span>'
-                    .'</button>'
-                    .'<button type="button" class="btn btn-soft-dark btn-xs btn-view-customer-due" data-url="'.e($detailUrl).'" title="বাকির বিস্তারিত / View Due Details">'
-                    .'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="app-icon"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>'
-                    .'<span class="bn">বিস্তারিত</span><span class="en" style="display:none;">Details</span>'
-                    .'</button>'
-                    .'<a href="'.e($newSaleUrl).'" class="btn btn-soft-teal btn-xs" title="নতুন বিক্রয় / New Sale">'
-                    .'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="app-icon"><path d="M12 5v14M5 12h14"/></svg>'
-                    .'<span class="bn">বেচা</span><span class="en" style="display:none;">Sell</span>'
-                    .'</a>'
-                    .'</div>';
+                if ($user?->can('customers.payment')) {
+                    $paymentModalUrl = route('due-ledger.customer.payment-modal', $customer);
+                    $buttons .= '<button type="button" class="btn btn-soft-green btn-xs btn-open-customer-payment" data-url="'.e($paymentModalUrl).'" title="বাকি আদায় / Collect Due">'
+                        .'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="app-icon"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>'
+                        .'<span class="bn">জমা</span><span class="en" style="display:none;">Collect</span>'
+                        .'</button>';
+                }
+
+                if ($user?->can('customers.view')) {
+                    $detailUrl = route('due-ledger.customer.details', $customer);
+                    $buttons .= '<button type="button" class="btn btn-soft-dark btn-xs btn-view-customer-due" data-url="'.e($detailUrl).'" title="বাকির বিস্তারিত / View Due Details">'
+                        .'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="app-icon"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>'
+                        .'<span class="bn">বিস্তারিত</span><span class="en" style="display:none;">Details</span>'
+                        .'</button>';
+                }
+
+                if ($user?->can('sales.create')) {
+                    $newSaleUrl = route('sales.create').'?customer_id='.$customer->id;
+                    $buttons .= '<a href="'.e($newSaleUrl).'" class="btn btn-soft-teal btn-xs" title="নতুন বিক্রয় / New Sale">'
+                        .'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="app-icon"><path d="M12 5v14M5 12h14"/></svg>'
+                        .'<span class="bn">বেচা</span><span class="en" style="display:none;">Sell</span>'
+                        .'</a>';
+                }
+
+                return '<div class="row-actions" style="display:flex; align-items:center; justify-content:flex-end; gap:6px;">'.$buttons.'</div>';
             })
             ->filter(function ($query) {
                 if ($keyword = request('search.value')) {

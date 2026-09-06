@@ -419,7 +419,7 @@ class AccountFeatureTest extends TestCase
     {
         // User with ONLY accounts permission
         $accountsRole = Role::create(['name' => 'AccountsOnly', 'guard_name' => 'web']);
-        $accountsRole->givePermissionTo(['accounts.view', 'accounts.write', 'accounts.delete']);
+        $accountsRole->givePermissionTo(['accounts.view', 'accounts.create', 'accounts.edit', 'accounts.delete']);
 
         $accountsUser = User::create([
             'name' => 'Accounts Manager',
@@ -431,7 +431,7 @@ class AccountFeatureTest extends TestCase
 
         // User with ONLY account-transfers permission
         $transferRole = Role::create(['name' => 'TransferOnly', 'guard_name' => 'web']);
-        $transferRole->givePermissionTo(['account-transfers.view', 'account-transfers.write', 'account-transfers.delete']);
+        $transferRole->givePermissionTo(['account-transfers.view', 'account-transfers.create', 'account-transfers.delete']);
 
         $transferUser = User::create([
             'name' => 'Transfer Manager',

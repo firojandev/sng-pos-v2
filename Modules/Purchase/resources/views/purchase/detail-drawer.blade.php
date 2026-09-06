@@ -12,6 +12,7 @@
     />
 </div>
 
+@can('purchase.print')
 <x-core::button
     type="button"
     variant="secondary"
@@ -24,6 +25,7 @@
 >
     <span class="bn">ইনভয়েস স্লিপ ও প্রিন্ট</span><span class="en">Invoice & Print</span>
 </x-core::button>
+@endcan
 
 <div class="tx-section">
     <div class="tx-row">
@@ -250,6 +252,7 @@
 @endif
 
 <div style="display:flex; gap:10px; margin-top:20px; flex-wrap:wrap;">
+    @can('purchase.delete')
     @if ($purchase->canBeDeleted())
         <form
             method="POST"
@@ -285,6 +288,9 @@
             </x-core::button>
         </div>
     @endif
+    @endcan
+
+    @can('purchase.return')
     <x-core::button
         variant="secondary"
         size="sm"
@@ -294,6 +300,9 @@
     >
         <span class="bn">ফেরত</span><span class="en">Return</span>
     </x-core::button>
+    @endcan
+
+    @can('purchase.view')
     <x-core::button
         type="button"
         variant="secondary"
@@ -306,6 +315,9 @@
     >
         <span class="bn">গ্রহণের ইতিহাস</span><span class="en">Receipt History</span>
     </x-core::button>
+    @endcan
+
+    @can('purchase.receive')
     @if ($purchase->hasPendingItems())
         <x-core::button
             type="button"
@@ -320,6 +332,9 @@
             <span class="bn">পণ্য গ্রহণ</span><span class="en" style="display:none;">Receive</span>
         </x-core::button>
     @endif
+    @endcan
+
+    @can('purchase.edit')
     @if ($purchase->canBeEdited())
         <x-core::button
             variant="secondary"
@@ -344,4 +359,5 @@
             </x-core::button>
         </div>
     @endif
+    @endcan
 </div>

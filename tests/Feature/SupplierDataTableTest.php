@@ -33,11 +33,12 @@ class SupplierDataTableTest extends TestCase
         ]);
 
         Permission::firstOrCreate(['name' => 'suppliers.view', 'guard_name' => 'web']);
-        Permission::firstOrCreate(['name' => 'suppliers.write', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'suppliers.create', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'suppliers.edit', 'guard_name' => 'web']);
         Permission::firstOrCreate(['name' => 'suppliers.delete', 'guard_name' => 'web']);
 
         $role = Role::firstOrCreate(['name' => 'Shop Admin', 'guard_name' => 'web']);
-        $role->givePermissionTo(['suppliers.view', 'suppliers.write', 'suppliers.delete']);
+        $role->givePermissionTo(['suppliers.view', 'suppliers.create', 'suppliers.edit', 'suppliers.delete']);
 
         $user = User::factory()->create([
             'shop_id' => $shop->id,

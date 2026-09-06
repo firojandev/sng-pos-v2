@@ -11,33 +11,39 @@
         <div class="panel-body">
             <div class="section-row">
                 <div class="filters"></div>
-                <x-core::button color="primary" size="sm" type="button" icon="plus" id="btn-open-create-category-modal">
-                    <span class="bn">নতুন ক্যাটাগরি</span><span class="en">New Category</span>
-                </x-core::button>
+                @can('products.create')
+                    <x-core::button color="primary" size="sm" type="button" icon="plus" id="btn-open-create-category-modal">
+                        <span class="bn">নতুন ক্যাটাগরি</span><span class="en">New Category</span>
+                    </x-core::button>
+                @endcan
             </div>
 
             <div class="mini-grid">
                 @forelse ($categories as $category)
                     <div class="mini-card pm-card">
                         <div class="mini-card-actions">
-                            <button
-                                type="button"
-                                class="act btn-edit-category"
-                                title="Edit"
-                                data-id="{{ $category->id }}"
-                                data-name="{{ $category->name }}"
-                                data-description="{{ $category->description }}"
-                                data-action="{{ route('categories.update', $category) }}"
-                            >
-                                <x-core::icon name="edit" size="14" />
-                            </button>
-                            <form method="POST" action="{{ route('categories.destroy', $category) }}" class="delete-form">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="act" title="Delete">
-                                    <x-core::icon name="trash-2" size="14" class="text-danger" />
+                            @can('products.edit')
+                                <button
+                                    type="button"
+                                    class="act btn-edit-category"
+                                    title="Edit"
+                                    data-id="{{ $category->id }}"
+                                    data-name="{{ $category->name }}"
+                                    data-description="{{ $category->description }}"
+                                    data-action="{{ route('categories.update', $category) }}"
+                                >
+                                    <x-core::icon name="edit" size="14" />
                                 </button>
-                            </form>
+                            @endcan
+                            @can('products.delete')
+                                <form method="POST" action="{{ route('categories.destroy', $category) }}" class="delete-form">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="act" title="Delete">
+                                        <x-core::icon name="trash-2" size="14" class="text-danger" />
+                                    </button>
+                                </form>
+                            @endcan
                         </div>
                         <div class="nm">{{ $category->name }}</div>
                         <div class="sub">{{ $category->sub_categories_count }} সাব-ক্যাটাগরি &middot; {{ $category->products_count }} পণ্য</div>
