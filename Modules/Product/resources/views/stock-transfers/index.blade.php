@@ -1,198 +1,253 @@
 <x-core::layout
     title="স্টক ট্রান্সফার"
-    title-en="Stock Transfer"
+    title-en="Stock Transfers"
     subtitle="গুদামের মধ্যে পণ্য স্থানান্তর পরিচালনা করুন"
-    subtitle-en="Manage stock transfers between warehouses"
+    subtitle-en="Manage and track stock transfers between warehouses"
     active="stock-transfers"
 >
-    <div class="section-row">
-        <div class="filters">
-            <form method="GET" action="{{ route('stock-transfers.index') }}">
-                <select name="status" onchange="this.form.submit()">
-                    <option value="all" @selected($status === 'all')>সব</option>
-                    @foreach (\Modules\Product\Models\StockTransfer::statusLabels() as $key => $label)
-                        <option value="{{ $key }}" @selected($status === $key)>{{ $label['bn'] }}</option>
-                    @endforeach
-                </select>
-            </form>
-        </div>
-        <a class="btn btn-gold" href="{{ route('stock-transfers.create') }}">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>
-            <span class="bn">নতুন ট্রান্সফার</span><span class="en">New Transfer</span>
+    {{-- Top Tab Navigation --}}
+    <div class="tabbar" style="margin-bottom:16px;">
+        <a href="{{ route('stock-transfers.index') }}" class="tabbtn active">
+            <span class="bn">স্টক ট্রান্সফার</span><span class="en" style="display:none;">Stock Transfers</span>
+        </a>
+        <a href="{{ route('stock.history') }}" class="tabbtn">
+            <span class="bn">স্টকের ইতিহাস</span><span class="en" style="display:none;">Stock History</span>
         </a>
     </div>
 
-    <div class="panel" style="margin-top:0;">
-        <div class="panel-body">
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th class="bn">ট্রান্সফার নং</th><th class="en" style="display:none;">Transfer No</th>
-                            <th class="bn">থেকে</th><th class="en" style="display:none;">From</th>
-                            <th class="bn">প্রতি</th><th class="en" style="display:none;">To</th>
-                            <th class="bn">আইটেম</th><th class="en" style="display:none;">Items</th>
-                            <th class="bn">অবস্থা</th><th class="en" style="display:none;">Status</th>
-                            <th class="bn">তারিখ</th><th class="en" style="display:none;">Date</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($transfers as $transfer)
-                            @php $label = $transfer->statusLabel(); @endphp
-                            <tr style="cursor:pointer;" onclick="openModal('transferDetail-{{ $transfer->id }}')">
-                                <td class="cell-main">#{{ $transfer->transfer_no }}</td>
-                                <td>{{ $transfer->fromWarehouse->name ?? '—' }}</td>
-                                <td>{{ $transfer->toWarehouse->name ?? '—' }}</td>
-                                <td>{{ $transfer->items->count() }}</td>
-                                <td>
-                                    @if ($transfer->status === 'received')
-                                        <span class="badge b-green bn">{{ $label['bn'] }}</span><span class="badge b-green en" style="display:none;">{{ $label['en'] }}</span>
-                                    @elseif ($transfer->status === 'cancelled')
-                                        <span class="badge b-red bn">{{ $label['bn'] }}</span><span class="badge b-red en" style="display:none;">{{ $label['en'] }}</span>
-                                    @else
-                                        <span class="badge b-gold bn">{{ $label['bn'] }}</span><span class="badge b-gold en" style="display:none;">{{ $label['en'] }}</span>
-                                    @endif
-                                </td>
-                                <td>{{ $transfer->created_at->format('d M, Y') }}</td>
-                                <td onclick="event.stopPropagation();">
-                                    <div class="row-actions">
-                                        <button type="button" class="act" title="Details" onclick="openModal('transferDetail-{{ $transfer->id }}')">
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="5.5" r="1.6" fill="#5C6B65"/><circle cx="12" cy="12" r="1.6" fill="#5C6B65"/><circle cx="12" cy="18.5" r="1.6" fill="#5C6B65"/></svg>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="7">
-                                    <x-core::table.empty
-                                        icon="arrow-left-right"
-                                        title="কোনো স্টক ট্রান্সফার নেই"
-                                        title-en="No stock transfers found"
-                                    />
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+    {{-- Summary Stat Cards --}}
+    @if (isset($metrics))
+        <div class="stat-grid" style="margin-bottom:16px; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));">
+            <x-core::stat-card
+                icon="arrow-left-right"
+                color="teal"
+                :value="number_format($metrics['total'])"
+                label="মোট ট্রান্সফার"
+                label-en="Total Transfers"
+                subtext="সকল চালান"
+                subtext-en="All transfer requests"
+            />
 
-            <div style="margin-top:14px;">
-                {{ $transfers->links() }}
+            <x-core::stat-card
+                icon="clock"
+                color="gold"
+                :value="number_format($metrics['pending'])"
+                value-color="gold"
+                label="অপেক্ষমাণ অনুমোদন"
+                label-en="Pending Approval"
+                subtext="অনুমোদনের অপেক্ষায়"
+                subtext-en="Awaiting sign-off"
+            />
+
+            <x-core::stat-card
+                icon="check"
+                color="blue"
+                :value="number_format($metrics['approved'])"
+                value-color="blue"
+                label="অনুমোদিত"
+                label-en="Approved"
+                subtext="প্রেরণের অপেক্ষায়"
+                subtext-en="Ready to dispatch"
+            />
+
+            <x-core::stat-card
+                icon="arrow-right"
+                color="blue"
+                :value="number_format($metrics['dispatched'])"
+                label="প্রেরিত (চলমান)"
+                label-en="Dispatched"
+                subtext="পথিমধ্যে রয়েছে"
+                subtext-en="In transit"
+            />
+
+            <x-core::stat-card
+                icon="check-circle"
+                color="green"
+                :value="number_format($metrics['received'])"
+                value-color="green"
+                label="সফলভাবে গৃহীত"
+                label-en="Completed"
+                subtext="গন্তব্যে পৌঁছেছে"
+                subtext-en="Stock added to warehouse"
+            />
+        </div>
+    @endif
+
+    {{-- Filter Toolbar & Header Action --}}
+    <div class="section-row" style="margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+        <div class="filters" style="display:flex; align-items:center; flex-wrap:nowrap; gap:8px;">
+            <div style="width:170px; flex-shrink:0;">
+                <x-core::select
+                    name="filter_status"
+                    id="filter-status"
+                    size="sm"
+                    :no-margin="true"
+                    :options="['' => 'সকল অবস্থা (All Status)'] + collect(\Modules\Product\Models\StockTransfer::statusLabels())->mapWithKeys(fn($item, $key) => [$key => $item['bn'] . ' (' . $item['en'] . ')'])->toArray()"
+                />
             </div>
+            <div style="width:170px; flex-shrink:0;">
+                <x-core::select
+                    name="filter_from_warehouse"
+                    id="filter-from-warehouse"
+                    size="sm"
+                    :no-margin="true"
+                    :options="['' => 'উৎস গুদাম (From)'] + $warehouses->pluck('name', 'id')->toArray()"
+                />
+            </div>
+            <div style="width:170px; flex-shrink:0;">
+                <x-core::select
+                    name="filter_to_warehouse"
+                    id="filter-to-warehouse"
+                    size="sm"
+                    :no-margin="true"
+                    :options="['' => 'গন্তব্য গুদাম (To)'] + $warehouses->pluck('name', 'id')->toArray()"
+                />
+            </div>
+            <x-core::button
+                type="button"
+                variant="secondary"
+                size="sm"
+                icon="rotate-ccw"
+                id="btn-reset-filters"
+                title="রিসেট / Reset"
+            >
+                <span class="bn">রিসেট</span>
+                <span class="en" style="display:none;">Reset</span>
+            </x-core::button>
+        </div>
+
+        <x-core::button
+            :href="route('stock-transfers.create')"
+            size="sm"
+            color="primary"
+            icon="plus"
+        >
+            <span class="bn">নতুন ট্রান্সফার</span>
+            <span class="en" style="display:none;">New Transfer</span>
+        </x-core::button>
+    </div>
+
+    {{-- DataTable Container --}}
+    <div class="table-container table-teal">
+        <div class="table-responsive">
+            {!! $dataTable->table(['class' => 'app-table', 'id' => 'stock-transfers-data-table']) !!}
         </div>
     </div>
 
-    @foreach ($transfers as $transfer)
-        @php $label = $transfer->statusLabel(); @endphp
-        <div class="drawer-backdrop" id="transferDetail-{{ $transfer->id }}">
-            <div class="drawer">
-                <div class="drawer-head">
-                    <div class="drawer-title bn">ট্রান্সফার #{{ $transfer->transfer_no }}</div>
-                    <div class="drawer-title en" style="display:none;">Transfer #{{ $transfer->transfer_no }}</div>
-                    <button type="button" class="drawer-x" onclick="closeModal('transferDetail-{{ $transfer->id }}')">&times;</button>
-                </div>
-
-                <div class="tx-section">
-                    <div class="tx-row">
-                        <span class="lbl bn">থেকে</span><span class="lbl en" style="display:none;">From</span>
-                        <span class="val">{{ $transfer->fromWarehouse->name ?? '—' }}</span>
-                    </div>
-                    <div class="tx-row">
-                        <span class="lbl bn">প্রতি</span><span class="lbl en" style="display:none;">To</span>
-                        <span class="val">{{ $transfer->toWarehouse->name ?? '—' }}</span>
-                    </div>
-                    <div class="tx-row strong">
-                        <span class="lbl bn">অবস্থা</span><span class="lbl en" style="display:none;">Status</span>
-                        <span class="val">{{ $label['bn'] }}</span>
-                    </div>
-                </div>
-
-                <div class="tx-section">
-                    <div class="tx-row">
-                        <span class="lbl bn">অনুরোধ</span><span class="lbl en" style="display:none;">Requested</span>
-                        <span class="val" style="font-weight:400;">{{ $transfer->requestedBy->name ?? '—' }} &middot; {{ $transfer->created_at->format('d M, h:i A') }}</span>
-                    </div>
-                    @if ($transfer->approved_at)
-                        <div class="tx-row">
-                            <span class="lbl bn">অনুমোদন</span><span class="lbl en" style="display:none;">Approved</span>
-                            <span class="val" style="font-weight:400;">{{ $transfer->approvedBy->name ?? '—' }} &middot; {{ $transfer->approved_at->format('d M, h:i A') }}</span>
-                        </div>
-                    @endif
-                    @if ($transfer->dispatched_at)
-                        <div class="tx-row">
-                            <span class="lbl bn">প্রেরণ</span><span class="lbl en" style="display:none;">Dispatched</span>
-                            <span class="val" style="font-weight:400;">{{ $transfer->dispatchedBy->name ?? '—' }} &middot; {{ $transfer->dispatched_at->format('d M, h:i A') }}</span>
-                        </div>
-                    @endif
-                    @if ($transfer->received_at)
-                        <div class="tx-row">
-                            <span class="lbl bn">গ্রহণ</span><span class="lbl en" style="display:none;">Received</span>
-                            <span class="val" style="font-weight:400;">{{ $transfer->receivedBy->name ?? '—' }} &middot; {{ $transfer->received_at->format('d M, h:i A') }}</span>
-                        </div>
-                    @endif
-                </div>
-
-                <div class="drawer-title bn" style="font-size:14px; margin-bottom:10px;">আইটেমসমূহ</div>
-                <div class="drawer-title en" style="display:none; font-size:14px; margin-bottom:10px;">Items</div>
-                <div class="tx-section">
-                    @foreach ($transfer->items as $item)
-                        <div class="tx-item">
-                            <div class="nm">{{ $item->product->name ?? '—' }}</div>
-                            <div class="meta">
-                                <span>Batch: {{ $item->batch_no }}</span>
-                                <span>Qty: {{ rtrim(rtrim(number_format($item->quantity, 2), '0'), '.') }}</span>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-
-                @if ($transfer->note)
-                    <div class="tx-section">
-                        <div class="lbl bn" style="margin-bottom:6px;">নোট</div>
-                        <div class="lbl en" style="display:none; margin-bottom:6px;">Notes</div>
-                        <div class="val" style="font-weight:400;">{{ $transfer->note }}</div>
-                    </div>
-                @endif
-
-                <div style="display:flex; gap:10px; margin-top:20px;">
-                    @if ($transfer->status === 'pending')
-                        <form method="POST" action="{{ route('stock-transfers.approve', $transfer) }}" style="flex:1;">
-                            @csrf
-                            <button type="submit" class="btn btn-teal" style="width:100%; justify-content:center;">
-                                <span class="bn">অনুমোদন করুন</span><span class="en">Approve</span>
-                            </button>
-                        </form>
-                        <form method="POST" action="{{ route('stock-transfers.cancel', $transfer) }}" style="flex:1;" onsubmit="return confirm('এই ট্রান্সফার বাতিল করতে চান?');">
-                            @csrf
-                            <button type="submit" class="btn btn-red" style="width:100%; justify-content:center;">
-                                <span class="bn">বাতিল করুন</span><span class="en">Cancel</span>
-                            </button>
-                        </form>
-                    @elseif ($transfer->status === 'approved')
-                        <form method="POST" action="{{ route('stock-transfers.dispatch', $transfer) }}" style="flex:1;">
-                            @csrf
-                            <button type="submit" class="btn btn-gold" style="width:100%; justify-content:center;">
-                                <span class="bn">প্রেরণ করুন</span><span class="en">Dispatch</span>
-                            </button>
-                        </form>
-                        <form method="POST" action="{{ route('stock-transfers.cancel', $transfer) }}" style="flex:1;" onsubmit="return confirm('এই ট্রান্সফার বাতিল করতে চান?');">
-                            @csrf
-                            <button type="submit" class="btn btn-red" style="width:100%; justify-content:center;">
-                                <span class="bn">বাতিল করুন</span><span class="en">Cancel</span>
-                            </button>
-                        </form>
-                    @elseif ($transfer->status === 'dispatched')
-                        <form method="POST" action="{{ route('stock-transfers.receive', $transfer) }}" style="flex:1;">
-                            @csrf
-                            <button type="submit" class="btn btn-green" style="width:100%; justify-content:center;">
-                                <span class="bn">গ্রহণ নিশ্চিত করুন</span><span class="en">Confirm Receipt</span>
-                            </button>
-                        </form>
-                    @endif
-                </div>
-            </div>
+    {{-- Transfer Detail Drawer --}}
+    <div class="drawer-backdrop" id="transferDetailDrawer">
+        <div class="drawer" id="transferDetailDrawerContent" style="width:580px; max-width:95vw; background:var(--card);">
+            {{-- Loaded dynamically via AJAX --}}
         </div>
-    @endforeach
+    </div>
+
+    @push('scripts')
+        {!! $dataTable->scripts() !!}
+
+        <script>
+        $(function () {
+            function reloadTransferTable() {
+                var tableId = 'stock-transfers-data-table';
+                if (window.LaravelDataTables && window.LaravelDataTables[tableId]) {
+                    window.LaravelDataTables[tableId].ajax.reload(null, false);
+                } else if ($.fn.DataTable && $.fn.DataTable.isDataTable('#' + tableId)) {
+                    $('#' + tableId).DataTable().ajax.reload(null, false);
+                }
+            }
+
+            // Filters change
+            $(document).on('change', '#filter-status, #filter-from-warehouse, #filter-to-warehouse', function () {
+                reloadTransferTable();
+            });
+
+            // Reset filters
+            $(document).on('click', '#btn-reset-filters', function (e) {
+                e.preventDefault();
+                $('#filter-status').val('');
+                $('#filter-from-warehouse').val('');
+                $('#filter-to-warehouse').val('');
+                reloadTransferTable();
+            });
+
+            // Open Transfer Detail Drawer via AJAX
+            $(document).on('click', '.btn-view-transfer-detail', function (e) {
+                e.preventDefault();
+                var url = $(this).data('url') || $(this).attr('href');
+                if (!url) return;
+
+                var $content = $('#transferDetailDrawerContent');
+                $content.html('<div style="display:flex; align-items:center; justify-content:center; padding:80px 20px; color:var(--ink-500);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin" style="animation:spin 1s linear infinite;"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg></div>');
+                $('#transferDetailDrawer').addClass('open');
+
+                $.get(url, function (html) {
+                    $content.html(html);
+                    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                        window.lucide.createIcons();
+                    }
+                }).fail(function () {
+                    $content.html('<div style="padding:24px; color:var(--red-600); text-align:center;"><div style="font-weight:600; margin-bottom:8px;">তথ্য লোড করতে সমস্যা হয়েছে</div><div style="font-size:12px; color:var(--ink-500);">Failed to load transfer details</div></div>');
+                });
+            });
+
+            // Close Drawer Handlers
+            $(document).on('click', '#transferDetailDrawer .drawer-x', function () {
+                $('#transferDetailDrawer').removeClass('open');
+            });
+
+            $('#transferDetailDrawer').on('click', function (e) {
+                if ($(e.target).is('#transferDetailDrawer')) {
+                    $(this).removeClass('open');
+                }
+            });
+
+            // Handle AJAX form actions inside Drawer or Table
+            $(document).on('submit', '.inline-transfer-action-form, .inline-drawer-action-form', function (e) {
+                e.preventDefault();
+                var $form = $(this);
+                var $btn = $form.find('button[type="submit"]');
+                var url = $form.attr('action');
+
+                $btn.prop('disabled', true);
+
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: $form.serialize(),
+                    dataType: 'json',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function (res) {
+                        $btn.prop('disabled', false);
+                        $('#transferDetailDrawer').removeClass('open');
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'success',
+                                title: res.message || 'কার্যক্রম সফল হয়েছে',
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                        } else if (typeof window.toast === 'function') {
+                            window.toast(res.message || 'কার্যক্রম সফল হয়েছে', res.message_en || 'Action completed successfully');
+                        }
+                        reloadTransferTable();
+                    },
+                    error: function (xhr) {
+                        $btn.prop('disabled', false);
+                        var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'কার্যক্রম সম্পন্ন করতে সমস্যা হয়েছে';
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'ত্রুটি!',
+                                text: msg
+                            });
+                        }
+                    }
+                });
+            });
+        });
+        </script>
+    @endpush
 </x-core::layout>

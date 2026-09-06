@@ -57,6 +57,7 @@ Route::middleware(['auth', 'feature:stock'])->group(function () {
     Route::get('stock-transfers', [StockTransferController::class, 'index'])->name('stock-transfers.index')->middleware('permission:stock.view');
     Route::get('stock-transfers/create', [StockTransferController::class, 'create'])->name('stock-transfers.create')->middleware('permission:stock.write');
     Route::post('stock-transfers', [StockTransferController::class, 'store'])->name('stock-transfers.store')->middleware('permission:stock.write');
+    Route::get('stock-transfers/{transfer}', [StockTransferController::class, 'show'])->name('stock-transfers.show')->middleware('permission:stock.view');
     Route::post('stock-transfers/{transfer}/approve', [StockTransferController::class, 'approve'])->name('stock-transfers.approve')->middleware('permission:stock.write');
     Route::post('stock-transfers/{transfer}/dispatch', [StockTransferController::class, 'dispatch'])->name('stock-transfers.dispatch')->middleware('permission:stock.write');
     Route::post('stock-transfers/{transfer}/receive', [StockTransferController::class, 'receive'])->name('stock-transfers.receive')->middleware('permission:stock.write');
