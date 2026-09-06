@@ -496,6 +496,36 @@
             <line x1="12" x2="12" y1="20" y2="10" />
             <line x1="18" x2="18" y1="20" y2="4" />
             <line x1="6" x2="6" y1="20" y2="16" />
+            @break
+
+        @case('landmark')
+        @case('bank')
+            <line x1="3" x2="21" y1="22" y2="22" />
+            <line x1="6" x2="6" y1="18" y2="11" />
+            <line x1="10" x2="10" y1="18" y2="11" />
+            <line x1="14" x2="14" y1="18" y2="11" />
+            <line x1="18" x2="18" y1="18" y2="11" />
+            <polygon points="12 2 20 7 4 7" />
+            @break
+
+        @case('smartphone')
+        @case('mobile')
+            <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
+            <path d="M12 18h.01" />
+            @break
+
+        @case('banknote')
+            <rect width="20" height="12" x="2" y="6" rx="2" />
+            <circle cx="12" cy="12" r="2" />
+            <path d="M6 12h.01M18 12h.01" />
+            @break
+
+        @case('coins')
+            <circle cx="8" cy="8" r="6" />
+            <path d="M18.09 10.37A6 6 0 1 1 10.34 18" />
+            <path d="M7 6h1v4" />
+            <path d="m16.71 13.88.7.71-2.82 2.82" />
+            @break
         @case('git-branch')
         @case('branch')
             <line x1="6" x2="6" y1="3" y2="15" />
