@@ -3,6 +3,7 @@
     'id' => null,
     'value' => null,
     'placeholder' => null,
+    'placeholderEn' => null,
     'rows' => 3,
     'resize' => 'vertical',
     'maxLength' => null,
@@ -123,7 +124,8 @@
                 @if ($name) name="{{ $name }}" @endif
                 @if ($inputId) id="{{ $inputId }}" @endif
                 rows="{{ $rows }}"
-                @if ($placeholder) placeholder="{{ $placeholder }}" @endif
+                @if ($placeholder) placeholder="{{ $placeholder }}" data-placeholder-bn="{{ $placeholder }}" @endif
+                @if ($placeholderEn) data-placeholder-en="{{ $placeholderEn }}" @endif
                 @if ($maxLength) maxlength="{{ $maxLength }}" @endif
                 @if ($required) required @endif
                 @if ($disabled) disabled @endif

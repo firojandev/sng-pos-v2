@@ -1,16 +1,32 @@
-<div class="field" style="margin-top:0;">
-    <label class="bn">ব্র্যান্ড</label><label class="en" style="display:none;">Brand</label>
-    <select name="brand_id" required>
-        <option value="">-- নির্বাচন করুন --</option>
-        @foreach ($brands as $brand)
-            <option value="{{ $brand->id }}" {{ (int) old('brand_id', $model->brand_id) === $brand->id ? 'selected' : '' }}>{{ $brand->name }}</option>
-        @endforeach
-    </select>
-    @error('brand_id') <div class="field-error">{{ $message }}</div> @enderror
-</div>
+@php
+    $brandOptions = ['' => '-- নির্বাচন করুন --'];
+    foreach ($brands as $brand) {
+        $brandOptions[$brand->id] = $brand->name;
+    }
+    $selectedBrandId = old('brand_id', $model->brand_id ?? '');
+@endphp
 
-<div class="field">
-    <label class="bn">মডেলের নাম</label><label class="en" style="display:none;">Model Name</label>
-    <input type="text" name="name" value="{{ old('name', $model->name) }}" placeholder="যেমন গ্যালাক্সি এস২৪" required>
-    @error('name') <div class="field-error">{{ $message }}</div> @enderror
+<div style="display:flex; flex-direction:column; gap:14px;">
+    <x-core::select
+        name="brand_id"
+        id="model_brand_id"
+        label="ব্র্যান্ড"
+        label-en="Brand"
+        :options="$brandOptions"
+        :value="$selectedBrandId"
+        size="sm"
+        :required="true"
+    />
+
+    <x-core::input
+        name="name"
+        id="model_name"
+        label="মডেলের নাম"
+        label-en="Model Name"
+        placeholder="যেমন: গ্যালাক্সি এস২৪"
+        placeholder-en="e.g. Galaxy S24"
+        :value="old('name', $model->name ?? '')"
+        size="sm"
+        :required="true"
+    />
 </div>
