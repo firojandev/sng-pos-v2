@@ -144,6 +144,55 @@ class StockDataTableTest extends TestCase
         $response->assertSee('Potato Crackers');
     }
 
+    public function test_stock_index_metrics_are_scoped_to_current_shop(): void
+    {
+        $otherShop = Shop::create([
+            'name' => 'Other Shop',
+            'slug' => 'other-shop',
+            'status' => 'active',
+            'enabled_features' => Features::keys(),
+        ]);
+
+        $otherCategory = Category::create(['shop_id' => $otherShop->id, 'name' => 'Other Category']);
+        $otherProduct = Product::create([
+            'shop_id' => $otherShop->id,
+            'category_id' => $otherCategory->id,
+            'name' => 'Expensive Item',
+            'sku' => 'EXP-01',
+            'purchase_price' => 1000,
+            'sale_price' => 1500,
+            'status' => 'active',
+        ]);
+
+        Batch::create([
+            'shop_id' => $otherShop->id,
+            'product_id' => $otherProduct->id,
+            'batch_no' => 'OTHER-BATCH-01',
+            'quantity' => 100,
+        ]);
+
+        $myCategory = Category::create(['shop_id' => $this->shop->id, 'name' => 'My Category']);
+        Product::create([
+            'shop_id' => $this->shop->id,
+            'category_id' => $myCategory->id,
+            'name' => 'Zero Stock Item',
+            'sku' => 'ZERO-01',
+            'purchase_price' => 50,
+            'sale_price' => 80,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($this->user)->get(route('stock.index'));
+
+        $response->assertOk();
+        $response->assertViewHas('metrics', function ($metrics) {
+            return $metrics['totalProducts'] === 1
+                && (float) $metrics['totalQty'] === 0.0
+                && (float) $metrics['totalValue'] === 0.0
+                && $metrics['outCount'] === 1;
+        });
+    }
+
     public function test_stock_adjustment_via_ajax(): void
     {
         $category = Category::create(['shop_id' => $this->shop->id, 'name' => 'Dairy']);

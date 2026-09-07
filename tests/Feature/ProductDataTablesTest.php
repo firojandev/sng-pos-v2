@@ -118,6 +118,19 @@ class ProductDataTablesTest extends TestCase
         $this->assertStringContainsString('Samsung', $response->json('data.0.brand'));
     }
 
+    public function test_can_delete_product_model(): void
+    {
+        $brand = Brand::create(['shop_id' => $this->shop->id, 'name' => 'Samsung']);
+        $model = ProductModel::create(['shop_id' => $this->shop->id, 'brand_id' => $brand->id, 'name' => 'Galaxy S24']);
+
+        $response = $this->actingAs($this->user)
+            ->delete(route('models.destroy', $model));
+
+        $response->assertRedirect(route('models.index'));
+        $response->assertSessionHas('status', 'মডেল মুছে ফেলা হয়েছে');
+        $this->assertDatabaseMissing('product_models', ['id' => $model->id]);
+    }
+
     public function test_batches_datatable_generates_html_and_query(): void
     {
         $dataTable = new BatchesDataTable;
