@@ -13,6 +13,11 @@
             'warrantyDuration' => $product->warranty_duration,
             'warrantyType' => $product->warranty_type,
             'baseUnitId' => $baseUnit?->id,
+            'isVat' => (bool) $product->is_vat,
+            'vatPercentage' => (float) ($product->vat_percentage ?? 0),
+            'isWholesale' => (bool) $product->is_wholesale,
+            'wholesalePrice' => (float) ($product->wholesale_price ?? 0),
+            'wholesaleMinQty' => (float) ($product->wholesale_min_qty ?? 1),
             'units' => $product->units->map(function ($u) {
                 $raw = (float) $u->pivot->conversion_factor;
 
@@ -51,11 +56,13 @@
             'discount' => rtrim(rtrim(number_format($item->discount, 2, '.', ''), '0'), '.'),
             'barcode' => $item->product->barcode ?? '',
             'warrantyExpiresAt' => optional($item->warranty_expires_at)->format('Y-m-d') ?? '',
+            'isWholesale' => (bool) ($item->product?->is_wholesale && (float) $item->unit_price == (float) $item->product?->wholesale_price),
         ])->values()->toArray()
         : []
     );
 
     $initialDiscount = old('discount', $sale->discount ?? 0);
+    $initialTax = old('tax', $sale->tax ?? 0);
     $initialDeliveryCharge = old('delivery_charge', $sale->delivery_charge ?? 0);
     $initialNote = old('note', $sale->note);
     $initialInvoiceNo = old('invoice_no', $sale->exists ? $sale->invoice_no : '');
@@ -209,6 +216,11 @@
 
         <div class="cart-totals" style="display: flex; flex-direction: column; align-items: flex-end;">
             <span id="subtotal-display" style="display:none;">0.00</span>
+            <div id="cart-tax-row" style="display: none; justify-content: flex-end; align-items: baseline; gap: 8px; width: 100%; padding: 2px 0 4px;">
+                <span class="sum-label bn" style="color:var(--ink-600); font-weight:600; font-size:13px;">মোট ভ্যাট</span>
+                <span class="sum-label en" style="display:none; color:var(--ink-600); font-weight:600; font-size:13px;">Total VAT</span>
+                <b id="tax-display" style="font-family:'Plus Jakarta Sans','Manrope',sans-serif; font-weight:700; font-size:14px; color:var(--blue-ink);">৳0.00</b>
+            </div>
             <div class="sum-row total" style="display: flex; justify-content: flex-end; align-items: baseline; gap: 8px; width: 100%; border-bottom: none; padding: 4px 0 10px;">
                 <span class="sum-label bn" style="color:var(--ink-900); font-weight:700; font-size:15px;">সর্বমোট</span>
                 <span class="sum-label en" style="display:none; color:var(--ink-900); font-weight:700; font-size:15px;">Total Amount</span>
@@ -233,6 +245,7 @@
 
 <div id="hidden-fields-container"></div>
 <input type="hidden" name="discount" id="discount-hidden" value="0">
+<input type="hidden" name="tax" id="tax-hidden" value="{{ $initialTax }}">
 <div id="hidden-payments-container"></div>
 
 <style>
@@ -486,6 +499,12 @@
                     </select>
                 </div>
             </div>
+            <div id="drawer-tax-row"
+                style="display:none; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:13px;">
+                <span class="bn" style="color:var(--ink-700);">ভ্যাট (ট্যাক্স)</span>
+                <span class="en" style="color:var(--ink-700); display:none;">Tax / VAT</span>
+                <b style="color:var(--blue-ink);">৳<span id="drawer-calc-tax">0.00</span></b>
+            </div>
             <div
                 style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:13px;">
                 <span class="bn" style="color:var(--ink-700);">ডেলিভারী চার্জ</span>
@@ -616,6 +635,7 @@
         discountType: 'flat',
         barcode: row.barcode || '',
         warrantyExpiresAt: row.warrantyExpiresAt || '',
+        isWholesale: !!row.isWholesale,
     }));
 
     function escapeHtml(str) {
@@ -645,6 +665,17 @@
 
     function lineAmount(item) {
         return (item.qty * item.price) - lineDiscountAmount(item);
+    }
+
+    function lineTaxAmount(item) {
+        const p = productData[item.productId];
+        if (!p || !p.isVat || !(p.vatPercentage > 0)) return 0;
+        const net = Math.max(0, lineAmount(item));
+        return net * (p.vatPercentage / 100);
+    }
+
+    function totalTax() {
+        return cart.reduce((sum, item) => sum + lineTaxAmount(item), 0);
     }
 
     function addDuration(dateStr, amount, unit) {
@@ -704,7 +735,7 @@
     function addToCart(productId) {
         const p = productData[productId];
         if (!p) return;
-        const existing = cart.find((c) => c.productId === productId && !c.warrantyExpiresAt);
+        const existing = cart.find((c) => String(c.productId) === String(productId));
         if (existing) {
             existing.qty += 1;
         } else {
@@ -715,19 +746,14 @@
             cart.push({
                 productId: productId, qty: 1, unitId: p.baseUnitId || '', price: p.price,
                 discountRaw: 0, discountType: 'flat', barcode: p.barcode || '', warrantyExpiresAt: warrantyExpiresAt,
+                isWholesale: false,
             });
         }
         renderAll();
     }
 
     function decreaseFromCart(productId) {
-        let index = -1;
-        for (let i = cart.length - 1; i >= 0; i--) {
-            if (String(cart[i].productId) === String(productId)) {
-                index = i;
-                break;
-            }
-        }
+        const index = cart.findIndex((c) => String(c.productId) === String(productId));
         if (index === -1) return;
 
         if (cart[index].qty > 1) {
@@ -806,14 +832,22 @@
         cartList.innerHTML = cart.map((item, i) => {
             const p = productData[item.productId] || { name: 'Unknown', price: 0, units: [] };
             const factor = unitFactor(p, item.unitId);
-            const referenceUnitPrice = p.price * factor;
+            const referenceUnitPrice = (item.isWholesale ? (p.wholesalePrice || p.price) : p.price) * factor;
             const hasBarcode = !!item.barcode;
             const hasWarranty = !!item.warrantyExpiresAt;
             const warrantyLabel = hasWarranty ? formatDisplayDate(item.warrantyExpiresAt) : '';
+            const hasTax = p.isVat && p.vatPercentage > 0;
+            const itemTax = lineTaxAmount(item);
+            const hasWholesale = p.isWholesale && (p.wholesalePrice > 0 || p.wholesaleMinQty > 0);
+
             return '<div class="cart-item" data-index="' + i + '">' +
                 '<div class="ci-head">' +
                     '<div class="thumb"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="8" height="8" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="13" y="4" width="8" height="8" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="14" width="8" height="6" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="13" y="14" width="8" height="6" rx="1.6" stroke="currentColor" stroke-width="1.6"/></svg></div>' +
                     '<div class="nm" title="' + escapeHtml(p.name) + '">' + escapeHtml(p.name) + '</div>' +
+                    (hasTax ? '<div class="ci-tax-badge" title="ভ্যাট প্রযোজ্য (' + p.vatPercentage + '%)">' +
+                        '<span class="bn">ভ্যাট (' + p.vatPercentage + '%): ৳<span class="ci-item-tax-amt">' + fmt(itemTax) + '</span></span>' +
+                        '<span class="en" style="display:none;">Tax (' + p.vatPercentage + '%): ৳<span class="ci-item-tax-amt">' + fmt(itemTax) + '</span></span>' +
+                    '</div>' : '') +
                     '<div class="ci-head-popovers">' +
                         '<div class="item-popover barcode-popover">' +
                             '<div class="fld"><label class="bn">বারকোড</label><label class="en" style="display:none;">Barcode</label><input type="text" class="ci-barcode-input" value="' + escapeHtml(item.barcode) + '" placeholder="বারকোড স্ক্যান/লিখুন"></div>' +
@@ -831,6 +865,10 @@
                         '</div>' +
                     '</div>' +
                     '<div class="ci-actions">' +
+                        (hasWholesale ? '<label class="ci-wholesale-toggle' + (item.isWholesale ? ' is-active' : '') + '" title="পাইকারি বিক্রয় / Wholesale">' +
+                            '<input type="checkbox" class="ci-wholesale-chk" ' + (item.isWholesale ? 'checked' : '') + '>' +
+                            '<span class="bn">পাইকারি</span><span class="en" style="display:none;">Wholesale</span>' +
+                        '</label>' : '') +
                         '<button type="button" class="barcode-toggle-btn' + (hasBarcode ? ' has-value' : '') + '" title="Barcode"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 5v14M8 5v14M11 5v14M15 5v14M17 5v14M20 5v14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>' +
                         '<button type="button" class="warranty-toggle-btn' + (hasWarranty ? ' has-value' : '') + '" title="ওয়ারেন্টি">' +
                             '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>' +
@@ -869,6 +907,7 @@
             html += '<input type="hidden" name="items[' + i + '][discount]" value="' + fmt(lineDiscountAmount(item)) + '">';
             html += '<input type="hidden" name="items[' + i + '][barcode]" value="' + escapeHtml(item.barcode) + '">';
             html += '<input type="hidden" name="items[' + i + '][warranty_expires_at]" value="' + item.warrantyExpiresAt + '">';
+            html += '<input type="hidden" name="items[' + i + '][is_wholesale]" value="' + (item.isWholesale ? '1' : '0') + '">';
         });
         container.innerHTML = html;
     }
@@ -886,9 +925,10 @@
     function calcGrandTotalCost() {
         const sub = subtotal();
         const discount = Math.min(discountAmount(), sub);
+        const tax = totalTax();
         const deliveryCharge = parseFloat($('#delivery-charge-input').val()) || 0;
         const prevDueVal = parseFloat($('#total_previous_due').val()) || 0;
-        return Math.max(0, sub - discount + deliveryCharge + prevDueVal);
+        return Math.max(0, sub - discount + tax + deliveryCharge + prevDueVal);
     }
 
     let drawerMode = 'cash';
@@ -946,6 +986,7 @@
         $('#grand_total_cost').val(formatted);
         $('#grand_total_cost_display').text(formatted);
         $('#drawer-calc-subtotal').text(fmt(subtotal()));
+        $('#drawer-calc-tax').text(fmt(totalTax()));
         $('#drawer-total-payable').text(formatted);
 
         if (drawerMode === 'cash') {
@@ -971,10 +1012,23 @@
     function recalcGrand() {
         const sub = subtotal();
         const discount = Math.min(discountAmount(), sub);
+        const tax = totalTax();
         const deliveryCharge = parseFloat($('#delivery-charge-input').val()) || 0;
-        const total = Math.max(sub - discount + deliveryCharge, 0);
+        const total = Math.max(sub - discount + tax + deliveryCharge, 0);
 
         $('#subtotal-display').text(fmt(sub));
+        $('#tax-hidden').val(fmt(tax));
+        $('#tax-display').text('৳' + fmt(tax));
+        $('#drawer-calc-tax').text(fmt(tax));
+
+        if (tax > 0) {
+            $('#cart-tax-row').css('display', 'flex');
+            $('#drawer-tax-row').css('display', 'flex');
+        } else {
+            $('#cart-tax-row').hide();
+            $('#drawer-tax-row').hide();
+        }
+
         $('#total-display').text(fmt(total));
         $('#discount-hidden').val(fmt(discount));
 
@@ -1047,6 +1101,44 @@
         }
     });
 
+    cartList.addEventListener('change', (e) => {
+        const row = e.target.closest('.cart-item');
+        if (!row) return;
+        const index = parseInt(row.dataset.index, 10);
+        const item = cart[index];
+        if (!item) return;
+
+        if (e.target.classList.contains('ci-wholesale-chk')) {
+            const isChecked = e.target.checked;
+            item.isWholesale = isChecked;
+            const p = productData[item.productId];
+            const factor = unitFactor(p, item.unitId);
+            if (isChecked) {
+                const minQty = Math.max(1, p.wholesaleMinQty || 1);
+                if (item.qty < minQty) {
+                    item.qty = minQty;
+                }
+                const wholesaleBase = p.wholesalePrice > 0 ? p.wholesalePrice : p.price;
+                item.price = Math.round(wholesaleBase * factor * 100) / 100;
+            } else {
+                item.qty = 1;
+                item.price = Math.round(p.price * factor * 100) / 100;
+            }
+            renderAll();
+            return;
+        }
+
+        if (e.target.classList.contains('ci-unit-select')) {
+            const p = productData[item.productId];
+            const factor = unitFactor(p, e.target.value);
+            item.unitId = e.target.value;
+            const basePrice = item.isWholesale ? (p.wholesalePrice || p.price) : p.price;
+            item.price = Math.round(basePrice * factor * 100) / 100;
+            renderAll();
+            return;
+        }
+    });
+
     cartList.addEventListener('input', (e) => {
         const row = e.target.closest('.cart-item');
         if (!row) return;
@@ -1064,23 +1156,16 @@
             if (btn) btn.classList.toggle('has-value', !!item.barcode);
         }
 
-        if (e.target.classList.contains('ci-unit-select')) {
-            const p = productData[item.productId];
-            const factor = unitFactor(p, e.target.value);
-            item.unitId = e.target.value;
-            // Reset the selling price to a sensible default for the newly chosen
-            // unit (base sale price x factor) so Amount stays meaningful -- the
-            // shop admin can still adjust it afterwards for a wholesale price.
-            item.price = Math.round(p.price * factor * 100) / 100;
-            renderAll();
-            return;
-        }
-
         if (
             e.target.classList.contains('ci-qty') || e.target.classList.contains('ci-price')
             || e.target.classList.contains('ci-discount-raw') || e.target.classList.contains('ci-discount-type')
         ) {
             row.querySelector('.ci-total').value = fmt(lineAmount(item));
+            const p = productData[item.productId];
+            if (p && p.isVat && p.vatPercentage > 0) {
+                const taxEl = row.querySelector('.ci-item-tax-amt');
+                if (taxEl) taxEl.textContent = fmt(lineTaxAmount(item));
+            }
         }
         renderHiddenFields();
         recalcGrand();

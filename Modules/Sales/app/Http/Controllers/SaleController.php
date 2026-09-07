@@ -195,7 +195,7 @@ class SaleController extends Controller
                 ? Customer::where('id', $customerId)->lockForUpdate()->first()
                 : null;
 
-            [$subtotal, $discount, $deliveryCharge, $total] = $this->calculateBaseTotals($items, $data);
+            [$subtotal, $discount, $tax, $deliveryCharge, $total] = $this->calculateBaseTotals($items, $data);
             $profit = $this->calculateProfit($items, $discount);
 
             $customerPreviousDue = 0.0;
@@ -233,6 +233,7 @@ class SaleController extends Controller
                 'sale_date' => $data['sale_date'],
                 'subtotal' => $subtotal,
                 'discount' => $discount,
+                'tax' => $tax,
                 'delivery_charge' => $deliveryCharge,
                 'total' => $total,
                 'paid_amount' => $salePaid,
@@ -289,7 +290,7 @@ class SaleController extends Controller
                 ? Customer::where('id', $customerId)->lockForUpdate()->first()
                 : null;
 
-            [$subtotal, $discount, $deliveryCharge, $total] = $this->calculateBaseTotals($items, $data);
+            [$subtotal, $discount, $tax, $deliveryCharge, $total] = $this->calculateBaseTotals($items, $data);
             $profit = $this->calculateProfit($items, $discount);
 
             $customerPreviousDue = 0.0;
@@ -327,6 +328,7 @@ class SaleController extends Controller
                 'invoice_no' => $data['invoice_no'] ?? $sale->invoice_no,
                 'subtotal' => $subtotal,
                 'discount' => $discount,
+                'tax' => $tax,
                 'delivery_charge' => $deliveryCharge,
                 'total' => $total,
                 'paid_amount' => $salePaid,
@@ -401,16 +403,32 @@ class SaleController extends Controller
     }
 
     /**
-     * @return array{0: float, 1: float, 2: float, 3: float}
+     * @return array{0: float, 1: float, 2: float, 3: float, 4: float}
      */
     private function calculateBaseTotals(array $items, array $data): array
     {
         $subtotal = round((float) collect($items)->sum(fn ($item) => $this->lineAmount($item)), 2);
         $discount = round((float) ($data['discount'] ?? 0), 2);
-        $deliveryCharge = round((float) ($data['delivery_charge'] ?? 0), 2);
-        $total = round(max($subtotal - $discount + $deliveryCharge, 0), 2);
 
-        return [$subtotal, $discount, $deliveryCharge, $total];
+        $productVatMap = Product::whereIn('id', collect($items)->pluck('product_id'))
+            ->get(['id', 'is_vat', 'vat_percentage'])
+            ->keyBy('id');
+
+        $tax = round((float) collect($items)->sum(function ($item) use ($productVatMap) {
+            $p = $productVatMap->get($item['product_id']);
+            if ($p && $p->is_vat && (float) $p->vat_percentage > 0) {
+                $lineNet = max(0, $this->lineAmount($item));
+
+                return $lineNet * ((float) $p->vat_percentage / 100);
+            }
+
+            return 0;
+        }), 2);
+
+        $deliveryCharge = round((float) ($data['delivery_charge'] ?? 0), 2);
+        $total = round(max($subtotal - $discount + $tax + $deliveryCharge, 0), 2);
+
+        return [$subtotal, $discount, $tax, $deliveryCharge, $total];
     }
 
     /**

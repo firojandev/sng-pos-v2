@@ -2478,6 +2478,19 @@ table.pos-table{width:100%; border-collapse:collapse; min-width:820px;}
 .cart-item .ci-actions button.active{background:var(--blue-100); border-color:var(--blue-ic-bg); color:var(--blue-ink);}
 .cart-item .ci-actions button.has-value{background:var(--gold-100); border-color:var(--gold-500); color:var(--gold-ink);}
 .cart-item .ci-actions .ci-remove{background:var(--red-100); border-color:var(--red-100); color:var(--red-600);}
+.cart-item .ci-tax-badge{display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; padding:2px 8px; border-radius:6px; background:var(--blue-100); border:1px solid var(--blue-ic-bg); color:var(--blue-ink); white-space:nowrap; flex:0 0 auto;}
+.cart-item .ci-actions .ci-wholesale-toggle{display:inline-flex; align-items:center; gap:5px; padding:0 8px; height:26px; border-radius:8px; border:1px solid var(--border); background:var(--paper); color:var(--ink-700); cursor:pointer; font-size:11px; font-weight:600; user-select:none; transition:all .15s ease; flex:0 0 auto;}
+.cart-item .ci-actions .ci-wholesale-toggle:hover{background:var(--paper-line); border-color:var(--teal-800);}
+.cart-item .ci-actions .ci-wholesale-toggle.is-active{background:var(--teal-100); border-color:var(--teal-800); color:var(--teal-800);}
+.cart-item .ci-actions .ci-wholesale-toggle input[type="checkbox"]{accent-color:var(--teal-700); width:13px; height:13px; cursor:pointer; margin:0;}
+html.lang-en .cart-item .ci-wholesale-toggle .bn,
+body.lang-en .cart-item .ci-wholesale-toggle .bn,
+html.lang-en .cart-item .ci-tax-badge .bn,
+body.lang-en .cart-item .ci-tax-badge .bn{display:none !important;}
+html.lang-en .cart-item .ci-wholesale-toggle .en,
+body.lang-en .cart-item .ci-wholesale-toggle .en,
+html.lang-en .cart-item .ci-tax-badge .en,
+body.lang-en .cart-item .ci-tax-badge .en{display:inline !important;}
 .cart-item .ci-grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;}
 .cart-item .ci-grid.ci-grid-5{grid-template-columns:1fr 1fr 0.7fr 1fr 1fr;}
 .cart-item .ci-grid.ci-grid-6{grid-template-columns:0.7fr 0.9fr 0.9fr 0.9fr 1.2fr 0.9fr; gap:6px;}

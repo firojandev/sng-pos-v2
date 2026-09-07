@@ -246,7 +246,7 @@
             </div>
             <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
                 <span style="color:#334155;">ভ্যাট</span>
-                <span>৳{{ BanglaNumber::toBn('0.00') }}</span>
+                <span>৳{{ BanglaNumber::toBn(number_format((float) ($sale->tax ?? 0), 2)) }}</span>
             </div>
             <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
                 <span style="color:#334155;">ডেলিভারি</span>
