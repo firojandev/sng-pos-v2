@@ -23,25 +23,32 @@
                     <div class="mini-card pm-card">
                         <div class="mini-card-actions">
                             @can('products.edit')
-                                <button
+                                <x-core::button
                                     type="button"
-                                    class="act btn-edit-brand"
+                                    size="sm"
+                                    variant="ghost"
+                                    color="secondary"
+                                    icon="edit"
+                                    class="btn-edit-brand"
                                     title="Edit"
                                     data-id="{{ $brand->id }}"
                                     data-name="{{ $brand->name }}"
                                     data-description="{{ $brand->description }}"
                                     data-action="{{ route('brands.update', $brand) }}"
-                                >
-                                    <x-core::icon name="edit" size="14" />
-                                </button>
+                                />
                             @endcan
                             @can('products.delete')
-                                <form method="POST" action="{{ route('brands.destroy', $brand) }}" class="delete-form">
+                                <form method="POST" action="{{ route('brands.destroy', $brand) }}" class="delete-form" style="display:inline;">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="act" title="Delete">
-                                        <x-core::icon name="trash-2" size="14" class="text-danger" />
-                                    </button>
+                                    <x-core::button
+                                        type="submit"
+                                        size="sm"
+                                        variant="ghost"
+                                        color="danger"
+                                        icon="trash-2"
+                                        title="Delete"
+                                    />
                                 </form>
                             @endcan
                         </div>
@@ -88,19 +95,30 @@
             <form method="POST" action="{{ route('brands.store') }}" id="create_brand_form">
                 @csrf
                 <div style="display:flex; flex-direction:column; gap:14px;">
-                    <div class="field" style="margin-top:0;">
-                        <label class="bn">ব্র্যান্ডের নাম <span class="text-danger">*</span></label>
-                        <label class="en" style="display:none;">Brand Name <span class="text-danger">*</span></label>
-                        <input type="text" name="name" id="create_brand_name" value="{{ old('name') }}" placeholder="যেমন: স্যামসাং" required autofocus>
-                        @error('name') <div class="field-error">{{ $message }}</div> @enderror
-                    </div>
+                    <x-core::input
+                        name="name"
+                        id="create_brand_name"
+                        label="ব্র্যান্ডের নাম"
+                        label-en="Brand Name"
+                        placeholder="যেমন: স্যামসাং"
+                        placeholder-en="e.g. Samsung"
+                        :value="old('name')"
+                        size="sm"
+                        :required="true"
+                        autofocus
+                    />
 
-                    <div class="field" style="margin-top:0;">
-                        <label class="bn">বিবরণ</label>
-                        <label class="en" style="display:none;">Description</label>
-                        <textarea name="description" id="create_brand_description" rows="3" placeholder="ঐচ্ছিক বিবরণ">{{ old('description') }}</textarea>
-                        @error('description') <div class="field-error">{{ $message }}</div> @enderror
-                    </div>
+                    <x-core::textarea
+                        name="description"
+                        id="create_brand_description"
+                        label="বিবরণ"
+                        label-en="Description"
+                        placeholder="ঐচ্ছিক বিবরণ"
+                        placeholder-en="Optional description"
+                        :value="old('description')"
+                        rows="3"
+                        size="sm"
+                    />
                 </div>
 
                 <div style="margin-top:20px; padding-top:14px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:flex-end; gap:8px;">
@@ -136,19 +154,29 @@
                 @csrf
                 @method('PUT')
                 <div style="display:flex; flex-direction:column; gap:14px;">
-                    <div class="field" style="margin-top:0;">
-                        <label class="bn">ব্র্যান্ডের নাম <span class="text-danger">*</span></label>
-                        <label class="en" style="display:none;">Brand Name <span class="text-danger">*</span></label>
-                        <input type="text" name="name" id="edit_brand_name" value="{{ old('name') }}" placeholder="যেমন: স্যামসাং" required>
-                        @error('name') <div class="field-error">{{ $message }}</div> @enderror
-                    </div>
+                    <x-core::input
+                        name="name"
+                        id="edit_brand_name"
+                        label="ব্র্যান্ডের নাম"
+                        label-en="Brand Name"
+                        placeholder="যেমন: স্যামসাং"
+                        placeholder-en="e.g. Samsung"
+                        :value="old('name')"
+                        size="sm"
+                        :required="true"
+                    />
 
-                    <div class="field" style="margin-top:0;">
-                        <label class="bn">বিবরণ</label>
-                        <label class="en" style="display:none;">Description</label>
-                        <textarea name="description" id="edit_brand_description" rows="3" placeholder="ঐচ্ছিক বিবরণ">{{ old('description') }}</textarea>
-                        @error('description') <div class="field-error">{{ $message }}</div> @enderror
-                    </div>
+                    <x-core::textarea
+                        name="description"
+                        id="edit_brand_description"
+                        label="বিবরণ"
+                        label-en="Description"
+                        placeholder="ঐচ্ছিক বিবরণ"
+                        placeholder-en="Optional description"
+                        :value="old('description')"
+                        rows="3"
+                        size="sm"
+                    />
                 </div>
 
                 <div style="margin-top:20px; padding-top:14px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:flex-end; gap:8px;">

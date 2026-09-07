@@ -118,6 +118,19 @@ class ProductDataTablesTest extends TestCase
         $this->assertStringContainsString('Samsung', $response->json('data.0.brand'));
     }
 
+    public function test_can_delete_product_model(): void
+    {
+        $brand = Brand::create(['shop_id' => $this->shop->id, 'name' => 'Samsung']);
+        $model = ProductModel::create(['shop_id' => $this->shop->id, 'brand_id' => $brand->id, 'name' => 'Galaxy S24']);
+
+        $response = $this->actingAs($this->user)
+            ->delete(route('models.destroy', $model));
+
+        $response->assertRedirect(route('models.index'));
+        $response->assertSessionHas('status', 'মডেল মুছে ফেলা হয়েছে');
+        $this->assertDatabaseMissing('product_models', ['id' => $model->id]);
+    }
+
     public function test_batches_datatable_generates_html_and_query(): void
     {
         $dataTable = new BatchesDataTable;
@@ -308,5 +321,59 @@ class ProductDataTablesTest extends TestCase
         $response->assertOk();
         $response->assertSee('AirPods Pro');
         $response->assertSee('SKU: APP-2');
+    }
+
+    public function test_product_can_be_created_without_sku(): void
+    {
+        $category = Category::create(['shop_id' => $this->shop->id, 'name' => 'General']);
+        $unit = Unit::create(['shop_id' => $this->shop->id, 'name' => 'Piece', 'short_code' => 'pc']);
+
+        $response = $this->actingAs($this->user)->post(route('products.store'), [
+            'name' => 'Product without SKU',
+            'category_id' => $category->id,
+            'purchase_price' => 100,
+            'sale_price' => 150,
+            'alert_qty' => 5,
+            'status' => 'active',
+            'units' => [
+                ['unit_id' => $unit->id, 'is_base' => true, 'conversion_factor' => 1],
+            ],
+        ]);
+
+        $response->assertRedirect(route('products.index'));
+        $this->assertDatabaseHas('products', [
+            'name' => 'Product without SKU',
+            'sku' => null,
+        ]);
+    }
+
+    public function test_multiple_products_can_exist_without_sku(): void
+    {
+        $category = Category::create(['shop_id' => $this->shop->id, 'name' => 'General']);
+        $unit = Unit::create(['shop_id' => $this->shop->id, 'name' => 'Piece', 'short_code' => 'pc']);
+
+        $product1 = Product::create([
+            'shop_id' => $this->shop->id,
+            'category_id' => $category->id,
+            'name' => 'Product One',
+            'sku' => null,
+            'purchase_price' => 50,
+            'sale_price' => 70,
+            'status' => 'active',
+        ]);
+
+        $product2 = Product::create([
+            'shop_id' => $this->shop->id,
+            'category_id' => $category->id,
+            'name' => 'Product Two',
+            'sku' => null,
+            'purchase_price' => 80,
+            'sale_price' => 120,
+            'status' => 'active',
+        ]);
+
+        $this->assertNull($product1->sku);
+        $this->assertNull($product2->sku);
+        $this->assertDatabaseCount('products', 2);
     }
 }

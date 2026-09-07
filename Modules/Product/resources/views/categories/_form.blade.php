@@ -1,10 +1,25 @@
-<div class="field" style="margin-top:0;">
-    <label class="bn">নাম</label><label class="en" style="display:none;">Name</label>
-    <input type="text" name="name" value="{{ old('name', $category->name) }}" placeholder="যেমন ইলেকট্রনিক্স" required>
-    @error('name') <div class="field-error">{{ $message }}</div> @enderror
-</div>
+<div style="display:flex; flex-direction:column; gap:14px;">
+    <x-core::input
+        name="name"
+        id="category_name"
+        label="নাম"
+        label-en="Name"
+        placeholder="যেমন: মুদি পণ্য"
+        placeholder-en="e.g. Grocery Items"
+        :value="old('name', $category->name ?? '')"
+        size="sm"
+        :required="true"
+    />
 
-<div class="field">
-    <label class="bn">বিবরণ</label><label class="en" style="display:none;">Description</label>
-    <textarea name="description" placeholder="ঐচ্ছিক বিবরণ">{{ old('description', $category->description) }}</textarea>
+    <x-core::textarea
+        name="description"
+        id="category_description"
+        label="বিবরণ"
+        label-en="Description"
+        placeholder="ঐচ্ছিক বিবরণ"
+        placeholder-en="Optional description"
+        :value="old('description', $category->description ?? '')"
+        rows="3"
+        size="sm"
+    />
 </div>

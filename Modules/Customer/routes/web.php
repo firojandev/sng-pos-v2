@@ -13,4 +13,7 @@ Route::middleware(['auth', 'feature:customers'])->group(function () {
         ->middlewareFor(['create', 'store'], 'permission:customers.create')
         ->middlewareFor(['edit', 'update'], 'permission:customers.edit')
         ->middlewareFor(['destroy'], 'permission:customers.delete');
+
+    Route::post('customers/{customer}', [CustomerController::class, 'update'])
+        ->middleware('permission:customers.edit');
 });

@@ -73,14 +73,14 @@ $navGroups = [
                 'en' => 'Sales Ledger',
                 'icon' => '<path d="M4 4h16v16H4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 9h8M8 13h8M8 17h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
             ],
-            [
-                'key' => 'sale-returns',
-                'permission' => 'sales',
-                'route' => 'sale-returns.index',
-                'bn' => 'বিক্রয় ফেরত',
-                'en' => 'Sale Returns',
-                'icon' => '<path d="M4 12a8 8 0 1 1 2.3 5.7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M4 17v-5h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
-            ],
+//            [
+//                'key' => 'sale-returns',
+//                'permission' => 'sales',
+//                'route' => 'sale-returns.index',
+//                'bn' => 'বিক্রয় ফেরত',
+//                'en' => 'Sale Returns',
+//                'icon' => '<path d="M4 12a8 8 0 1 1 2.3 5.7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M4 17v-5h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
+//            ],
             [
                 'key' => 'due-ledger',
                 'permission' => 'customers',
@@ -119,14 +119,14 @@ $navGroups = [
                 'icon' => '<rect x="1" y="3" width="15" height="13" rx="2" stroke="currentColor" stroke-width="1.6"/><polygon points="16 8 20 8 23 11 23 16 16 16 8" stroke="currentColor" stroke-width="1.6"/><circle cx="5.5" cy="18.5" r="2.5" stroke="currentColor" stroke-width="1.6"/><circle cx="18.5" cy="18.5" r="2.5" stroke="currentColor" stroke-width="1.6"/>',
                 'enabled' => (bool) config('purchase.delivery_orders_enabled', false),
             ],
-            [
-                'key' => 'purchase-returns',
-                'permission' => 'purchase',
-                'route' => 'purchase-returns.index',
-                'bn' => 'ক্রয় ফেরত',
-                'en' => 'Purchase Returns',
-                'icon' => '<path d="M4 12a8 8 0 1 1 2.3 5.7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M4 17v-5h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
-            ],
+//            [
+//                'key' => 'purchase-returns',
+//                'permission' => 'purchase',
+//                'route' => 'purchase-returns.index',
+//                'bn' => 'ক্রয় ফেরত',
+//                'en' => 'Purchase Returns',
+//                'icon' => '<path d="M4 12a8 8 0 1 1 2.3 5.7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M4 17v-5h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
+//            ],
             [
                 'key' => 'purchase-due-ledger',
                 'permission' => 'suppliers',
@@ -216,14 +216,7 @@ $navGroups = [
                 'bn' => 'ব্যয়',
                 'en' => 'Expense',
                 'icon' => '<path d="M4 8l6 6 4-4 6 7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 17h5v-5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>',
-            ],
-            [
-                'key' => 'tax',
-                'route' => 'tax.index',
-                'bn' => 'ট্যাক্স ও ভ্যাট',
-                'en' => 'Tax & VAT',
-                'icon' => '<circle cx="7.5" cy="7.5" r="2.2" stroke="currentColor" stroke-width="1.6"/><circle cx="16.5" cy="16.5" r="2.2" stroke="currentColor" stroke-width="1.6"/><path d="M18 6 6 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
-            ],
+            ]
         ],
     ],
     [
@@ -374,6 +367,37 @@ $isNavItemVisible = function (array $item, bool $groupGated, $user) {
             @endforeach
         @endif
     </div>
+
+    <script>
+        (function () {
+            try {
+                var $w = $('.side-nav-wrapper');
+                if (!$w.length) return;
+                var saved = sessionStorage.getItem('sidebar-scroll');
+                if (saved !== null) {
+                    $w.scrollTop(parseInt(saved, 10));
+                }
+                var $act = $w.find('.nav-item.active');
+                if ($act.length) {
+                    var cTop = $w.offset().top;
+                    var aTop = $act.offset().top;
+                    var rTop = aTop - cTop;
+                    var rBot = rTop + $act.outerHeight();
+                    var cH = $w.innerHeight();
+                    if (rTop < 0) {
+                        $w.scrollTop($w.scrollTop() + rTop - 12);
+                    } else if (rBot > cH) {
+                        $w.scrollTop($w.scrollTop() + (rBot - cH) + 12);
+                    }
+                }
+                $w.on('click', 'a', function () {
+                    try {
+                        sessionStorage.setItem('sidebar-scroll', String($w.scrollTop()));
+                    } catch (err) {}
+                });
+            } catch (e) {}
+        })();
+    </script>
 
     <div class="side-foot">
         <div class="side-user-card">

@@ -1,10 +1,10 @@
 <div class="modal-backdrop" id="purchaseInvoiceModal" style="z-index:1050;">
     <div class="modal-box" style="width:760px; max-width:96vw; max-height:94vh; padding:0; border-radius:12px; background:var(--card, #ffffff); border:1px solid var(--border, #e2e8f0); box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); display:flex; flex-direction:column; overflow:hidden;">
-        
-        {{-- Modal Header: "Successful" with Close Button --}}
+
+        {{-- Modal Header: "Purchase Invoice" with Close Button --}}
         <div class="modal-head" style="padding:14px 20px; border-bottom:1px solid var(--border, #e2e8f0); display:flex; align-items:center; justify-content:space-between; background:var(--card, #ffffff);">
             <h3 style="font-size:18px; font-weight:700; color:var(--ink-900, #0f172a); margin:0; font-family:'Noto Sans Bengali', sans-serif;">
-                Successful
+                Purchase Invoice
             </h3>
             <x-core::button
                 type="button"
@@ -17,22 +17,24 @@
             />
         </div>
 
-        {{-- Modal Body: Gray Canvas containing the White Invoice Sheet --}}
-        <div class="modal-body" style="padding:20px; background:#f4f5f7; overflow-y:auto; overflow-x:hidden; flex:1;">
+        {{-- Modal Body: Canvas containing the Invoice Sheet --}}
+        <div class="modal-body" style="padding:20px; background:var(--paper, #f4f5f7); overflow-y:auto; overflow-x:hidden; flex:1;">
             @include('purchase::purchase._invoice_sheet')
         </div>
 
-        {{-- Modal Footer: Full-Width Dark Print Button --}}
+        {{-- Modal Footer: Print Button --}}
         <div class="modal-foot" style="padding:12px 20px; background:var(--card, #ffffff); border-top:1px solid var(--border, #e2e8f0);">
-            <button
+            <x-core::button
                 type="button"
-                class="btn-print-purchase-invoice"
-                style="width:100%; background:#1c1c1c; color:#ffffff; border:none; padding:11px 16px; border-radius:6px; font-size:14px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; font-family:'Noto Sans Bengali', sans-serif;"
+                color="primary"
+                size="sm"
+                icon="printer"
+                class="w-full btn-print-purchase-invoice"
+                style="width:100%; justify-content:center;"
                 onclick="printPurchaseInvoice('{{ route('purchase.print-invoice', $purchase) }}')"
             >
-                <x-core::icon name="printer" size="16" />
                 <span>প্রিন্ট করুন</span>
-            </button>
+            </x-core::button>
         </div>
     </div>
 </div>
@@ -63,4 +65,10 @@
             };
         };
     }
+
+    $(document).off('click.purchaseInvoiceModal').on('click.purchaseInvoiceModal', '#purchaseInvoiceModal', function (e) {
+        if ($(e.target).is('#purchaseInvoiceModal')) {
+            closeModal('purchaseInvoiceModal');
+        }
+    });
 </script>

@@ -40,26 +40,26 @@ class SalesDataTable extends BaseDataTable
                 $name = $customer ? e($customer->name) : 'ওয়াক-ইন গ্রাহক';
                 $initial = mb_substr($customer->name ?? '?', 0, 1);
                 $phone = $customer?->phone
-                    ? '<div style="font-size:11.5px; color:var(--ink-500); font-family:var(--font-mono, monospace);">'.e($customer->phone).'</div>'
+                    ? '<div style="font-size:11.5px; color:var(--ink-500); font-family:var(--font-mono, monospace); white-space:nowrap;">'.e($customer->phone).'</div>'
                     : '';
 
                 return '<div style="display:flex; align-items:center; gap:8px;">'
                     .'<div style="width:28px; height:28px; border-radius:6px; background:var(--teal-100); color:var(--teal-800); display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; flex-shrink:0;">'.e($initial).'</div>'
-                    .'<div><div style="font-weight:700; color:var(--ink-900);">'.$name.'</div>'.$phone.'</div>'
+                    .'<div style="min-width:0; max-width:180px;"><div style="font-weight:700; color:var(--ink-900); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word;" title="'.$name.'">'.$name.'</div>'.$phone.'</div>'
                     .'</div>';
             })
             ->editColumn('invoice_no', function (Sale $sale) {
-                $badge = '<span style="font-family:var(--font-mono, monospace); font-weight:700; color:var(--ink-800); background:var(--paper-line); padding:3px 8px; border-radius:6px; border:1px solid var(--border); font-size:12px;">#'.e($sale->invoice_no).'</span>';
+                $badge = '<span style="font-family:var(--font-mono, monospace); font-weight:700; color:var(--ink-800); background:var(--paper-line); padding:3px 8px; border-radius:6px; border:1px solid var(--border); font-size:12px; white-space:nowrap;">#'.e($sale->invoice_no).'</span>';
 
                 $warehouse = $sale->warehouse
-                    ? '<div style="font-size:11px; color:var(--ink-500); display:flex; align-items:center; gap:4px; margin-top:3px;"><span style="color:var(--ink-400);">•</span> '.e($sale->warehouse->name).'</div>'
+                    ? '<div style="font-size:11px; color:var(--ink-500); display:flex; align-items:center; gap:4px; margin-top:3px; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="'.e($sale->warehouse->name).'"><span style="color:var(--ink-400);">•</span> '.e($sale->warehouse->name).'</div>'
                     : '';
 
                 $hasReturns = $sale->returns->isNotEmpty()
-                    ? '<div style="margin-top:2px;"><span class="badge b-gold" style="font-size:10px; padding:1px 5px;">ফেরত / Return</span></div>'
+                    ? '<div style="margin-top:2px;"><span class="badge b-gold" style="font-size:10px; padding:1px 5px; white-space:nowrap;">ফেরত / Return</span></div>'
                     : '';
 
-                return '<div>'.$badge.$warehouse.$hasReturns.'</div>';
+                return '<div style="white-space:nowrap;">'.$badge.$warehouse.$hasReturns.'</div>';
             })
             ->addColumn('batch_no', function (Sale $sale) {
                 $batches = $sale->items->pluck('batch.batch_no')->filter()->unique();
@@ -67,7 +67,9 @@ class SalesDataTable extends BaseDataTable
                     return '<span style="color:var(--ink-400);">—</span>';
                 }
 
-                return '<span style="font-family:var(--font-mono, monospace); font-size:12px; color:var(--ink-700);">'.e($batches->implode(', ')).'</span>';
+                $batchList = $batches->implode(', ');
+
+                return '<div style="font-family:var(--font-mono, monospace); font-size:12px; color:var(--ink-700); max-width:140px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word;" title="'.e($batchList).'">'.e($batchList).'</div>';
             })
             ->addColumn('items_count', function (Sale $sale) {
                 $qty = (float) $sale->items->sum('quantity');
@@ -79,7 +81,7 @@ class SalesDataTable extends BaseDataTable
                     ? '<span title="ওয়ারেন্টি অন্তর্ভুক্ত / Warranty Included" style="color:var(--teal-700); margin-left:3px; display:inline-flex; vertical-align:middle;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>'
                     : '';
 
-                return '<div>'
+                return '<div style="white-space:nowrap;">'
                     .'<span style="font-family:var(--font-mono, monospace); color:var(--ink-700); font-weight:600;">'.$qtyFormatted.'</span>'
                     .$warranty
                     .'<div style="font-size:11px; color:var(--ink-500); margin-top:2px;">('.$count.' টি পণ্য)</div>'
@@ -92,7 +94,7 @@ class SalesDataTable extends BaseDataTable
                     ? '<div style="font-size:11px; color:var(--green-ink); font-family:var(--font-mono, monospace); margin-top:1px;">(ছাড়: ৳'.number_format((float) $sale->discount, 2).')</div>'
                     : '';
 
-                return '<div>'.$total.$discount.'</div>';
+                return '<div style="white-space:nowrap;">'.$total.$discount.'</div>';
             })
             ->editColumn('paid_amount', function (Sale $sale) {
                 $paid = '<span style="font-family:var(--font-mono, monospace); font-weight:600; color:var(--teal-800);">৳'.number_format((float) $sale->paid_amount, 2).'</span>';
@@ -105,15 +107,15 @@ class SalesDataTable extends BaseDataTable
                     ? '<div style="font-size:10.5px; color:var(--ink-500); margin-top:1px; max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="'.e($methods).'">'.e($methods).'</div>'
                     : '';
 
-                return '<div>'.$paid.$methodsHtml.'</div>';
+                return '<div style="white-space:nowrap;">'.$paid.$methodsHtml.'</div>';
             })
             ->editColumn('due_amount', function (Sale $sale) {
                 $due = (float) $sale->due_amount;
                 if ($due > 0) {
-                    return '<span style="font-family:var(--font-mono, monospace); font-weight:700; color:var(--red-600);">৳'.number_format($due, 2).'</span>';
+                    return '<span style="font-family:var(--font-mono, monospace); font-weight:700; color:var(--red-600); white-space:nowrap;">৳'.number_format($due, 2).'</span>';
                 }
 
-                return '<span style="font-family:var(--font-mono, monospace); color:var(--ink-400);">৳0.00</span>';
+                return '<span style="font-family:var(--font-mono, monospace); color:var(--ink-400); white-space:nowrap;">৳0.00</span>';
             })
             ->editColumn('sale_date', function (Sale $sale) {
                 if (! $sale->sale_date) {

@@ -39,6 +39,18 @@
     <link rel="stylesheet" href="https://fonts.maateen.me/solaiman-lipi/font.css">
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>
+        (function () {
+            if (window.$ && window.$.ajaxPrefilter) {
+                window.$.ajaxPrefilter(function (options, originalOptions, xhr) {
+                    var token = $('meta[name="csrf-token"]').attr('content');
+                    if (token) {
+                        xhr.setRequestHeader('X-CSRF-TOKEN', token);
+                    }
+                });
+            }
+        })();
+    </script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
 </head>

@@ -47,8 +47,8 @@ class PurchaseDueLedgerDataTable extends BaseDataTable
 
                 return '<div class="row-avatar" style="display:flex; align-items:flex-start; gap:10px;">'
                     .'<div class="av" style="width:34px; height:34px; border-radius:8px; background:var(--gold-600); color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; flex-shrink:0; margin-top:2px;">'.e($initial).'</div>'
-                    .'<div style="min-width:0;">'
-                    .'<div style="font-weight:700; color:var(--ink-900); font-size:13.5px; line-height:1.3;">'.e($supplier->name).'</div>'
+                    .'<div style="min-width:0; max-width:200px;">'
+                    .'<div style="font-weight:700; color:var(--ink-900); font-size:13.5px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word;" title="'.e($supplier->name).'">'.e($supplier->name).'</div>'
                     .$phone
                     .$address
                     .'</div>'
@@ -60,14 +60,14 @@ class PurchaseDueLedgerDataTable extends BaseDataTable
                 $totalAmount = (float) ($supplier->purchases_sum_total ?? 0);
 
                 if ($totalCount === 0) {
-                    $dueBadge = '<span style="display:inline-block; font-size:11px; font-weight:600; padding:1px 6px; border-radius:4px; background:var(--paper-line); color:var(--ink-500); margin-left:4px;">কোনো ক্রয় নেই</span>';
+                    $dueBadge = '<span style="display:inline-block; font-size:11px; font-weight:600; padding:1px 6px; border-radius:4px; background:var(--paper-line); color:var(--ink-500); margin-left:4px; white-space:nowrap;">কোনো ক্রয় নেই</span>';
                 } elseif ($dueCount > 0) {
-                    $dueBadge = '<span style="display:inline-block; font-size:11px; font-weight:700; padding:1px 6px; border-radius:4px; background:var(--red-100); color:var(--red-600); margin-left:4px;">'.$dueCount.' বাকি</span>';
+                    $dueBadge = '<span style="display:inline-block; font-size:11px; font-weight:700; padding:1px 6px; border-radius:4px; background:var(--red-100); color:var(--red-600); margin-left:4px; white-space:nowrap;">'.$dueCount.' বাকি</span>';
                 } else {
-                    $dueBadge = '<span style="display:inline-block; font-size:11px; font-weight:600; padding:1px 6px; border-radius:4px; background:var(--blue-100); color:var(--blue-ink); margin-left:4px;">বিল পরিশোধিত</span>';
+                    $dueBadge = '<span style="display:inline-block; font-size:11px; font-weight:600; padding:1px 6px; border-radius:4px; background:var(--blue-100); color:var(--blue-ink); margin-left:4px; white-space:nowrap;">বিল পরিশোধিত</span>';
                 }
 
-                return '<div style="font-size:12.5px;">'
+                return '<div style="font-size:12.5px; white-space:nowrap;">'
                     .'<div style="font-weight:600; color:var(--ink-800); display:flex; align-items:center;">'
                     .'<span>'.$totalCount.' টি ক্রয়</span>'
                     .$dueBadge
@@ -80,36 +80,36 @@ class PurchaseDueLedgerDataTable extends BaseDataTable
             ->editColumn('opening_due', function (Supplier $supplier) {
                 $opening = (float) $supplier->opening_due;
                 if ($opening > 0) {
-                    return '<span style="font-family:var(--font-mono, monospace); font-weight:600; color:var(--ink-700);">৳'.number_format($opening, 2).'</span>';
+                    return '<span style="font-family:var(--font-mono, monospace); font-weight:600; color:var(--ink-700); white-space:nowrap;">৳'.number_format($opening, 2).'</span>';
                 }
 
-                return '<span style="font-family:var(--font-mono, monospace); color:var(--ink-400);">৳0.00</span>';
+                return '<span style="font-family:var(--font-mono, monospace); color:var(--ink-400); white-space:nowrap;">৳0.00</span>';
             })
             ->addColumn('purchase_due', function (Supplier $supplier) {
                 $purchaseDue = (float) ($supplier->purchases_sum_due_amount ?? 0);
                 if ($purchaseDue > 0) {
-                    return '<span style="font-family:var(--font-mono, monospace); font-weight:700; color:var(--gold-ink, #b45309);">৳'.number_format($purchaseDue, 2).'</span>';
+                    return '<span style="font-family:var(--font-mono, monospace); font-weight:700; color:var(--gold-ink, #b45309); white-space:nowrap;">৳'.number_format($purchaseDue, 2).'</span>';
                 }
 
-                return '<span style="font-family:var(--font-mono, monospace); color:var(--ink-400);">৳0.00</span>';
+                return '<span style="font-family:var(--font-mono, monospace); color:var(--ink-400); white-space:nowrap;">৳0.00</span>';
             })
             ->addColumn('total_due', function (Supplier $supplier) {
                 $total = (float) $supplier->opening_due + (float) ($supplier->purchases_sum_due_amount ?? 0);
 
-                return '<div style="display:inline-flex; align-items:center; background:var(--red-100); border-radius:6px; padding:3px 8px;">'
+                return '<div style="display:inline-flex; align-items:center; background:var(--red-100); border-radius:6px; padding:3px 8px; white-space:nowrap;">'
                     .'<span style="font-family:var(--font-mono, monospace); font-weight:800; font-size:13.5px; color:var(--red-600);">৳'.number_format($total, 2).'</span>'
                     .'</div>';
             })
             ->addColumn('last_purchase', function (Supplier $supplier) {
                 $lastPurchase = $supplier->purchases->first();
                 if (! $lastPurchase) {
-                    return '<span style="color:var(--ink-400); font-size:11.5px;">শুধু ওপেনিং বাকি</span>';
+                    return '<span style="color:var(--ink-400); font-size:11.5px; white-space:nowrap;">শুধু ওপেনিং বাকি</span>';
                 }
 
                 $date = optional($lastPurchase->purchase_date)->format('d M, Y') ?? '—';
                 $inv = e($lastPurchase->invoice_no);
 
-                return '<div style="font-size:12px;">'
+                return '<div style="font-size:12px; white-space:nowrap;">'
                     .'<div style="font-family:var(--font-mono, monospace); font-weight:700; color:var(--ink-800);">#'.$inv.'</div>'
                     .'<div style="font-size:11px; color:var(--ink-500); margin-top:1px;">'.$date.'</div>'
                     .'</div>';

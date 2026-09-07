@@ -18,8 +18,8 @@ class AuthLoginTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('মাস্টারপস-এ লগইন করুন');
         $response->assertSee('Sign in to MasterPOS');
-        $response->assertSee('ইমেইল');
-        $response->assertSee('Email');
+        $response->assertSee('ইউজারনেম');
+        $response->assertSee('Username');
         $response->assertSee('পাসওয়ার্ড');
         $response->assertSee('Password');
         $response->assertSee('মনে রাখুন');

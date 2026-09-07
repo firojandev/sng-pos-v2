@@ -95,6 +95,12 @@
             <span class="val" style="font-family:var(--font-mono, monospace); color:var(--green-ink);">৳{{ number_format((float) $sale->discount, 2) }}</span>
         </div>
     @endif
+    @if ((float) ($sale->tax ?? 0) > 0)
+        <div class="tx-row">
+            <span class="lbl bn">ভ্যাট</span><span class="lbl en" style="display:none;">Tax / VAT</span>
+            <span class="val" style="font-family:var(--font-mono, monospace);">৳{{ number_format((float) $sale->tax, 2) }}</span>
+        </div>
+    @endif
     @if ((float) $sale->delivery_charge > 0)
         <div class="tx-row">
             <span class="lbl bn">ডেলিভারি চার্জ</span><span class="lbl en" style="display:none;">Delivery Charge</span>

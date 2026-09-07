@@ -112,7 +112,7 @@
             $part1 = trim($m[2] ?? '');
             $part2 = trim($m[3] ?? '');
             $suffix = $m[4] ?? '';
-            if (preg_match('/[\x{0980}-\x{09FF}]/u', $part1) && preg_match('/[a-zA-Z]/', $part2)) {
+            if (preg_match('/[\x{0980}-\x{09FF}]/u', $part1) && !preg_match('/[a-zA-Z]/', $part1) && preg_match('/[a-zA-Z]/', $part2)) {
                 $textBn = $prefix . $part1 . $suffix;
                 $textEn = $prefix . $part2 . $suffix;
             }

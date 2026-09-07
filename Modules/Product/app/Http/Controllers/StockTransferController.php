@@ -23,8 +23,26 @@ class StockTransferController extends Controller
     public function index(StockTransfersDataTable $dataTable): mixed
     {
         $warehouses = Warehouse::where('status', 'active')
+            ->with('branch')
             ->orderBy('name')
-            ->get(['id', 'name']);
+            ->get();
+
+        $products = Product::where('status', 'active')
+            ->orderBy('name')
+            ->get(['id', 'name', 'sku']);
+
+        $batches = Batch::whereIn('warehouse_id', $warehouses->pluck('id'))
+            ->where('quantity', '>', 0)
+            ->get(['id', 'product_id', 'warehouse_id', 'batch_no', 'quantity']);
+
+        $batchesByWarehouseAndProduct = [];
+        foreach ($batches as $batch) {
+            $batchesByWarehouseAndProduct[$batch->warehouse_id][$batch->product_id][] = [
+                'id' => $batch->id,
+                'label' => $batch->batch_no.' ('.rtrim(rtrim(number_format($batch->quantity, 2), '0'), '.').')',
+                'quantity' => (float) $batch->quantity,
+            ];
+        }
 
         $totalTransfers = StockTransfer::count();
         $pendingCount = StockTransfer::where('status', 'pending')->count();
@@ -42,7 +60,12 @@ class StockTransferController extends Controller
             'cancelled' => $cancelledCount,
         ];
 
-        return $dataTable->render('product::stock-transfers.index', compact('warehouses', 'metrics'));
+        return $dataTable->render('product::stock-transfers.index', compact(
+            'warehouses',
+            'products',
+            'batchesByWarehouseAndProduct',
+            'metrics'
+        ));
     }
 
     public function show(StockTransfer $transfer, Request $request): View
@@ -79,6 +102,7 @@ class StockTransferController extends Controller
             $batchesByWarehouseAndProduct[$batch->warehouse_id][$batch->product_id][] = [
                 'id' => $batch->id,
                 'label' => $batch->batch_no.' ('.rtrim(rtrim(number_format($batch->quantity, 2), '0'), '.').')',
+                'quantity' => (float) $batch->quantity,
             ];
         }
 
@@ -89,11 +113,11 @@ class StockTransferController extends Controller
         ]);
     }
 
-    public function store(StoreStockTransferRequest $request): RedirectResponse
+    public function store(StoreStockTransferRequest $request): RedirectResponse|JsonResponse
     {
         $data = $request->validated();
 
-        DB::transaction(function () use ($data) {
+        $transfer = DB::transaction(function () use ($data) {
             $transfer = StockTransfer::create([
                 'from_warehouse_id' => $data['from_warehouse_id'],
                 'to_warehouse_id' => $data['to_warehouse_id'],
@@ -114,7 +138,18 @@ class StockTransferController extends Controller
                     'quantity' => $item['quantity'],
                 ]);
             }
+
+            return $transfer;
         });
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'স্টক ট্রান্সফারের অনুরোধ তৈরি করা হয়েছে',
+                'message_en' => 'Stock transfer request created successfully',
+                'transfer' => $transfer,
+            ]);
+        }
 
         return redirect()->route('stock-transfers.index')->with('status', 'স্টক ট্রান্সফারের অনুরোধ তৈরি করা হয়েছে');
     }

@@ -653,11 +653,102 @@ class WarehouseDataTableTest extends TestCase
         $purchaseResponse = $this->actingAs($user)->get(route('purchase.create'));
         $purchaseResponse->assertOk();
         $purchaseResponse->assertSee('value="'.$whZ->id.'" selected', false);
+        $this->assertEquals($whZ->id, $purchaseResponse->viewData('warehouseId'));
 
         // Test Sale Create: Z Retail Warehouse should be selected
         $saleResponse = $this->actingAs($user)->get(route('sales.create'));
         $saleResponse->assertOk();
         $saleResponse->assertSee('value="'.$whZ->id.'" selected', false);
         $this->assertEquals($whZ->id, $saleResponse->viewData('warehouseId'));
+    }
+
+    public function test_purchase_create_page_updates_selected_warehouse_and_scopes_product_stock(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+        $shop->update(['enabled_features' => ['branches', 'purchase', 'sales']]);
+
+        Permission::firstOrCreate(['name' => 'purchase.view', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'purchase.create', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'purchase.edit', 'guard_name' => 'web']);
+
+        $role = Role::findByName('Shop Admin', 'web');
+        $role->givePermissionTo(['purchase.view', 'purchase.create', 'purchase.edit']);
+
+        $branch = Branch::create([
+            'shop_id' => $shop->id,
+            'name' => 'Main Branch',
+            'status' => 'active',
+        ]);
+
+        $wh1 = Warehouse::create([
+            'shop_id' => $shop->id,
+            'branch_id' => $branch->id,
+            'name' => 'Warehouse 1',
+            'status' => 'active',
+            'is_default' => true,
+        ]);
+
+        $wh2 = Warehouse::create([
+            'shop_id' => $shop->id,
+            'branch_id' => $branch->id,
+            'name' => 'Warehouse 2',
+            'status' => 'active',
+            'is_default' => false,
+        ]);
+
+        $category = Category::create([
+            'shop_id' => $shop->id,
+            'name' => 'General',
+            'status' => 'active',
+        ]);
+
+        $product = Product::create([
+            'shop_id' => $shop->id,
+            'category_id' => $category->id,
+            'name' => 'Test Item',
+            'sku' => 'TEST-001',
+            'purchase_price' => 100,
+            'sale_price' => 150,
+            'status' => 'active',
+        ]);
+
+        // Stock in Warehouse 1 = 15
+        Batch::create([
+            'shop_id' => $shop->id,
+            'product_id' => $product->id,
+            'warehouse_id' => $wh1->id,
+            'batch_no' => 'B-WH1',
+            'purchase_price' => 100,
+            'sale_price' => 150,
+            'quantity' => 15,
+            'status' => 'active',
+        ]);
+
+        // Stock in Warehouse 2 = 40
+        Batch::create([
+            'shop_id' => $shop->id,
+            'product_id' => $product->id,
+            'warehouse_id' => $wh2->id,
+            'batch_no' => 'B-WH2',
+            'purchase_price' => 100,
+            'sale_price' => 150,
+            'quantity' => 40,
+            'status' => 'active',
+        ]);
+
+        // Default loads Warehouse 1
+        $resDefault = $this->actingAs($user)->get(route('purchase.create'));
+        $resDefault->assertOk();
+        $this->assertEquals($wh1->id, $resDefault->viewData('warehouseId'));
+        $productsDefault = $resDefault->viewData('products');
+        $this->assertEquals(15, (float) $productsDefault->firstWhere('id', $product->id)->batches_sum_quantity);
+
+        // Explicit query param for Warehouse 2
+        $resWh2 = $this->actingAs($user)->get(route('purchase.create', ['warehouse_id' => $wh2->id]));
+        $resWh2->assertOk();
+        $this->assertEquals($wh2->id, $resWh2->viewData('warehouseId'));
+        $resWh2->assertSee('value="'.$wh2->id.'" selected', false);
+        $productsWh2 = $resWh2->viewData('products');
+        $this->assertEquals(40, (float) $productsWh2->firstWhere('id', $product->id)->batches_sum_quantity);
     }
 }

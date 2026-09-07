@@ -23,6 +23,7 @@ class StoreSaleRequest extends FormRequest
             'sale_date' => ['required', 'date'],
             'invoice_no' => ['nullable', 'string', 'max:255', 'unique:sales,invoice_no'],
             'discount' => ['nullable', 'numeric', 'min:0'],
+            'tax' => ['nullable', 'numeric', 'min:0'],
             'delivery_charge' => ['nullable', 'numeric', 'min:0'],
             'employee_name' => ['nullable', 'string', 'max:255'],
             'employee_phone' => ['nullable', 'string', 'max:30'],
