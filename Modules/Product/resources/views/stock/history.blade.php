@@ -13,12 +13,6 @@
         <a href="{{ route('stock.history') }}" class="tabbtn active">
             <span class="bn">স্টকের ইতিহাস</span><span class="en" style="display:none;">Stock History</span>
         </a>
-        <a href="{{ route('stock-transfers.index') }}" class="tabbtn">
-            <span class="bn">স্টক ট্রান্সফার</span><span class="en" style="display:none;">Stock Transfers</span>
-        </a>
-        <a href="{{ route('batches.index') }}" class="tabbtn">
-            <span class="bn">ব্যাচসমূহ</span><span class="en" style="display:none;">Batches</span>
-        </a>
     </div>
 
     {{-- Filter Toolbar --}}
@@ -99,7 +93,7 @@
                     <span class="en" style="display:none;">Filtered Product:</span>
                 </span>
                 <x-core::badge color="teal" size="sm" icon="package">
-                    {{ $product->name }} (SKU: {{ $product->sku }})
+                    {{ $product->name }}@if ($product->sku) (SKU: {{ $product->sku }})@endif
                 </x-core::badge>
             </div>
             <x-core::button size="xs" variant="secondary" :href="route('stock.history')" icon="x">
@@ -119,8 +113,8 @@
                         <th class="bn">পণ্য</th><th class="en" style="display:none;">Product</th>
                         <th class="bn" style="width:130px;">ব্যাচ</th><th class="en" style="display:none;">Batch</th>
                         <th class="bn" style="width:140px;">ধরন</th><th class="en" style="display:none;">Type</th>
-                        <th class="bn table-cell-right" style="width:110px;">পরিমাণ</th><th class="en" style="display:none;">Quantity</th>
-                        <th class="bn table-cell-center" style="width:140px;">আগে &rarr; পরে</th><th class="en" style="display:none;">Before &rarr; After</th>
+                        <th class="bn table-cell-right" style="width:110px;">পরিমাণ</th><th class="en table-cell-right" style="display:none;">Quantity</th>
+                        <th class="bn table-cell-center" style="width:140px;">আগে &rarr; পরে</th><th class="en table-cell-center" style="display:none;">Before &rarr; After</th>
                         <th class="bn" style="width:180px;">রেফারেন্স</th><th class="en" style="display:none;">Reference</th>
                         <th class="bn" style="width:130px;">দ্বারা</th><th class="en" style="display:none;">By</th>
                     </tr>
@@ -136,7 +130,7 @@
                                 <div style="font-weight:700; color:var(--ink-900); font-size:13px;">
                                     {{ $movement->product->name ?? '—' }}
                                 </div>
-                                @if (isset($movement->product->sku))
+                                @if (!empty($movement->product->sku))
                                     <div style="font-size:11px; font-family:var(--font-mono, monospace); color:var(--ink-400); margin-top:2px;">
                                         SKU: {{ $movement->product->sku }}
                                     </div>

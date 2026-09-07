@@ -13,11 +13,53 @@ window.createIcons = safeCreateIcons;
 
 
 
-/* ---------------- Global AJAX Setup ---------------- */
+/* ---------------- Global AJAX Setup & CSRF Token Injection ---------------- */
+function getCsrfToken() {
+    return $('meta[name="csrf-token"]').attr('content') || '';
+}
+
+$.ajaxSetup({
+    headers: {
+        'X-CSRF-TOKEN': getCsrfToken()
+    }
+});
+
+$.ajaxPrefilter(function (options, originalOptions, xhr) {
+    const token = getCsrfToken();
+    if (token) {
+        xhr.setRequestHeader('X-CSRF-TOKEN', token);
+    }
+});
+
 $(function () {
-    $.ajaxSetup({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+    const token = getCsrfToken();
+    if (token) {
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': token
+            }
+        });
+    }
+
+    // Global handler for expired CSRF session (HTTP 419)
+    $(document).ajaxError(function (event, jqXHR) {
+        if (jqXHR && jqXHR.status === 419) {
+            const isEn = $('body').hasClass('lang-en');
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: isEn ? 'Session Expired' : 'সেশনের মেয়াদ শেষ',
+                    text: isEn 
+                        ? 'Your session has expired. Please refresh the page to continue.' 
+                        : 'আপনার সেশনের মেয়াদ শেষ হয়ে গেছে। অনুগ্রহ করে পেজটি রিফ্রেশ করুন।',
+                    confirmButtonColor: '#0D9488',
+                    confirmButtonText: isEn ? 'Refresh Page' : 'পেজ রিফ্রেশ করুন'
+                }).then(function () {
+                    window.location.reload();
+                });
+            } else if (typeof toast === 'function') {
+                toast('সেশনের মেয়াদ শেষ। পেজ রিফ্রেশ করুন।', 'Session expired. Please refresh the page.');
+            }
         }
     });
 });
@@ -44,6 +86,9 @@ function toggleSidebar(forceState) {
         const shouldOpen = typeof forceState === 'boolean' ? forceState : !$sidebar.hasClass('open');
         $sidebar.toggleClass('open', shouldOpen);
         $overlay.toggleClass('show', shouldOpen);
+        if (shouldOpen) {
+            setTimeout(restoreSidebarScroll, 50);
+        }
     } else {
         const shouldCollapse = typeof forceState === 'boolean' ? !forceState : !$app.hasClass('sidebar-collapsed');
         $app.toggleClass('sidebar-collapsed', shouldCollapse);
@@ -60,6 +105,73 @@ function initSidebarState() {
             $('.app').addClass('sidebar-collapsed');
         }
     } catch (e) {}
+}
+
+/* ---------------- Sidebar Scroll Preservation ---------------- */
+function saveSidebarScroll() {
+    const $wrapper = $('.side-nav-wrapper');
+    if ($wrapper.length) {
+        try {
+            sessionStorage.setItem('sidebar-scroll', String($wrapper.scrollTop()));
+        } catch (e) {}
+    }
+}
+
+function restoreSidebarScroll() {
+    const $wrapper = $('.side-nav-wrapper');
+    if (!$wrapper.length) return;
+
+    try {
+        const saved = sessionStorage.getItem('sidebar-scroll');
+        if (saved !== null) {
+            $wrapper.scrollTop(parseInt(saved, 10));
+        }
+        ensureActiveSidebarItemVisible($wrapper);
+    } catch (e) {}
+}
+
+function ensureActiveSidebarItemVisible($wrapper) {
+    $wrapper = $wrapper || $('.side-nav-wrapper');
+    if (!$wrapper.length) return;
+
+    const $act = $wrapper.find('.nav-item.active');
+    if (!$act.length) return;
+
+    const cTop = $wrapper.offset().top;
+    const aTop = $act.offset().top;
+    const rTop = aTop - cTop;
+    const rBot = rTop + $act.outerHeight();
+    const cH = $wrapper.innerHeight();
+
+    if (rTop < 0) {
+        $wrapper.scrollTop($wrapper.scrollTop() + rTop - 12);
+    } else if (rBot > cH) {
+        $wrapper.scrollTop($wrapper.scrollTop() + (rBot - cH) + 12);
+    }
+}
+
+function initSidebarScroll() {
+    const $wrapper = $('.side-nav-wrapper');
+    if (!$wrapper.length) return;
+
+    restoreSidebarScroll();
+
+    let scrollTimeout = null;
+    $wrapper.on('scroll', function () {
+        if (scrollTimeout) return;
+        scrollTimeout = setTimeout(function () {
+            scrollTimeout = null;
+            saveSidebarScroll();
+        }, 100);
+    });
+
+    $(document).on('click', '.side-nav-wrapper a, .sidebar a', function () {
+        saveSidebarScroll();
+    });
+
+    $(window).on('beforeunload pagehide', function () {
+        saveSidebarScroll();
+    });
 }
 
 /* ---------------- Generic Modals & Drawers ---------------- */
@@ -181,8 +293,9 @@ function initSelectOption(opt) {
 
                 const hasBn = /[\u0980-\u09FF]/.test(part1);
                 const hasEn = /[a-zA-Z]/.test(part2);
+                const part1HasEn = /[a-zA-Z]/.test(part1);
 
-                if (hasBn && hasEn) {
+                if (hasBn && hasEn && !part1HasEn) {
                     bn = prefix + part1 + suffix;
                     en = prefix + part2 + suffix;
                 }
@@ -289,6 +402,7 @@ function initLang() {
 /* ---------------- Keyboard Shortcuts & Listeners ---------------- */
 $(function () {
     initSidebarState();
+    initSidebarScroll();
     updateThemeButtons();
     updateMobilePreviewToggle();
     initLang();
@@ -720,6 +834,10 @@ function initStatusSwitcherBehaviors() {
 /* ---------------- Expose Globals for Blade Templates ---------------- */
 window.toast = toast;
 window.toggleSidebar = toggleSidebar;
+window.saveSidebarScroll = saveSidebarScroll;
+window.restoreSidebarScroll = restoreSidebarScroll;
+window.ensureActiveSidebarItemVisible = ensureActiveSidebarItemVisible;
+window.initSidebarScroll = initSidebarScroll;
 window.setLang = setLang;
 window.setTheme = setTheme;
 window.setMobilePreview = setMobilePreview;

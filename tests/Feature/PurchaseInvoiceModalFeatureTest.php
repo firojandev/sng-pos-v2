@@ -182,7 +182,7 @@ class PurchaseInvoiceModalFeatureTest extends TestCase
             ->get(route('purchase.create'));
 
         $response->assertOk();
-        $response->assertSee('Successful');
+        $response->assertSee('Purchase Invoice');
         $response->assertSee('ইনভয়েস');
         $response->assertSee('Gadget Parks');
         $response->assertSee('Sagor');
@@ -220,7 +220,7 @@ class PurchaseInvoiceModalFeatureTest extends TestCase
         $response = $this->actingAs($this->user)->get(route('purchase.invoice-modal', $purchase));
 
         $response->assertOk();
-        $response->assertSee('Successful');
+        $response->assertSee('Purchase Invoice');
         $response->assertSee('তেরো হাজার পাঁচ শত টাকা');
         $response->assertSee('প্রিন্ট করুন');
     }
@@ -345,5 +345,50 @@ class PurchaseInvoiceModalFeatureTest extends TestCase
         $printResponse->assertSee(BanglaNumber::toBn(10));
         $printResponse->assertSee(BanglaNumber::toBn(6));
         $printResponse->assertSee(BanglaNumber::toBn(4));
+    }
+
+    public function test_invoice_modal_renders_product_name_cell_with_wrapping_styles_for_long_names(): void
+    {
+        $longNameProduct = Product::create([
+            'shop_id' => $this->shop->id,
+            'category_id' => $this->product->category_id,
+            'name' => 'Hawkins Black Berry Infrared Cooker (Model: ME-IFCH-53 / 54)',
+            'sku' => 'KMCM-113',
+            'barcode' => 'KMCM-113',
+            'purchase_price' => 2750,
+            'sale_price' => 3200,
+            'min_stock' => 2,
+            'status' => 'active',
+        ]);
+
+        $purchase = Purchase::create([
+            'shop_id' => $this->shop->id,
+            'supplier_id' => $this->supplier->id,
+            'warehouse_id' => $this->warehouse->id,
+            'purchase_date' => now()->toDateString(),
+            'invoice_no' => 'PU-0038',
+            'subtotal' => 55000,
+            'discount' => 0,
+            'delivery_charge' => 0,
+            'total' => 55000,
+            'paid_amount' => 55000,
+            'due_amount' => 0,
+            'payment_status' => 'paid',
+        ]);
+
+        $purchase->items()->create([
+            'product_id' => $longNameProduct->id,
+            'quantity' => 20,
+            'received_quantity' => 20,
+            'purchase_price' => 2750,
+            'total' => 55000,
+            'batch_no' => 'KMCM-113',
+        ]);
+
+        $response = $this->actingAs($this->user)->get(route('purchase.invoice-modal', $purchase));
+        $response->assertOk();
+        $response->assertSee('Hawkins Black Berry Infrared Cooker (Model: ME-IFCH-53 / 54)');
+        $response->assertSee('col-product-name');
+        $response->assertSee('white-space:normal !important', false);
     }
 }

@@ -145,112 +145,119 @@
     @endforeach
 </datalist>
 
-<div class="pos-header">
-    <div>
-        <div class="ttl bn">{{ $purchase->exists ? 'ক্রয় সম্পাদনা' : 'নতুন ক্রয়' }}</div>
-        <div class="ttl en" style="display:none;">{{ $purchase->exists ? 'Edit Purchase' : 'New Purchase' }}</div>
-        <div class="meta">
-            <span class="bn">ইনভয়েস: </span><span class="en"
-                                                   style="display:none;">Invoice: </span>{{ $purchase->invoice_no ?? 'স্বয়ংক্রিয়ভাবে তৈরি হবে' }}
-        </div>
-    </div>
+<div class="pos-header purchase-pos-header">
+{{--    <div>--}}
+{{--        <div class="ttl bn">{{ $purchase->exists ? 'ক্রয় সম্পাদনা' : 'নতুন ক্রয়' }}</div>--}}
+{{--        <div class="ttl en" style="display:none;">{{ $purchase->exists ? 'Edit Purchase' : 'New Purchase' }}</div>--}}
+{{--        <div class="meta">--}}
+{{--            <span class="bn">ইনভয়েস: </span><span class="en"--}}
+{{--                                                   style="display:none;">Invoice: </span>{{ $purchase->invoice_no ?? 'স্বয়ংক্রিয়ভাবে তৈরি হবে' }}--}}
+{{--        </div>--}}
+{{--    </div>--}}
 
 
     @php
         $defaultWarehouse = $warehouses->firstWhere('is_default', true);
-        $selectedWarehouseId = old('warehouse_id', $purchase->warehouse_id ?? $defaultWarehouse?->id);
+        $selectedWarehouseId = old('warehouse_id', $warehouseId ?? $purchase->warehouse_id ?? $defaultWarehouse?->id ?? optional($warehouses->first())->id);
     @endphp
 
-    <div style="width: 190px; flex-shrink: 0;">
-        <x-core::select
-            name="warehouse_id"
-            label="গুদাম"
-            label-en="Warehouse"
-            size="sm"
-            required
-            :no-margin="true"
-        >
-            <option value="">-- নির্বাচন করুন --</option>
-            @foreach ($warehouses as $warehouse)
-                <option
-                    value="{{ $warehouse->id }}" {{ (string) $selectedWarehouseId === (string) $warehouse->id ? 'selected' : '' }}>
-                    {{ $warehouse->name }} @if($warehouse->is_default) [ডিফল্ট] @endif @if($warehouse->branch)
-                        ({{ $warehouse->branch->name }})
-                    @endif
-                </option>
-            @endforeach
-        </x-core::select>
-    </div>
+    <div class="purchase-header-grid">
+        <div class="purchase-header-item warehouse-item">
+            <x-core::select
+                name="warehouse_id"
+                id="purchase-warehouse-select"
+                label="গুদাম"
+                label-en="Warehouse"
+                size="sm"
+                required
+                :no-margin="true"
+                onchange="if (this.value) { window.location.href = '{{ $purchase->exists ? route('purchase.edit', $purchase) : route('purchase.create') }}?warehouse_id=' + this.value; }"
+            >
+                <option value="">-- নির্বাচন করুন --</option>
+                @foreach ($warehouses as $warehouse)
+                    <option
+                        value="{{ $warehouse->id }}" {{ (string) $selectedWarehouseId === (string) $warehouse->id ? 'selected' : '' }}
+                        data-text-bn="{{ $warehouse->name }}@if($warehouse->is_default) [ডিফল্ট]@endif @if($warehouse->branch) ({{ $warehouse->branch->name }})@endif"
+                        data-text-en="{{ $warehouse->name }}@if($warehouse->is_default) [Default]@endif @if($warehouse->branch) ({{ $warehouse->branch->name }})@endif">
+                        {{ $warehouse->name }} @if($warehouse->is_default) [ডিফল্ট] @endif @if($warehouse->branch)
+                            ({{ $warehouse->branch->name }})
+                        @endif
+                    </option>
+                @endforeach
+            </x-core::select>
+        </div>
 
-    <div style="width: 145px; flex-shrink: 0;">
-        <x-core::input
-            type="date"
-            name="purchase_date"
-            id="purchase-date-input"
-            label="তারিখ"
-            label-en="Date"
-            size="sm"
-            required
-            :no-margin="true"
-            value="{{ old('purchase_date', optional($purchase->purchase_date)->format('Y-m-d') ?? now()->format('Y-m-d')) }}"
-        />
-    </div>
+        <div class="purchase-header-item">
+            <x-core::input
+                type="date"
+                name="purchase_date"
+                id="purchase-date-input"
+                label="তারিখ"
+                label-en="Date"
+                size="sm"
+                required
+                :no-margin="true"
+                value="{{ old('purchase_date', optional($purchase->purchase_date)->format('Y-m-d') ?? now()->format('Y-m-d')) }}"
+            />
+        </div>
 
-    <div style="width: 140px; flex-shrink: 0;">
-        <x-core::input
-            type="text"
-            name="do_number"
-            id="do-number-input"
-            label="ডিও নম্বর"
-            label-en="D.O. Number"
-            size="sm"
-            :no-margin="true"
-            placeholder="ডিও নম্বর"
-            placeholder-en="D.O. No"
-            value="{{ $initialDoNumber }}"
-        />
-    </div>
+        <div class="purchase-header-item">
+            <x-core::input
+                type="text"
+                name="do_number"
+                id="do-number-input"
+                label="ডিও নম্বর"
+                label-en="D.O. Number"
+                size="sm"
+                :no-margin="true"
+                placeholder="ডিও নম্বর"
+                placeholder-en="D.O. No"
+                value="{{ $initialDoNumber }}"
+            />
+        </div>
 
-    <div style="width: 145px; flex-shrink: 0;">
-        <x-core::input
-            type="date"
-            name="do_date"
-            id="do-date-input"
-            label="ডিও তারিখ"
-            label-en="D.O. Date"
-            size="sm"
-            :no-margin="true"
-            value="{{ $initialDoDate }}"
-        />
-    </div>
+        <div class="purchase-header-item">
+            <x-core::input
+                type="date"
+                name="do_date"
+                id="do-date-input"
+                label="ডিও তারিখ"
+                label-en="D.O. Date"
+                size="sm"
+                :no-margin="true"
+                value="{{ $initialDoDate }}"
+            />
+        </div>
 
-    <div style="width: 155px; flex-shrink: 0;">
-        <x-core::input
-            type="text"
-            name="vehicle_number"
-            id="vehicle-number-input"
-            label="গাড়ির নম্বর"
-            label-en="Vehicle Number"
-            size="sm"
-            :no-margin="true"
-            placeholder="গাড়ির নম্বর"
-            placeholder-en="Vehicle No"
-            value="{{ $initialVehicleNumber }}"
-        />
-    </div>
-    <div style="width: 155px; flex-shrink: 0;">
-        <x-core::input
-            type="text"
-            name="delivery_person_name"
-            id="delivery-person-name-input"
-            label="ডেলিভারি ব্যক্তির নাম"
-            label-en="Delivery Person Name"
-            size="sm"
-            :no-margin="true"
-            placeholder="ডেলিভারি ব্যক্তির নাম"
-            placeholder-en="Delivery Person Name"
-            value="{{ $initialDeliveryPersonName }}"
-        />
+        <div class="purchase-header-item">
+            <x-core::input
+                type="text"
+                name="vehicle_number"
+                id="vehicle-number-input"
+                label="গাড়ির নম্বর"
+                label-en="Vehicle Number"
+                size="sm"
+                :no-margin="true"
+                placeholder="গাড়ির নম্বর"
+                placeholder-en="Vehicle No"
+                value="{{ $initialVehicleNumber }}"
+            />
+        </div>
+
+        <div class="purchase-header-item delivery-person-item">
+            <x-core::input
+                type="text"
+                name="delivery_person_name"
+                id="delivery-person-name-input"
+                label="ডেলিভারি ব্যক্তির নাম"
+                label-en="Delivery Person Name"
+                size="sm"
+                :no-margin="true"
+                placeholder="ডেলিভারি ব্যক্তির নাম"
+                placeholder-en="Delivery Person Name"
+                value="{{ $initialDeliveryPersonName }}"
+            />
+        </div>
     </div>
 </div>
 
@@ -269,7 +276,7 @@
                 </svg>
                 <input type="text" id="catalog-search" placeholder="Search...">
             </div>
-            <div class="search-inline" style="max-width:150px;">
+            <div class="search-inline search-inline-barcode" style="max-width:150px;">
                 <input type="text" id="catalog-barcode" placeholder="Barcode" class="bn-ph">
             </div>
             <a href="{{ route('products.create') }}" target="_blank" class="cat-icbtn" title="নতুন পণ্য">
@@ -327,21 +334,22 @@
             </div>
         </div>
 
-        <div class="cart-totals" style="display: flex; flex-direction: column; align-items: flex-end;">
+        <div class="cart-totals purchase-cart-totals" style="display: flex; flex-direction: column; align-items: flex-end;">
             <span id="subtotal-display" style="display:none;">0.00</span>
-            <div class="sum-row total" style="display: flex; justify-content: flex-end; align-items: baseline; gap: 8px; width: 100%; border-bottom: none; padding: 4px 0 10px;">
+            <div class="sum-row total purchase-sum-total" style="display: flex; justify-content: flex-end; align-items: baseline; gap: 8px; width: 100%; border-bottom: none; padding: 4px 0 10px;">
                 <span class="sum-label bn" style="color:var(--ink-900); font-weight:700; font-size:15px;">সর্বমোট</span>
                 <span class="sum-label en" style="display:none; color:var(--ink-900); font-weight:700; font-size:15px;">Total Amount</span>
                 <b id="total-display" style="font-family:'Plus Jakarta Sans','Manrope',sans-serif; font-weight:800; font-size:20px; color:var(--teal-800);">0.00</b>
             </div>
 
-            <div class="cart-cta" style="display: flex; justify-content: flex-end; width: 100%; margin-top: 6px;">
+            <div class="cart-cta purchase-cart-cta" style="display: flex; justify-content: flex-end; width: 100%; margin-top: 6px;">
                 <x-core::button
                     type="button"
                     color="primary"
                     size="sm"
                     id="make-payment-btn"
                     icon-after="arrow-right"
+                    class="purchase-payment-btn"
                     style="flex: 0 0 auto; height: 38px; font-weight: 700; font-size: 13.5px; padding: 0 22px; justify-content: center;"
                 >
                     <span class="bn">Make Payment</span><span class="en" style="display:none;">Make Payment</span>
@@ -383,7 +391,7 @@
             <span class="bn">মোট প্রদেয় </span><span class="en" style="display:none;">Total Payable </span><span
                 id="drawer-total-payable">0.00</span>
         </div>
-        <div style="display: flex; gap: 10px;">
+        <div class="drawer-date-paytype-row" style="display: flex; gap: 10px;">
             <div style="flex: 1; min-width: 0;margin-bottom:6px;" id="purchase-date-wrapper">
                 <x-core::input
                     type="text"
@@ -539,8 +547,8 @@
             />
         </div>
         <div id="employee-fields" style="display:{{ $initialEmployeeName ? 'block' : 'none' }};">
-            <div style="display: flex; gap: 10px;">
-                <div style="margin-bottom:14px;">
+            <div class="drawer-employee-row" style="display: flex; gap: 10px;">
+                <div style="flex: 1; min-width: 0; margin-bottom: 14px;">
                     <x-core::input
                         type="text"
                         name="employee_name"
@@ -554,7 +562,7 @@
                         list="employees-datalist"
                     />
                 </div>
-                <div style="margin-bottom:14px;">
+                <div style="flex: 1; min-width: 0; margin-bottom: 14px;">
                     <x-core::input
                         type="text"
                         name="employee_phone"
@@ -896,6 +904,12 @@
                     '<div class="ci-head">' +
                     '<div class="thumb"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="8" height="8" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="13" y="4" width="8" height="8" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="14" width="8" height="6" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="13" y="14" width="8" height="6" rx="1.6" stroke="currentColor" stroke-width="1.6"/></svg></div>' +
                     '<div class="nm" title="' + escapeHtml(p.name) + '">' + escapeHtml(p.name) + '</div>' +
+                    '<div class="ci-actions">' +
+                    '<button type="button" class="barcode-toggle-btn' + (hasBarcode ? ' has-value' : '') + '" title="Barcode"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 5v14M8 5v14M11 5v14M15 5v14M17 5v14M20 5v14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>' +
+                    '<button type="button" class="validity-toggle-btn' + (hasValidity ? ' has-value' : '') + '" title="মেয়াদ"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>' +
+                    '<button type="button" class="ci-remove" title="Remove">&times;</button>' +
+                    '</div>' +
+                    '</div>' +
                     '<div class="ci-head-popovers">' +
                     '<div class="item-popover barcode-popover">' +
                     '<div class="fld"><label class="bn">বারকোড</label><label class="en" style="display:none;">Barcode</label><input type="text" class="ci-barcode-input" value="' + escapeHtml(item.barcode) + '" placeholder="বারকোড স্ক্যান/লিখুন"></div>' +
@@ -904,12 +918,6 @@
                     '<div class="fld"><label class="bn">ব্যাচ নং</label><label class="en" style="display:none;">Batch No</label><input type="text" class="ci-batch-input" value="' + escapeHtml(item.batchNo) + '" placeholder="স্বয়ংক্রিয়"></div>' +
                     '<div class="fld"><label class="bn">উৎপাদন</label><label class="en" style="display:none;">Mfg Date</label><input type="date" class="ci-mfg-input" value="' + item.mfgDate + '"></div>' +
                     '<div class="fld"><label class="bn">মেয়াদ উত্তীর্ণ</label><label class="en" style="display:none;">Expiry Date</label><input type="date" class="ci-expiry-input" value="' + item.expiryDate + '"></div>' +
-                    '</div>' +
-                    '</div>' +
-                    '<div class="ci-actions">' +
-                    '<button type="button" class="barcode-toggle-btn' + (hasBarcode ? ' has-value' : '') + '" title="Barcode"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 5v14M8 5v14M11 5v14M15 5v14M17 5v14M20 5v14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>' +
-                    '<button type="button" class="validity-toggle-btn' + (hasValidity ? ' has-value' : '') + '" title="মেয়াদ"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>' +
-                    '<button type="button" class="ci-remove" title="Remove">&times;</button>' +
                     '</div>' +
                     '</div>' +
                     '<div class="ci-grid ci-grid-6 ci-grid-6-purchase">' +
@@ -1347,11 +1355,21 @@
         function submitQuickSupplier() {
             const $form = $('#quick_supplier_form');
             const $btn = $('#btn-save-quick-supplier');
-            const url = $form.attr('action') || '{{ route('suppliers.store') }}';
+            const url = $form.attr('action') || '{{ route('suppliers.store', [], false) }}';
+            const csrfToken = $('meta[name="csrf-token"]').attr('content');
 
             $form.find('.is-invalid').removeClass('is-invalid');
             $form.find('.dynamic-error').remove();
             $btn.prop('disabled', true);
+
+            if (csrfToken) {
+                const $tokenInput = $form.find('input[name="_token"]');
+                if ($tokenInput.length) {
+                    $tokenInput.val(csrfToken);
+                } else {
+                    $form.prepend('<input type="hidden" name="_token" value="' + csrfToken + '">');
+                }
+            }
 
             $.ajax({
                 url: url,
@@ -1359,6 +1377,7 @@
                 data: $form.serialize(),
                 dataType: 'json',
                 headers: {
+                    'X-CSRF-TOKEN': csrfToken,
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
@@ -1601,6 +1620,17 @@
 
             renderHiddenFields();
             document.getElementById('purchase-form').submit();
+        });
+
+        $(document).on('change', '#purchase-warehouse-select', function () {
+            const whId = $(this).val();
+            if (whId) {
+                @if ($purchase->exists)
+                    window.location.href = '{{ route('purchase.edit', $purchase) }}?warehouse_id=' + whId;
+                @else
+                    window.location.href = '{{ route('purchase.create') }}?warehouse_id=' + whId;
+                @endif
+            }
         });
 
         syncPaymentTypeUI();

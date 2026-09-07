@@ -27,11 +27,16 @@ class BatchesDataTable extends BaseDataTable
             })
             ->addColumn('product', function (Batch $batch) {
                 if ($batch->product) {
-                    return '<div style="font-weight:600; color:var(--ink-800); font-size:13px;">'
+                    $skuHtml = $batch->product->sku
+                        ? '<div style="font-size:11.5px; color:var(--ink-500); font-family:var(--font-mono, monospace); white-space:nowrap;">'
+                            .e($batch->product->sku)
+                            .'</div>'
+                        : '';
+
+                    return '<div style="font-weight:600; color:var(--ink-800); font-size:13px; max-width:240px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word;" title="'.e($batch->product->name).'">'
                         .e($batch->product->name)
-                        .'</div><div style="font-size:11.5px; color:var(--ink-500); font-family:var(--font-mono, monospace);">'
-                        .e($batch->product->sku)
-                        .'</div>';
+                        .'</div>'
+                        .$skuHtml;
                 }
 
                 return '<span style="color:var(--ink-400);">—</span>';
@@ -41,7 +46,7 @@ class BatchesDataTable extends BaseDataTable
                     return '<span style="color:var(--ink-400);">—</span>';
                 }
 
-                return '<span style="color:var(--ink-700); font-size:12.5px;">'.optional($batch->mfg_date)->format('d M, Y').'</span>';
+                return '<span style="color:var(--ink-700); font-size:12.5px; white-space:nowrap;">'.optional($batch->mfg_date)->format('d M, Y').'</span>';
             })
             ->editColumn('expiry_date', function (Batch $batch) {
                 if (! $batch->expiry_date) {
@@ -50,15 +55,15 @@ class BatchesDataTable extends BaseDataTable
 
                 $formatted = optional($batch->expiry_date)->format('d M, Y');
                 if ($batch->expiry_date->isPast()) {
-                    return Blade::render('<x-core::badge color="red" size="xs" variant="soft">{{ $date }} (মেয়াদোত্তীর্ণ)</x-core::badge>', ['date' => $formatted]);
+                    return Blade::render('<x-core::badge color="red" size="xs" variant="soft" style="white-space:nowrap;">{{ $date }} (মেয়াদোত্তীর্ণ)</x-core::badge>', ['date' => $formatted]);
                 }
 
-                return '<span style="color:var(--ink-700); font-size:12.5px;">'.$formatted.'</span>';
+                return '<span style="color:var(--ink-700); font-size:12.5px; white-space:nowrap;">'.$formatted.'</span>';
             })
             ->editColumn('quantity', function (Batch $batch) {
                 $qty = rtrim(rtrim(number_format($batch->quantity, 2), '0'), '.');
 
-                return Blade::render('<x-core::badge color="teal" size="xs" variant="soft">{{ $qty }}</x-core::badge>', ['qty' => $qty]);
+                return Blade::render('<x-core::badge color="teal" size="xs" variant="soft" style="white-space:nowrap;">{{ $qty }}</x-core::badge>', ['qty' => $qty]);
             })
             ->addColumn('action', function (Batch $batch) {
                 return view('product::batches.datatables-actions', compact('batch'))->render();

@@ -1,34 +1,69 @@
-<div class="field" style="margin-top:0;">
-    <label class="bn">পণ্য</label><label class="en" style="display:none;">Product</label>
-    <select name="product_id" required>
-        <option value="">-- নির্বাচন করুন --</option>
-        @foreach ($products as $product)
-            <option value="{{ $product->id }}" {{ (int) old('product_id', $batch->product_id) === $product->id ? 'selected' : '' }}>{{ $product->name }} ({{ $product->sku }})</option>
-        @endforeach
-    </select>
-    @error('product_id') <div class="field-error">{{ $message }}</div> @enderror
-</div>
+@php
+    $productOptions = ['' => '-- নির্বাচন করুন --'];
+    foreach ($products as $product) {
+        $productOptions[$product->id] = $product->sku ? $product->name . ' (' . $product->sku . ')' : $product->name;
+    }
+    $selectedProductId = old('product_id', $batch->product_id ?? '');
+@endphp
 
-<div class="field">
-    <label class="bn">ব্যাচ নং</label><label class="en" style="display:none;">Batch No</label>
-    <input type="text" name="batch_no" value="{{ old('batch_no', $batch->batch_no) }}" placeholder="যেমন BT-2026-001" required>
-    @error('batch_no') <div class="field-error">{{ $message }}</div> @enderror
-</div>
+<div style="display:flex; flex-direction:column; gap:14px;">
+    <x-core::select
+        name="product_id"
+        id="batch_product_id"
+        label="পণ্য"
+        label-en="Product"
+        :options="$productOptions"
+        :value="$selectedProductId"
+        size="sm"
+        :required="true"
+    />
 
-<div class="field-row">
-    <div class="field">
-        <label class="bn">উৎপাদন তারিখ</label><label class="en" style="display:none;">Mfg Date</label>
-        <input type="date" name="mfg_date" value="{{ old('mfg_date', optional($batch->mfg_date)->format('Y-m-d')) }}">
+    <x-core::input
+        name="batch_no"
+        id="batch_batch_no"
+        label="ব্যাচ নং"
+        label-en="Batch No"
+        placeholder="যেমন BT-2026-001"
+        placeholder-en="e.g. BT-2026-001"
+        :value="old('batch_no', $batch->batch_no ?? '')"
+        size="sm"
+        :required="true"
+    />
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+        <x-core::input
+            type="date"
+            name="mfg_date"
+            id="batch_mfg_date"
+            label="উৎপাদন তারিখ"
+            label-en="Mfg Date"
+            :value="old('mfg_date', optional($batch->mfg_date)->format('Y-m-d'))"
+            size="sm"
+        />
+
+        <x-core::input
+            type="date"
+            name="expiry_date"
+            id="batch_expiry_date"
+            label="মেয়াদ শেষের তারিখ"
+            label-en="Expiry Date"
+            :value="old('expiry_date', optional($batch->expiry_date)->format('Y-m-d'))"
+            size="sm"
+        />
     </div>
-    <div class="field">
-        <label class="bn">মেয়াদ শেষের তারিখ</label><label class="en" style="display:none;">Expiry Date</label>
-        <input type="date" name="expiry_date" value="{{ old('expiry_date', optional($batch->expiry_date)->format('Y-m-d')) }}">
-        @error('expiry_date') <div class="field-error">{{ $message }}</div> @enderror
-    </div>
-</div>
 
-<div class="field">
-    <label class="bn">পরিমাণ</label><label class="en" style="display:none;">Quantity</label>
-    <input type="number" step="0.01" min="0" name="quantity" value="{{ old('quantity', $batch->quantity) }}" required>
-    @error('quantity') <div class="field-error">{{ $message }}</div> @enderror
+    <x-core::input
+        type="number"
+        step="0.01"
+        min="0"
+        name="quantity"
+        id="batch_quantity"
+        label="পরিমাণ"
+        label-en="Quantity"
+        placeholder="0"
+        placeholder-en="0"
+        :value="old('quantity', $batch->quantity ?? '')"
+        size="sm"
+        :required="true"
+    />
 </div>

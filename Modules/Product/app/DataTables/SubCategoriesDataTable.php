@@ -21,13 +21,13 @@ class SubCategoriesDataTable extends BaseDataTable
     {
         return (new EloquentDataTable($query))
             ->editColumn('name', function (SubCategory $subCategory) {
-                return '<div style="font-weight:700; color:var(--ink-900); font-size:13.5px;">'
+                return '<div style="font-weight:700; color:var(--ink-900); font-size:13.5px; max-width:200px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word;" title="'.e($subCategory->name).'">'
                     .e($subCategory->name)
                     .'</div>';
             })
             ->addColumn('parent_category', function (SubCategory $subCategory) {
                 if ($subCategory->category) {
-                    return '<span style="font-weight:600; color:var(--ink-800); font-size:13px;">'
+                    return '<span style="font-weight:600; color:var(--ink-800); font-size:13px; max-width:180px; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="'.e($subCategory->category->name).'">'
                         .e($subCategory->category->name)
                         .'</span>';
                 }
@@ -37,14 +37,16 @@ class SubCategoriesDataTable extends BaseDataTable
             ->editColumn('products_count', function (SubCategory $subCategory) {
                 $count = (int) ($subCategory->products_count ?? 0);
 
-                return Blade::render('<x-core::badge color="teal" size="xs" variant="soft">{{ $count }} টি</x-core::badge>', ['count' => $count]);
+                return Blade::render('<x-core::badge color="teal" size="xs" variant="soft" style="white-space:nowrap;">{{ $count }} টি</x-core::badge>', ['count' => $count]);
             })
             ->editColumn('description', function (SubCategory $subCategory) {
                 if (! $subCategory->description) {
                     return '<span style="color:var(--ink-400);">—</span>';
                 }
 
-                return '<span style="color:var(--ink-700); font-size:13px;">'.e($subCategory->description).'</span>';
+                return '<div style="color:var(--ink-700); font-size:13px; max-width:260px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word;" title="'.e($subCategory->description).'">'
+                    .e($subCategory->description)
+                    .'</div>';
             })
             ->addColumn('action', function (SubCategory $subCategory) {
                 return view('product::sub-categories.datatables-actions', compact('subCategory'))->render();
@@ -73,7 +75,6 @@ class SubCategoriesDataTable extends BaseDataTable
     {
         $query = $model->newQuery()
             ->with(['category'])
-            ->withCount('products')
             ->select([
                 'categories.id',
                 'categories.shop_id',
@@ -82,7 +83,8 @@ class SubCategoriesDataTable extends BaseDataTable
                 'categories.name',
                 'categories.description',
                 'categories.created_at',
-            ]);
+            ])
+            ->withCount('products');
 
         if ($parentId = request('parent_id')) {
             $query->where('categories.parent_id', $parentId);
@@ -111,7 +113,7 @@ class SubCategoriesDataTable extends BaseDataTable
             Column::make('name')->title('<span class="bn">নাম</span><span class="en">Name</span>')->width(180),
             Column::computed('parent_category')->title('<span class="bn">মূল ক্যাটাগরি</span><span class="en">Parent Category</span>')->width(180),
             Column::make('products_count')->title('<span class="bn">পণ্য সংখ্যা</span><span class="en">Products</span>')->addClass('table-cell-center')->width(120)->searchable(false),
-            Column::make('description')->title('<span class="bn">বিবরণ</span><span class="en">Description</span>'),
+            Column::make('description')->title('<span class="bn">বিবরণ</span><span class="en">Description</span>')->width(240),
             Column::computed('action')
                 ->title('<span class="bn">অ্যাকশন</span><span class="en">Action</span>')
                 ->orderable(false)

@@ -222,38 +222,55 @@
             </div>
 
             <div style="display:flex; flex-direction:column; gap:16px;">
-                <div class="field-row" style="display:grid; grid-template-columns: 2fr 1fr; gap:16px;">
-                    <div class="field" style="margin-top:0;">
-                        <label class="bn">পণ্যের নাম <span class="text-danger">*</span></label>
-                        <label class="en" style="display:none;">Product Name <span class="text-danger">*</span></label>
-                        <input type="text" name="name" id="product_name" value="{{ old('name', $product->name) }}" placeholder="যেমন: স্যামসাং গ্যালাক্সি এস২৪" required autofocus>
-                        @error('name') <div class="field-error">{{ $message }}</div> @enderror
-                    </div>
-                    <div class="field" style="margin-top:0;">
-                        <label class="bn">SKU / বারকোড আইডি <span class="text-danger">*</span></label>
-                        <label class="en" style="display:none;">SKU Code <span class="text-danger">*</span></label>
-                        <input type="text" name="sku" id="product_sku" value="{{ old('sku', $product->sku) }}" placeholder="যেমন: SKU-1001" style="font-family:var(--font-mono, monospace);" required>
-                        @error('sku') <div class="field-error">{{ $message }}</div> @enderror
-                    </div>
+                <div style="display:grid; grid-template-columns: 2fr 1fr; gap:16px;">
+                    <x-core::input
+                        name="name"
+                        id="product_name"
+                        label="পণ্যের নাম"
+                        label-en="Product Name"
+                        placeholder="যেমন: স্যামসাং গ্যালাক্সি এস২৪"
+                        placeholder-en="e.g. Samsung Galaxy S24"
+                        :value="old('name', $product->name)"
+                        size="sm"
+                        :required="true"
+                        autofocus
+                    />
+                    <x-core::input
+                        name="sku"
+                        id="product_sku"
+                        label="SKU / বারকোড আইডি"
+                        label-en="SKU Code"
+                        placeholder="যেমন: SKU-1001 (ঐচ্ছিক)"
+                        placeholder-en="e.g. SKU-1001 (Optional)"
+                        :value="old('sku', $product->sku)"
+                        size="sm"
+                        style="font-family:var(--font-mono, monospace);"
+                    />
                 </div>
 
-                <div class="field" style="margin-top:0;">
-                    <label class="bn">সাইজ / ভলিউম / ভ্যারিয়েন্ট</label>
-                    <label class="en" style="display:none;">Size / Volume / Variant</label>
-                    <input type="text" name="size" value="{{ old('size', $product->size) }}" placeholder="যেমন: 1L, 500g, 2kg, XL, 128GB">
-                    <div class="helper" style="margin-top:4px; font-size:12px; color:var(--ink-500);">
-                        <span class="bn">টিপ: একই পণ্যের ভিন্ন সাইজ (যেমন তেল ১L, ২L, ৫L) আলাদা পণ্য হিসেবে যোগ করুন, কারণ প্রতিটির স্টক ও দাম আলাদা।</span>
-                        <span class="en" style="display:none;">Tip: Different sizes of the same product should be added as separate items to track distinct stocks and prices.</span>
-                    </div>
-                    @error('size') <div class="field-error">{{ $message }}</div> @enderror
-                </div>
+                <x-core::input
+                    name="size"
+                    id="product_size"
+                    label="সাইজ / ভলিউম / ভ্যারিয়েন্ট"
+                    label-en="Size / Volume / Variant"
+                    placeholder="যেমন: 1L, 500g, 2kg, XL, 128GB"
+                    placeholder-en="e.g. 1L, 500g, 2kg, XL, 128GB"
+                    :value="old('size', $product->size)"
+                    helper="টিপ: একই পণ্যের ভিন্ন সাইজ (যেমন তেল ১L, ২L, ৫L) আলাদা পণ্য হিসেবে যোগ করুন, কারণ প্রতিটির স্টক ও দাম আলাদা।"
+                    size="sm"
+                />
 
-                <div class="field" style="margin-top:0;">
-                    <label class="bn">সংক্ষিপ্ত বিবরণ</label>
-                    <label class="en" style="display:none;">Short Description</label>
-                    <textarea name="short_description" rows="3" placeholder="পণ্য সম্পর্কিত সংক্ষিপ্ত তথ্য বা স্পেসিফিকেশন">{{ old('short_description', $product->short_description) }}</textarea>
-                    @error('short_description') <div class="field-error">{{ $message }}</div> @enderror
-                </div>
+                <x-core::textarea
+                    name="short_description"
+                    id="product_short_description"
+                    label="সংক্ষিপ্ত বিবরণ"
+                    label-en="Short Description"
+                    placeholder="পণ্য সম্পর্কিত সংক্ষিপ্ত তথ্য বা স্পেসিফিকেশন"
+                    placeholder-en="Brief details or specifications about the product"
+                    :value="old('short_description', $product->short_description)"
+                    rows="3"
+                    size="sm"
+                />
             </div>
         </div>
 
@@ -272,24 +289,47 @@
             </div>
 
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:16px;">
-                <div class="field" style="margin-top:0;">
-                    <label class="bn">ক্রয় মূল্য (৳) <span class="text-danger">*</span></label>
-                    <label class="en" style="display:none;">Purchase Price (৳) <span class="text-danger">*</span></label>
-                    <input type="number" step="0.01" min="0" name="purchase_price" value="{{ old('purchase_price', $product->purchase_price ?? 0) }}" placeholder="0.00" required>
-                    @error('purchase_price') <div class="field-error">{{ $message }}</div> @enderror
-                </div>
-                <div class="field" style="margin-top:0;">
-                    <label class="bn">বিক্রয় মূল্য (৳) <span class="text-danger">*</span></label>
-                    <label class="en" style="display:none;">Sale Price (৳) <span class="text-danger">*</span></label>
-                    <input type="number" step="0.01" min="0" name="sale_price" value="{{ old('sale_price', $product->sale_price ?? 0) }}" placeholder="0.00" required>
-                    @error('sale_price') <div class="field-error">{{ $message }}</div> @enderror
-                </div>
-                <div class="field" style="margin-top:0;">
-                    <label class="bn">স্টক এলার্ট লিমিট <span class="text-danger">*</span></label>
-                    <label class="en" style="display:none;">Alert Quantity <span class="text-danger">*</span></label>
-                    <input type="number" min="0" name="alert_qty" value="{{ old('alert_qty', $product->alert_qty ?? 5) }}" placeholder="5" required>
-                    @error('alert_qty') <div class="field-error">{{ $message }}</div> @enderror
-                </div>
+                <x-core::input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    name="purchase_price"
+                    id="product_purchase_price"
+                    label="ক্রয় মূল্য (৳)"
+                    label-en="Purchase Price (৳)"
+                    placeholder="0.00"
+                    placeholder-en="0.00"
+                    :value="old('purchase_price', $product->purchase_price ?? 0)"
+                    size="sm"
+                    :required="true"
+                />
+                <x-core::input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    name="sale_price"
+                    id="product_sale_price"
+                    label="বিক্রয় মূল্য (৳)"
+                    label-en="Sale Price (৳)"
+                    placeholder="0.00"
+                    placeholder-en="0.00"
+                    :value="old('sale_price', $product->sale_price ?? 0)"
+                    size="sm"
+                    :required="true"
+                />
+                <x-core::input
+                    type="number"
+                    min="0"
+                    name="alert_qty"
+                    id="product_alert_qty"
+                    label="স্টক এলার্ট লিমিট"
+                    label-en="Alert Quantity"
+                    placeholder="5"
+                    placeholder-en="5"
+                    :value="old('alert_qty', $product->alert_qty ?? 5)"
+                    size="sm"
+                    :required="true"
+                />
             </div>
 
             {{-- Feature Accordions: VAT, Wholesale, Discount --}}
@@ -302,11 +342,21 @@
                     title="এই পণ্যে ভ্যাট প্রযোজ্য (VAT Applicable)"
                     title-en="VAT Applicable on this product"
                 >
-                    <div class="field" style="margin-top:0; max-width:260px;">
-                        <label class="bn">ভ্যাটের হার (%) <span class="text-danger">*</span></label>
-                        <label class="en" style="display:none;">VAT Percentage (%) <span class="text-danger">*</span></label>
-                        <input type="number" step="0.01" min="0" max="100" name="vat_percentage" value="{{ old('vat_percentage', $product->vat_percentage ?? 0) }}" placeholder="যেমন: 5, 7.5, 15">
-                        @error('vat_percentage') <div class="field-error">{{ $message }}</div> @enderror
+                    <div style="max-width:260px;">
+                        <x-core::input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            max="100"
+                            name="vat_percentage"
+                            id="product_vat_percentage"
+                            label="ভ্যাটের হার (%)"
+                            label-en="VAT Percentage (%)"
+                            placeholder="যেমন: 5, 7.5, 15"
+                            placeholder-en="e.g. 5, 7.5, 15"
+                            :value="old('vat_percentage', $product->vat_percentage ?? 0)"
+                            size="sm"
+                        />
                     </div>
                 </x-core::accordion>
 
@@ -319,18 +369,31 @@
                     title-en="Enable Wholesale Pricing"
                 >
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
-                        <div class="field" style="margin-top:0;">
-                            <label class="bn">পাইকারি মূল্য (৳) <span class="text-danger">*</span></label>
-                            <label class="en" style="display:none;">Wholesale Price (৳) <span class="text-danger">*</span></label>
-                            <input type="number" step="0.01" min="0" name="wholesale_price" value="{{ old('wholesale_price', $product->wholesale_price) }}" placeholder="0.00">
-                            @error('wholesale_price') <div class="field-error">{{ $message }}</div> @enderror
-                        </div>
-                        <div class="field" style="margin-top:0;">
-                            <label class="bn">সর্বনিম্ন পাইকারি পরিমাণ <span class="text-danger">*</span></label>
-                            <label class="en" style="display:none;">Minimum Wholesale Quantity <span class="text-danger">*</span></label>
-                            <input type="number" min="1" name="wholesale_min_qty" value="{{ old('wholesale_min_qty', $product->wholesale_min_qty ?? 10) }}" placeholder="10">
-                            @error('wholesale_min_qty') <div class="field-error">{{ $message }}</div> @enderror
-                        </div>
+                        <x-core::input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            name="wholesale_price"
+                            id="product_wholesale_price"
+                            label="পাইকারি মূল্য (৳)"
+                            label-en="Wholesale Price (৳)"
+                            placeholder="0.00"
+                            placeholder-en="0.00"
+                            :value="old('wholesale_price', $product->wholesale_price)"
+                            size="sm"
+                        />
+                        <x-core::input
+                            type="number"
+                            min="1"
+                            name="wholesale_min_qty"
+                            id="product_wholesale_min_qty"
+                            label="সর্বনিম্ন পাইকারি পরিমাণ"
+                            label-en="Minimum Wholesale Quantity"
+                            placeholder="10"
+                            placeholder-en="10"
+                            :value="old('wholesale_min_qty', $product->wholesale_min_qty ?? 10)"
+                            size="sm"
+                        />
                     </div>
                 </x-core::accordion>
 
@@ -343,21 +406,31 @@
                     title-en="Special Product Discount"
                 >
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
-                        <div class="field" style="margin-top:0;">
-                            <label class="bn">ছাড়ের ধরন <span class="text-danger">*</span></label>
-                            <label class="en" style="display:none;">Discount Type <span class="text-danger">*</span></label>
-                            <select name="discount_type" id="discount_type_select">
-                                <option value="flat" {{ old('discount_type', $product->discount_type ?? 'flat') === 'flat' ? 'selected' : '' }}>ফ্ল্যাট পরিমাণ (Flat ৳)</option>
-                                <option value="percentage" {{ old('discount_type', $product->discount_type ?? 'flat') === 'percentage' ? 'selected' : '' }}>শতাংশ (Percentage %)</option>
-                            </select>
-                            @error('discount_type') <div class="field-error">{{ $message }}</div> @enderror
-                        </div>
-                        <div class="field" style="margin-top:0;">
-                            <label class="bn">ছাড়ের মান <span class="text-danger">*</span></label>
-                            <label class="en" style="display:none;">Discount Value <span class="text-danger">*</span></label>
-                            <input type="number" step="0.01" min="0" name="discount_value" value="{{ old('discount_value', $product->discount_value) }}" placeholder="0.00">
-                            @error('discount_value') <div class="field-error">{{ $message }}</div> @enderror
-                        </div>
+                        <x-core::select
+                            name="discount_type"
+                            id="discount_type_select"
+                            label="ছাড়ের ধরন"
+                            label-en="Discount Type"
+                            size="sm"
+                            :value="old('discount_type', $product->discount_type ?? 'flat')"
+                            :options="[
+                                'flat' => ['bn' => 'ফ্ল্যাট পরিমাণ (Flat ৳)', 'en' => 'Flat Amount (Flat ৳)'],
+                                'percentage' => ['bn' => 'শতাংশ (Percentage %)', 'en' => 'Percentage (%)'],
+                            ]"
+                        />
+                        <x-core::input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            name="discount_value"
+                            id="product_discount_value"
+                            label="ছাড়ের মান"
+                            label-en="Discount Value"
+                            placeholder="0.00"
+                            placeholder-en="0.00"
+                            :value="old('discount_value', $product->discount_value)"
+                            size="sm"
+                        />
                     </div>
                 </x-core::accordion>
             </div>
@@ -443,12 +516,17 @@
                     title="কাস্টম / প্রস্তুতকারক বারকোড (Custom Barcode)"
                     title-en="Manufacturer / Custom Barcode"
                 >
-                    <div class="field" style="margin-top:0;">
-                        <label class="bn">বারকোড নম্বর <span class="text-danger">*</span></label>
-                        <label class="en" style="display:none;">Barcode Number <span class="text-danger">*</span></label>
-                        <input type="text" name="barcode" value="{{ old('barcode', $product->barcode) }}" placeholder="যেমন: 8901030895555" style="font-family:var(--font-mono, monospace);">
-                        @error('barcode') <div class="field-error">{{ $message }}</div> @enderror
-                    </div>
+                    <x-core::input
+                        name="barcode"
+                        id="product_barcode"
+                        label="বারকোড নম্বর"
+                        label-en="Barcode Number"
+                        placeholder="যেমন: 8901030895555"
+                        placeholder-en="e.g. 8901030895555"
+                        :value="old('barcode', $product->barcode)"
+                        size="sm"
+                        style="font-family:var(--font-mono, monospace);"
+                    />
                 </x-core::accordion>
 
                 {{-- Warranty Toggle Box --}}
@@ -460,22 +538,31 @@
                     title-en="Product Warranty"
                 >
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
-                        <div class="field" style="margin-top:0;">
-                            <label class="bn">ওয়ারেন্টির মেয়াদ <span class="text-danger">*</span></label>
-                            <label class="en" style="display:none;">Duration <span class="text-danger">*</span></label>
-                            <input type="number" min="1" name="warranty_duration" value="{{ old('warranty_duration', $product->warranty_duration) }}" placeholder="যেমন: 1, 6, 12">
-                            @error('warranty_duration') <div class="field-error">{{ $message }}</div> @enderror
-                        </div>
-                        <div class="field" style="margin-top:0;">
-                            <label class="bn">মেয়াদ একক <span class="text-danger">*</span></label>
-                            <label class="en" style="display:none;">Duration Unit <span class="text-danger">*</span></label>
-                            <select name="warranty_type">
-                                <option value="day" {{ old('warranty_type', $product->warranty_type) === 'day' ? 'selected' : '' }}>দিন (Days)</option>
-                                <option value="month" {{ old('warranty_type', $product->warranty_type) === 'month' ? 'selected' : '' }}>মাস (Months)</option>
-                                <option value="year" {{ old('warranty_type', $product->warranty_type) === 'year' ? 'selected' : '' }}>বছর (Years)</option>
-                            </select>
-                            @error('warranty_type') <div class="field-error">{{ $message }}</div> @enderror
-                        </div>
+                        <x-core::input
+                            type="number"
+                            min="1"
+                            name="warranty_duration"
+                            id="product_warranty_duration"
+                            label="ওয়ারেন্টির মেয়াদ"
+                            label-en="Duration"
+                            placeholder="যেমন: 1, 6, 12"
+                            placeholder-en="e.g. 1, 6, 12"
+                            :value="old('warranty_duration', $product->warranty_duration)"
+                            size="sm"
+                        />
+                        <x-core::select
+                            name="warranty_type"
+                            id="product_warranty_type"
+                            label="মেয়াদ একক"
+                            label-en="Duration Unit"
+                            size="sm"
+                            :value="old('warranty_type', $product->warranty_type)"
+                            :options="[
+                                'day' => ['bn' => 'দিন (Days)', 'en' => 'Days'],
+                                'month' => ['bn' => 'মাস (Months)', 'en' => 'Months'],
+                                'year' => ['bn' => 'বছর (Years)', 'en' => 'Years'],
+                            ]"
+                        />
                     </div>
                 </x-core::accordion>
 
@@ -487,12 +574,15 @@
                     title="মেয়াদ উত্তীর্ণের তারিখ (Product Expiry)"
                     title-en="Track Expiry Date"
                 >
-                    <div class="field" style="margin-top:0;">
-                        <label class="bn">মেয়াদ শেষের তারিখ <span class="text-danger">*</span></label>
-                        <label class="en" style="display:none;">Expiry Date <span class="text-danger">*</span></label>
-                        <input type="date" name="expiry_date" value="{{ old('expiry_date', optional($product->expiry_date)->format('Y-m-d')) }}">
-                        @error('expiry_date') <div class="field-error">{{ $message }}</div> @enderror
-                    </div>
+                    <x-core::input
+                        type="date"
+                        name="expiry_date"
+                        id="product_expiry_date"
+                        label="মেয়াদ শেষের তারিখ"
+                        label-en="Expiry Date"
+                        :value="old('expiry_date', optional($product->expiry_date)->format('Y-m-d'))"
+                        size="sm"
+                    />
                 </x-core::accordion>
             </div>
         </div>
@@ -516,11 +606,15 @@
                 </div>
             </div>
 
-            <div class="image-dropzone" id="image-dropzone-box">
-                <input type="file" name="image" id="product_image_input" accept="image/*" style="display:none;">
+            <input type="file" name="image" id="product_image_input" accept="image/*" style="display:none;">
 
+            <div class="image-dropzone" id="image-dropzone-box" role="button" tabindex="0" aria-label="Upload product image">
                 <div id="image-preview-container" style="{{ $product->image_url ? '' : 'display:none;' }} margin-bottom:12px;">
                     <img id="image-preview-element" src="{{ $product->image_url ?? '' }}" alt="Preview" style="max-width:100%; height:140px; border-radius:10px; object-fit:contain; border:1px solid var(--border); background:var(--card); padding:4px;">
+                    <div style="font-size:11.5px; color:var(--ink-500); margin-top:6px;">
+                        <span class="bn">ছবি পরিবর্তন করতে ক্লিক করুন</span>
+                        <span class="en" style="display:none;">Click to change image</span>
+                    </div>
                 </div>
 
                 <div id="image-placeholder-container" style="{{ $product->image_url ? 'display:none;' : '' }}">
@@ -552,38 +646,36 @@
             </div>
 
             <div style="display:flex; flex-direction:column; gap:14px;">
-                <div class="field" style="margin-top:0;">
-                    <label class="bn">মূল ক্যাটাগরি <span class="text-danger">*</span></label>
-                    <label class="en" style="display:none;">Parent Category <span class="text-danger">*</span></label>
-                    <select name="category_id" id="f-category" required>
-                        <option value="">-- নির্বাচন করুন --</option>
-                        @foreach ($categories as $category)
-                            <option value="{{ $category->id }}" {{ (int) old('category_id', $product->category_id) === $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
-                        @endforeach
-                    </select>
-                    @error('category_id') <div class="field-error">{{ $message }}</div> @enderror
-                </div>
+                <x-core::select
+                    name="category_id"
+                    id="f-category"
+                    label="মূল ক্যাটাগরি"
+                    label-en="Parent Category"
+                    :options="['' => ['bn' => '-- নির্বাচন করুন --', 'en' => '-- Select --']] + $categories->pluck('name', 'id')->toArray()"
+                    :value="old('category_id', $product->category_id)"
+                    size="sm"
+                    :required="true"
+                />
 
-                <div class="field" style="margin-top:0;">
-                    <label class="bn">সাব-ক্যাটাগরি</label>
-                    <label class="en" style="display:none;">Sub-category</label>
-                    <select name="sub_category_id" id="f-subcategory">
-                        <option value="">-- নির্বাচন করুন --</option>
-                    </select>
-                    @error('sub_category_id') <div class="field-error">{{ $message }}</div> @enderror
-                </div>
+                <x-core::select
+                    name="sub_category_id"
+                    id="f-subcategory"
+                    label="সাব-ক্যাটাগরি"
+                    label-en="Sub-category"
+                    size="sm"
+                >
+                    <option value="" data-text-bn="-- নির্বাচন করুন --" data-text-en="-- Select --">-- নির্বাচন করুন --</option>
+                </x-core::select>
 
-                <div class="field" style="margin-top:0;">
-                    <label class="bn">ব্র্যান্ড</label>
-                    <label class="en" style="display:none;">Brand</label>
-                    <select name="brand_id" id="f-brand">
-                        <option value="">-- কোনো ব্র্যান্ড নেই (None) --</option>
-                        @foreach ($brands as $brand)
-                            <option value="{{ $brand->id }}" {{ (int) old('brand_id', $product->brand_id) === $brand->id ? 'selected' : '' }}>{{ $brand->name }}</option>
-                        @endforeach
-                    </select>
-                    @error('brand_id') <div class="field-error">{{ $message }}</div> @enderror
-                </div>
+                <x-core::select
+                    name="brand_id"
+                    id="f-brand"
+                    label="ব্র্যান্ড"
+                    label-en="Brand"
+                    :options="['' => ['bn' => '-- কোনো ব্র্যান্ড নেই (None) --', 'en' => '-- None --']] + $brands->pluck('name', 'id')->toArray()"
+                    :value="old('brand_id', $product->brand_id)"
+                    size="sm"
+                />
             </div>
         </div>
 
@@ -617,11 +709,11 @@
             </div>
 
             <div style="display:flex; flex-direction:column; gap:10px;">
-                <x-core::button type="submit" color="primary" size="md" icon="check" style="width:100%; justify-content:center;">
+                <x-core::button type="submit" color="primary" size="sm" icon="check" style="width:100%; justify-content:center;">
                     <span class="bn">{{ $product->exists ? 'পণ্য হালনাগাদ করুন' : 'পণ্য সংরক্ষণ করুন' }}</span>
                     <span class="en" style="display:none;">{{ $product->exists ? 'Update Product' : 'Save Product' }}</span>
                 </x-core::button>
-                <x-core::button type="button" variant="secondary" :href="route('products.index')" size="md" style="width:100%; justify-content:center;">
+                <x-core::button as="a" variant="secondary" :href="route('products.index')" size="sm" style="width:100%; justify-content:center;">
                     <span class="bn">বাতিল</span>
                     <span class="en" style="display:none;">Cancel</span>
                 </x-core::button>
@@ -661,12 +753,51 @@ $(function () {
     updateSubCategoryDropdown();
 
     // Image Upload & Preview
-    $('#image-dropzone-box').on('click', function () {
-        $('#product_image_input').trigger('click');
+    $('#image-dropzone-box').on('click', function (e) {
+        if ($(e.target).closest('#product_image_input').length) {
+            return;
+        }
+        var input = document.getElementById('product_image_input');
+        if (input) {
+            input.click();
+        }
+    });
+
+    $('#image-dropzone-box').on('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            var input = document.getElementById('product_image_input');
+            if (input) {
+                input.click();
+            }
+        }
+    });
+
+    $('#image-dropzone-box').on('dragover dragenter', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).css({ 'border-color': 'var(--teal-600)', 'background': 'var(--teal-50)' });
+    });
+
+    $('#image-dropzone-box').on('dragleave drop', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).css({ 'border-color': '', 'background': '' });
+    });
+
+    $('#image-dropzone-box').on('drop', function (e) {
+        var dt = e.originalEvent && e.originalEvent.dataTransfer;
+        if (dt && dt.files && dt.files.length) {
+            var input = document.getElementById('product_image_input');
+            if (input) {
+                input.files = dt.files;
+                $(input).trigger('change');
+            }
+        }
     });
 
     $('#product_image_input').on('change', function (e) {
-        var file = this.files[0];
+        var file = this.files && this.files[0];
         if (file) {
             var reader = new FileReader();
             reader.onload = function (evt) {

@@ -7,30 +7,52 @@
 >
     <x-product::tabbar active="products" />
 
+@php
+    $categoryFilterOptions = ['' => ['bn' => 'সকল ক্যাটাগরি', 'en' => 'All Categories']];
+    foreach ($categories as $cat) {
+        $categoryFilterOptions[$cat->id] = $cat->name;
+    }
+
+    $brandFilterOptions = ['' => ['bn' => 'সকল ব্র্যান্ড', 'en' => 'All Brands']];
+    foreach ($brands as $b) {
+        $brandFilterOptions[$b->id] = $b->name;
+    }
+
+    $statusFilterOptions = [
+        '' => ['bn' => 'সকল অবস্থা', 'en' => 'All Status'],
+        'active' => ['bn' => 'সক্রিয়', 'en' => 'Active'],
+        'inactive' => ['bn' => 'নিষ্ক্রিয়', 'en' => 'Inactive'],
+    ];
+@endphp
+
     <div class="section-row" style="margin-bottom:16px; margin-top:16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
         <div class="filters" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-            <div>
-                <select name="filter_category" id="filter-category" style="height:36px; padding:0 12px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--ink-800); font-size:13px; outline:none;">
-                    <option value="" data-text-bn="সকল ক্যাটাগরি" data-text-en="All Categories">সকল ক্যাটাগরি</option>
-                    @foreach ($categories as $cat)
-                        <option value="{{ $cat->id }}">{{ $cat->name }}</option>
-                    @endforeach
-                </select>
+            <div style="width:180px; flex-shrink:0;">
+                <x-core::select
+                    name="filter_category"
+                    id="filter-category"
+                    size="sm"
+                    :no-margin="true"
+                    :options="$categoryFilterOptions"
+                />
             </div>
-            <div>
-                <select name="filter_brand" id="filter-brand" style="height:36px; padding:0 12px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--ink-800); font-size:13px; outline:none;">
-                    <option value="" data-text-bn="সকল ব্র্যান্ড" data-text-en="All Brands">সকল ব্র্যান্ড</option>
-                    @foreach ($brands as $b)
-                        <option value="{{ $b->id }}">{{ $b->name }}</option>
-                    @endforeach
-                </select>
+            <div style="width:180px; flex-shrink:0;">
+                <x-core::select
+                    name="filter_brand"
+                    id="filter-brand"
+                    size="sm"
+                    :no-margin="true"
+                    :options="$brandFilterOptions"
+                />
             </div>
-            <div>
-                <select name="filter_status" id="filter-status" style="height:36px; padding:0 12px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--ink-800); font-size:13px; outline:none;">
-                    <option value="" data-text-bn="সকল অবস্থা" data-text-en="All Status">সকল অবস্থা</option>
-                    <option value="active" data-text-bn="সক্রিয়" data-text-en="Active">সক্রিয়</option>
-                    <option value="inactive" data-text-bn="নিষ্ক্রিয়" data-text-en="Inactive">নিষ্ক্রিয়</option>
-                </select>
+            <div style="width:150px; flex-shrink:0;">
+                <x-core::select
+                    name="filter_status"
+                    id="filter-status"
+                    size="sm"
+                    :no-margin="true"
+                    :options="$statusFilterOptions"
+                />
             </div>
             <x-core::button
                 type="button"
@@ -46,7 +68,7 @@
         </div>
         @can('products.create')
             <x-core::button :href="route('products.create')" size="sm" color="primary" icon="plus">
-                <span class="bn">নতুন পণ্য</span><span class="en">New Product</span>
+                <span class="bn">নতুন পণ্য</span><span class="en" style="display:none;">New Product</span>
             </x-core::button>
         @endcan
     </div>
@@ -59,6 +81,19 @@
 
     {{-- Stock History Modal Container --}}
     <div id="stockHistoryModalContainer"></div>
+
+    @push('styles')
+        <style>
+            #products-data-table {
+                width: 100% !important;
+            }
+            #products-data-table th:first-child,
+            #products-data-table td:first-child {
+                max-width: 280px;
+                width: 260px;
+            }
+        </style>
+    @endpush
 
     @push('scripts')
         {!! $dataTable->scripts() !!}
