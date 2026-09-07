@@ -13,12 +13,6 @@
         <a href="{{ route('stock.history') }}" class="tabbtn active">
             <span class="bn">স্টকের ইতিহাস</span><span class="en" style="display:none;">Stock History</span>
         </a>
-        <a href="{{ route('stock-transfers.index') }}" class="tabbtn">
-            <span class="bn">স্টক ট্রান্সফার</span><span class="en" style="display:none;">Stock Transfers</span>
-        </a>
-        <a href="{{ route('batches.index') }}" class="tabbtn">
-            <span class="bn">ব্যাচসমূহ</span><span class="en" style="display:none;">Batches</span>
-        </a>
     </div>
 
     {{-- Filter Toolbar --}}

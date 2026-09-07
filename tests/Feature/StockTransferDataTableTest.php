@@ -281,4 +281,93 @@ class StockTransferDataTableTest extends TestCase
         $this->assertNotNull($destBatch);
         $this->assertEquals(10, (float) $destBatch->quantity);
     }
+
+    public function test_stock_transfers_index_renders_create_transfer_modal(): void
+    {
+        $response = $this->actingAs($this->user)->get(route('stock-transfers.index'));
+
+        $response->assertOk();
+        $response->assertSee('createStockTransferModal');
+        $response->assertSee('btn-open-create-transfer-modal');
+        $response->assertSee('modal-from-warehouse');
+        $response->assertSee('modal-to-warehouse');
+        $response->assertSee('modal-items-container');
+    }
+
+    public function test_store_stock_transfer_via_ajax(): void
+    {
+        $category = Category::create(['shop_id' => $this->shop->id, 'name' => 'Accessories']);
+        $product = Product::create([
+            'shop_id' => $this->shop->id,
+            'category_id' => $category->id,
+            'name' => 'USB Hub',
+            'sku' => 'USB-HUB-4P',
+            'purchase_price' => 300,
+            'sale_price' => 500,
+            'status' => 'active',
+        ]);
+
+        $batch = Batch::create([
+            'shop_id' => $this->shop->id,
+            'product_id' => $product->id,
+            'warehouse_id' => $this->warehouse1->id,
+            'batch_no' => 'BATCH-HUB-01',
+            'quantity' => 50,
+        ]);
+
+        $postData = [
+            'from_warehouse_id' => $this->warehouse1->id,
+            'to_warehouse_id' => $this->warehouse2->id,
+            'note' => 'Transferring stock for branch display',
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'batch_id' => $batch->id,
+                    'quantity' => 12,
+                ],
+            ],
+        ];
+
+        $response = $this->actingAs($this->user)
+            ->postJson(route('stock-transfers.store'), $postData);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+        ]);
+
+        $this->assertDatabaseHas('stock_transfers', [
+            'from_warehouse_id' => $this->warehouse1->id,
+            'to_warehouse_id' => $this->warehouse2->id,
+            'status' => 'pending',
+            'requested_by' => $this->user->id,
+            'note' => 'Transferring stock for branch display',
+        ]);
+
+        $createdTransfer = StockTransfer::where('from_warehouse_id', $this->warehouse1->id)
+            ->where('to_warehouse_id', $this->warehouse2->id)
+            ->latest()
+            ->first();
+
+        $this->assertNotNull($createdTransfer);
+        $this->assertCount(1, $createdTransfer->items);
+        $this->assertEquals(12, (float) $createdTransfer->items->first()->quantity);
+        $this->assertEquals($batch->id, $createdTransfer->items->first()->batch_id);
+    }
+
+    public function test_store_stock_transfer_validation_via_ajax(): void
+    {
+        // Same warehouse validation
+        $response = $this->actingAs($this->user)
+            ->postJson(route('stock-transfers.store'), [
+                'from_warehouse_id' => $this->warehouse1->id,
+                'to_warehouse_id' => $this->warehouse1->id,
+                'items' => [
+                    ['product_id' => 1, 'batch_id' => 1, 'quantity' => 5],
+                ],
+            ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['to_warehouse_id']);
+    }
 }

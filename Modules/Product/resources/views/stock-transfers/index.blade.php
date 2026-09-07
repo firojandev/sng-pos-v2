@@ -6,14 +6,14 @@
     active="stock-transfers"
 >
     {{-- Top Tab Navigation --}}
-    <div class="tabbar" style="margin-bottom:16px;">
-        <a href="{{ route('stock-transfers.index') }}" class="tabbtn active">
-            <span class="bn">স্টক ট্রান্সফার</span><span class="en" style="display:none;">Stock Transfers</span>
-        </a>
-        <a href="{{ route('stock.history') }}" class="tabbtn">
-            <span class="bn">স্টকের ইতিহাস</span><span class="en" style="display:none;">Stock History</span>
-        </a>
-    </div>
+{{--    <div class="tabbar" style="margin-bottom:16px;">--}}
+{{--        <a href="{{ route('stock-transfers.index') }}" class="tabbtn active">--}}
+{{--            <span class="bn">স্টক ট্রান্সফার</span><span class="en" style="display:none;">Stock Transfers</span>--}}
+{{--        </a>--}}
+{{--        <a href="{{ route('stock.history') }}" class="tabbtn">--}}
+{{--            <span class="bn">স্টকের ইতিহাস</span><span class="en" style="display:none;">Stock History</span>--}}
+{{--        </a>--}}
+{{--    </div>--}}
 
     {{-- Summary Stat Cards --}}
     @if (isset($metrics))
@@ -116,17 +116,18 @@
             </x-core::button>
         </div>
 
-        @can('stock.transfer')
+        @canany(['stock.create', 'stock.transfer'])
         <x-core::button
-            :href="route('stock-transfers.create')"
+            type="button"
             size="sm"
             color="primary"
             icon="plus"
+            id="btn-open-create-transfer-modal"
         >
             <span class="bn">নতুন ট্রান্সফার</span>
             <span class="en" style="display:none;">New Transfer</span>
         </x-core::button>
-        @endcan
+        @endcanany
     </div>
 
     {{-- DataTable Container --}}
@@ -142,6 +143,9 @@
             {{-- Loaded dynamically via AJAX --}}
         </div>
     </div>
+
+    {{-- Create Stock Transfer Modal --}}
+    @include('product::stock-transfers._create_modal')
 
     @push('scripts')
         {!! $dataTable->scripts() !!}
@@ -245,6 +249,292 @@
                                 title: 'ত্রুটি!',
                                 text: msg
                             });
+                        }
+                    }
+                });
+            });
+
+            /* ---------------- Create Stock Transfer Modal ---------------- */
+            var productData = {};
+            var batchesByWarehouse = {};
+            try {
+                productData = JSON.parse($('#modal-transfer-products-data').text()) || {};
+                batchesByWarehouse = JSON.parse($('#modal-transfer-batches-data').text()) || {};
+            } catch (e) {
+                productData = {};
+                batchesByWarehouse = {};
+            }
+
+            var modalRowCount = 1;
+
+            function escapeHtml(str) {
+                return String(str).replace(/[&<>"']/g, function (c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+                });
+            }
+
+            function buildModalProductOptions() {
+                var html = '<option value="">-- নির্বাচন করুন --</option>';
+                $.each(productData, function (pid, info) {
+                    html += '<option value="' + pid + '">' + escapeHtml(info.label) + '</option>';
+                });
+                return html;
+            }
+
+            function populateModalBatches($row) {
+                var $batchSelect = $row.find('.modal-batch-select');
+                var productId = $row.find('.modal-product-select').val();
+                var warehouseId = $('#modal-from-warehouse').val();
+                var $qtyInput = $row.find('.modal-qty-input');
+                var $maxHint = $row.find('.modal-batch-max-hint');
+
+                $qtyInput.removeAttr('max');
+                $maxHint.hide().empty();
+
+                if (!warehouseId) {
+                    $batchSelect.html('<option value="">-- আগে প্রেরণকারী গুদাম নির্বাচন করুন --</option>');
+                    return;
+                }
+                if (!productId) {
+                    $batchSelect.html('<option value="">-- পণ্য নির্বাচন করুন --</option>');
+                    return;
+                }
+
+                var batches = (batchesByWarehouse[warehouseId] || {})[productId] || [];
+                if (!batches || batches.length === 0) {
+                    $batchSelect.html('<option value="">-- এই গুদামে কোনো ব্যাচ/স্টক নেই --</option>');
+                    return;
+                }
+
+                var html = '<option value="">-- ব্যাচ নির্বাচন করুন --</option>';
+                $.each(batches, function (i, b) {
+                    html += '<option value="' + b.id + '" data-qty="' + (b.quantity || 0) + '">' + escapeHtml(b.label) + '</option>';
+                });
+                $batchSelect.html(html);
+            }
+
+            function newModalRowHtml(index) {
+                return '<tr class="modal-item-row" data-index="' + index + '" style="border-bottom:1px solid var(--border);">' +
+                    '<td style="min-width:220px; padding:8px 10px;">' +
+                        '<select name="items[' + index + '][product_id]" class="form-control form-select form-control-sm modal-product-select" style="font-size:13px; font-family:\'Noto Sans Bengali\', sans-serif;" required>' +
+                            buildModalProductOptions() +
+                        '</select>' +
+                    '</td>' +
+                    '<td style="min-width:200px; padding:8px 10px;">' +
+                        '<select name="items[' + index + '][batch_id]" class="form-control form-select form-control-sm modal-batch-select" style="font-size:13px; font-family:\'Noto Sans Bengali\', sans-serif;" required>' +
+                            '<option value="">-- আগে প্রেরণকারী গুদাম নির্বাচন করুন --</option>' +
+                        '</select>' +
+                    '</td>' +
+                    '<td style="width:140px; padding:8px 10px;">' +
+                        '<input type="number" step="0.01" min="0.01" name="items[' + index + '][quantity]" class="form-control form-control-sm modal-qty-input" style="font-size:13px; font-family:var(--font-mono, monospace);" placeholder="0.00" required>' +
+                        '<div class="modal-batch-max-hint" style="font-size:11px; color:var(--ink-500); margin-top:2px; display:none;"></div>' +
+                    '</td>' +
+                    '<td style="width:44px; text-align:center; padding:8px 10px;">' +
+                        '<button type="button" class="modal-remove-item-btn" style="width:30px; height:30px; border-radius:8px; border:none; background:transparent; color:var(--red-600); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:background-color 0.15s ease;" title="Remove">' +
+                            '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6"/></svg>' +
+                        '</button>' +
+                    '</td>' +
+                '</tr>';
+            }
+
+            function resetModalForm() {
+                var $form = $('#create_stock_transfer_form');
+                $form[0].reset();
+                $form.find('.is-invalid').removeClass('is-invalid');
+                $form.find('.dynamic-error').remove();
+                $('#modal-transfer-error-box').hide().empty();
+
+                modalRowCount = 1;
+                $('#modal-items-container').html(newModalRowHtml(0));
+            }
+
+            // Open Transfer Create Modal
+            $(document).on('click', '#btn-open-create-transfer-modal', function (e) {
+                e.preventDefault();
+                resetModalForm();
+                openModal('createStockTransferModal');
+            });
+
+            // Auto-open if #create hash or query parameter
+            if (window.location.hash === '#create' || new URLSearchParams(window.location.search).get('create') === '1') {
+                resetModalForm();
+                openModal('createStockTransferModal');
+            }
+
+            // From Warehouse change updates all rows
+            $(document).on('change', '#modal-from-warehouse', function () {
+                var fromWh = $(this).val();
+                var toWh = $('#modal-to-warehouse').val();
+                if (fromWh && toWh && fromWh === toWh) {
+                    $('#modal-transfer-error-box').text('প্রেরণকারী গুদাম এবং গ্রহণকারী গুদাম একই হতে পারে না').show();
+                } else {
+                    $('#modal-transfer-error-box').hide().empty();
+                }
+
+                $('#modal-items-container .modal-item-row').each(function () {
+                    populateModalBatches($(this));
+                });
+            });
+
+            // To Warehouse change check
+            $(document).on('change', '#modal-to-warehouse', function () {
+                var fromWh = $('#modal-from-warehouse').val();
+                var toWh = $(this).val();
+                if (fromWh && toWh && fromWh === toWh) {
+                    $('#modal-transfer-error-box').text('প্রেরণকারী গুদাম এবং গ্রহণকারী গুদাম একই হতে পারে না').show();
+                } else {
+                    $('#modal-transfer-error-box').hide().empty();
+                }
+            });
+
+            // Product change
+            $(document).on('change', '.modal-product-select', function () {
+                populateModalBatches($(this).closest('.modal-item-row'));
+            });
+
+            // Batch selection updates max attribute and hint
+            $(document).on('change', '.modal-batch-select', function () {
+                var $row = $(this).closest('.modal-item-row');
+                var $opt = $(this).find('option:selected');
+                var maxQty = parseFloat($opt.data('qty'));
+                var $qtyInput = $row.find('.modal-qty-input');
+                var $hint = $row.find('.modal-batch-max-hint');
+
+                if (!isNaN(maxQty) && maxQty > 0) {
+                    $qtyInput.attr('max', maxQty);
+                    $hint.text('মজুদ: ' + maxQty).show();
+                } else {
+                    $qtyInput.removeAttr('max');
+                    $hint.hide().empty();
+                }
+            });
+
+            // Remove item row
+            $(document).on('click', '.modal-remove-item-btn', function () {
+                var $rows = $('#modal-items-container .modal-item-row');
+                if ($rows.length > 1) {
+                    $(this).closest('.modal-item-row').remove();
+                } else {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'সতর্কতা',
+                            text: 'অন্তত একটি আইটেম প্রয়োজন',
+                            confirmButtonColor: 'var(--teal-700)'
+                        });
+                    } else if (typeof window.toast === 'function') {
+                        window.toast('অন্তত একটি আইটেম প্রয়োজন', 'At least one item is required');
+                    }
+                }
+            });
+
+            // Add item row
+            $('#modal-add-item-btn').on('click', function () {
+                $('#modal-items-container').append(newModalRowHtml(modalRowCount));
+                modalRowCount++;
+            });
+
+            // Close Modal Handlers
+            $(document).on('click', '.modal-close-btn', function (e) {
+                e.preventDefault();
+                $(this).closest('.modal-backdrop').removeClass('open');
+            });
+
+            $('.modal-backdrop').on('click', function (e) {
+                if ($(e.target).hasClass('modal-backdrop')) {
+                    $(this).removeClass('open');
+                }
+            });
+
+            // Submit Create Stock Transfer Form via AJAX
+            $('#create_stock_transfer_form').on('submit', function (e) {
+                e.preventDefault();
+                var $form = $(this);
+                var $btn = $('#btn-save-stock-transfer');
+                var url = $form.attr('action');
+
+                $form.find('.is-invalid').removeClass('is-invalid');
+                $form.find('.dynamic-error').remove();
+                $('#modal-transfer-error-box').hide().empty();
+
+                var fromWh = $('#modal-from-warehouse').val();
+                var toWh = $('#modal-to-warehouse').val();
+
+                if (!fromWh) {
+                    $('#modal-transfer-error-box').text('অনুগ্রহ করে প্রেরণকারী গুদাম নির্বাচন করুন').show();
+                    return;
+                }
+                if (!toWh) {
+                    $('#modal-transfer-error-box').text('অনুগ্রহ করে গ্রহণকারী গুদাম নির্বাচন করুন').show();
+                    return;
+                }
+                if (fromWh === toWh) {
+                    $('#modal-transfer-error-box').text('প্রেরণকারী গুদাম এবং গ্রহণকারী গুদাম একই হতে পারে না').show();
+                    return;
+                }
+
+                var hasInvalidBatch = false;
+                $form.find('.modal-batch-select').each(function () {
+                    if (!$(this).val()) {
+                        hasInvalidBatch = true;
+                        $(this).addClass('is-invalid');
+                    }
+                });
+                if (hasInvalidBatch) {
+                    $('#modal-transfer-error-box').text('সকল পণ্যের জন্য বৈধ ব্যাচ নির্বাচন করুন').show();
+                    return;
+                }
+
+                $btn.prop('disabled', true);
+
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: $form.serialize(),
+                    dataType: 'json',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function (res) {
+                        $btn.prop('disabled', false);
+                        closeModal('createStockTransferModal');
+                        resetModalForm();
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'success',
+                                title: res.message || 'স্টক ট্রান্সফারের অনুরোধ তৈরি করা হয়েছে',
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                        } else if (typeof window.toast === 'function') {
+                            window.toast(res.message || 'স্টক ট্রান্সফারের অনুরোধ তৈরি করা হয়েছে', res.message_en || 'Stock transfer created');
+                        }
+                        reloadTransferTable();
+                    },
+                    error: function (xhr) {
+                        $btn.prop('disabled', false);
+                        if (xhr.status === 422 && xhr.responseJSON) {
+                            var errors = xhr.responseJSON.errors;
+                            if (errors) {
+                                var errorList = [];
+                                $.each(errors, function (key, msgs) {
+                                    errorList.push(msgs[0]);
+                                    var $field = $form.find('[name="' + key + '"]');
+                                    if ($field.length) {
+                                        $field.addClass('is-invalid');
+                                        var $err = $('<div class="field-error dynamic-error" style="color:var(--red-600); font-size:12px; margin-top:4px;">' + msgs[0] + '</div>');
+                                        $field.closest('.form-group, .field, td, div').append($err);
+                                    }
+                                });
+                                $('#modal-transfer-error-box').html(errorList.join('<br>')).show();
+                            } else if (xhr.responseJSON.message) {
+                                $('#modal-transfer-error-box').text(xhr.responseJSON.message).show();
+                            }
+                        } else {
+                            var errMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'স্টক ট্রান্সফার করতে সমস্যা হয়েছে';
+                            $('#modal-transfer-error-box').text(errMsg).show();
                         }
                     }
                 });
