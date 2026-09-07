@@ -82,7 +82,6 @@ class BranchesDataTable extends BaseDataTable
     public function query(Branch $model): QueryBuilder
     {
         return $model->newQuery()
-            ->withCount('warehouses')
             ->select([
                 'branches.id',
                 'branches.shop_id',
@@ -91,7 +90,8 @@ class BranchesDataTable extends BaseDataTable
                 'branches.address',
                 'branches.status',
                 'branches.created_at',
-            ]);
+            ])
+            ->withCount('warehouses');
     }
 
     /**

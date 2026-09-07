@@ -44,6 +44,9 @@
         margin-bottom: 14px !important;
         font-size: 11.5px !important;
     }
+    .purchase-invoice-sheet table.invoice-items-table tbody td {
+        white-space: normal;
+    }
     .purchase-invoice-sheet table.invoice-items-table th,
     .purchase-invoice-sheet table.invoice-items-table td {
         box-sizing: border-box !important;
@@ -51,6 +54,14 @@
         word-break: break-word !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
+    }
+    .purchase-invoice-sheet table.invoice-items-table td.col-product-name,
+    .purchase-invoice-sheet table.invoice-items-table td.col-product-name div,
+    .purchase-invoice-sheet table.invoice-items-table .product-title {
+        white-space: normal !important;
+        word-break: break-word !important;
+        overflow-wrap: anywhere !important;
+        line-height: 1.4 !important;
     }
 </style>
 
@@ -151,10 +162,10 @@
                     <td style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; vertical-align:middle;">
                         {{ BanglaNumber::toBn($idx + 1) }}.
                     </td>
-                    <td style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 8px; text-align:left; vertical-align:middle;">
-                        <div style="font-weight:600; color:#0f172a;">{{ $item->product->name ?? '—' }}</div>
+                    <td class="col-product-name" style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 8px; text-align:left; vertical-align:middle; white-space:normal !important; word-break:break-word; overflow-wrap:anywhere;">
+                        <div class="product-title" style="font-weight:600; color:#0f172a; white-space:normal !important; word-break:break-word; overflow-wrap:anywhere; line-height:1.4;">{{ $item->product->name ?? '—' }}</div>
                         @if ($barcode)
-                            <div style="font-size:10.5px; color:#64748b; margin-top:1px;">
+                            <div style="font-size:10.5px; color:#64748b; margin-top:2px; white-space:normal !important; word-break:break-word;">
                                 বারকোড: {{ $barcode }}
                             </div>
                         @endif
@@ -243,14 +254,6 @@
             <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
                 <span style="color:#334155;">সাব টোটাল</span>
                 <span style="font-weight:600;">{{ BanglaNumber::toBnMoney($purchase->subtotal) }}</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                <span style="color:#334155;">(-) ছাড়</span>
-                <span>৳ {{ BanglaNumber::toBnMoney($purchase->discount) }}</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                <span style="color:#334155;">ডেলিভারি</span>
-                <span>৳ {{ BanglaNumber::toBnMoney($purchase->delivery_charge) }}</span>
             </div>
             @if((float) $purchase->transportation_cost > 0)
                 <div style="display:flex; justify-content:space-between; margin-bottom:2px;">

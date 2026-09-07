@@ -122,7 +122,6 @@ class ShopsDataTable extends BaseDataTable
     public function query(Shop $model): QueryBuilder
     {
         return $model->newQuery()
-            ->withCount('admins')
             ->with(['activeSubscription.plan'])
             ->select([
                 'shops.id',
@@ -134,7 +133,8 @@ class ShopsDataTable extends BaseDataTable
                 'shops.status',
                 'shops.enabled_features',
                 'shops.created_at',
-            ]);
+            ])
+            ->withCount('admins');
     }
 
     /**

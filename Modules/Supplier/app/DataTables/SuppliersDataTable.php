@@ -192,11 +192,6 @@ class SuppliersDataTable extends BaseDataTable
     public function query(Supplier $model): QueryBuilder
     {
         $query = $model->newQuery()
-            ->withSum('purchases', 'total')
-            ->withSum('purchases', 'due_amount')
-            ->withCount('purchases')
-            ->withCount(['purchases as due_purchases_count' => fn ($q) => $q->where('due_amount', '>', 0)])
-            ->with(['purchases' => fn ($q) => $q->latest('purchase_date')])
             ->select([
                 'suppliers.id',
                 'suppliers.shop_id',
@@ -207,7 +202,12 @@ class SuppliersDataTable extends BaseDataTable
                 'suppliers.opening_due',
                 'suppliers.status',
                 'suppliers.created_at',
-            ]);
+            ])
+            ->withSum('purchases', 'total')
+            ->withSum('purchases', 'due_amount')
+            ->withCount('purchases')
+            ->withCount(['purchases as due_purchases_count' => fn ($q) => $q->where('due_amount', '>', 0)])
+            ->with(['purchases' => fn ($q) => $q->latest('purchase_date')]);
 
         if ($status = request('status')) {
             if ($status !== 'all') {

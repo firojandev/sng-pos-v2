@@ -102,7 +102,6 @@ class WarehousesDataTable extends BaseDataTable
     {
         $query = $model->newQuery()
             ->with(['branch'])
-            ->withCount('batches')
             ->select([
                 'warehouses.id',
                 'warehouses.shop_id',
@@ -113,6 +112,7 @@ class WarehousesDataTable extends BaseDataTable
                 'warehouses.is_default',
                 'warehouses.created_at',
             ])
+            ->withCount('batches')
             ->orderByDesc('warehouses.is_default');
 
         if ($branchId = request('branch_id')) {

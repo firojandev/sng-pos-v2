@@ -75,7 +75,6 @@ class ExpenseSubCategoriesDataTable extends BaseDataTable
     {
         $query = $model->newQuery()
             ->with(['category'])
-            ->withCount('expenses')
             ->select([
                 'categories.id',
                 'categories.shop_id',
@@ -84,7 +83,8 @@ class ExpenseSubCategoriesDataTable extends BaseDataTable
                 'categories.name',
                 'categories.description',
                 'categories.created_at',
-            ]);
+            ])
+            ->withCount('expenses');
 
         if ($parentId = request('parent_id')) {
             $query->where('categories.parent_id', $parentId);

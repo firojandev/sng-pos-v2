@@ -208,11 +208,6 @@ class CustomersDataTable extends BaseDataTable
     public function query(Customer $model): QueryBuilder
     {
         $query = $model->newQuery()
-            ->withSum('sales', 'total')
-            ->withSum('sales', 'due_amount')
-            ->withCount('sales')
-            ->withCount(['sales as due_sales_count' => fn ($q) => $q->where('due_amount', '>', 0)])
-            ->with(['sales' => fn ($q) => $q->latest('sale_date')])
             ->select([
                 'customers.id',
                 'customers.shop_id',
@@ -223,7 +218,12 @@ class CustomersDataTable extends BaseDataTable
                 'customers.opening_due',
                 'customers.status',
                 'customers.created_at',
-            ]);
+            ])
+            ->withSum('sales', 'total')
+            ->withSum('sales', 'due_amount')
+            ->withCount('sales')
+            ->withCount(['sales as due_sales_count' => fn ($q) => $q->where('due_amount', '>', 0)])
+            ->with(['sales' => fn ($q) => $q->latest('sale_date')]);
 
         if ($status = request('status')) {
             if ($status !== 'all') {

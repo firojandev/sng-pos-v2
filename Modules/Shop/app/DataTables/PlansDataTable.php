@@ -100,7 +100,6 @@ class PlansDataTable extends BaseDataTable
     public function query(Plan $model): QueryBuilder
     {
         return $model->newQuery()
-            ->withCount('subscriptions')
             ->select([
                 'plans.id',
                 'plans.name',
@@ -113,7 +112,8 @@ class PlansDataTable extends BaseDataTable
                 'plans.max_products',
                 'plans.status',
                 'plans.created_at',
-            ]);
+            ])
+            ->withCount('subscriptions');
     }
 
     /**
