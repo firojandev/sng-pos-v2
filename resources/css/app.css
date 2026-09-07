@@ -4172,7 +4172,15 @@ input.numeric-input,
   border: 1px solid var(--table-border);
   border-radius: var(--table-radius);
   box-shadow: var(--shadow-sm);
-  overflow: hidden;
+  overflow-x: auto;
+}
+
+.row-avatar {
+  min-width: 0;
+  max-width: 100%;
+}
+.row-avatar > div {
+  min-width: 0;
 }
 
 /* Layout Top Bar */

@@ -46,18 +46,18 @@ class StockDataTable extends BaseDataTable
             ->addColumn('category', function (Product $product) {
                 if ($product->category) {
                     $catName = e($product->category->name);
-                    $subHtml = $product->subCategory ? '<div style="color:var(--ink-400); font-size:11px; margin-top:2px;">'.e($product->subCategory->name).'</div>' : '';
+                    $subHtml = $product->subCategory ? '<div style="color:var(--ink-400); font-size:11px; margin-top:2px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">'.e($product->subCategory->name).'</div>' : '';
 
-                    return '<div style="font-weight:600; color:var(--ink-800); font-size:12.5px;">'.$catName.'</div>'.$subHtml;
+                    return '<div style="font-weight:600; color:var(--ink-800); font-size:12.5px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="'.$catName.'">'.$catName.'</div>'.$subHtml;
                 }
 
                 return '<span style="color:var(--ink-400);">—</span>';
             })
             ->editColumn('purchase_price', function (Product $product) {
-                return '<div style="font-family:var(--font-mono, monospace); font-weight:700; color:var(--ink-800); font-size:13px;">৳'.number_format((float) $product->purchase_price, 2).'</div>';
+                return '<div style="font-family:var(--font-mono, monospace); font-weight:700; color:var(--ink-800); font-size:13px; white-space:nowrap;">৳'.number_format((float) $product->purchase_price, 2).'</div>';
             })
             ->editColumn('sale_price', function (Product $product) {
-                return '<div style="font-family:var(--font-mono, monospace); font-weight:600; color:var(--teal-700); font-size:13px;">৳'.number_format((float) $product->sale_price, 2).'</div>';
+                return '<div style="font-family:var(--font-mono, monospace); font-weight:600; color:var(--teal-700); font-size:13px; white-space:nowrap;">৳'.number_format((float) $product->sale_price, 2).'</div>';
             })
             ->addColumn('total_stock', function (Product $product) {
                 $qty = (float) ($product->total_stock ?? 0);
@@ -75,13 +75,13 @@ class StockDataTable extends BaseDataTable
                     $bgColor = 'var(--gold-100)';
                 }
 
-                $pill = '<div style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:6px; background:'.$bgColor.'; color:'.$color.'; font-family:var(--font-mono, monospace); font-weight:800; font-size:13px;">'
+                $pill = '<div style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:6px; background:'.$bgColor.'; color:'.$color.'; font-family:var(--font-mono, monospace); font-weight:800; font-size:13px; white-space:nowrap;">'
                     .$formattedQty.($unitName ? ' <span style="font-size:11px; font-weight:600;">'.e($unitName).'</span>' : '')
                     .'</div>';
 
                 $batchText = $batchesCount > 0
-                    ? '<div style="font-size:11px; color:var(--ink-400); margin-top:3px;">'.$batchesCount.' টি ব্যাচ</div>'
-                    : '<div style="font-size:11px; color:var(--ink-400); margin-top:3px;">কোনো ব্যাচ নেই</div>';
+                    ? '<div style="font-size:11px; color:var(--ink-400); margin-top:3px; white-space:nowrap;">'.$batchesCount.' টি ব্যাচ</div>'
+                    : '<div style="font-size:11px; color:var(--ink-400); margin-top:3px; white-space:nowrap;">কোনো ব্যাচ নেই</div>';
 
                 return '<div style="text-align:right;">'.$pill.$batchText.'</div>';
             })
@@ -91,7 +91,7 @@ class StockDataTable extends BaseDataTable
                 $val = max(0, $qty * $price);
 
                 return '<div style="text-align:right;">'
-                    .'<div style="font-family:var(--font-mono, monospace); font-weight:800; color:var(--teal-800); font-size:13px;">৳'.number_format($val, 2).'</div>'
+                    .'<div style="font-family:var(--font-mono, monospace); font-weight:800; color:var(--teal-800); font-size:13px; white-space:nowrap;">৳'.number_format($val, 2).'</div>'
                     .'</div>';
             })
             ->addColumn('stock_status', function (Product $product) {

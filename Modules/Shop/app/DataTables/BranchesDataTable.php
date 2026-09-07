@@ -21,7 +21,7 @@ class BranchesDataTable extends BaseDataTable
     {
         return (new EloquentDataTable($query))
             ->editColumn('name', function (Branch $branch) {
-                return '<div style="font-weight:700; color:var(--ink-900); font-size:13.5px;">'
+                return '<div style="font-weight:700; color:var(--ink-900); font-size:13.5px; max-width:200px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word;" title="'.e($branch->name).'">'
                     .e($branch->name)
                     .'</div>';
             })
@@ -30,7 +30,7 @@ class BranchesDataTable extends BaseDataTable
                     return '<span style="color:var(--ink-400);">—</span>';
                 }
 
-                return '<span style="font-family:var(--font-mono, monospace); font-size:12.5px; color:var(--ink-700);">'
+                return '<span style="font-family:var(--font-mono, monospace); font-size:12.5px; color:var(--ink-700); white-space:nowrap;">'
                     .e($branch->phone)
                     .'</span>';
             })
@@ -39,12 +39,14 @@ class BranchesDataTable extends BaseDataTable
                     return '<span style="color:var(--ink-400);">—</span>';
                 }
 
-                return '<span style="color:var(--ink-700); font-size:13px;">'.e($branch->address).'</span>';
+                return '<div style="color:var(--ink-700); font-size:13px; max-width:240px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word;" title="'.e($branch->address).'">'
+                    .e($branch->address)
+                    .'</div>';
             })
             ->editColumn('warehouses_count', function (Branch $branch) {
                 $count = (int) ($branch->warehouses_count ?? 0);
 
-                return Blade::render('<x-core::badge color="teal" size="xs" variant="soft">{{ $count }} টি</x-core::badge>', ['count' => $count]);
+                return '<span style="white-space:nowrap;">'.Blade::render('<x-core::badge color="teal" size="xs" variant="soft">{{ $count }} টি</x-core::badge>', ['count' => $count]).'</span>';
             })
             ->editColumn('status', function (Branch $branch) {
                 if ($branch->status === 'active') {
@@ -110,7 +112,7 @@ class BranchesDataTable extends BaseDataTable
         return [
             Column::make('name')->title('<span class="bn">শাখার নাম</span><span class="en">Branch Name</span>')->width(200),
             Column::make('phone')->title('<span class="bn">মোবাইল</span><span class="en">Phone</span>')->width(140),
-            Column::make('address')->title('<span class="bn">ঠিকানা</span><span class="en">Address</span>'),
+            Column::make('address')->title('<span class="bn">ঠিকানা</span><span class="en">Address</span>')->width(240),
             Column::make('warehouses_count')->title('<span class="bn">গুদাম সংখ্যা</span><span class="en">Warehouses</span>')->addClass('table-cell-center')->width(120)->searchable(false),
             Column::make('status')->title('<span class="bn">অবস্থা</span><span class="en">Status</span>')->addClass('table-cell-center')->width(100),
             Column::computed('action')

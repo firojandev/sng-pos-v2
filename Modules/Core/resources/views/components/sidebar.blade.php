@@ -216,14 +216,7 @@ $navGroups = [
                 'bn' => 'ব্যয়',
                 'en' => 'Expense',
                 'icon' => '<path d="M4 8l6 6 4-4 6 7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 17h5v-5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>',
-            ],
-            [
-                'key' => 'tax',
-                'route' => 'tax.index',
-                'bn' => 'ট্যাক্স ও ভ্যাট',
-                'en' => 'Tax & VAT',
-                'icon' => '<circle cx="7.5" cy="7.5" r="2.2" stroke="currentColor" stroke-width="1.6"/><circle cx="16.5" cy="16.5" r="2.2" stroke="currentColor" stroke-width="1.6"/><path d="M18 6 6 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
-            ],
+            ]
         ],
     ],
     [

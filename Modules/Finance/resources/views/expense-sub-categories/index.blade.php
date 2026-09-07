@@ -9,7 +9,7 @@
 
     <div class="section-row" style="margin-bottom:16px; margin-top:16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
         <div class="filters" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-            <div style="min-width:220px;">
+            <div>
                 <select name="filter_parent_category" id="filter-parent-category" style="height:36px; padding:0 12px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--ink-800); font-size:13px; outline:none;">
                     <option value="" data-text-bn="সকল মূল ক্যাটাগরি" data-text-en="All Categories">সকল মূল ক্যাটাগরি</option>
                     @foreach ($categories as $cat)

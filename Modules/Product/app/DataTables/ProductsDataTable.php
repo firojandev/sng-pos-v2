@@ -73,13 +73,15 @@ class ProductsDataTable extends BaseDataTable
                 $sale = '৳'.number_format((float) $product->sale_price, 2);
                 $purchase = '৳'.number_format((float) $product->purchase_price, 2);
 
-                return '<div style="font-weight:700; color:var(--teal-700); font-size:13px;">'.$sale.'</div>'
-                    .'<div style="font-size:11.5px; color:var(--ink-500);">ক্রয়: '.$purchase.'</div>';
+                return '<div style="white-space:nowrap;">'
+                    .'<div style="font-weight:700; color:var(--teal-700); font-size:13px;">'.$sale.'</div>'
+                    .'<div style="font-size:11.5px; color:var(--ink-500);">ক্রয়: '.$purchase.'</div>'
+                    .'</div>';
             })
             ->addColumn('units', function (Product $product) {
                 $units = $product->units->pluck('short_code')->implode(', ');
 
-                return $units ?: '<span style="color:var(--ink-400);">—</span>';
+                return $units ? '<span style="white-space:nowrap;">'.e($units).'</span>' : '<span style="color:var(--ink-400);">—</span>';
             })
             ->editColumn('is_vat', function (Product $product) {
                 if ($product->is_vat) {

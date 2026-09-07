@@ -108,6 +108,14 @@
         </div>
     </div>
 
+    @push('styles')
+        <style>
+            #suppliers-data-table {
+                width: 100% !important;
+            }
+        </style>
+    @endpush
+
     {{-- Create Supplier Modal --}}
     <div class="modal-backdrop" id="createSupplierModal" style="z-index:999;">
         <div class="modal-box" style="width:520px; max-width:95vw; max-height:90vh; overflow-y:auto; padding:24px; border-radius:16px;">

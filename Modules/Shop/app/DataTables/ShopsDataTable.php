@@ -29,8 +29,8 @@ class ShopsDataTable extends BaseDataTable
                 $slugBadge = Blade::render('<x-core::badge color="grey" size="xs" variant="outline">{{ $slug }}</x-core::badge>', ['slug' => $slug]);
                 $codeBadge = $storeCode ? Blade::render('<x-core::badge color="teal" size="xs" variant="soft">#{{ $code }}</x-core::badge>', ['code' => $storeCode]) : '';
 
-                return '<div style="display:flex; flex-direction:column; align-items:flex-start; gap:4px;">'
-                    .'<span style="font-weight:700; color:var(--ink-900); font-size:13.5px; line-height:1.2;">'.$name.'</span>'
+                return '<div style="display:flex; flex-direction:column; align-items:flex-start; gap:4px; max-width:200px;">'
+                    .'<span style="font-weight:700; color:var(--ink-900); font-size:13.5px; line-height:1.2; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="'.$name.'">'.$name.'</span>'
                     .'<div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">'
                     .$slugBadge
                     .$codeBadge
@@ -42,7 +42,7 @@ class ShopsDataTable extends BaseDataTable
                     return '<span style="color:var(--ink-400);">—</span>';
                 }
 
-                return '<span style="font-family:var(--font-mono, monospace); font-size:12.5px; color:var(--ink-700);">'
+                return '<span style="font-family:var(--font-mono, monospace); font-size:12.5px; color:var(--ink-700); white-space:nowrap;">'
                     .e($shop->phone)
                     .'</span>';
             })
@@ -65,8 +65,8 @@ class ShopsDataTable extends BaseDataTable
                     $statusBadge = Blade::render('<x-core::badge :color="$color" size="xs" variant="soft">{{ $label }}</x-core::badge>', ['color' => $color, 'label' => $label]);
 
                     return '<div style="display:flex; flex-direction:column; align-items:flex-start; gap:3px;">'
-                        .'<span style="font-weight:600; font-size:13px; color:var(--ink-800);">'.$planName.'</span>'
-                        .$statusBadge
+                        .'<span style="font-weight:600; font-size:13px; color:var(--ink-800); max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="'.$planName.'">'.$planName.'</span>'
+                        .'<span style="white-space:nowrap;">'.$statusBadge.'</span>'
                         .'</div>';
                 }
 
@@ -75,12 +75,12 @@ class ShopsDataTable extends BaseDataTable
             ->editColumn('admins_count', function (Shop $shop) {
                 $count = (int) ($shop->admins_count ?? 0);
 
-                return Blade::render('<x-core::badge color="teal" size="xs" variant="soft" :dot="true">{{ $count }}</x-core::badge>', ['count' => $count]);
+                return '<span style="white-space:nowrap;">'.Blade::render('<x-core::badge color="teal" size="xs" variant="soft" :dot="true">{{ $count }}</x-core::badge>', ['count' => $count]).'</span>';
             })
             ->editColumn('enabled_features', function (Shop $shop) {
                 $count = is_array($shop->enabled_features) ? count($shop->enabled_features) : 0;
 
-                return Blade::render('<x-core::badge color="grey" size="xs" variant="outline">{{ $count }} টি</x-core::badge>', ['count' => $count]);
+                return '<span style="white-space:nowrap;">'.Blade::render('<x-core::badge color="grey" size="xs" variant="outline">{{ $count }} টি</x-core::badge>', ['count' => $count]).'</span>';
             })
             ->editColumn('status', function (Shop $shop) {
                 if ($shop->status === 'active') {

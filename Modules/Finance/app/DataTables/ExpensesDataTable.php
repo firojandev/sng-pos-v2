@@ -52,16 +52,16 @@ class ExpensesDataTable extends BaseDataTable
                     .'<span style="display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:var(--red-100); color:var(--red-600); flex-shrink:0;">'
                     .'<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17h10V7"/><path d="m17 17-10-10"/></svg>'
                     .'</span>'
-                    .'<span>'.e($expense->title).'</span>'
+                    .'<span style="max-width:220px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word;" title="'.e($expense->title).'">'.e($expense->title).'</span>'
                     .'</div>';
 
                 $note = $expense->note
-                    ? '<div style="font-size:11.5px; color:var(--ink-500); font-weight:400; max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:3px;" title="'.e($expense->note).'">'
+                    ? '<div style="font-size:11.5px; color:var(--ink-500); font-weight:400; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:3px;" title="'.e($expense->note).'">'
                         .e($expense->note)
                         .'</div>'
                     : '';
 
-                return $titleText.$note;
+                return '<div>'.$titleText.$note.'</div>';
             })
             ->addColumn('category', function (Expense $expense) {
                 if (! $expense->category) {
@@ -70,8 +70,9 @@ class ExpensesDataTable extends BaseDataTable
 
                 $catName = e($expense->category->name);
                 $subName = $expense->subCategory ? ' <span style="color:var(--ink-500); font-size:11.5px;">/ '.e($expense->subCategory->name).'</span>' : '';
+                $fullTitle = $expense->category->name.($expense->subCategory ? ' / '.$expense->subCategory->name : '');
 
-                return '<div style="font-weight:600; color:var(--ink-800); font-size:13px;">'.$catName.$subName.'</div>';
+                return '<div style="font-weight:600; color:var(--ink-800); font-size:13px; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="'.e($fullTitle).'">'.$catName.$subName.'</div>';
             })
             ->addColumn('account', function (Expense $expense) {
                 if (! $expense->account) {
@@ -79,20 +80,20 @@ class ExpensesDataTable extends BaseDataTable
                 }
 
                 $acc = $expense->account;
-                $name = '<div style="font-weight:600; color:var(--ink-900); font-size:13px;">'.e($acc->name).'</div>';
+                $name = '<div style="font-weight:600; color:var(--ink-900); font-size:13px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="'.e($acc->name).'">'.e($acc->name).'</div>';
 
                 $typeBadges = [
-                    'cash' => '<span style="display:inline-block; font-size:11px; padding:2px 7px; border-radius:4px; font-weight:600; background:var(--green-100); color:var(--green-ink);"><span class="bn">নগদ</span><span class="en" style="display:none;">Cash</span></span>',
-                    'bank' => '<span style="display:inline-block; font-size:11px; padding:2px 7px; border-radius:4px; font-weight:600; background:var(--blue-100); color:var(--blue-ink);"><span class="bn">ব্যাংক</span><span class="en" style="display:none;">Bank</span></span>',
-                    'mfs' => '<span style="display:inline-block; font-size:11px; padding:2px 7px; border-radius:4px; font-weight:600; background:var(--gold-100); color:var(--gold-ink);"><span class="bn">মোবাইল ব্যাংকিং</span><span class="en" style="display:none;">MFS</span></span>',
+                    'cash' => '<span style="display:inline-block; font-size:11px; padding:2px 7px; border-radius:4px; font-weight:600; background:var(--green-100); color:var(--green-ink); white-space:nowrap;"><span class="bn">নগদ</span><span class="en" style="display:none;">Cash</span></span>',
+                    'bank' => '<span style="display:inline-block; font-size:11px; padding:2px 7px; border-radius:4px; font-weight:600; background:var(--blue-100); color:var(--blue-ink); white-space:nowrap;"><span class="bn">ব্যাংক</span><span class="en" style="display:none;">Bank</span></span>',
+                    'mfs' => '<span style="display:inline-block; font-size:11px; padding:2px 7px; border-radius:4px; font-weight:600; background:var(--gold-100); color:var(--gold-ink); white-space:nowrap;"><span class="bn">মোবাইল ব্যাংকিং</span><span class="en" style="display:none;">MFS</span></span>',
                 ];
 
                 $badge = $typeBadges[$acc->type] ?? '';
                 $details = '';
                 if ($acc->type === 'bank' && ($acc->bank_name || $acc->account_number)) {
-                    $details = '<span style="font-size:11px; color:var(--ink-500);">'.e($acc->bank_name ?? '').($acc->account_number ? ' ('.e($acc->account_number).')' : '').'</span>';
+                    $details = '<span style="font-size:11px; color:var(--ink-500); max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="'.e(($acc->bank_name ?? '').($acc->account_number ? ' ('.$acc->account_number.')' : '')).'">'.e($acc->bank_name ?? '').($acc->account_number ? ' ('.e($acc->account_number).')' : '').'</span>';
                 } elseif ($acc->type === 'mfs' && ($acc->mfs_provider || $acc->account_number)) {
-                    $details = '<span style="font-size:11px; color:var(--ink-500);">'.e($acc->mfs_provider ?? 'MFS').($acc->account_number ? ' ('.e($acc->account_number).')' : '').'</span>';
+                    $details = '<span style="font-size:11px; color:var(--ink-500); max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="'.e(($acc->mfs_provider ?? 'MFS').($acc->account_number ? ' ('.$acc->account_number.')' : '')).'">'.e($acc->mfs_provider ?? 'MFS').($acc->account_number ? ' ('.e($acc->account_number).')' : '').'</span>';
                 }
 
                 return $name.'<div style="margin-top:2px; display:flex; align-items:center; gap:4px; flex-wrap:wrap;">'.$badge.$details.'</div>';

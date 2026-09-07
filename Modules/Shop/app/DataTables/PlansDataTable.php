@@ -25,8 +25,8 @@ class PlansDataTable extends BaseDataTable
                 $name = e($plan->name);
                 $slugBadge = Blade::render('<x-core::badge color="grey" size="xs" variant="outline">{{ $slug }}</x-core::badge>', ['slug' => $slug]);
 
-                return '<div style="display:flex; flex-direction:column; align-items:flex-start; gap:4px;">'
-                    .'<span style="font-weight:700; color:var(--ink-900); font-size:13.5px; line-height:1.2;">'.$name.'</span>'
+                return '<div style="display:flex; flex-direction:column; align-items:flex-start; gap:4px; max-width:180px;">'
+                    .'<span style="font-weight:700; color:var(--ink-900); font-size:13.5px; line-height:1.2; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="'.$name.'">'.$name.'</span>'
                     .$slugBadge
                     .'</div>';
             })
@@ -35,7 +35,7 @@ class PlansDataTable extends BaseDataTable
                 $cycleEn = $plan->billing_cycle === 'yearly' ? 'yr' : 'mo';
                 $formattedPrice = number_format((float) $plan->price, 0);
 
-                return '<div style="font-weight:800; color:var(--teal-800); font-size:13.5px;">'
+                return '<div style="font-weight:800; color:var(--teal-800); font-size:13.5px; white-space:nowrap;">'
                     .'৳'.$formattedPrice
                     .'<span style="font-size:11px; color:var(--ink-500); font-weight:600; margin-left:2px;">/'
                     .'<span class="bn">'.$cycleBn.'</span>'
@@ -45,38 +45,38 @@ class PlansDataTable extends BaseDataTable
             })
             ->editColumn('max_users', function (Plan $plan) {
                 if ($plan->max_users !== null) {
-                    return Blade::render('<x-core::badge color="grey" size="xs">{{ $limit }}</x-core::badge>', ['limit' => $plan->max_users]);
+                    return '<span style="white-space:nowrap;">'.Blade::render('<x-core::badge color="grey" size="xs">{{ $limit }}</x-core::badge>', ['limit' => $plan->max_users]).'</span>';
                 }
 
-                return '<span style="font-weight:800; color:var(--teal-700); font-size:15px;" title="Unlimited">&infin;</span>';
+                return '<span style="font-weight:800; color:var(--teal-700); font-size:15px; white-space:nowrap;" title="Unlimited">&infin;</span>';
             })
             ->editColumn('max_branches', function (Plan $plan) {
                 if ($plan->max_branches !== null) {
-                    return Blade::render('<x-core::badge color="grey" size="xs">{{ $limit }}</x-core::badge>', ['limit' => $plan->max_branches]);
+                    return '<span style="white-space:nowrap;">'.Blade::render('<x-core::badge color="grey" size="xs">{{ $limit }}</x-core::badge>', ['limit' => $plan->max_branches]).'</span>';
                 }
 
-                return '<span style="font-weight:800; color:var(--teal-700); font-size:15px;" title="Unlimited">&infin;</span>';
+                return '<span style="font-weight:800; color:var(--teal-700); font-size:15px; white-space:nowrap;" title="Unlimited">&infin;</span>';
             })
             ->editColumn('max_warehouses', function (Plan $plan) {
                 if ($plan->max_warehouses !== null) {
-                    return Blade::render('<x-core::badge color="grey" size="xs">{{ $limit }}</x-core::badge>', ['limit' => $plan->max_warehouses]);
+                    return '<span style="white-space:nowrap;">'.Blade::render('<x-core::badge color="grey" size="xs">{{ $limit }}</x-core::badge>', ['limit' => $plan->max_warehouses]).'</span>';
                 }
 
-                return '<span style="font-weight:800; color:var(--teal-700); font-size:15px;" title="Unlimited">&infin;</span>';
+                return '<span style="font-weight:800; color:var(--teal-700); font-size:15px; white-space:nowrap;" title="Unlimited">&infin;</span>';
             })
             ->editColumn('max_products', function (Plan $plan) {
                 if ($plan->max_products !== null) {
                     $formatted = number_format((float) $plan->max_products);
 
-                    return Blade::render('<x-core::badge color="grey" size="xs">{{ $limit }}</x-core::badge>', ['limit' => $formatted]);
+                    return '<span style="white-space:nowrap;">'.Blade::render('<x-core::badge color="grey" size="xs">{{ $limit }}</x-core::badge>', ['limit' => $formatted]).'</span>';
                 }
 
-                return '<span style="font-weight:800; color:var(--teal-700); font-size:15px;" title="Unlimited">&infin;</span>';
+                return '<span style="font-weight:800; color:var(--teal-700); font-size:15px; white-space:nowrap;" title="Unlimited">&infin;</span>';
             })
             ->editColumn('subscriptions_count', function (Plan $plan) {
                 $count = (int) ($plan->subscriptions_count ?? 0);
 
-                return Blade::render('<x-core::badge color="teal" size="xs" variant="soft" :dot="true">{{ $count }}</x-core::badge>', ['count' => $count]);
+                return '<span style="white-space:nowrap;">'.Blade::render('<x-core::badge color="teal" size="xs" variant="soft" :dot="true">{{ $count }}</x-core::badge>', ['count' => $count]).'</span>';
             })
             ->editColumn('status', function (Plan $plan) {
                 if ($plan->status === 'active') {

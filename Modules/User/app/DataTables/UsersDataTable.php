@@ -46,9 +46,9 @@ class UsersDataTable extends BaseDataTable
 
                 return '<div class="row-avatar" style="display:flex; align-items:center; gap:10px;">'
                     .$avatarHtml
-                    .'<div style="min-width:0;">'
+                    .'<div style="min-width:0; max-width:180px;">'
                     .'<div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">'
-                    .'<span style="font-weight:700; color:var(--ink-900); font-size:13.5px;">'.e($user->name).'</span>'
+                    .'<span style="font-weight:700; color:var(--ink-900); font-size:13.5px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word;" title="'.e($user->name).'">'.e($user->name).'</span>'
                     .$badges
                     .'</div>'
                     .'<div style="margin-top:2px;">'.$code.'</div>'
@@ -56,9 +56,9 @@ class UsersDataTable extends BaseDataTable
                     .'</div>';
             })
             ->editColumn('email', function (User $user) {
-                $emailLink = '<a href="mailto:'.e($user->email).'" style="font-size:12.5px; font-weight:600; color:var(--ink-800); text-decoration:none; display:inline-flex; align-items:center; gap:5px;">'
+                $emailLink = '<a href="mailto:'.e($user->email).'" style="font-size:12.5px; font-weight:600; color:var(--ink-800); text-decoration:none; display:inline-flex; align-items:center; gap:5px; max-width:170px;">'
                     .'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6; flex-shrink:0;"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>'
-                    .'<span>'.e($user->email).'</span>'
+                    .'<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="'.e($user->email).'">'.e($user->email).'</span>'
                     .'</a>';
 
                 $phoneHtml = '';
@@ -132,7 +132,7 @@ class UsersDataTable extends BaseDataTable
                     ? '<div style="font-size:11px; color:var(--ink-500); margin-top:2px;">'.implode(' &middot; ', $sub).'</div>'
                     : '';
 
-                return '<div>'.($designation ?: '<div style="font-size:12px; color:var(--ink-700);">'.e($employee->name).'</div>').$subHtml.'</div>';
+                return '<div style="min-width:0; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">'.($designation ?: '<div style="font-size:12px; color:var(--ink-700);">'.e($employee->name).'</div>').$subHtml.'</div>';
             })
             ->addColumn('auth_credentials', function (User $user) {
                 $supportPin = $user->support_pin ?: '—';
