@@ -99,7 +99,7 @@
                     <span class="en" style="display:none;">Filtered Product:</span>
                 </span>
                 <x-core::badge color="teal" size="sm" icon="package">
-                    {{ $product->name }} (SKU: {{ $product->sku }})
+                    {{ $product->name }}@if ($product->sku) (SKU: {{ $product->sku }})@endif
                 </x-core::badge>
             </div>
             <x-core::button size="xs" variant="secondary" :href="route('stock.history')" icon="x">
@@ -136,7 +136,7 @@
                                 <div style="font-weight:700; color:var(--ink-900); font-size:13px;">
                                     {{ $movement->product->name ?? '—' }}
                                 </div>
-                                @if (isset($movement->product->sku))
+                                @if (!empty($movement->product->sku))
                                     <div style="font-size:11px; font-family:var(--font-mono, monospace); color:var(--ink-400); margin-top:2px;">
                                         SKU: {{ $movement->product->sku }}
                                     </div>

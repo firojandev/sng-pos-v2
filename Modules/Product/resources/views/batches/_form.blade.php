@@ -1,7 +1,7 @@
 @php
     $productOptions = ['' => '-- নির্বাচন করুন --'];
     foreach ($products as $product) {
-        $productOptions[$product->id] = $product->name . ' (' . $product->sku . ')';
+        $productOptions[$product->id] = $product->sku ? $product->name . ' (' . $product->sku . ')' : $product->name;
     }
     $selectedProductId = old('product_id', $batch->product_id ?? '');
 @endphp

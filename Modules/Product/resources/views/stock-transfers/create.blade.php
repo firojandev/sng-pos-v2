@@ -8,7 +8,7 @@
     @php
         $productData = [];
         foreach ($products as $product) {
-            $productData[$product->id] = ['label' => $product->name.' ('.$product->sku.')'];
+            $productData[$product->id] = ['label' => $product->sku ? $product->name.' ('.$product->sku.')' : $product->name];
         }
 
         $warehouseOptions = [];

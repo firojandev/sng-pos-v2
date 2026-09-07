@@ -240,11 +240,10 @@
                         id="product_sku"
                         label="SKU / বারকোড আইডি"
                         label-en="SKU Code"
-                        placeholder="যেমন: SKU-1001"
-                        placeholder-en="e.g. SKU-1001"
+                        placeholder="যেমন: SKU-1001 (ঐচ্ছিক)"
+                        placeholder-en="e.g. SKU-1001 (Optional)"
                         :value="old('sku', $product->sku)"
                         size="sm"
-                        :required="true"
                         style="font-family:var(--font-mono, monospace);"
                     />
                 </div>

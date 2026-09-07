@@ -23,39 +23,46 @@ class ProductsDataTable extends BaseDataTable
             ->editColumn('name', function (Product $product) {
                 $avatar = '';
                 if ($product->image_url) {
-                    $avatar = '<img src="'.e($product->image_url).'" alt="" style="width:32px; height:32px; border-radius:8px; object-fit:cover; flex:0 0 auto;">';
+                    $avatar = '<img src="'.e($product->image_url).'" alt="" style="width:32px; height:32px; border-radius:8px; object-fit:cover; flex-shrink:0;">';
                 } else {
                     $initial = mb_substr($product->name, 0, 1);
-                    $avatar = '<div class="av" style="width:32px; height:32px; border-radius:8px; background:var(--teal-800); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; flex:0 0 auto;">'.e($initial).'</div>';
+                    $avatar = '<div class="av" style="width:32px; height:32px; border-radius:8px; background:var(--teal-800); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; flex-shrink:0;">'.e($initial).'</div>';
                 }
 
                 $sizeHtml = $product->size ? ' <span style="font-size:11.5px; color:var(--ink-500); font-weight:500;">('.e($product->size).')</span>' : '';
 
-                return '<div class="row-avatar" style="display:flex; align-items:center; gap:10px;">'
+                return '<div class="row-avatar" style="display:flex; align-items:center; gap:10px; max-width:280px;">'
                     .$avatar
-                    .'<div><div style="font-weight:700; color:var(--ink-900); font-size:13.5px;">'
+                    .'<div style="min-width:0; flex:1;">'
+                    .'<div style="font-weight:700; color:var(--ink-900); font-size:13px; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word;" title="'.e($product->name).'">'
                     .e($product->name)
                     .$sizeHtml
-                    .'</div></div></div>';
+                    .'</div>'
+                    .'</div>'
+                    .'</div>';
             })
             ->editColumn('sku', function (Product $product) {
-                return '<span style="font-family:var(--font-mono, monospace); font-size:12.5px; font-weight:600; color:var(--ink-700);">'
-                    .e($product->sku)
-                    .'</span>';
+                if ($product->sku) {
+                    return '<span style="font-family:var(--font-mono, monospace); font-size:12px; font-weight:600; color:var(--ink-700); max-width:110px; overflow:hidden; text-overflow:ellipsis; display:inline-block; vertical-align:middle; white-space:nowrap;" title="'.e($product->sku).'">'
+                        .e($product->sku)
+                        .'</span>';
+                }
+
+                return '<span style="color:var(--ink-400);">—</span>';
             })
             ->addColumn('category', function (Product $product) {
                 if ($product->category) {
                     $catName = e($product->category->name);
                     $subHtml = $product->subCategory ? ' <span style="color:var(--ink-500); font-size:11.5px;">/ '.e($product->subCategory->name).'</span>' : '';
 
-                    return '<div style="font-weight:600; color:var(--ink-800); font-size:13px;">'.$catName.$subHtml.'</div>';
+                    return '<div style="font-weight:600; color:var(--ink-800); font-size:13px; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="'.e($product->category->name.($product->subCategory ? ' / '.$product->subCategory->name : '')).'">'.$catName.$subHtml.'</div>';
                 }
 
                 return '<span style="color:var(--ink-400);">—</span>';
             })
             ->addColumn('brand', function (Product $product) {
                 if ($product->brand) {
-                    return '<span style="font-weight:600; color:var(--ink-800); font-size:13px;">'
+                    return '<span style="font-weight:600; color:var(--ink-800); font-size:13px; max-width:130px; overflow:hidden; text-overflow:ellipsis; display:inline-block; vertical-align:middle; white-space:nowrap;" title="'.e($product->brand->name).'">'
                         .e($product->brand->name)
                         .'</span>';
                 }
@@ -177,21 +184,21 @@ class ProductsDataTable extends BaseDataTable
     public function getColumns(): array
     {
         return [
-            Column::make('name')->title('<span class="bn">পণ্য</span><span class="en">Product</span>')->width(220),
-            Column::make('sku')->title('<span class="bn">SKU</span><span class="en">SKU</span>')->width(120),
-            Column::computed('category')->title('<span class="bn">ক্যাটাগরি</span><span class="en">Category</span>')->width(160),
-            Column::computed('brand')->title('<span class="bn">ব্র্যান্ড</span><span class="en">Brand</span>')->width(130),
-            Column::computed('price')->title('<span class="bn">মূল্য</span><span class="en">Price</span>')->width(130),
-            Column::computed('units')->title('<span class="bn">ইউনিট</span><span class="en">Units</span>')->width(100),
-            Column::make('is_vat')->title('<span class="bn">ভ্যাট</span><span class="en">VAT</span>')->addClass('table-cell-center')->width(80),
-            Column::make('status')->title('<span class="bn">অবস্থা</span><span class="en">Status</span>')->addClass('table-cell-center')->width(90),
+            Column::make('name')->title('<span class="bn">পণ্য</span><span class="en">Product</span>')->width(260),
+            Column::make('sku')->title('<span class="bn">SKU</span><span class="en">SKU</span>')->width(110),
+            Column::computed('category')->title('<span class="bn">ক্যাটাগরি</span><span class="en">Category</span>')->width(150),
+            Column::computed('brand')->title('<span class="bn">ব্র্যান্ড</span><span class="en">Brand</span>')->width(120),
+            Column::computed('price')->title('<span class="bn">মূল্য</span><span class="en">Price</span>')->width(120),
+            Column::computed('units')->title('<span class="bn">ইউনিট</span><span class="en">Units</span>')->width(90),
+            Column::make('is_vat')->title('<span class="bn">ভ্যাট</span><span class="en">VAT</span>')->addClass('table-cell-center')->width(70),
+            Column::make('status')->title('<span class="bn">অবস্থা</span><span class="en">Status</span>')->addClass('table-cell-center')->width(85),
             Column::computed('action')
                 ->title('<span class="bn">অ্যাকশন</span><span class="en">Action</span>')
                 ->orderable(false)
                 ->searchable(false)
                 ->exportable(false)
                 ->printable(false)
-                ->width(125)
+                ->width(110)
                 ->addClass('table-cell-right'),
         ];
     }

@@ -82,6 +82,19 @@
     {{-- Stock History Modal Container --}}
     <div id="stockHistoryModalContainer"></div>
 
+    @push('styles')
+        <style>
+            #products-data-table {
+                width: 100% !important;
+            }
+            #products-data-table th:first-child,
+            #products-data-table td:first-child {
+                max-width: 280px;
+                width: 260px;
+            }
+        </style>
+    @endpush
+
     @push('scripts')
         {!! $dataTable->scripts() !!}
 

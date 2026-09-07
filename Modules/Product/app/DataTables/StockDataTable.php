@@ -30,12 +30,12 @@ class StockDataTable extends BaseDataTable
                 }
 
                 $sizeHtml = $product->size ? ' <span style="font-size:11.5px; color:var(--ink-500); font-weight:500;">('.e($product->size).')</span>' : '';
-                $skuHtml = '<div style="font-size:11px; font-family:var(--font-mono, monospace); color:var(--ink-400); margin-top:2px;">SKU: '.e($product->sku).'</div>';
+                $skuHtml = $product->sku ? '<div style="font-size:11px; font-family:var(--font-mono, monospace); color:var(--ink-400); margin-top:2px;">SKU: '.e($product->sku).'</div>' : '';
 
-                return '<div class="row-avatar" style="display:flex; align-items:center; gap:10px;">'
+                return '<div class="row-avatar" style="display:flex; align-items:center; gap:10px; max-width:280px;">'
                     .$avatar
-                    .'<div style="min-width:0;">'
-                    .'<div style="font-weight:700; color:var(--ink-900); font-size:13px; line-height:1.3;">'
+                    .'<div style="min-width:0; flex:1;">'
+                    .'<div style="font-weight:700; color:var(--ink-900); font-size:13px; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word;" title="'.e($product->name).'">'
                     .e($product->name)
                     .$sizeHtml
                     .'</div>'

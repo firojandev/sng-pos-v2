@@ -27,11 +27,16 @@ class BatchesDataTable extends BaseDataTable
             })
             ->addColumn('product', function (Batch $batch) {
                 if ($batch->product) {
+                    $skuHtml = $batch->product->sku
+                        ? '<div style="font-size:11.5px; color:var(--ink-500); font-family:var(--font-mono, monospace);">'
+                            .e($batch->product->sku)
+                            .'</div>'
+                        : '';
+
                     return '<div style="font-weight:600; color:var(--ink-800); font-size:13px;">'
                         .e($batch->product->name)
-                        .'</div><div style="font-size:11.5px; color:var(--ink-500); font-family:var(--font-mono, monospace);">'
-                        .e($batch->product->sku)
-                        .'</div>';
+                        .'</div>'
+                        .$skuHtml;
                 }
 
                 return '<span style="color:var(--ink-400);">—</span>';

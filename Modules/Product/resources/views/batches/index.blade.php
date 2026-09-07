@@ -11,7 +11,7 @@
     $productFilterOptions = ['' => ['bn' => 'সকল পণ্য', 'en' => 'All Products']];
     $productSelectOptions = ['' => ['bn' => '-- নির্বাচন করুন --', 'en' => '-- Select --']];
     foreach ($products as $p) {
-        $pName = $p->name . ' (' . $p->sku . ')';
+        $pName = $p->sku ? $p->name . ' (' . $p->sku . ')' : $p->name;
         $productFilterOptions[$p->id] = $pName;
         $productSelectOptions[$p->id] = $pName;
     }
