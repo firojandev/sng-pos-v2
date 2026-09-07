@@ -116,13 +116,13 @@
 </datalist>
 
 <div class="pos-header">
-    <div>
-        <div class="ttl bn">{{ $sale->exists ? 'বিক্রয় সম্পাদনা' : 'নতুন বিক্রয়' }}</div>
-        <div class="ttl en" style="display:none;">{{ $sale->exists ? 'Edit Sale' : 'New Sale' }}</div>
-        <div class="meta">
-            <span class="bn">ইনভয়েস: </span><span class="en" style="display:none;">Invoice: </span>{{ $sale->invoice_no ?? 'স্বয়ংক্রিয়ভাবে তৈরি হবে' }}
-        </div>
-    </div>
+{{--    <div>--}}
+{{--        <div class="ttl bn">{{ $sale->exists ? 'বিক্রয় সম্পাদনা' : 'নতুন বিক্রয়' }}</div>--}}
+{{--        <div class="ttl en" style="display:none;">{{ $sale->exists ? 'Edit Sale' : 'New Sale' }}</div>--}}
+{{--        <div class="meta">--}}
+{{--            <span class="bn">ইনভয়েস: </span><span class="en" style="display:none;">Invoice: </span>{{ $sale->invoice_no ?? 'স্বয়ংক্রিয়ভাবে তৈরি হবে' }}--}}
+{{--        </div>--}}
+{{--    </div>--}}
 
     @if ($sale->exists)
         <div class="fld">
@@ -135,7 +135,10 @@
             <label class="bn">গুদাম</label><label class="en" style="display:none;">Warehouse</label>
             <select onchange="window.location.href = '{{ route('sales.create') }}?warehouse_id=' + this.value;">
                 @foreach ($warehouses as $warehouse)
-                    <option value="{{ $warehouse->id }}" {{ (string) $warehouseId === (string) $warehouse->id ? 'selected' : '' }}>
+                    <option
+                        value="{{ $warehouse->id }}" {{ (string) $warehouseId === (string) $warehouse->id ? 'selected' : '' }}
+                        data-text-bn="{{ $warehouse->name }}@if($warehouse->is_default) [ডিফল্ট]@endif @if($warehouse->branch) ({{ $warehouse->branch->name }})@endif"
+                        data-text-en="{{ $warehouse->name }}@if($warehouse->is_default) [Default]@endif @if($warehouse->branch) ({{ $warehouse->branch->name }})@endif">
                         {{ $warehouse->name }} @if($warehouse->is_default) [ডিফল্ট] @endif @if($warehouse->branch) ({{ $warehouse->branch->name }}) @endif
                     </option>
                 @endforeach

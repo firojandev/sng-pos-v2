@@ -146,34 +146,38 @@
 </datalist>
 
 <div class="pos-header">
-    <div>
-        <div class="ttl bn">{{ $purchase->exists ? 'ক্রয় সম্পাদনা' : 'নতুন ক্রয়' }}</div>
-        <div class="ttl en" style="display:none;">{{ $purchase->exists ? 'Edit Purchase' : 'New Purchase' }}</div>
-        <div class="meta">
-            <span class="bn">ইনভয়েস: </span><span class="en"
-                                                   style="display:none;">Invoice: </span>{{ $purchase->invoice_no ?? 'স্বয়ংক্রিয়ভাবে তৈরি হবে' }}
-        </div>
-    </div>
+{{--    <div>--}}
+{{--        <div class="ttl bn">{{ $purchase->exists ? 'ক্রয় সম্পাদনা' : 'নতুন ক্রয়' }}</div>--}}
+{{--        <div class="ttl en" style="display:none;">{{ $purchase->exists ? 'Edit Purchase' : 'New Purchase' }}</div>--}}
+{{--        <div class="meta">--}}
+{{--            <span class="bn">ইনভয়েস: </span><span class="en"--}}
+{{--                                                   style="display:none;">Invoice: </span>{{ $purchase->invoice_no ?? 'স্বয়ংক্রিয়ভাবে তৈরি হবে' }}--}}
+{{--        </div>--}}
+{{--    </div>--}}
 
 
     @php
         $defaultWarehouse = $warehouses->firstWhere('is_default', true);
-        $selectedWarehouseId = old('warehouse_id', $purchase->warehouse_id ?? $defaultWarehouse?->id);
+        $selectedWarehouseId = old('warehouse_id', $warehouseId ?? $purchase->warehouse_id ?? $defaultWarehouse?->id ?? optional($warehouses->first())->id);
     @endphp
 
     <div style="width: 190px; flex-shrink: 0;">
         <x-core::select
             name="warehouse_id"
+            id="purchase-warehouse-select"
             label="গুদাম"
             label-en="Warehouse"
             size="sm"
             required
             :no-margin="true"
+            onchange="if (this.value) { window.location.href = '{{ $purchase->exists ? route('purchase.edit', $purchase) : route('purchase.create') }}?warehouse_id=' + this.value; }"
         >
             <option value="">-- নির্বাচন করুন --</option>
             @foreach ($warehouses as $warehouse)
                 <option
-                    value="{{ $warehouse->id }}" {{ (string) $selectedWarehouseId === (string) $warehouse->id ? 'selected' : '' }}>
+                    value="{{ $warehouse->id }}" {{ (string) $selectedWarehouseId === (string) $warehouse->id ? 'selected' : '' }}
+                    data-text-bn="{{ $warehouse->name }}@if($warehouse->is_default) [ডিফল্ট]@endif @if($warehouse->branch) ({{ $warehouse->branch->name }})@endif"
+                    data-text-en="{{ $warehouse->name }}@if($warehouse->is_default) [Default]@endif @if($warehouse->branch) ({{ $warehouse->branch->name }})@endif">
                     {{ $warehouse->name }} @if($warehouse->is_default) [ডিফল্ট] @endif @if($warehouse->branch)
                         ({{ $warehouse->branch->name }})
                     @endif
@@ -1612,6 +1616,17 @@
 
             renderHiddenFields();
             document.getElementById('purchase-form').submit();
+        });
+
+        $(document).on('change', '#purchase-warehouse-select', function () {
+            const whId = $(this).val();
+            if (whId) {
+                @if ($purchase->exists)
+                    window.location.href = '{{ route('purchase.edit', $purchase) }}?warehouse_id=' + whId;
+                @else
+                    window.location.href = '{{ route('purchase.create') }}?warehouse_id=' + whId;
+                @endif
+            }
         });
 
         syncPaymentTypeUI();

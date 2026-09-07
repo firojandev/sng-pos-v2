@@ -182,7 +182,7 @@ class PurchaseInvoiceModalFeatureTest extends TestCase
             ->get(route('purchase.create'));
 
         $response->assertOk();
-        $response->assertSee('Successful');
+        $response->assertSee('Purchase Invoice');
         $response->assertSee('ইনভয়েস');
         $response->assertSee('Gadget Parks');
         $response->assertSee('Sagor');
@@ -220,7 +220,7 @@ class PurchaseInvoiceModalFeatureTest extends TestCase
         $response = $this->actingAs($this->user)->get(route('purchase.invoice-modal', $purchase));
 
         $response->assertOk();
-        $response->assertSee('Successful');
+        $response->assertSee('Purchase Invoice');
         $response->assertSee('তেরো হাজার পাঁচ শত টাকা');
         $response->assertSee('প্রিন্ট করুন');
     }

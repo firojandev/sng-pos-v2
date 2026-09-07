@@ -91,8 +91,19 @@
                     id="filter-from-warehouse"
                     size="sm"
                     :no-margin="true"
-                    :options="['' => 'উৎস গুদাম (From)'] + $warehouses->pluck('name', 'id')->toArray()"
-                />
+                >
+                    <option value="" data-text-bn="উৎস গুদাম" data-text-en="From Warehouse">উৎস গুদাম (From)</option>
+                    @foreach ($warehouses as $warehouse)
+                        <option
+                            value="{{ $warehouse->id }}"
+                            data-text-bn="{{ $warehouse->name }}@if($warehouse->is_default) [ডিফল্ট]@endif @if($warehouse->branch) ({{ $warehouse->branch->name }})@endif"
+                            data-text-en="{{ $warehouse->name }}@if($warehouse->is_default) [Default]@endif @if($warehouse->branch) ({{ $warehouse->branch->name }})@endif">
+                            {{ $warehouse->name }} @if($warehouse->is_default) [ডিফল্ট] @endif @if($warehouse->branch)
+                                ({{ $warehouse->branch->name }})
+                            @endif
+                        </option>
+                    @endforeach
+                </x-core::select>
             </div>
             <div style="width:170px; flex-shrink:0;">
                 <x-core::select
@@ -100,8 +111,19 @@
                     id="filter-to-warehouse"
                     size="sm"
                     :no-margin="true"
-                    :options="['' => 'গন্তব্য গুদাম (To)'] + $warehouses->pluck('name', 'id')->toArray()"
-                />
+                >
+                    <option value="" data-text-bn="গন্তব্য গুদাম" data-text-en="To Warehouse">গন্তব্য গুদাম (To)</option>
+                    @foreach ($warehouses as $warehouse)
+                        <option
+                            value="{{ $warehouse->id }}"
+                            data-text-bn="{{ $warehouse->name }}@if($warehouse->is_default) [ডিফল্ট]@endif @if($warehouse->branch) ({{ $warehouse->branch->name }})@endif"
+                            data-text-en="{{ $warehouse->name }}@if($warehouse->is_default) [Default]@endif @if($warehouse->branch) ({{ $warehouse->branch->name }})@endif">
+                            {{ $warehouse->name }} @if($warehouse->is_default) [ডিফল্ট] @endif @if($warehouse->branch)
+                                ({{ $warehouse->branch->name }})
+                            @endif
+                        </option>
+                    @endforeach
+                </x-core::select>
             </div>
             <x-core::button
                 type="button"
@@ -346,6 +368,12 @@
 
                 modalRowCount = 1;
                 $('#modal-items-container').html(newModalRowHtml(0));
+
+                if ($('#modal-from-warehouse').val()) {
+                    $('#modal-items-container .modal-item-row').each(function () {
+                        populateModalBatches($(this));
+                    });
+                }
             }
 
             // Open Transfer Create Modal

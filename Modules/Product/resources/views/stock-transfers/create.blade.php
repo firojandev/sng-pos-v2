@@ -38,26 +38,46 @@
                         id="from-warehouse"
                         label="প্রেরণকারী গুদাম"
                         label-en="From Warehouse"
-                        placeholder="-- নির্বাচন করুন --"
-                        placeholder-en="-- Select Warehouse --"
-                        :options="$warehouseOptions"
-                        :value="old('from_warehouse_id')"
                         size="sm"
-                        :required="true"
-                    />
+                        required
+                        :no-margin="true"
+                    >
+                        <option value="">-- নির্বাচন করুন --</option>
+                        @foreach ($warehouses as $warehouse)
+                            <option
+                                value="{{ $warehouse->id }}"
+                                data-text-bn="{{ $warehouse->name }}@if($warehouse->is_default) [ডিফল্ট]@endif @if($warehouse->branch) ({{ $warehouse->branch->name }})@endif"
+                                data-text-en="{{ $warehouse->name }}@if($warehouse->is_default) [Default]@endif @if($warehouse->branch) ({{ $warehouse->branch->name }})@endif"
+                                {{ (string) old('from_warehouse_id') === (string) $warehouse->id ? 'selected' : '' }}>
+                                {{ $warehouse->name }} @if($warehouse->is_default) [ডিফল্ট] @endif @if($warehouse->branch)
+                                    ({{ $warehouse->branch->name }})
+                                @endif
+                            </option>
+                        @endforeach
+                    </x-core::select>
 
                     <x-core::select
                         name="to_warehouse_id"
                         id="to-warehouse"
                         label="গ্রহণকারী গুদাম"
                         label-en="To Warehouse"
-                        placeholder="-- নির্বাচন করুন --"
-                        placeholder-en="-- Select Warehouse --"
-                        :options="$warehouseOptions"
-                        :value="old('to_warehouse_id')"
                         size="sm"
-                        :required="true"
-                    />
+                        required
+                        :no-margin="true"
+                    >
+                        <option value="">-- নির্বাচন করুন --</option>
+                        @foreach ($warehouses as $warehouse)
+                            <option
+                                value="{{ $warehouse->id }}"
+                                data-text-bn="{{ $warehouse->name }}@if($warehouse->is_default) [ডিফল্ট]@endif @if($warehouse->branch) ({{ $warehouse->branch->name }})@endif"
+                                data-text-en="{{ $warehouse->name }}@if($warehouse->is_default) [Default]@endif @if($warehouse->branch) ({{ $warehouse->branch->name }})@endif"
+                                {{ (string) old('to_warehouse_id') === (string) $warehouse->id ? 'selected' : '' }}>
+                                {{ $warehouse->name }} @if($warehouse->is_default) [ডিফল্ট] @endif @if($warehouse->branch)
+                                    ({{ $warehouse->branch->name }})
+                                @endif
+                            </option>
+                        @endforeach
+                    </x-core::select>
                 </div>
 
                 <div style="overflow-x:auto; margin-top:20px;">

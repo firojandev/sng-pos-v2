@@ -6,13 +6,9 @@
         }
     }
 
-    $warehouseOptions = [];
-    if (isset($warehouses)) {
-        foreach ($warehouses as $warehouse) {
-            $whName = $warehouse->name . ($warehouse->branch ? ' (' . $warehouse->branch->name . ')' : '');
-            $warehouseOptions[$warehouse->id] = $whName;
-        }
-    }
+    $defaultWarehouse = isset($warehouses) ? $warehouses->firstWhere('is_default', true) : null;
+    $selectedFromWarehouseId = old('from_warehouse_id', $defaultWarehouse?->id);
+    $selectedToWarehouseId = old('to_warehouse_id');
 @endphp
 
 <script id="modal-transfer-products-data" type="application/json">{!! json_encode($productData) !!}</script>
@@ -47,24 +43,50 @@
                     id="modal-from-warehouse"
                     label="প্রেরণকারী গুদাম"
                     label-en="From Warehouse"
-                    placeholder="-- নির্বাচন করুন --"
-                    placeholder-en="-- Select Warehouse --"
-                    :options="$warehouseOptions"
                     size="sm"
-                    :required="true"
-                />
+                    required
+                    :no-margin="true"
+                >
+                    <option value="">-- নির্বাচন করুন --</option>
+                    @if (isset($warehouses))
+                        @foreach ($warehouses as $warehouse)
+                            <option
+                                value="{{ $warehouse->id }}"
+                                data-text-bn="{{ $warehouse->name }}@if($warehouse->is_default) [ডিফল্ট]@endif @if($warehouse->branch) ({{ $warehouse->branch->name }})@endif"
+                                data-text-en="{{ $warehouse->name }}@if($warehouse->is_default) [Default]@endif @if($warehouse->branch) ({{ $warehouse->branch->name }})@endif"
+                                {{ (string) $selectedFromWarehouseId === (string) $warehouse->id ? 'selected' : '' }}>
+                                {{ $warehouse->name }} @if($warehouse->is_default) [ডিফল্ট] @endif @if($warehouse->branch)
+                                    ({{ $warehouse->branch->name }})
+                                @endif
+                            </option>
+                        @endforeach
+                    @endif
+                </x-core::select>
 
                 <x-core::select
                     name="to_warehouse_id"
                     id="modal-to-warehouse"
                     label="গ্রহণকারী গুদাম"
                     label-en="To Warehouse"
-                    placeholder="-- নির্বাচন করুন --"
-                    placeholder-en="-- Select Warehouse --"
-                    :options="$warehouseOptions"
                     size="sm"
-                    :required="true"
-                />
+                    required
+                    :no-margin="true"
+                >
+                    <option value="">-- নির্বাচন করুন --</option>
+                    @if (isset($warehouses))
+                        @foreach ($warehouses as $warehouse)
+                            <option
+                                value="{{ $warehouse->id }}"
+                                data-text-bn="{{ $warehouse->name }}@if($warehouse->is_default) [ডিফল্ট]@endif @if($warehouse->branch) ({{ $warehouse->branch->name }})@endif"
+                                data-text-en="{{ $warehouse->name }}@if($warehouse->is_default) [Default]@endif @if($warehouse->branch) ({{ $warehouse->branch->name }})@endif"
+                                {{ (string) $selectedToWarehouseId === (string) $warehouse->id ? 'selected' : '' }}>
+                                {{ $warehouse->name }} @if($warehouse->is_default) [ডিফল্ট] @endif @if($warehouse->branch)
+                                    ({{ $warehouse->branch->name }})
+                                @endif
+                            </option>
+                        @endforeach
+                    @endif
+                </x-core::select>
             </div>
 
             <div style="overflow-x:auto; margin-top:16px; border:1px solid var(--border); border-radius:10px;">

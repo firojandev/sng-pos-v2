@@ -113,8 +113,8 @@
                         <th class="bn">পণ্য</th><th class="en" style="display:none;">Product</th>
                         <th class="bn" style="width:130px;">ব্যাচ</th><th class="en" style="display:none;">Batch</th>
                         <th class="bn" style="width:140px;">ধরন</th><th class="en" style="display:none;">Type</th>
-                        <th class="bn table-cell-right" style="width:110px;">পরিমাণ</th><th class="en" style="display:none;">Quantity</th>
-                        <th class="bn table-cell-center" style="width:140px;">আগে &rarr; পরে</th><th class="en" style="display:none;">Before &rarr; After</th>
+                        <th class="bn table-cell-right" style="width:110px;">পরিমাণ</th><th class="en table-cell-right" style="display:none;">Quantity</th>
+                        <th class="bn table-cell-center" style="width:140px;">আগে &rarr; পরে</th><th class="en table-cell-center" style="display:none;">Before &rarr; After</th>
                         <th class="bn" style="width:180px;">রেফারেন্স</th><th class="en" style="display:none;">Reference</th>
                         <th class="bn" style="width:130px;">দ্বারা</th><th class="en" style="display:none;">By</th>
                     </tr>

@@ -293,8 +293,9 @@ function initSelectOption(opt) {
 
                 const hasBn = /[\u0980-\u09FF]/.test(part1);
                 const hasEn = /[a-zA-Z]/.test(part2);
+                const part1HasEn = /[a-zA-Z]/.test(part1);
 
-                if (hasBn && hasEn) {
+                if (hasBn && hasEn && !part1HasEn) {
                     bn = prefix + part1 + suffix;
                     en = prefix + part2 + suffix;
                 }
