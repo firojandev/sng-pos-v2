@@ -8,6 +8,7 @@ use Illuminate\Database\Seeder;
 use Modules\Core\Support\Features;
 use Modules\Core\Support\Permissions;
 use Modules\Finance\Database\Seeders\AccountDatabaseSeeder;
+use Modules\Shop\Database\Seeders\ShopDatabaseSeeder;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
 use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
@@ -30,10 +31,11 @@ class DatabaseSeeder extends Seeder
         $superAdminRole = Role::firstOrCreate(['name' => 'Super Admin', 'guard_name' => 'web']);
 
         $superAdmin = User::firstOrCreate(
-            ['email' => 'superadmin@masterpos.test'],
+            ['email' => 'softngear@gmail.com'],
             [
                 'name' => 'Super Admin',
-                'password' => bcrypt('password'),
+                'username' => 'SNGSuperAdmin',
+                'password' => bcrypt('SNGAdmin@2026!'),
             ]
         );
         $superAdmin->syncRoles([$superAdminRole]);
@@ -57,17 +59,19 @@ class DatabaseSeeder extends Seeder
         $demoAdminRole->syncPermissions(Permission::where('guard_name', 'web')->get());
 
         $demoAdmin = User::updateOrCreate(
-            ['email' => 'admin@masterpos.test'],
+            ['email' => 'admin@softngear.com'],
             [
                 'shop_id' => $demoShop->id,
                 'name' => 'Admin',
-                'password' => bcrypt('password'),
+                'username' => 'SNGShopAdmin',
+                'password' => bcrypt('SNGAdmin@2026!'),
             ]
         );
         setPermissionsTeamId($demoShop->id);
         $demoAdmin->syncRoles([$demoAdminRole]);
         setPermissionsTeamId(null);
 
+        $this->call(ShopDatabaseSeeder::class);
         $this->call(SubscriptionifySeeder::class);
         $this->call(AccountDatabaseSeeder::class);
 
