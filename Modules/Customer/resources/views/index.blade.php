@@ -7,45 +7,49 @@
 >
     {{-- Summary Stat Cards --}}
     @if (isset($metrics))
-        <div class="stat-grid" style="margin-bottom:16px;">
+        <div class="stat-grid" id="customer-stat-grid" style="margin-bottom:16px;">
             <x-core::stat-card
                 icon="users"
                 color="teal"
                 :value="number_format($metrics['totalCustomers'])"
+                value-id="stat-total-customers"
                 label="মোট গ্রাহক"
                 label-en="Total Customers"
                 :subtext="'সক্রিয়: ' . number_format($metrics['activeCustomers']) . ' জন'"
                 :subtext-en="'Active: ' . number_format($metrics['activeCustomers'])"
+                subtext-id="stat-active-customers"
             />
 
             <x-core::stat-card
                 icon="credit-card"
                 color="red"
                 :value="'৳' . number_format($metrics['totalDue'], 2)"
+                value-id="stat-total-due"
                 value-color="red"
                 label="মোট বকেয়া বাকি"
                 label-en="Total Outstanding Due"
                 :subtext="'বাকি রয়েছে: ' . number_format($metrics['dueCustomersCount']) . ' জন'"
                 :subtext-en="'Due Customers: ' . number_format($metrics['dueCustomersCount'])"
+                subtext-id="stat-due-customers"
             />
 
             <x-core::stat-card
                 icon="shopping-bag"
                 color="blue"
                 :value="'৳' . number_format($metrics['totalSalesAmount'], 2)"
+                value-id="stat-total-sales-amount"
                 label="মোট বিক্রয় পরিমাণ"
                 label-en="Total Sales Volume"
                 :subtext="number_format($metrics['totalSalesCount']) . ' টি চালান'"
                 :subtext-en="number_format($metrics['totalSalesCount']) . ' Invoices'"
+                subtext-id="stat-total-sales-count"
             />
 
-            @php
-                $paidTotal = max(0, $metrics['totalSalesAmount'] - ($metrics['totalDue'] - (float) \Modules\Customer\Models\Customer::sum('opening_due')));
-            @endphp
             <x-core::stat-card
                 icon="check-circle"
                 color="green"
-                :value="'৳' . number_format($paidTotal, 2)"
+                :value="'৳' . number_format($metrics['paidTotal'] ?? 0, 2)"
+                value-id="stat-paid-total"
                 value-color="green"
                 label="মোট পরিশোধিত আদায়"
                 label-en="Total Collected Paid"
@@ -361,12 +365,64 @@
                 $form.find('.dynamic-error').remove();
             }
 
+            function updateCustomerMetrics(metrics) {
+                if (!metrics) return;
+                if (metrics.totalCustomers !== undefined) {
+                    $('#stat-total-customers').text(Number(metrics.totalCustomers).toLocaleString('en-US'));
+                }
+                if (metrics.activeCustomers !== undefined) {
+                    $('#stat-active-customers .bn').text('সক্রিয়: ' + Number(metrics.activeCustomers).toLocaleString('en-US') + ' জন');
+                    $('#stat-active-customers .en').text('Active: ' + Number(metrics.activeCustomers).toLocaleString('en-US'));
+                }
+                if (metrics.totalDue !== undefined) {
+                    $('#stat-total-due').text('৳' + Number(metrics.totalDue).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                }
+                if (metrics.dueCustomersCount !== undefined) {
+                    $('#stat-due-customers .bn').text('বাকি রয়েছে: ' + Number(metrics.dueCustomersCount).toLocaleString('en-US') + ' জন');
+                    $('#stat-due-customers .en').text('Due Customers: ' + Number(metrics.dueCustomersCount).toLocaleString('en-US'));
+                }
+                if (metrics.totalSalesAmount !== undefined) {
+                    $('#stat-total-sales-amount').text('৳' + Number(metrics.totalSalesAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                }
+                if (metrics.totalSalesCount !== undefined) {
+                    $('#stat-total-sales-count .bn').text(Number(metrics.totalSalesCount).toLocaleString('en-US') + ' টি চালান');
+                    $('#stat-total-sales-count .en').text(Number(metrics.totalSalesCount).toLocaleString('en-US') + ' Invoices');
+                }
+                if (metrics.paidTotal !== undefined) {
+                    $('#stat-paid-total').text('৳' + Number(metrics.paidTotal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                }
+            }
+
+            function reloadCustomerMetrics() {
+                $.ajax({
+                    url: '{{ route("customers.metrics") }}',
+                    type: 'GET',
+                    dataType: 'json',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function (res) {
+                        if (res && res.metrics) {
+                            updateCustomerMetrics(res.metrics);
+                        }
+                    }
+                });
+            }
+
+            $(document).on('xhr.dt', '#customers-data-table', function (e, settings, json, xhr) {
+                if (json && json.metrics) {
+                    updateCustomerMetrics(json.metrics);
+                }
+            });
+
             function reloadCustomerTable() {
                 if (window.LaravelDataTables && window.LaravelDataTables['customers-data-table']) {
                     window.LaravelDataTables['customers-data-table'].ajax.reload(null, false);
                 } else if ($.fn.DataTable.isDataTable('#customers-data-table')) {
                     $('#customers-data-table').DataTable().ajax.reload(null, false);
                 }
+                reloadCustomerMetrics();
             }
 
             function setStatusToggleValue($container, statusVal) {
@@ -449,6 +505,9 @@
                         $btn.prop('disabled', false);
                         closeModal('createCustomerModal');
                         $form[0].reset();
+                        if (response.metrics) {
+                            updateCustomerMetrics(response.metrics);
+                        }
                         reloadCustomerTable();
                         if (typeof window.toast === 'function') {
                             window.toast(response.message || 'গ্রাহক সফলভাবে যোগ করা হয়েছে', 'Customer created successfully');
@@ -495,6 +554,9 @@
                     success: function (response) {
                         $btn.prop('disabled', false);
                         closeModal('editCustomerModal');
+                        if (response.metrics) {
+                            updateCustomerMetrics(response.metrics);
+                        }
                         reloadCustomerTable();
                         if (typeof window.toast === 'function') {
                             window.toast(response.message || 'গ্রাহক হালনাগাদ করা হয়েছে', 'Customer updated successfully');

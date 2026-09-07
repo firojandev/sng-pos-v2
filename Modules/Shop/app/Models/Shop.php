@@ -6,7 +6,9 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Modules\Finance\Models\Account;
 use Revoltify\Subscriptionify\Concerns\InteractsWithSubscriptions;
 use Revoltify\Subscriptionify\Contracts\Subscribable;
 use Revoltify\Subscriptionify\Enums\Interval;
@@ -72,6 +74,22 @@ class Shop extends Model implements Subscribable
     public function admins(): BelongsToMany
     {
         return $this->users();
+    }
+
+    /**
+     * Accounts belonging to this shop.
+     */
+    public function accounts(): HasMany
+    {
+        return $this->hasMany(Account::class, 'shop_id');
+    }
+
+    /**
+     * The primary cash account of this shop.
+     */
+    public function cashAccount(): HasOne
+    {
+        return $this->hasOne(Account::class, 'shop_id')->where('type', 'cash');
     }
 
     /**

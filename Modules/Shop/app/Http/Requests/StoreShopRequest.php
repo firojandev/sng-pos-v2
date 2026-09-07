@@ -63,6 +63,19 @@ class StoreShopRequest extends FormRequest
             'current_period_start' => ['nullable', 'date'],
             'current_period_end' => ['nullable', 'date'],
             'trial_ends_at' => ['nullable', 'date'],
+
+            'cash_account_name' => ['nullable', 'string', 'max:255'],
+            'cash_opening_balance' => ['nullable', 'numeric', 'min:0'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'cash_opening_balance.min' => 'ক্যাশ অ্যাকাউন্টের প্রারম্ভিক ব্যালেন্স ০ বা তার বেশি হতে হবে।',
         ];
     }
 }

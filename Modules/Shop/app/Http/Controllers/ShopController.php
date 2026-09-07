@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 use Modules\Core\Support\Features;
+use Modules\Finance\Models\Account;
+use Modules\Finance\Models\AccountTransaction;
 use Modules\Shop\DataTables\ShopsDataTable;
 use Modules\Shop\Http\Requests\StoreShopAdminRequest;
 use Modules\Shop\Http\Requests\StoreShopRequest;
@@ -210,6 +212,39 @@ class ShopController extends Controller
                     ]);
                     $shop->clearSubscriptionCache();
                 }
+            }
+
+            // Auto create default cash account because regular users cannot create cash accounts
+            $cashName = trim((string) $request->validated('cash_account_name', ''));
+            $cashOpeningBalance = max(0, (float) $request->validated('cash_opening_balance', 0));
+
+            $cashAccount = Account::withoutGlobalScopes()->firstOrCreate(
+                [
+                    'shop_id' => $shop->id,
+                    'type' => 'cash',
+                ],
+                [
+                    'name' => $cashName !== '' ? $cashName : 'নগদ টাকা (Cash)',
+                    'opening_balance' => $cashOpeningBalance,
+                    'current_balance' => $cashOpeningBalance,
+                    'is_default' => false,
+                    'status' => 'active',
+                    'note' => 'প্রধান ক্যাশ অ্যাকাউন্ট (সিস্টেম নির্ধারিত)',
+                ]
+            );
+
+            if ($cashOpeningBalance > 0 && $cashAccount->wasRecentlyCreated) {
+                AccountTransaction::create([
+                    'shop_id' => $shop->id,
+                    'account_id' => $cashAccount->id,
+                    'type' => 'in',
+                    'amount' => $cashOpeningBalance,
+                    'balance_after' => $cashOpeningBalance,
+                    'source' => 'opening_balance',
+                    'note' => 'প্রারম্ভিক ব্যালেন্স (Opening Balance)',
+                    'occurred_at' => now(),
+                    'created_by' => auth()->id() ?? $admin->id,
+                ]);
             }
         });
 
