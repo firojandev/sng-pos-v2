@@ -5,127 +5,139 @@
     subtitle-en="History of fund transfers between accounts"
     active="account-transfers"
 >
+    {{-- Summary KPI Stat Cards --}}
+    <div class="stat-grid" style="margin-bottom:20px;">
+        <x-core::stat-card
+            icon="arrow-left-right"
+            color="teal"
+            :value="'৳ ' . number_format($totalTransferAmount, 2)"
+            label="মোট স্থানান্তরিত পরিমাণ"
+            label-en="Total Transferred"
+            subtext="সর্বমোট স্থানান্তরের পরিমাণ"
+            subtext-en="Total transferred across accounts"
+        />
 
-    {{-- KPI Cards --}}
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:20px;">
-        <div class="panel" style="margin:0; padding:16px; border-left:4px solid #D4AF37;">
-            <div style="font-size:12px; color:var(--text-muted); font-weight:600;">
-                <span class="bn">মোট স্থানান্তরিত পরিমাণ</span><span class="en" style="display:none;">Total Transferred</span>
-            </div>
-            <div style="font-size:22px; font-weight:700; color:var(--text-primary); margin-top:4px;">
-                ৳ {{ number_format($totalTransferAmount, 2) }}
-            </div>
-        </div>
+        <x-core::stat-card
+            icon="receipt"
+            color="red"
+            value-color="red"
+            :value="'৳ ' . number_format($totalChargeAmount, 2)"
+            label="মোট ট্রান্সফার চার্জ / ফি"
+            label-en="Total Transfer Fee"
+            subtext="স্থানান্তর বাবদ ব্যয়িত ফি"
+            subtext-en="Charges & processing fees"
+        />
 
-        <div class="panel" style="margin:0; padding:16px; border-left:4px solid #ef4444;">
-            <div style="font-size:12px; color:var(--text-muted); font-weight:600;">
-                <span class="bn">মোট ট্রান্সফার চার্জ / ফি</span><span class="en" style="display:none;">Total Transfer Fee</span>
-            </div>
-            <div style="font-size:22px; font-weight:700; color:#dc2626; margin-top:4px;">
-                ৳ {{ number_format($totalChargeAmount, 2) }}
-            </div>
-        </div>
+        <x-core::stat-card
+            icon="calendar"
+            color="gold"
+            value-color="gold"
+            :value="'৳ ' . number_format($thisMonthTransferAmount, 2)"
+            label="চলতি মাসের স্থানান্তর"
+            label-en="This Month's Transfers"
+            :subtext="now()->format('F Y') . ' এর মোট স্থানান্তর'"
+            :subtext-en="now()->format('M Y') . ' total volume'"
+        />
+
+        <x-core::stat-card
+            icon="check-circle"
+            color="blue"
+            value-color="blue"
+            :value="number_format($totalTransferCount)"
+            label="মোট লেনদেন সংখ্যা"
+            label-en="Total Transfers"
+            subtext="সম্পন্ন স্থানান্তরের রেকর্ড"
+            subtext-en="Completed transfer entries"
+        />
     </div>
 
-    <div class="panel" style="margin-top:0;">
-        <div class="panel-body">
-            <div class="section-row" style="display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between; align-items:center;">
-                <form method="GET" action="{{ route('account-transfers.index') }}" class="filters" style="display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:0;">
-                    <div style="width:200px;">
-                        <x-core::input name="q" value="{{ $search }}" placeholder="খুঁজুন..." placeholder-en="Search..." icon="search" size="sm" />
-                    </div>
+    @if (session('status'))
+        <div class="alert alert-success" style="margin-bottom:16px; padding:10px 14px; background:var(--green-100); color:var(--green-ink); border-radius:8px; font-size:13px; font-weight:500;">
+            {{ session('status') }}
+        </div>
+    @endif
 
-                    <div style="display:flex; align-items:center; gap:6px;">
-                        <input type="date" name="from" value="{{ $from }}" style="height:32px; padding:4px 10px; border:1px solid var(--border); border-radius:8px; font-size:12.5px; background:var(--paper);">
-                        <span style="color:var(--text-muted); font-size:12px;">হতে</span>
-                        <input type="date" name="to" value="{{ $to }}" style="height:32px; padding:4px 10px; border:1px solid var(--border); border-radius:8px; font-size:12.5px; background:var(--paper);">
-                    </div>
+    @php
+        $fromAccountOptions = ['' => 'সকল উৎস অ্যাকাউন্ট (All Source)'];
+        $toAccountOptions = ['' => 'সকল গন্তব্য অ্যাকাউন্ট (All Destination)'];
+        foreach ($accounts as $acc) {
+            $fromAccountOptions[$acc->id] = $acc->display_name;
+            $toAccountOptions[$acc->id] = $acc->display_name;
+        }
+    @endphp
 
-                    <x-core::button type="submit" color="primary" size="sm">ফিল্টার</x-core::button>
-                    @if ($search || $from != now()->startOfMonth()->toDateString() || $to != now()->endOfMonth()->toDateString())
-                        <x-core::button variant="secondary" size="sm" href="{{ route('account-transfers.index') }}">রিসেট</x-core::button>
-                    @endif
-                </form>
-
-                @can('account-transfers.create')
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <x-core::button color="primary" size="sm" id="btnOpenTransferModal" icon="plus">
-                        <span class="bn">নতুন ট্রান্সফার</span><span class="en" style="display:none;">New Transfer</span>
-                    </x-core::button>
-                </div>
-                @endcan
+    {{-- Filter Toolbar & Action Buttons --}}
+    <div class="section-row" style="margin-bottom:16px; margin-top:16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+        <div class="filters" style="display:flex; align-items:center; flex-wrap:nowrap; gap:8px; overflow-x:auto; max-width:100%; padding-bottom:2px;">
+            <div style="width:190px; flex-shrink:0;">
+                <x-core::select
+                    id="filter-from-account"
+                    name="filter_from_account"
+                    size="sm"
+                    :no-margin="true"
+                    :options="$fromAccountOptions"
+                />
             </div>
 
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th class="bn">ট্রান্সফার নং ও তারিখ</th><th class="en" style="display:none;">Transfer No & Date</th>
-                            <th class="bn">উৎস অ্যাকাউন্ট</th><th class="en" style="display:none;">From Account</th>
-                            <th class="bn">গন্তব্য অ্যাকাউন্ট</th><th class="en" style="display:none;">To Account</th>
-                            <th class="bn" style="text-align:right;">পরিমাণ</th><th class="en" style="display:none; text-align:right;">Amount</th>
-                            <th class="bn" style="text-align:right;">চার্জ / ফি</th><th class="en" style="display:none; text-align:right;">Fee</th>
-                            <th class="bn">মন্তব্য ও তৈরি করেছেন</th><th class="en" style="display:none;">Note & Creator</th>
-                            <th style="text-align:right;">অ্যাকশন</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($transfers as $trf)
-                            <tr>
-                                <td class="cell-main">
-                                    <div style="font-weight:600; font-size:13px;">{{ $trf->transfer_no }}</div>
-                                    <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
-                                        {{ optional($trf->transfer_date)->format('d M, Y') ?? '—' }}
-                                    </div>
-                                </td>
-                                <td>
-                                    <span style="font-weight:600; color:#dc2626;">{{ $trf->fromAccount->name ?? '—' }}</span>
-                                    <div style="font-size:11px; color:var(--text-muted);">{{ $trf->fromAccount->typeLabel()['bn'] ?? '' }}</div>
-                                </td>
-                                <td>
-                                    <span style="font-weight:600; color:#16a34a;">{{ $trf->toAccount->name ?? '—' }}</span>
-                                    <div style="font-size:11px; color:var(--text-muted);">{{ $trf->toAccount->typeLabel()['bn'] ?? '' }}</div>
-                                </td>
-                                <td style="text-align:right; font-weight:700; font-family:'Manrope',sans-serif; font-size:14px;">
-                                    ৳ {{ number_format($trf->amount, 2) }}
-                                </td>
-                                <td style="text-align:right; font-family:'Manrope',sans-serif; color:{{ $trf->charge > 0 ? '#dc2626' : 'var(--text-muted)' }};">
-                                    {{ $trf->charge > 0 ? '৳ '.number_format($trf->charge, 2) : '—' }}
-                                </td>
-                                <td>
-                                    <div style="font-size:13px;">{{ $trf->note ?? '—' }}</div>
-                                    <div style="font-size:11px; color:var(--text-muted);">{{ $trf->creator->name ?? 'System' }}</div>
-                                </td>
-                                <td style="text-align:right;">
-                                    <div class="row-actions" style="justify-content:flex-end;">
-                                        @can('account-transfers.delete')
-                                        <form method="POST" action="{{ route('account-transfers.destroy', $trf) }}" class="delete-form" data-title="ট্রান্সফার বাতিল করবেন?" data-text="এই ট্রান্সফারটি বাতিল করতে চান? সংশ্লিষ্ট অ্যাকাউন্টের ব্যালেন্স আগের অবস্থায় ফিরে যাবে।" style="display:inline;">
-                                            @csrf
-                                            @method('DELETE')
-                                            <x-core::button variant="ghost" color="danger" size="xs" icon-only icon="trash-2" type="submit" title="বাতিল করুন" />
-                                        </form>
-                                        @endcan
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="7">
-                                    <x-core::table.empty
-                                        icon="arrow-left-right"
-                                        title="কোনো ফান্ড ট্রান্সফার রেকর্ড পাওয়া যায়নি"
-                                        title-en="No fund transfers found"
-                                    />
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+            <div style="width:190px; flex-shrink:0;">
+                <x-core::select
+                    id="filter-to-account"
+                    name="filter_to_account"
+                    size="sm"
+                    :no-margin="true"
+                    :options="$toAccountOptions"
+                />
             </div>
 
-            <div style="margin-top:14px;">
-                {{ $transfers->links() }}
+            <div style="width:135px; flex-shrink:0;">
+                <x-core::input
+                    type="date"
+                    id="filter-date-from"
+                    name="filter_date_from"
+                    size="sm"
+                    :no-margin="true"
+                    placeholder="হতে / From"
+                    title="তারিখ হতে / Date From"
+                />
             </div>
+
+            <div style="width:135px; flex-shrink:0;">
+                <x-core::input
+                    type="date"
+                    id="filter-date-to"
+                    name="filter_date_to"
+                    size="sm"
+                    :no-margin="true"
+                    placeholder="পর্যন্ত / To"
+                    title="তারিখ পর্যন্ত / Date To"
+                />
+            </div>
+
+            <x-core::button
+                type="button"
+                variant="secondary"
+                size="sm"
+                icon="rotate-ccw"
+                id="btn-reset-transfer-filters"
+                title="রিসেট / Reset"
+            >
+                <span class="bn">রিসেট</span>
+                <span class="en" style="display:none;">Reset</span>
+            </x-core::button>
+        </div>
+
+        @can('account-transfers.create')
+            <x-core::button color="primary" size="sm" type="button" icon="plus" id="btnOpenTransferModal">
+                <span class="bn">নতুন ট্রান্সফার</span>
+                <span class="en" style="display:none;">New Transfer</span>
+            </x-core::button>
+        @endcan
+    </div>
+
+    {{-- DataTable Container --}}
+    <div class="table-container">
+        <div class="table-responsive">
+            {!! $dataTable->table(['class' => 'app-table', 'id' => 'account-transfers-data-table']) !!}
         </div>
     </div>
 
@@ -149,6 +161,8 @@
     @endcan
 
     @push('scripts')
+    {!! $dataTable->scripts() !!}
+
     <script>
     (function () {
         function initTransferIndex() {
@@ -159,6 +173,31 @@
 
             var $ = window.jQuery;
             $(function () {
+                function reloadTransferTable() {
+                    var tableId = 'account-transfers-data-table';
+                    if (window.LaravelDataTables && window.LaravelDataTables[tableId]) {
+                        window.LaravelDataTables[tableId].ajax.reload(null, false);
+                    } else if ($.fn.DataTable && $.fn.DataTable.isDataTable('#' + tableId)) {
+                        $('#' + tableId).DataTable().ajax.reload(null, false);
+                    }
+                }
+
+                // Filter change handlers
+                $(document).on('change', '#filter-from-account, #filter-to-account, #filter-date-from, #filter-date-to', function () {
+                    reloadTransferTable();
+                });
+
+                // Reset filter handler
+                $(document).on('click', '#btn-reset-transfer-filters', function (e) {
+                    e.preventDefault();
+                    $('#filter-from-account').val('');
+                    $('#filter-to-account').val('');
+                    $('#filter-date-from').val('');
+                    $('#filter-date-to').val('');
+                    reloadTransferTable();
+                });
+
+                // Modal triggers
                 $('#btnOpenTransferModal').on('click', function () {
                     $('#createTransferModal').addClass('open');
                 });

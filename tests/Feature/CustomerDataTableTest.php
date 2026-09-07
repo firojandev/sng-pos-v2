@@ -225,4 +225,77 @@ class CustomerDataTableTest extends TestCase
         $response->assertRedirect(route('customers.index'));
         $this->assertDatabaseMissing('customers', ['id' => $customer->id]);
     }
+
+    public function test_customers_metrics_endpoint_returns_json_metrics(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+
+        Customer::create([
+            'shop_id' => $shop->id,
+            'name' => 'Opening Due Customer',
+            'opening_due' => 1500,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($user)->getJson(route('customers.metrics'));
+
+        $response->assertOk();
+        $response->assertJsonStructure([
+            'success',
+            'metrics' => [
+                'totalCustomers',
+                'activeCustomers',
+                'totalDue',
+                'dueCustomersCount',
+                'totalSalesAmount',
+                'totalSalesCount',
+                'paidTotal',
+            ],
+        ]);
+        $this->assertEquals(1, $response->json('metrics.totalCustomers'));
+        $this->assertEquals(1500.00, (float) $response->json('metrics.totalDue'));
+        $this->assertEquals(1, $response->json('metrics.dueCustomersCount'));
+    }
+
+    public function test_creating_customer_with_opening_due_returns_updated_metrics_in_ajax(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+
+        $response = $this->actingAs($user)->postJson(route('customers.store'), [
+            'name' => 'New Customer With Due',
+            'phone' => '01899999999',
+            'opening_due' => 2750.50,
+            'status' => 'active',
+        ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+        ]);
+        $this->assertNotNull($response->json('metrics'));
+        $this->assertEquals(1, $response->json('metrics.totalCustomers'));
+        $this->assertEquals(2750.50, (float) $response->json('metrics.totalDue'));
+        $this->assertEquals(1, $response->json('metrics.dueCustomersCount'));
+    }
+
+    public function test_customers_datatable_ajax_payload_includes_metrics(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+
+        Customer::create([
+            'shop_id' => $shop->id,
+            'name' => 'Existing Customer',
+            'opening_due' => 800,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($user)->getJson(route('customers.index'), [
+            'X-Requested-With' => 'XMLHttpRequest',
+        ]);
+
+        $response->assertOk();
+        $this->assertNotNull($response->json('metrics'));
+        $this->assertEquals(800.00, (float) $response->json('metrics.totalDue'));
+        $this->assertEquals(1, $response->json('metrics.dueCustomersCount'));
+    }
 }

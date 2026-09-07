@@ -3,11 +3,13 @@
 namespace Modules\Finance\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Modules\Finance\DataTables\AccountTransfersDataTable;
 use Modules\Finance\Http\Requests\StoreAccountTransferRequest;
 use Modules\Finance\Models\Account;
 use Modules\Finance\Models\AccountTransfer;
@@ -19,40 +21,24 @@ class AccountTransferController extends Controller
         protected AccountTransactionService $transactionService
     ) {}
 
-    public function index(Request $request): View
+    public function index(AccountTransfersDataTable $dataTable): mixed
     {
-        $from = $request->query('from', now()->startOfMonth()->toDateString());
-        $to = $request->query('to', now()->endOfMonth()->toDateString());
-        $search = trim((string) $request->query('q', ''));
-
-        $query = AccountTransfer::with(['fromAccount', 'toAccount', 'creator'])
-            ->whereDate('transfer_date', '>=', $from)
-            ->whereDate('transfer_date', '<=', $to);
-
-        if ($search !== '') {
-            $query->where(function ($q) use ($search) {
-                $q->where('transfer_no', 'like', "%{$search}%")
-                    ->orWhere('note', 'like', "%{$search}%")
-                    ->orWhereHas('fromAccount', fn ($sub) => $sub->where('name', 'like', "%{$search}%"))
-                    ->orWhereHas('toAccount', fn ($sub) => $sub->where('name', 'like', "%{$search}%"));
-            });
-        }
-
-        $transfers = $query->latest('transfer_date')->latest('id')->paginate(15)->withQueryString();
-        $totalTransferAmount = (clone $query)->sum('amount');
-        $totalChargeAmount = (clone $query)->sum('charge');
+        $totalTransferAmount = (float) AccountTransfer::sum('amount');
+        $totalChargeAmount = (float) AccountTransfer::sum('charge');
+        $thisMonthTransferAmount = (float) AccountTransfer::whereYear('transfer_date', now()->year)
+            ->whereMonth('transfer_date', now()->month)
+            ->sum('amount');
+        $totalTransferCount = (int) AccountTransfer::count();
 
         $accounts = Account::active()->orderBy('name')->get();
 
-        return view('finance::transfers.index', [
-            'transfers' => $transfers,
+        return $dataTable->render('finance::transfers.index', [
             'accounts' => $accounts,
             'transfer' => new AccountTransfer,
             'totalTransferAmount' => $totalTransferAmount,
             'totalChargeAmount' => $totalChargeAmount,
-            'from' => $from,
-            'to' => $to,
-            'search' => $search,
+            'thisMonthTransferAmount' => $thisMonthTransferAmount,
+            'totalTransferCount' => $totalTransferCount,
         ]);
     }
 
@@ -94,10 +80,17 @@ class AccountTransferController extends Controller
         return redirect()->route('account-transfers.index')->with('status', 'ফান্ড ট্রান্সফার সফলভাবে সম্পন্ন হয়েছে');
     }
 
-    public function destroy(AccountTransfer $accountTransfer): RedirectResponse
+    public function destroy(AccountTransfer $accountTransfer, Request $request): RedirectResponse|JsonResponse
     {
         $this->transactionService->deleteTransactionsFor($accountTransfer);
         $accountTransfer->delete();
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'ফান্ড ট্রান্সফার রেকর্ড বাতিল করা হয়েছে',
+            ]);
+        }
 
         return redirect()->route('account-transfers.index')->with('status', 'ফান্ড ট্রান্সফার রেকর্ড বাতিল করা হয়েছে');
     }
