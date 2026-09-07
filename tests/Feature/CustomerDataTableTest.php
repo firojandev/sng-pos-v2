@@ -298,4 +298,58 @@ class CustomerDataTableTest extends TestCase
         $this->assertEquals(800.00, (float) $response->json('metrics.totalDue'));
         $this->assertEquals(1, $response->json('metrics.dueCustomersCount'));
     }
+
+    public function test_customer_can_be_updated_via_post_with_method_override(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+
+        $customer = Customer::create([
+            'shop_id' => $shop->id,
+            'name' => 'Customer Method Override',
+            'phone' => '01800000001',
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($user)->postJson(route('customers.update', $customer), [
+            '_method' => 'PUT',
+            'name' => 'Customer Method Override Updated',
+            'status' => 'active',
+        ], ['X-HTTP-Method-Override' => 'PUT']);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+        ]);
+        $this->assertDatabaseHas('customers', [
+            'id' => $customer->id,
+            'name' => 'Customer Method Override Updated',
+        ]);
+    }
+
+    public function test_customer_can_be_updated_via_direct_post(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+
+        $customer = Customer::create([
+            'shop_id' => $shop->id,
+            'name' => 'Customer Direct POST',
+            'phone' => '01800000002',
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($user)->postJson(url("/customers/{$customer->id}"), [
+            'name' => 'Customer Direct POST Updated',
+            'status' => 'inactive',
+        ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+        ]);
+        $this->assertDatabaseHas('customers', [
+            'id' => $customer->id,
+            'name' => 'Customer Direct POST Updated',
+            'status' => 'inactive',
+        ]);
+    }
 }

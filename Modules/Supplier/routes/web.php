@@ -9,4 +9,7 @@ Route::middleware(['auth', 'feature:suppliers'])->group(function () {
         ->middlewareFor(['create', 'store'], 'permission:suppliers.create')
         ->middlewareFor(['edit', 'update'], 'permission:suppliers.edit')
         ->middlewareFor(['destroy'], 'permission:suppliers.delete');
+
+    Route::post('suppliers/{supplier}', [SupplierController::class, 'update'])
+        ->middleware('permission:suppliers.edit');
 });

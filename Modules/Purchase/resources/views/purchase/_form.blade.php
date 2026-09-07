@@ -1347,11 +1347,21 @@
         function submitQuickSupplier() {
             const $form = $('#quick_supplier_form');
             const $btn = $('#btn-save-quick-supplier');
-            const url = $form.attr('action') || '{{ route('suppliers.store') }}';
+            const url = $form.attr('action') || '{{ route('suppliers.store', [], false) }}';
+            const csrfToken = $('meta[name="csrf-token"]').attr('content');
 
             $form.find('.is-invalid').removeClass('is-invalid');
             $form.find('.dynamic-error').remove();
             $btn.prop('disabled', true);
+
+            if (csrfToken) {
+                const $tokenInput = $form.find('input[name="_token"]');
+                if ($tokenInput.length) {
+                    $tokenInput.val(csrfToken);
+                } else {
+                    $form.prepend('<input type="hidden" name="_token" value="' + csrfToken + '">');
+                }
+            }
 
             $.ajax({
                 url: url,
@@ -1359,6 +1369,7 @@
                 data: $form.serialize(),
                 dataType: 'json',
                 headers: {
+                    'X-CSRF-TOKEN': csrfToken,
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },

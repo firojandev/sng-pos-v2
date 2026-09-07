@@ -211,6 +211,60 @@ class SupplierDataTableTest extends TestCase
         ]);
     }
 
+    public function test_supplier_can_be_updated_via_post_with_method_override(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+
+        $supplier = Supplier::create([
+            'shop_id' => $shop->id,
+            'name' => 'Supplier Method Override',
+            'phone' => '01700000001',
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($user)->postJson(route('suppliers.update', $supplier), [
+            '_method' => 'PUT',
+            'name' => 'Supplier Method Override Updated',
+            'status' => 'active',
+        ], ['X-HTTP-Method-Override' => 'PUT']);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+        ]);
+        $this->assertDatabaseHas('suppliers', [
+            'id' => $supplier->id,
+            'name' => 'Supplier Method Override Updated',
+        ]);
+    }
+
+    public function test_supplier_can_be_updated_via_direct_post(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+
+        $supplier = Supplier::create([
+            'shop_id' => $shop->id,
+            'name' => 'Supplier Direct POST',
+            'phone' => '01700000002',
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($user)->postJson(url("/suppliers/{$supplier->id}"), [
+            'name' => 'Supplier Direct POST Updated',
+            'status' => 'inactive',
+        ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+        ]);
+        $this->assertDatabaseHas('suppliers', [
+            'id' => $supplier->id,
+            'name' => 'Supplier Direct POST Updated',
+            'status' => 'inactive',
+        ]);
+    }
+
     public function test_supplier_can_be_deleted(): void
     {
         [$user, $shop] = $this->createShopUser();

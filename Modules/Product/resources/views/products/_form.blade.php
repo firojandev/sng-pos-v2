@@ -516,11 +516,15 @@
                 </div>
             </div>
 
-            <div class="image-dropzone" id="image-dropzone-box">
-                <input type="file" name="image" id="product_image_input" accept="image/*" style="display:none;">
+            <input type="file" name="image" id="product_image_input" accept="image/*" style="display:none;">
 
+            <div class="image-dropzone" id="image-dropzone-box" role="button" tabindex="0" aria-label="Upload product image">
                 <div id="image-preview-container" style="{{ $product->image_url ? '' : 'display:none;' }} margin-bottom:12px;">
                     <img id="image-preview-element" src="{{ $product->image_url ?? '' }}" alt="Preview" style="max-width:100%; height:140px; border-radius:10px; object-fit:contain; border:1px solid var(--border); background:var(--card); padding:4px;">
+                    <div style="font-size:11.5px; color:var(--ink-500); margin-top:6px;">
+                        <span class="bn">ছবি পরিবর্তন করতে ক্লিক করুন</span>
+                        <span class="en" style="display:none;">Click to change image</span>
+                    </div>
                 </div>
 
                 <div id="image-placeholder-container" style="{{ $product->image_url ? 'display:none;' : '' }}">
@@ -661,12 +665,51 @@ $(function () {
     updateSubCategoryDropdown();
 
     // Image Upload & Preview
-    $('#image-dropzone-box').on('click', function () {
-        $('#product_image_input').trigger('click');
+    $('#image-dropzone-box').on('click', function (e) {
+        if ($(e.target).closest('#product_image_input').length) {
+            return;
+        }
+        var input = document.getElementById('product_image_input');
+        if (input) {
+            input.click();
+        }
+    });
+
+    $('#image-dropzone-box').on('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            var input = document.getElementById('product_image_input');
+            if (input) {
+                input.click();
+            }
+        }
+    });
+
+    $('#image-dropzone-box').on('dragover dragenter', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).css({ 'border-color': 'var(--teal-600)', 'background': 'var(--teal-50)' });
+    });
+
+    $('#image-dropzone-box').on('dragleave drop', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).css({ 'border-color': '', 'background': '' });
+    });
+
+    $('#image-dropzone-box').on('drop', function (e) {
+        var dt = e.originalEvent && e.originalEvent.dataTransfer;
+        if (dt && dt.files && dt.files.length) {
+            var input = document.getElementById('product_image_input');
+            if (input) {
+                input.files = dt.files;
+                $(input).trigger('change');
+            }
+        }
     });
 
     $('#product_image_input').on('change', function (e) {
-        var file = this.files[0];
+        var file = this.files && this.files[0];
         if (file) {
             var reader = new FileReader();
             reader.onload = function (evt) {

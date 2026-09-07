@@ -375,6 +375,37 @@ $isNavItemVisible = function (array $item, bool $groupGated, $user) {
         @endif
     </div>
 
+    <script>
+        (function () {
+            try {
+                var $w = $('.side-nav-wrapper');
+                if (!$w.length) return;
+                var saved = sessionStorage.getItem('sidebar-scroll');
+                if (saved !== null) {
+                    $w.scrollTop(parseInt(saved, 10));
+                }
+                var $act = $w.find('.nav-item.active');
+                if ($act.length) {
+                    var cTop = $w.offset().top;
+                    var aTop = $act.offset().top;
+                    var rTop = aTop - cTop;
+                    var rBot = rTop + $act.outerHeight();
+                    var cH = $w.innerHeight();
+                    if (rTop < 0) {
+                        $w.scrollTop($w.scrollTop() + rTop - 12);
+                    } else if (rBot > cH) {
+                        $w.scrollTop($w.scrollTop() + (rBot - cH) + 12);
+                    }
+                }
+                $w.on('click', 'a', function () {
+                    try {
+                        sessionStorage.setItem('sidebar-scroll', String($w.scrollTop()));
+                    } catch (err) {}
+                });
+            } catch (e) {}
+        })();
+    </script>
+
     <div class="side-foot">
         <div class="side-user-card">
             @if ($user?->avatar_url)
