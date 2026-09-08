@@ -22,7 +22,7 @@ class PlanLimits
             return null;
         }
 
-        $featureSlug = str_replace('max_', '', $limitKey);
+        $featureSlug = str_replace('_', '-', $limitKey);
 
         if ($shop->subscribed()) {
             if ($shop->isUnlimitedUsage($featureSlug)) {

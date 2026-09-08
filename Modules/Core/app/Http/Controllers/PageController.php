@@ -149,11 +149,6 @@ class PageController extends Controller
         return $this->placeholder('tax', 'ট্যাক্স ও ভ্যাট', 'Tax & VAT', 'ট্যাক্স ও ভ্যাট হার পরিচালনা করুন', 'Manage tax and VAT rates');
     }
 
-    public function reports(): View
-    {
-        return $this->placeholder('reports', 'রিপোর্ট', 'Reports', 'বিস্তারিত ব্যবসায়িক রিপোর্ট দেখুন', 'View detailed business reports');
-    }
-
     public function settings(): View
     {
         return $this->placeholder('settings', 'সেটিংস', 'Settings', 'দোকান ও অ্যাকাউন্ট সেটিংস পরিচালনা করুন', 'Manage shop and account settings');

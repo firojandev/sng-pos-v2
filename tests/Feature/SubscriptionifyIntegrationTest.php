@@ -59,8 +59,8 @@ class SubscriptionifyIntegrationTest extends TestCase
         $this->assertFalse($shop->hasFeature('tax'));
 
         // Limit feature checks
-        $this->assertTrue($shop->canConsume('users', 1));
-        $this->assertTrue($shop->canConsume('products', 1));
+        $this->assertTrue($shop->canConsume('max-users', 1));
+        $this->assertTrue($shop->canConsume('max-products', 1));
     }
 
     public function test_shop_can_grant_and_revoke_custom_direct_features(): void

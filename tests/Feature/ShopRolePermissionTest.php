@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Modules\Core\Support\Features;
 use Modules\Core\Support\Permissions;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
 use Modules\Shop\Models\Plan;
@@ -50,7 +49,6 @@ class ShopRolePermissionTest extends TestCase
             'name' => 'Shop A',
             'slug' => 'shop-a',
             'status' => 'active',
-            'enabled_features' => Features::keys(),
         ]);
         $plan = Plan::where('slug', 'standard')->first();
         if ($plan) {
@@ -72,7 +70,6 @@ class ShopRolePermissionTest extends TestCase
             'name' => 'Shop B',
             'slug' => 'shop-b',
             'status' => 'active',
-            'enabled_features' => Features::keys(),
         ]);
         if ($plan) {
             $this->shopB->subscribe($plan);

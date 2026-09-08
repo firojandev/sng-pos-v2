@@ -29,8 +29,8 @@ class CustomerDataTableTest extends TestCase
             'name' => 'Customer Test Shop',
             'slug' => 'customer-test-shop',
             'status' => 'active',
-            'enabled_features' => ['customers'],
         ]);
+        $this->subscribeShopToFeatures($shop, ['customers']);
 
         Permission::firstOrCreate(['name' => 'customers.view', 'guard_name' => 'web']);
         Permission::firstOrCreate(['name' => 'customers.create', 'guard_name' => 'web']);

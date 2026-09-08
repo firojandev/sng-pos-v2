@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Modules\Core\Support\Features;
 use Modules\Core\Support\Permissions;
 use Modules\Finance\Database\Seeders\AccountDatabaseSeeder;
 use Modules\Shop\Database\Seeders\ShopDatabaseSeeder;
@@ -47,7 +46,6 @@ class DatabaseSeeder extends Seeder
                 'phone' => '+8801700000000',
                 'address' => 'মিরপুর-১০, ঢাকা-১২১৬',
                 'status' => 'active',
-                'enabled_features' => Features::keys(),
             ]
         );
 
@@ -74,8 +72,6 @@ class DatabaseSeeder extends Seeder
         $this->call(ShopDatabaseSeeder::class);
         $this->call(SubscriptionifySeeder::class);
         $this->call(AccountDatabaseSeeder::class);
-
-        $demoShop->update(['enabled_features' => Features::keys()]);
 
         $standardPlan = Plan::where('slug', 'standard')->first();
         if ($standardPlan && ! $demoShop->subscribed()) {

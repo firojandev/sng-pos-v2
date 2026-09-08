@@ -14,22 +14,22 @@ class SubscriptionifySeeder extends Seeder
     {
         // 1. Create or Update Limit Features
         $limitFeatures = [
-            'users' => [
+            'max-users' => [
                 'name' => 'ইউজার সীমা (Users Limit)',
                 'description' => 'Maximum staff & admin accounts',
                 'sort_order' => 1,
             ],
-            'branches' => [
+            'max-branches' => [
                 'name' => 'শাখা সীমা (Branches Limit)',
                 'description' => 'Maximum physical branches',
                 'sort_order' => 2,
             ],
-            'warehouses' => [
+            'max-warehouses' => [
                 'name' => 'গুদাম সীমা (Warehouses Limit)',
                 'description' => 'Maximum warehouses / godowns',
                 'sort_order' => 3,
             ],
-            'products' => [
+            'max-products' => [
                 'name' => 'পণ্য সীমা (Products Limit)',
                 'description' => 'Maximum product catalog items',
                 'sort_order' => 4,
@@ -55,14 +55,26 @@ class SubscriptionifySeeder extends Seeder
             'cashbox' => ['name' => 'ক্যাশবক্স (Cashbox)', 'sort_order' => 12],
             'quick-sale' => ['name' => 'দ্রুত বেচা (Quick Sale POS)', 'sort_order' => 13],
             'stock' => ['name' => 'স্টক ট্র্যাকিং (Stock Tracking)', 'sort_order' => 14],
-            'customers' => ['name' => 'গ্রাহক ও বাকি খাতা (Customers & Due)', 'sort_order' => 15],
-            'suppliers' => ['name' => 'সরবরাহকারী (Suppliers)', 'sort_order' => 16],
-            'income' => ['name' => 'আয় (Income)', 'sort_order' => 17],
-            'expense' => ['name' => 'ব্যয় (Expense)', 'sort_order' => 18],
-            'tax' => ['name' => 'ট্যাক্স ও ভ্যাট (Tax & VAT)', 'sort_order' => 19],
-            'reports' => ['name' => 'রিপোর্ট ও অ্যানালিটিক্স (Reports)', 'sort_order' => 20],
-            'audit' => ['name' => 'অ্যাক্টিভিটি লগ (Audit Log)', 'sort_order' => 21],
-            'employees' => ['name' => 'কর্মচারী (Employees)', 'sort_order' => 22],
+            'products' => ['name' => 'পণ্য ব্যবস্থাপনা (Product Management)', 'sort_order' => 15],
+            'branches' => ['name' => 'শাখা ও গুদাম (Branches & Warehouses)', 'sort_order' => 16],
+            'customers' => ['name' => 'গ্রাহক ও বাকি খাতা (Customers & Due)', 'sort_order' => 17],
+            'suppliers' => ['name' => 'সরবরাহকারী (Suppliers)', 'sort_order' => 18],
+            'income' => ['name' => 'আয় (Income)', 'sort_order' => 19],
+            'expense' => ['name' => 'ব্যয় (Expense)', 'sort_order' => 20],
+            'accounts' => ['name' => 'অ্যাকাউন্ট (Accounts)', 'sort_order' => 21],
+            'account-transfers' => ['name' => 'ফান্ড ট্রান্সফার (Fund Transfers)', 'sort_order' => 22],
+            'tax' => ['name' => 'ট্যাক্স ও ভ্যাট (Tax & VAT)', 'sort_order' => 23],
+            'report-sales' => ['name' => 'বিক্রয় রিপোর্ট (Sales Report)', 'sort_order' => 24],
+            'report-purchase' => ['name' => 'ক্রয় রিপোর্ট (Purchase Report)', 'sort_order' => 25],
+            'report-stock' => ['name' => 'স্টক রিপোর্ট (Stock Report)', 'sort_order' => 26],
+            'report-products' => ['name' => 'পণ্য রিপোর্ট (Product Report)', 'sort_order' => 27],
+            'report-profit-loss' => ['name' => 'লাভ-ক্ষতি রিপোর্ট (Profit & Loss Report)', 'sort_order' => 28],
+            'report-income' => ['name' => 'আয় রিপোর্ট (Income Report)', 'sort_order' => 29],
+            'report-expense' => ['name' => 'ব্যয় রিপোর্ট (Expense Report)', 'sort_order' => 30],
+            'audit' => ['name' => 'অ্যাক্টিভিটি লগ (Audit Log)', 'sort_order' => 31],
+            'employees' => ['name' => 'কর্মচারী (Employees)', 'sort_order' => 32],
+            'users' => ['name' => 'ইউজার (Users)', 'sort_order' => 33],
+            'subscription' => ['name' => 'সাবস্ক্রিপশন ও প্ল্যান (Subscription & Plan)', 'sort_order' => 34],
         ];
 
         foreach ($toggleFeatures as $slug => $data) {
@@ -95,12 +107,12 @@ class SubscriptionifySeeder extends Seeder
                 'sort_order' => 1,
                 'status' => 'active',
                 'limits' => [
-                    'users' => 2,
-                    'branches' => 1,
-                    'warehouses' => 1,
-                    'products' => 200,
+                    'max-users' => 2,
+                    'max-branches' => 1,
+                    'max-warehouses' => 1,
+                    'max-products' => 200,
                 ],
-                'toggles' => ['sales', 'purchase', 'cashbox', 'quick-sale', 'stock', 'customers', 'suppliers', 'income', 'expense', 'reports'],
+                'toggles' => ['sales', 'purchase', 'cashbox', 'quick-sale', 'stock', 'products', 'branches', 'customers', 'suppliers', 'income', 'expense', 'report-sales', 'subscription'],
             ],
             [
                 'name' => 'স্ট্যান্ডার্ড (Standard)',
@@ -116,12 +128,12 @@ class SubscriptionifySeeder extends Seeder
                 'sort_order' => 2,
                 'status' => 'active',
                 'limits' => [
-                    'users' => 5,
-                    'branches' => 3,
-                    'warehouses' => 3,
-                    'products' => 2000,
+                    'max-users' => 5,
+                    'max-branches' => 3,
+                    'max-warehouses' => 3,
+                    'max-products' => 2000,
                 ],
-                'toggles' => ['sales', 'purchase', 'cashbox', 'quick-sale', 'stock', 'customers', 'suppliers', 'income', 'expense', 'tax', 'reports', 'audit', 'employees'],
+                'toggles' => ['sales', 'purchase', 'cashbox', 'quick-sale', 'stock', 'products', 'branches', 'customers', 'suppliers', 'income', 'expense', 'accounts', 'account-transfers', 'tax', 'report-sales', 'report-purchase', 'report-stock', 'report-products', 'report-profit-loss', 'report-income', 'report-expense', 'audit', 'employees', 'users', 'subscription'],
             ],
             [
                 'name' => 'প্রিমিয়াম (Enterprise)',
@@ -137,10 +149,10 @@ class SubscriptionifySeeder extends Seeder
                 'sort_order' => 3,
                 'status' => 'active',
                 'limits' => [
-                    'users' => null, // 0 in Subscriptionify = unlimited
-                    'branches' => null,
-                    'warehouses' => null,
-                    'products' => null,
+                    'max-users' => null, // 0 in Subscriptionify = unlimited
+                    'max-branches' => null,
+                    'max-warehouses' => null,
+                    'max-products' => null,
                 ],
                 'toggles' => array_keys($toggleFeatures),
             ],

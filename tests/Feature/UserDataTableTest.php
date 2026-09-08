@@ -8,7 +8,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Core\Support\Features;
 use Modules\Core\Support\Permissions;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
-use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
 use Modules\User\DataTables\UsersDataTable;
 use Spatie\Permission\Models\Permission;
@@ -45,13 +44,9 @@ class UserDataTableTest extends TestCase
             'name' => 'User Test Shop',
             'slug' => 'user-test-shop',
             'status' => 'active',
-            'enabled_features' => Features::keys(),
         ]);
-
-        $standardPlan = Plan::where('slug', 'standard')->first();
-        if ($standardPlan) {
-            $this->shop->subscribe($standardPlan);
-        }
+        $this->subscribeShopToFeatures($this->shop, Features::keys());
+        $this->shop->grantFeature('max-users');
 
         $this->adminUser = User::create([
             'name' => 'Shop Admin',

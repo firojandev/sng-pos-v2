@@ -34,8 +34,8 @@ class WarehouseDataTableTest extends TestCase
             'name' => 'Warehouse Test Shop',
             'slug' => 'warehouse-test-shop',
             'status' => 'active',
-            'enabled_features' => ['branches'],
         ]);
+        $this->subscribeShopToFeatures($shop, ['branches', 'max-warehouses']);
 
         Permission::firstOrCreate(['name' => 'branches.view', 'guard_name' => 'web']);
         Permission::firstOrCreate(['name' => 'branches.create', 'guard_name' => 'web']);
@@ -613,7 +613,8 @@ class WarehouseDataTableTest extends TestCase
     public function test_default_warehouse_is_auto_selected_in_create_purchase_and_sale(): void
     {
         [$user, $shop] = $this->createShopUser();
-        $shop->update(['enabled_features' => ['branches', 'purchase', 'sales']]);
+        $shop->subscriptions()->update(['status' => 'cancelled']);
+        $this->subscribeShopToFeatures($shop, ['branches', 'purchase', 'sales']);
 
         Permission::firstOrCreate(['name' => 'purchase.view', 'guard_name' => 'web']);
         Permission::firstOrCreate(['name' => 'purchase.create', 'guard_name' => 'web']);
@@ -665,7 +666,8 @@ class WarehouseDataTableTest extends TestCase
     public function test_purchase_create_page_updates_selected_warehouse_and_scopes_product_stock(): void
     {
         [$user, $shop] = $this->createShopUser();
-        $shop->update(['enabled_features' => ['branches', 'purchase', 'sales']]);
+        $shop->subscriptions()->update(['status' => 'cancelled']);
+        $this->subscribeShopToFeatures($shop, ['branches', 'purchase', 'sales']);
 
         Permission::firstOrCreate(['name' => 'purchase.view', 'guard_name' => 'web']);
         Permission::firstOrCreate(['name' => 'purchase.create', 'guard_name' => 'web']);

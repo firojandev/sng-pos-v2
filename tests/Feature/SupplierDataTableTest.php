@@ -29,8 +29,8 @@ class SupplierDataTableTest extends TestCase
             'name' => 'Supplier Test Shop',
             'slug' => 'supplier-test-shop',
             'status' => 'active',
-            'enabled_features' => ['suppliers'],
         ]);
+        $this->subscribeShopToFeatures($shop, ['suppliers']);
 
         Permission::firstOrCreate(['name' => 'suppliers.view', 'guard_name' => 'web']);
         Permission::firstOrCreate(['name' => 'suppliers.create', 'guard_name' => 'web']);

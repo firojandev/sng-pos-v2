@@ -23,7 +23,13 @@
         'accounts' => ['icon' => 'credit-card', 'desc_bn' => 'ব্যাংক ও ক্যাশ অ্যাকাউন্ট', 'desc_en' => 'Bank & Cash Accounts'],
         'account-transfers' => ['icon' => 'refresh', 'desc_bn' => 'হিসাবের মধ্যকার স্থানান্তর', 'desc_en' => 'Inter-account Transfers'],
         'tax' => ['icon' => 'percent', 'desc_bn' => 'ট্যাক্স ও ভ্যাট কনফিগারেশন', 'desc_en' => 'VAT & Tax Settings'],
-        'reports' => ['icon' => 'bar-chart', 'desc_bn' => 'ব্যবসায়িক প্রতিবেদন ও হিসাব', 'desc_en' => 'Business Analytics & Reports'],
+        'report-sales' => ['icon' => 'bar-chart', 'desc_bn' => 'বিক্রয় প্রতিবেদন', 'desc_en' => 'Sales Report'],
+        'report-purchase' => ['icon' => 'bar-chart', 'desc_bn' => 'ক্রয় প্রতিবেদন', 'desc_en' => 'Purchase Report'],
+        'report-stock' => ['icon' => 'bar-chart', 'desc_bn' => 'স্টক প্রতিবেদন', 'desc_en' => 'Stock Report'],
+        'report-products' => ['icon' => 'bar-chart', 'desc_bn' => 'পণ্য প্রতিবেদন', 'desc_en' => 'Product Report'],
+        'report-profit-loss' => ['icon' => 'bar-chart', 'desc_bn' => 'লাভ-ক্ষতি প্রতিবেদন', 'desc_en' => 'Profit & Loss Report'],
+        'report-income' => ['icon' => 'bar-chart', 'desc_bn' => 'আয় প্রতিবেদন', 'desc_en' => 'Income Report'],
+        'report-expense' => ['icon' => 'bar-chart', 'desc_bn' => 'ব্যয় প্রতিবেদন', 'desc_en' => 'Expense Report'],
         'audit' => ['icon' => 'activity', 'desc_bn' => 'সিস্টেম অ্যাক্টিভিটি লগ', 'desc_en' => 'System Audit Logs'],
         'employees' => ['icon' => 'user-check', 'desc_bn' => 'কর্মচারী ও বেতন হিসাব', 'desc_en' => 'Staff & Payroll'],
         'users' => ['icon' => 'shield', 'desc_bn' => 'ইউজার অ্যাকাউন্ট ও পারমিশন', 'desc_en' => 'Users & Access Rights'],
@@ -64,7 +70,7 @@
             'subtitle_en' => 'Staff, user accounts, business reports and activity audit',
             'icon' => 'shield',
             'badge_color' => 'red',
-            'keys' => ['employees', 'users', 'reports', 'audit'],
+            'keys' => ['employees', 'users', 'report-sales', 'report-purchase', 'report-stock', 'report-products', 'report-profit-loss', 'report-income', 'report-expense', 'audit'],
         ],
     ];
 
@@ -841,7 +847,13 @@ $(function () {
                 'account-transfers.view', 'account-transfers.create',
                 'cashbox.view', 'cashbox.cash-in', 'cashbox.cash-out',
                 'tax.view', 'tax.edit',
-                'reports.view', 'reports.print'
+                'report-sales.view', 'report-sales.print',
+                'report-purchase.view', 'report-purchase.print',
+                'report-stock.view', 'report-stock.print',
+                'report-products.view', 'report-products.print',
+                'report-profit-loss.view', 'report-profit-loss.print',
+                'report-income.view', 'report-income.print',
+                'report-expense.view', 'report-expense.print'
             ];
             $.each(perms, function (i, p) {
                 $('input[name="permissions[]"][value="' + p + '"]').prop('checked', true);

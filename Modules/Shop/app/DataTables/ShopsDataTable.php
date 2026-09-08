@@ -77,8 +77,8 @@ class ShopsDataTable extends BaseDataTable
 
                 return '<span style="white-space:nowrap;">'.Blade::render('<x-core::badge color="teal" size="xs" variant="soft" :dot="true">{{ $count }}</x-core::badge>', ['count' => $count]).'</span>';
             })
-            ->editColumn('enabled_features', function (Shop $shop) {
-                $count = is_array($shop->enabled_features) ? count($shop->enabled_features) : 0;
+            ->addColumn('plan_features', function (Shop $shop) {
+                $count = $shop->activeSubscription?->plan?->features->count() ?? 0;
 
                 return '<span style="white-space:nowrap;">'.Blade::render('<x-core::badge color="grey" size="xs" variant="outline">{{ $count }} টি</x-core::badge>', ['count' => $count]).'</span>';
             })
@@ -110,7 +110,7 @@ class ShopsDataTable extends BaseDataTable
                     $q->where('name', 'like', "%{$keyword}%");
                 });
             })
-            ->rawColumns(['name', 'phone', 'subscription', 'admins_count', 'enabled_features', 'status', 'action'])
+            ->rawColumns(['name', 'phone', 'subscription', 'admins_count', 'plan_features', 'status', 'action'])
             ->setRowId('id');
     }
 
@@ -122,7 +122,7 @@ class ShopsDataTable extends BaseDataTable
     public function query(Shop $model): QueryBuilder
     {
         return $model->newQuery()
-            ->with(['activeSubscription.plan'])
+            ->with(['activeSubscription.plan.features'])
             ->select([
                 'shops.id',
                 'shops.name',
@@ -131,7 +131,6 @@ class ShopsDataTable extends BaseDataTable
                 'shops.phone',
                 'shops.address',
                 'shops.status',
-                'shops.enabled_features',
                 'shops.created_at',
             ])
             ->withCount('admins');
@@ -157,7 +156,7 @@ class ShopsDataTable extends BaseDataTable
             Column::make('phone')->title('<span class="bn">মোবাইল</span><span class="en">Phone</span>')->width(130),
             Column::computed('subscription')->title('<span class="bn">সাবস্ক্রিপশন</span><span class="en">Subscription</span>')->width(140),
             Column::make('admins_count')->title('<span class="bn">এডমিন</span><span class="en">Admins</span>')->addClass('table-cell-center')->width(80)->searchable(false),
-            Column::make('enabled_features')->title('<span class="bn">ফিচার</span><span class="en">Features</span>')->addClass('table-cell-center')->width(90)->orderable(false)->searchable(false),
+            Column::computed('plan_features')->title('<span class="bn">ফিচার</span><span class="en">Features</span>')->addClass('table-cell-center')->width(90)->orderable(false)->searchable(false),
             Column::make('status')->title('<span class="bn">অবস্থা</span><span class="en">Status</span>')->addClass('table-cell-center')->width(90),
             Column::computed('action')
                 ->title('<span class="bn">অ্যাকশন</span><span class="en">Action</span>')

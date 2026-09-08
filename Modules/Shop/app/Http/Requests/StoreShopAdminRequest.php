@@ -28,7 +28,6 @@ class StoreShopAdminRequest extends FormRequest
                 'min:8',
                 'confirmed',
             ],
-            'role' => ['required', 'string', 'max:255', Rule::notIn(['Super Admin'])],
         ];
     }
 }

@@ -45,6 +45,4 @@ Route::middleware(['auth'])->group(function () {
         ->get('/expense', [PageController::class, 'expense'])->name('expense.index');
     Route::middleware(['permission:tax.view', 'feature:tax'])
         ->get('/tax', [PageController::class, 'tax'])->name('tax.index');
-    Route::middleware(['permission:reports.view', 'feature:reports'])
-        ->get('/reports', [PageController::class, 'reports'])->name('reports.index');
 });
