@@ -852,7 +852,7 @@
                         '<div class="item-popover barcode-popover">' +
                             '<div class="fld"><label class="bn">বারকোড</label><label class="en" style="display:none;">Barcode</label><input type="text" class="ci-barcode-input" value="' + escapeHtml(item.barcode) + '" placeholder="বারকোড স্ক্যান/লিখুন"></div>' +
                         '</div>' +
-                        '<div class="item-popover warranty-popover">' +
+                        (hasWarranty ? '' : '<div class="item-popover warranty-popover">' +
                             '<div class="warranty-presets">' +
                                 warrantyPresets.map((w) => '<button type="button" class="warranty-preset-btn" data-n="' + w.n + '" data-u="' + w.u + '">' + w.n + ' ' + warrantyUnitLabels[w.u] + '</button>').join('') +
                             '</div>' +
@@ -861,8 +861,7 @@
                                 '<select class="ci-warranty-custom-u"><option value="day">দিন</option><option value="week">সপ্তাহ</option><option value="month">মাস</option><option value="year">বছর</option></select>' +
                                 '<button type="button" class="ci-warranty-set-btn btn btn-outline btn-sm">সেট করুন</button>' +
                             '</div>' +
-                            (hasWarranty ? '<div class="warranty-clear"><button type="button" class="ci-warranty-clear-btn">ওয়ারেন্টি মুছে ফেলুন</button></div>' : '') +
-                        '</div>' +
+                        '</div>') +
                     '</div>' +
                     '<div class="ci-actions">' +
                         (hasWholesale ? '<label class="ci-wholesale-toggle' + (item.isWholesale ? ' is-active' : '') + '" title="পাইকারি বিক্রয় / Wholesale">' +
@@ -870,9 +869,11 @@
                             '<span class="bn">পাইকারি</span><span class="en" style="display:none;">Wholesale</span>' +
                         '</label>' : '') +
                         '<button type="button" class="barcode-toggle-btn' + (hasBarcode ? ' has-value' : '') + '" title="Barcode"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 5v14M8 5v14M11 5v14M15 5v14M17 5v14M20 5v14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>' +
-                        '<button type="button" class="warranty-toggle-btn' + (hasWarranty ? ' has-value' : '') + '" title="ওয়ারেন্টি">' +
-                            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>' +
-                            (hasWarranty ? '<span class="ci-warranty-label bn">ওয়ারেন্টি</span><span class="ci-warranty-label en" style="display:none;">Warranty</span><span class="ci-warranty-date">' + warrantyLabel + '</span>' : '') +
+                        '<button type="button" class="warranty-toggle-btn' + (hasWarranty ? ' has-value' : '') + '" title="ওয়ারেন্টি"' + (hasWarranty ? ' disabled' : '') + '>' +
+                            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none">' +
+                                '<rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/>' +
+                                '<path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>' +
+                            '</svg>' + (hasWarranty ? '<span class="ci-warranty-label bn">ওয়ারেন্টি</span><span class="ci-warranty-label en" style="display:none;">Warranty</span><span class="ci-warranty-date">' + warrantyLabel + '</span>' : '') +
                         '</button>' +
                         '<button type="button" class="ci-remove" title="Remove">&times;</button>' +
                     '</div>' +
@@ -1146,7 +1147,26 @@
         const item = cart[index];
         if (!item) return;
 
-        if (e.target.classList.contains('ci-qty')) item.qty = parseFloat(e.target.value) || 0;
+        if (e.target.classList.contains('ci-qty')) {
+            const newQty = parseFloat(e.target.value) || 0;
+            const p = productData[item.productId];
+            if (item.isWholesale) {
+                const minQty = Math.max(1, p.wholesaleMinQty || 1);
+                if (newQty < minQty) {
+                    item.qty = minQty;
+                    e.target.value = minQty;
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Minimum quantity',
+                        text: 'Quantity set to minimum allowed ' + minQty
+                    });
+                } else {
+                    item.qty = newQty;
+                }
+            } else {
+                item.qty = newQty;
+            }
+        }
         if (e.target.classList.contains('ci-price')) item.price = parseFloat(e.target.value) || 0;
         if (e.target.classList.contains('ci-discount-raw')) item.discountRaw = parseFloat(e.target.value) || 0;
         if (e.target.classList.contains('ci-discount-type')) item.discountType = e.target.value;
