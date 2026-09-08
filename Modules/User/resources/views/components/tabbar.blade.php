@@ -4,6 +4,7 @@
 $tabs = [
     ['key' => 'users', 'route' => 'users.index', 'bn' => 'ইউজার', 'en' => 'Users'],
     ['key' => 'roles', 'route' => 'roles.index', 'bn' => 'রোল ও পারমিশন', 'en' => 'Roles & Permissions'],
+    ['key' => 'settings', 'route' => 'settings.index', 'bn' => 'দোকান সেটিংস', 'en' => 'Shop Settings'],
 ];
 @endphp
 

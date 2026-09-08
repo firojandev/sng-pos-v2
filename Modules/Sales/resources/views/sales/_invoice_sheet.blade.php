@@ -72,7 +72,7 @@
     <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:10px;">
         <div style="flex-shrink:0; width:48px; height:48px; border-radius:6px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
             @if(!empty($shop?->logo))
-                <img src="{{ asset($shop->logo) }}" alt="Shop Logo" style="max-width:48px; max-height:48px; object-fit:contain;">
+                <img src="{{ $shop->logo_url ?? asset($shop->logo) }}" alt="Shop Logo" style="max-width:48px; max-height:48px; object-fit:contain;">
             @else
                 <svg width="46" height="46" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect x="7" y="19" width="34" height="23" rx="2" fill="#38bdf8" stroke="#0f172a" stroke-width="2"/>
@@ -292,4 +292,10 @@
             </div>
         </div>
     </div>
+
+    @if(!empty($shop?->invoice_footer))
+        <div style="margin-top:16px; border-top:1px dashed #cbd5e1; padding-top:8px; font-size:11px; color:#475569; text-align:center;">
+            {{ $shop->invoice_footer }}
+        </div>
+    @endif
 </div>

@@ -12,7 +12,7 @@
                 <div style="position:relative; width:80px; height:80px; margin:0 auto 14px;">
                     <div id="leftAvatarWrapper" style="width:80px; height:80px; border-radius:20px; overflow:hidden; display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow-sm); border:2px solid var(--border); background:var(--card);">
                         @if ($user->avatar_url)
-                            <img id="leftAvatarImg" src="{{ $user->avatar_url }}" alt="{{ $user->name }}" style="width:100%; height:100%; object-fit:cover; display:block;">
+                            <img id="leftAvatarImg" src="{{ $user->avatar_url }}" alt="{{ $user->name }}" onerror="this.style.display='none'; document.getElementById('leftAvatarFallback').style.display='flex';" style="width:100%; height:100%; object-fit:cover; display:block;">
                             <div id="leftAvatarFallback" style="display:none; width:100%; height:100%; background:linear-gradient(135deg, #0D9488 0%, #0891B2 100%); color:#ffffff; align-items:center; justify-content:center; font-family:'Noto Sans Bengali','SolaimanLipi','Baloo Da 2',sans-serif; font-weight:800; font-size:32px;">
                                 {{ mb_substr($user->name ?? '?', 0, 1) }}
                             </div>
@@ -115,7 +115,7 @@
                     <div style="margin-bottom:24px; padding:16px; background:var(--paper); border:1px solid var(--border); border-radius:14px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
                         <div style="width:68px; height:68px; border-radius:18px; overflow:hidden; border:2px solid var(--border); background:var(--card); display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:var(--shadow-sm);">
                             @if ($user->avatar_url)
-                                <img id="formAvatarPreview" src="{{ $user->avatar_url }}" alt="{{ $user->name }}" style="width:100%; height:100%; object-fit:cover; display:block;">
+                                <img id="formAvatarPreview" src="{{ $user->avatar_url }}" alt="{{ $user->name }}" onerror="this.style.display='none'; document.getElementById('formAvatarFallback').style.display='flex';" style="width:100%; height:100%; object-fit:cover; display:block;">
                                 <div id="formAvatarFallback" style="display:none; width:100%; height:100%; background:linear-gradient(135deg, #0D9488 0%, #0891B2 100%); color:#ffffff; align-items:center; justify-content:center; font-family:'Noto Sans Bengali','SolaimanLipi','Baloo Da 2',sans-serif; font-weight:800; font-size:26px;">
                                     {{ mb_substr($user->name ?? '?', 0, 1) }}
                                 </div>

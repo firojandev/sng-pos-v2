@@ -1,10 +1,10 @@
 <div class="modal-backdrop" id="saleInvoiceModal" style="z-index:1050;">
     <div class="modal-box" style="width:760px; max-width:96vw; max-height:94vh; padding:0; border-radius:12px; background:var(--card, #ffffff); border:1px solid var(--border, #e2e8f0); box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); display:flex; flex-direction:column; overflow:hidden;">
-        
-        {{-- Modal Header: "Successful" with Close Button --}}
+
+        {{-- Modal Header: "Sale Invoice" with Close Button --}}
         <div class="modal-head" style="padding:14px 20px; border-bottom:1px solid var(--border, #e2e8f0); display:flex; align-items:center; justify-content:space-between; background:var(--card, #ffffff);">
             <h3 style="font-size:18px; font-weight:700; color:var(--ink-900, #0f172a); margin:0; font-family:'Noto Sans Bengali', sans-serif;">
-                Successful
+                Sale Invoice
             </h3>
             <x-core::button
                 type="button"

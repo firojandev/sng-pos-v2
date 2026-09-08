@@ -5,8 +5,6 @@
     subtitle-en="Manage system login accounts and access roles"
     active="users"
 >
-    <x-user::tabbar active="users" />
-
     {{-- Executive Summary Stat Grid --}}
     @if (isset($metrics))
         <div class="stat-grid" style="margin-bottom:16px;">

@@ -8,7 +8,6 @@ use Modules\Core\Http\Controllers\PageController;
 Route::middleware(['auth'])->group(function () {
     Route::get('/', [PageController::class, 'dashboard'])->name('dashboard');
     Route::get('/styleguide', [PageController::class, 'styleguide'])->name('styleguide');
-    Route::get('/settings', [PageController::class, 'settings'])->name('settings.index');
     Route::prefix('due-ledger')->name('due-ledger.')->group(function () {
         Route::get('/', [DueLedgerController::class, 'index'])->name('index');
         Route::get('/sales', [DueLedgerController::class, 'sales'])->name('sales')->middleware('permission:customers.view');

@@ -44,26 +44,32 @@
                             label-en="Sale Date"
                             size="sm"
                             value="{{ old('sale_date', now()->format('Y-m-d')) }}"
+                            :required="true"
                         />
                     </div>
 
                     {{-- Row 1, Col 2: Payment Method --}}
+                    @php
+                        $selectedPaymentType = old('payment_type', 'cash');
+                    @endphp
                     <div id="quick-payment-type-group">
                         <x-core::select
                             id="quick-payment-type"
                             name="payment_type"
+                            :value="$selectedPaymentType"
                             label="পেমেন্টের মাধ্যম"
                             label-en="Payment Method"
                             size="sm"
+                            :required="true"
                         >
-                            <option value="cash" {{ old('payment_type', 'cash') === 'cash' ? 'selected' : '' }}>নগদ (Cash)</option>
-                            <option value="bank" {{ old('payment_type', 'bank') === 'bank' ? 'selected' : '' }}>ব্যাংক / MFS (Bank)</option>
-                            <option value="both" {{ old('payment_type', 'both') === 'both' ? 'selected' : '' }}>উভয় (ক্যাশ + ব্যাংক)</option>
+                            <option value="cash" {{ $selectedPaymentType === 'cash' ? 'selected' : '' }}>নগদ (Cash)</option>
+                            <option value="bank" {{ $selectedPaymentType === 'bank' ? 'selected' : '' }}>ব্যাংক / MFS (Bank)</option>
+                            <option value="both" {{ $selectedPaymentType === 'both' ? 'selected' : '' }}>উভয় (ক্যাশ + ব্যাংক)</option>
                         </x-core::select>
                     </div>
 
                     {{-- Row 2, Col 1 (when bank or both): Bank Account --}}
-                    <div id="quick-account-group" style="display:{{ in_array(old('payment_type', 'cash'), ['bank', 'both']) ? 'block' : 'none' }};">
+                    <div id="quick-account-group" style="display:{{ in_array($selectedPaymentType, ['bank', 'both']) ? 'block' : 'none' }};">
                         <x-core::select
                             id="quick-account-select"
                             name="account_id"
@@ -90,7 +96,7 @@
                     </div>
 
                     {{-- Single Amount (Row 2 Col 1 for cash, Row 3 full-width for bank) --}}
-                    <div id="quick-single-amount-group" style="display:{{ old('payment_type', 'cash') === 'both' ? 'none' : 'block' }};">
+                    <div id="quick-single-amount-group" style="display:{{ $selectedPaymentType === 'both' ? 'none' : 'block' }};">
                         <x-core::input
                             type="number"
                             step="0.01"
@@ -104,6 +110,7 @@
                             placeholder="0.00"
                             value="{{ old('amount') }}"
                             :stepper="false"
+                            :required="true"
                         />
                     </div>
 
@@ -121,11 +128,12 @@
                             placeholder="লাভের পরিমাণ (ঐচ্ছিক)"
                             value="{{ old('profit') }}"
                             :stepper="false"
+                            :required="true"
                         />
                     </div>
 
                     {{-- Both: Cash Paid (Row 3 Col 1) --}}
-                    <div id="quick-both-cash-group" style="display:{{ old('payment_type', 'cash') === 'both' ? 'block' : 'none' }};">
+                    <div id="quick-both-cash-group" style="display:{{ $selectedPaymentType === 'both' ? 'block' : 'none' }};">
                         <x-core::input
                             type="number"
                             step="0.01"
@@ -143,7 +151,7 @@
                     </div>
 
                     {{-- Both: Bank Paid (Row 3 Col 2) --}}
-                    <div id="quick-both-bank-group" style="display:{{ old('payment_type', 'cash') === 'both' ? 'block' : 'none' }};">
+                    <div id="quick-both-bank-group" style="display:{{ $selectedPaymentType === 'both' ? 'block' : 'none' }};">
                         <x-core::input
                             type="number"
                             step="0.01"
@@ -161,7 +169,7 @@
                     </div>
 
                     {{-- Both: Summary Pill (full width) --}}
-                    <div id="quick-both-summary-group" style="grid-column:1 / -1; display:{{ old('payment_type', 'cash') === 'both' ? 'block' : 'none' }};">
+                    <div id="quick-both-summary-group" style="grid-column:1 / -1; display:{{ $selectedPaymentType === 'both' ? 'block' : 'none' }};">
                         <div style="display:flex; justify-content:space-between; align-items:center; font-size:12.5px; padding:8px 12px; background:var(--paper); border:1px dashed var(--border); border-radius:8px; margin-top: 14px;">
                             <span style="color:var(--ink-700); font-weight:600;">
                                 <span class="bn">মোট প্রদান: </span>
@@ -238,8 +246,8 @@
                             style="width:100%; justify-content:center; padding:10px 0; font-size:14px; font-weight:700;"
                             id="btn-submit-quick-sale"
                         >
-                            <span class="bn">টাকার মূল্য পেয়েছেন</span>
-                            <span class="en" style="display:none;">Amount Received</span>
+                            <span class="bn">বিক্রি</span>
+                            <span class="en" style="display:none;">Sale</span>
                         </x-core::button>
                     </div>
                 </div>

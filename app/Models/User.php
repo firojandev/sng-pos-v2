@@ -14,7 +14,6 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Modules\Core\Observers\AuditObserver;
 use Modules\Employee\Models\Employee;
 use Modules\Shop\Models\Shop;
@@ -46,7 +45,10 @@ class User extends Authenticatable
                     return $this->avatar;
                 }
 
-                return Storage::disk('public')->url($this->avatar);
+                $clean = ltrim($this->avatar, '/');
+                $path = str_starts_with($clean, 'storage/') ? $clean : 'storage/'.$clean;
+
+                return asset($path);
             }
         );
     }

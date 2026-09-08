@@ -3,10 +3,8 @@
     title-en="Roles & Permissions"
     subtitle="দোকানের ইউজারদের জন্য রোল তৈরি ও পরিচালনা করুন"
     subtitle-en="Create and manage roles for your shop's users"
-    active="users"
+    active="roles"
 >
-    <x-user::tabbar active="roles" />
-
     <div class="panel" style="margin-top:0;">
         <div class="panel-body">
             <div class="section-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">

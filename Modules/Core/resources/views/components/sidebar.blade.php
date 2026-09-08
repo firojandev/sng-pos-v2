@@ -245,6 +245,22 @@ $navGroups = [
                 'icon' => '<circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.6"/><path d="M4.5 20c1-4 3.8-6 7.5-6s6.5 2 7.5 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
             ],
             [
+                'key' => 'roles',
+                'permission' => 'users',
+                'route' => 'roles.index',
+                'bn' => 'রোল ও পারমিশন',
+                'en' => 'Roles & Permissions',
+                'icon' => '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+            ],
+            [
+                'key' => 'settings',
+                'route' => 'settings.index',
+                'bn' => 'দোকান সেটিংস',
+                'en' => 'Shop Settings',
+                'gated' => false,
+                'icon' => '<circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/><path d="M19 12a7 7 0 0 0-.14-1.4l2-1.5-2-3.5-2.3.9a7 7 0 0 0-2.4-1.4L14 2h-4l-.16 2.1a7 7 0 0 0-2.4 1.4l-2.3-.9-2 3.5 2 1.5A7 7 0 0 0 5 12a7 7 0 0 0 .14 1.4l-2 1.5 2 3.5 2.3-.9a7 7 0 0 0 2.4 1.4L10 22h4l.16-2.1a7 7 0 0 0 2.4-1.4l2.3.9 2-3.5-2-1.5c.09-.46.14-.93.14-1.4Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>',
+            ],
+            [
                 'key' => 'audit-log',
                 'permission' => 'audit',
                 'route' => 'audit-log.index',
@@ -313,14 +329,6 @@ $navGroups = [
         'label' => ['bn' => 'অন্যান্য', 'en' => 'Other'],
         'gated' => false,
         'items' => [
-            [
-                'key' => 'settings',
-                'route' => 'settings.index',
-                'bn' => 'সেটিংস',
-                'en' => 'Settings',
-                'icon' => '<circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/><path d="M19 12a7 7 0 0 0-.14-1.4l2-1.5-2-3.5-2.3.9a7 7 0 0 0-2.4-1.4L14 2h-4l-.16 2.1a7 7 0 0 0-2.4 1.4l-2.3-.9-2 3.5 2 1.5A7 7 0 0 0 5 12a7 7 0 0 0 .14 1.4l-2 1.5 2 3.5 2.3-.9a7 7 0 0 0 2.4 1.4L10 22h4l.16-2.1a7 7 0 0 0 2.4-1.4l2.3.9 2-3.5-2-1.5c.09-.46.14-.93.14-1.4Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>',
-                'gated' => false,
-            ],
             [
                 'key' => 'styleguide',
                 'route' => 'styleguide',
