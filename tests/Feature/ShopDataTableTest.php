@@ -69,7 +69,6 @@ class ShopDataTableTest extends TestCase
             'phone' => '01711223344',
             'address' => 'Dhaka, Bangladesh',
             'status' => 'active',
-            'enabled_features' => ['sales', 'stock'],
         ]);
 
         $response = $this->actingAs($user)
@@ -111,7 +110,6 @@ class ShopDataTableTest extends TestCase
             'phone' => '01888999000',
             'address' => 'Chittagong, Bangladesh',
             'status' => 'active',
-            'features' => ['sales', 'products', 'customers'],
             'admin_name' => 'Grand Manager',
             'admin_email' => 'manager@grandmarket.test',
             'admin_password' => 'Secret12345!',
@@ -141,14 +139,13 @@ class ShopDataTableTest extends TestCase
             'phone' => '01700000000',
             'address' => 'Sylhet, Bangladesh',
             'status' => 'active',
-            'enabled_features' => ['sales'],
         ]);
 
         $response = $this->actingAs($user)->get(route('shops.edit', $shop));
 
         $response->assertOk();
         $response->assertSee('Original Shop');
-        $response->assertSee('দোকানের বিবরণ ও সক্রিয় ফিচার');
+        $response->assertSee('দোকানের বিবরণ');
         $response->assertSee('সাবস্ক্রিপশন প্যাকেজ ও মেয়াদ');
         $response->assertSee('দোকানের এডমিনগণ');
         $response->assertSee('দোকানের সংক্ষিপ্ত বিবরণ');
@@ -163,7 +160,6 @@ class ShopDataTableTest extends TestCase
             'phone' => '01700000000',
             'address' => 'Old Address',
             'status' => 'active',
-            'enabled_features' => ['sales'],
         ]);
 
         $response = $this->actingAs($user)->put(route('shops.update', $shop), [
@@ -172,7 +168,6 @@ class ShopDataTableTest extends TestCase
             'phone' => '01999999999',
             'address' => 'New Address, Dhaka',
             'status' => 'inactive',
-            'features' => ['sales', 'stock', 'branches'],
         ]);
 
         $response->assertRedirect(route('shops.edit', $shop));
@@ -261,7 +256,6 @@ class ShopDataTableTest extends TestCase
             'phone' => '01711000111',
             'address' => 'Mirpur, Dhaka',
             'status' => 'active',
-            'features' => ['sales', 'stock'],
             'admin_name' => 'Bismillah Admin',
             'admin_email' => 'admin@bismillah.test',
             'admin_password' => 'Password123!',
@@ -424,8 +418,8 @@ class ShopDataTableTest extends TestCase
             'phone' => '01911999999',
             'address' => 'Banani, Dhaka',
             'status' => 'active',
-            'enabled_features' => ['sales', 'purchase', 'stock'],
         ]);
+        $this->subscribeShopToFeatures($shop, ['sales', 'purchase', 'stock']);
 
         $response = $this->actingAs($user)
             ->getJson(route('shops.show', $shop));
@@ -439,8 +433,8 @@ class ShopDataTableTest extends TestCase
             'phone' => '01911999999',
             'address' => 'Banani, Dhaka',
             'status' => 'active',
-            'enabled_features' => ['sales', 'purchase', 'stock'],
         ]);
+        $this->assertEqualsCanonicalizing(['sales', 'purchase', 'stock'], $response->json('plan_features'));
     }
 
     public function test_shop_creation_auto_creates_default_cash_account(): void
@@ -454,7 +448,6 @@ class ShopDataTableTest extends TestCase
             'phone' => '01711223344',
             'address' => 'Dhanmondi, Dhaka',
             'status' => 'active',
-            'features' => ['sales', 'accounts'],
             'admin_name' => 'Cash Admin',
             'admin_email' => 'cashadmin@autocash.test',
             'admin_password' => 'Secret12345!',
@@ -494,7 +487,6 @@ class ShopDataTableTest extends TestCase
             'phone' => '01755667788',
             'address' => 'Uttara, Dhaka',
             'status' => 'active',
-            'features' => ['sales', 'accounts'],
             'admin_name' => 'Custom Admin',
             'admin_email' => 'customadmin@customcash.test',
             'admin_password' => 'Secret12345!',

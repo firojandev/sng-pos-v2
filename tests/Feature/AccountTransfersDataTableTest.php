@@ -48,12 +48,13 @@ class AccountTransfersDataTableTest extends TestCase
             'name' => 'Transfer Test Shop',
             'slug' => 'transfer-test-shop',
             'status' => 'active',
-            'enabled_features' => Features::keys(),
         ]);
 
         $standardPlan = Plan::where('slug', 'standard')->first();
         if ($standardPlan) {
             $this->shop->subscribe($standardPlan);
+        } else {
+            $this->subscribeShopToFeatures($this->shop, Features::keys());
         }
 
         $this->user = User::create([

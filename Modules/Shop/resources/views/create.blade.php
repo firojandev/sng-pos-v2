@@ -1,33 +1,10 @@
 <x-core::layout
     title="নতুন দোকান তৈরি"
     title-en="Create Shop"
-    subtitle="নতুন দোকান, প্রথম এডমিন অ্যাকাউন্ট ও ফিচার অনুমতি কনফিগার করুন"
-    subtitle-en="Create a new shop, assign initial shop admin, and configure active modules"
+    subtitle="নতুন দোকান, প্রথম এডমিন অ্যাকাউন্ট ও সাবস্ক্রিপশন প্যাকেজ নির্ধারণ করুন"
+    subtitle-en="Create a new shop, assign initial shop admin, and choose a subscription plan"
     active="shops"
 >
-    @php
-        $selectedFeatures = (array) old('features', array_keys($features));
-        $featureIcons = [
-            'sales' => 'shopping-cart',
-            'purchase' => 'truck',
-            'cashbox' => 'wallet',
-            'quick-sale' => 'sparkles',
-            'stock' => 'box',
-            'products' => 'tag',
-            'branches' => 'building',
-            'customers' => 'users',
-            'suppliers' => 'truck',
-            'income' => 'trending-up',
-            'expense' => 'trending-down',
-            'tax' => 'percent',
-            'reports' => 'file-text',
-            'audit' => 'shield',
-            'employees' => 'user',
-            'users' => 'lock',
-            'subscription' => 'sparkles',
-        ];
-    @endphp
-
     <style>
     .shop-form-grid {
         display: grid;
@@ -70,8 +47,8 @@
                     <div class="panel-title bn" style="font-size:16px;">নতুন দোকান তৈরি করুন</div>
                     <div class="panel-title en" style="display:none; font-size:16px;">Create New Shop</div>
                     <div style="font-size:11.5px; color:var(--ink-500); margin-top:2px;">
-                        <span class="bn">দোকানের মৌলিক তথ্য, প্রথম এডমিনের লগইন এবং সক্রিয় ফিচার নির্ধারণ করুন</span>
-                        <span class="en" style="display:none;">Set basic shop info, first admin credentials, and accessible features</span>
+                        <span class="bn">দোকানের মৌলিক তথ্য, প্রথম এডমিনের লগইন এবং সাবস্ক্রিপশন প্যাকেজ নির্ধারণ করুন</span>
+                        <span class="en" style="display:none;">Set basic shop info, first admin credentials, and subscription plan</span>
                     </div>
                 </div>
             </div>
@@ -319,19 +296,6 @@
                                         </div>
                                     </div>
                                 </div>
-
-                                <div>
-                                    <x-core::form-group name="admin_role" label="এডমিন রোল নির্ধারণ করুন" label-en="Assign Role" icon="shield" required>
-                                        <select name="admin_role" id="shop-admin-role-select" class="form-control form-select" required>
-                                            <option value="" disabled {{ old('admin_role') ? '' : 'selected' }}>-- রোল নির্বাচন করুন --</option>
-                                            @foreach ($roles as $role)
-                                                <option value="{{ $role->name }}" {{ old('admin_role', 'Admin') === $role->name ? 'selected' : '' }}>
-                                                    {{ $role->name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </x-core::form-group>
-                                </div>
                             </div>
                         </div>
 
@@ -465,92 +429,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        {{-- Card 4: Active Modules & Features Selection --}}
-                        <div class="panel" style="margin-top:0;">
-                            <div class="panel-head" style="padding:14px 18px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
-                                <div class="panel-title" style="display:flex; align-items:center; gap:8px; font-size:15px;">
-                                    <x-core::icon name="shield" size="18" style="color:var(--teal-800);" />
-                                    <span class="bn">এই দোকানের জন্য সক্রিয় মডিউল ও ফিচার</span>
-                                    <span class="en" style="display:none;">Active Modules & Features</span>
-                                    <x-core::badge id="selected-features-count" color="teal" size="xs">
-                                        {{ count($selectedFeatures) }} টি নির্বাচিত
-                                    </x-core::badge>
-                                </div>
-
-                                <div style="display:flex; align-items:center; gap:6px;">
-                                    <x-core::button
-                                        type="button"
-                                        variant="soft"
-                                        color="teal"
-                                        size="xs"
-                                        id="btn-select-all-features"
-                                        icon="check"
-                                    >
-                                        <span class="bn">সবগুলো নির্বাচন</span>
-                                        <span class="en" style="display:none;">Select All</span>
-                                    </x-core::button>
-
-                                    <x-core::button
-                                        type="button"
-                                        variant="soft"
-                                        color="secondary"
-                                        size="xs"
-                                        id="btn-deselect-all-features"
-                                        icon="x"
-                                    >
-                                        <span class="bn">সব বাতিল</span>
-                                        <span class="en" style="display:none;">Deselect All</span>
-                                    </x-core::button>
-                                </div>
-                            </div>
-                            <div class="panel-body" style="padding:18px;">
-                                <div style="font-size:12px; color:var(--ink-500); margin-bottom:12px;">
-                                    <span class="bn">শুধু নির্বাচিত মডিউলগুলো এই দোকানের এডমিন সাইডবারে দেখতে ও ব্যবহার করতে পারবে।</span>
-                                    <span class="en" style="display:none;">Only checked modules will be visible and usable in this shop's dashboard.</span>
-                                </div>
-
-                                <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:10px;">
-                                    @foreach ($features as $key => $labels)
-                                        @php
-                                            $isChecked = in_array($key, $selectedFeatures);
-                                            $iconName = $featureIcons[$key] ?? 'check-circle';
-                                        @endphp
-                                        <label
-                                            class="form-radio-card feature-card {{ $isChecked ? 'active' : '' }}"
-                                            style="padding:10px 12px; gap:10px; border-radius:10px;"
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                name="features[]"
-                                                value="{{ $key }}"
-                                                class="feature-checkbox"
-                                                data-feature-key="{{ $key }}"
-                                                data-feature-name-bn="{{ $labels['bn'] }}"
-                                                data-feature-name-en="{{ $labels['en'] }}"
-                                                {{ $isChecked ? 'checked' : '' }}
-                                            />
-                                            <span class="card-icon" style="width:30px; height:30px; border-radius:8px;">
-                                                <x-core::icon :name="$iconName" size="15" />
-                                            </span>
-                                            <span class="card-content">
-                                                <span class="card-title" style="font-size:12.5px;">
-                                                    <span class="bn">{{ $labels['bn'] }}</span>
-                                                    <span class="en" style="display:none;">{{ $labels['en'] }}</span>
-                                                </span>
-                                                <span class="card-desc" style="font-size:11px; font-family:monospace; color:var(--ink-400);">
-                                                    {{ $key }}
-                                                </span>
-                                            </span>
-                                        </label>
-                                    @endforeach
-                                </div>
-
-                                @error('features')
-                                    <div class="form-error" style="margin-top:10px;">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
                     </div>
 
                     {{-- Right Column: Live Shop Overview & Submission Actions --}}
@@ -627,9 +505,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <x-core::badge id="preview-admin-role" color="teal" size="xs">
-                                            {{ old('admin_role') ?: 'Role' }}
-                                        </x-core::badge>
+                                        <x-core::badge color="teal" size="xs">Admin</x-core::badge>
                                     </div>
                                 </div>
 
@@ -673,15 +549,6 @@
                                             সক্রিয়
                                         </x-core::badge>
                                     </div>
-                                </div>
-
-                                {{-- Feature tags preview --}}
-                                <div style="font-size:11.5px; font-weight:700; color:var(--ink-700); margin-bottom:6px;">
-                                    <span class="bn">সক্রিয় মডিউলসমূহ:</span>
-                                    <span class="en" style="display:none;">Active Modules:</span>
-                                </div>
-                                <div id="preview-feature-tags" style="display:flex; flex-wrap:wrap; gap:5px; min-height:28px;">
-                                    <!-- Populated via jQuery -->
                                 </div>
                             </div>
                         </div>
@@ -819,50 +686,6 @@
                 checkTimer = setTimeout(performAvailabilityCheck, 280);
             }
 
-            // 2. Feature tags live update and counter
-            function updateFeaturesPreview() {
-                var $checked = $('input[name="features[]"]:checked');
-                $('#selected-features-count').text($checked.length + ' টি নির্বাচিত');
-
-                var $tagsContainer = $('#preview-feature-tags');
-                $tagsContainer.empty();
-
-                if ($checked.length === 0) {
-                    $tagsContainer.html('<span style="font-size:11px; color:var(--ink-400);">কোনো ফিচার নির্বাচিত নেই</span>');
-                    return;
-                }
-
-                $checked.each(function () {
-                    var nameBn = $(this).data('feature-name-bn') || $(this).val();
-                    $tagsContainer.append(
-                        '<span class="badge b-teal badge-teal badge-xs" style="padding:2px 7px;">' + nameBn + '</span>'
-                    );
-                });
-            }
-
-            // Feature checkbox changes
-            $(document).on('change', 'input[name="features[]"]', function () {
-                var isChecked = $(this).is(':checked');
-                $(this).closest('.feature-card').toggleClass('active', isChecked);
-                updateFeaturesPreview();
-            });
-
-            // Select All Features
-            $(document).on('click', '#btn-select-all-features', function (e) {
-                e.preventDefault();
-                $('input[name="features[]"]').prop('checked', true);
-                $('.feature-card').addClass('active');
-                updateFeaturesPreview();
-            });
-
-            // Deselect All Features
-            $(document).on('click', '#btn-deselect-all-features', function (e) {
-                e.preventDefault();
-                $('input[name="features[]"]').prop('checked', false);
-                $('.feature-card').removeClass('active');
-                updateFeaturesPreview();
-            });
-
             // 3. Slug and Store Code Auto-generation from Shop Name
             $(document).on('input', '#shop-slug-input', function () {
                 slugManuallyEdited = true;
@@ -955,10 +778,6 @@
                 if ($('input[name="owner_type"]:checked').val() !== 'existing') {
                     $('#preview-admin-email').text($(this).val() || 'admin@example.com');
                 }
-            });
-
-            $(document).on('change', '#shop-admin-role-select', function () {
-                $('#preview-admin-role').text($(this).val() || 'Role');
             });
 
             // 6. Live Subscription & Date Calculations
@@ -1105,12 +924,7 @@
                     if (adminEmailVal) $('#preview-admin-email').text(adminEmailVal);
                 }
 
-                var adminRoleVal = $('#shop-admin-role-select').val();
-                if (adminRoleVal) $('#preview-admin-role').text(adminRoleVal);
-
                 updateSubscriptionPreview();
-
-                updateFeaturesPreview();
 
                 if (slugVal || codeVal) {
                     performAvailabilityCheck();

@@ -30,8 +30,8 @@ class BranchDataTableTest extends TestCase
             'name' => 'Branch Test Shop',
             'slug' => 'branch-test-shop',
             'status' => 'active',
-            'enabled_features' => ['branches'],
         ]);
+        $this->subscribeShopToFeatures($shop, ['branches', 'max-branches']);
 
         Permission::firstOrCreate(['name' => 'branches.view', 'guard_name' => 'web']);
         Permission::firstOrCreate(['name' => 'branches.create', 'guard_name' => 'web']);

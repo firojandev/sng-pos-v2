@@ -28,11 +28,6 @@ class Shop extends Model implements Subscribable
         'phone',
         'address',
         'status',
-        'enabled_features',
-    ];
-
-    protected $casts = [
-        'enabled_features' => 'array',
     ];
 
     protected static function booted(): void
@@ -103,21 +98,15 @@ class Shop extends Model implements Subscribable
     }
 
     /**
-     * Check if feature is available via Subscriptionify or shop manual override.
+     * Check if a feature is granted via the shop's plan or a direct grant.
+     *
+     * Delegates to Subscriptionify's own resolution (plan features +
+     * per-shop direct grants). The alias is required because this method
+     * overrides the trait's `hasFeature` under the same name.
      */
     public function hasFeature(string $key): bool
     {
-        // 1. If manual override is explicitly configured in shop
-        if (is_array($this->enabled_features) && in_array($key, $this->enabled_features, true)) {
-            return true;
-        }
-
-        // 2. Check via Subscriptionify plan & direct grants
-        if ($this->subscribed()) {
-            return $this->subscriptionifyHasFeature($key);
-        }
-
-        return false;
+        return $this->subscriptionifyHasFeature($key);
     }
 
     public function grantFeature(

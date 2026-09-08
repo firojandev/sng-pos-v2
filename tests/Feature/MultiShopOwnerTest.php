@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
-use Modules\Core\Support\Features;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
 use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
@@ -266,7 +265,6 @@ class MultiShopOwnerTest extends TestCase
             'store_code' => 'CHAIN-01',
             'phone' => '01711111111',
             'status' => 'active',
-            'features' => Features::keys(),
             'admin_name' => 'Chain Owner',
             'admin_email' => 'chain@owner.test',
             'admin_role' => 'Owner',
@@ -279,7 +277,6 @@ class MultiShopOwnerTest extends TestCase
             'store_code' => 'CHAIN-02',
             'phone' => '01722222222',
             'status' => 'active',
-            'features' => Features::keys(),
             'admin_name' => 'Chain Owner',
             'admin_email' => 'chain@owner.test',
             'admin_role' => 'Owner',
@@ -352,7 +349,6 @@ class MultiShopOwnerTest extends TestCase
             'slug' => 'shop-selected-owner',
             'store_code' => 'SEL-01',
             'status' => 'active',
-            'features' => Features::keys(),
             'owner_type' => 'existing',
             'existing_user_id' => $existingOwner->id,
             'admin_role' => 'Owner',
@@ -386,7 +382,6 @@ class MultiShopOwnerTest extends TestCase
             'slug' => 'monthly-shop',
             'store_code' => 'MON-01',
             'status' => 'active',
-            'features' => Features::keys(),
             'owner_type' => 'new',
             'admin_name' => 'Monthly Owner',
             'admin_email' => 'monthly@owner.test',
@@ -430,7 +425,6 @@ class MultiShopOwnerTest extends TestCase
             'slug' => 'yearly-shop',
             'store_code' => 'YR-01',
             'status' => 'active',
-            'features' => Features::keys(),
             'owner_type' => 'new',
             'admin_name' => 'Yearly Owner',
             'admin_email' => 'yearly@owner.test',

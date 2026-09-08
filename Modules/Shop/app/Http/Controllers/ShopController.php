@@ -11,7 +11,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
-use Modules\Core\Support\Features;
 use Modules\Finance\Models\Account;
 use Modules\Finance\Models\AccountTransaction;
 use Modules\Shop\DataTables\ShopsDataTable;
@@ -65,7 +64,7 @@ class ShopController extends Controller
 
     public function show(Shop $shop): JsonResponse|RedirectResponse
     {
-        $shop->load(['admins.roles', 'activeSubscription.plan']);
+        $shop->load(['admins.roles', 'activeSubscription.plan.features']);
 
         if (request()->wantsJson() || request()->ajax()) {
             $subscription = $shop->activeSubscription;
@@ -79,7 +78,7 @@ class ShopController extends Controller
                 'phone' => $shop->phone,
                 'address' => $shop->address,
                 'status' => $shop->status,
-                'enabled_features' => $shop->enabled_features ?? [],
+                'plan_features' => $plan?->features->pluck('slug')->all() ?? [],
                 'created_at' => $shop->created_at?->format('d M, Y (h:i A)'),
                 'edit_url' => route('shops.edit', $shop),
                 'subscription' => $subscription ? [
@@ -109,8 +108,6 @@ class ShopController extends Controller
         return view('shop::create', [
             'shop' => new Shop,
             'nextStoreCode' => Shop::generateNextStoreCode(),
-            'roles' => Role::where('name', '!=', 'Super Admin')->where('guard_name', 'web')->select('name')->distinct()->orderBy('name')->get(),
-            'features' => Features::all(),
             'plans' => Plan::where('is_active', true)->orWhere('status', 'active')->orderBy('sort_order')->orderBy('price')->get(),
             'existingOwners' => User::whereDoesntHave('roles', fn ($q) => $q->where('name', 'Super Admin'))
                 ->with(['shop', 'roles'])
@@ -131,7 +128,6 @@ class ShopController extends Controller
                 'phone' => $request->validated('phone'),
                 'address' => $request->validated('address'),
                 'status' => $request->validated('status'),
-                'enabled_features' => $request->validated('features', []),
             ]);
 
             $ownerType = $request->input('owner_type', 'new');
@@ -161,7 +157,7 @@ class ShopController extends Controller
                 }
             }
 
-            $roleName = $request->validated('admin_role');
+            $roleName = 'Admin';
             setPermissionsTeamId($shop->id);
             $shopRole = Role::where('shop_id', $shop->id)->where('name', $roleName)->first()
                 ?? Role::firstOrCreate([
@@ -253,22 +249,8 @@ class ShopController extends Controller
 
     public function edit(Shop $shop): View
     {
-        $shopRoles = Role::where('shop_id', $shop->id)
-            ->where('name', '!=', 'Super Admin')
-            ->orderBy('name')
-            ->get();
-
-        if ($shopRoles->isEmpty()) {
-            $shopRoles = Role::whereNull('shop_id')
-                ->where('name', '!=', 'Super Admin')
-                ->orderBy('name')
-                ->get();
-        }
-
         return view('shop::edit', [
             'shop' => $shop,
-            'roles' => $shopRoles,
-            'features' => Features::all(),
             'admins' => $shop->admins()->with('roles')->get(),
             'subscription' => $shop->subscription(),
             'plans' => Plan::where('is_active', true)->orWhere('status', 'active')->orderBy('price')->get(),
@@ -326,7 +308,6 @@ class ShopController extends Controller
             'phone' => $request->validated('phone'),
             'address' => $request->validated('address'),
             'status' => $request->validated('status'),
-            'enabled_features' => $request->validated('features', []),
         ]);
 
         return redirect()->route('shops.edit', $shop)->with('status', 'দোকানের তথ্য হালনাগাদ করা হয়েছে');
@@ -358,7 +339,7 @@ class ShopController extends Controller
             }
         }
 
-        $roleName = $request->validated('role');
+        $roleName = 'Admin';
         setPermissionsTeamId($shop->id);
         $role = Role::where('shop_id', $shop->id)->where('name', $roleName)->first()
             ?? Role::firstOrCreate([

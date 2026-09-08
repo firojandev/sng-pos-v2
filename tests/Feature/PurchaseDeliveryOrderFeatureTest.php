@@ -57,13 +57,13 @@ class PurchaseDeliveryOrderFeatureTest extends TestCase
             'name' => 'Test Mart',
             'slug' => 'test-mart',
             'status' => 'active',
-            'enabled_features' => Features::keys(),
         ]);
 
         $standardPlan = Plan::where('slug', 'standard')->first();
         if ($standardPlan) {
             $this->shop->subscribe($standardPlan);
         }
+        $this->subscribeShopToFeatures($this->shop, Features::keys());
 
         setPermissionsTeamId($this->shop->id);
 

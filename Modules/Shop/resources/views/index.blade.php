@@ -268,8 +268,8 @@
                             // Features
                             var $featuresList = $('#modal-shop-features');
                             $featuresList.empty();
-                            if (data.enabled_features && data.enabled_features.length > 0) {
-                                $.each(data.enabled_features, function (i, feat) {
+                            if (data.plan_features && data.plan_features.length > 0) {
+                                $.each(data.plan_features, function (i, feat) {
                                     $featuresList.append(
                                         '<span class="badge b-teal badge-teal badge-xs" style="padding:3px 8px; font-size:11.5px;">' + feat + '</span>'
                                     );

@@ -48,12 +48,13 @@ class DueLedgerFeatureTest extends TestCase
             'name' => 'Due Ledger Test Shop',
             'slug' => 'due-ledger-test-shop',
             'status' => 'active',
-            'enabled_features' => Features::keys(),
         ]);
 
         $standardPlan = Plan::where('slug', 'standard')->first();
         if ($standardPlan) {
             $this->shop->subscribe($standardPlan);
+        } else {
+            $this->subscribeShopToFeatures($this->shop, Features::keys());
         }
 
         $this->user = User::create([
