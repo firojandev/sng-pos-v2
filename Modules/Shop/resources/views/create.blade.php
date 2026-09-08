@@ -230,11 +230,13 @@
                                                 <option
                                                     value="{{ $owner->id }}"
                                                     data-name="{{ $owner->name }}"
+                                                    data-phone="{{ $owner->phone }}"
                                                     data-email="{{ $owner->email }}"
+                                                    data-username="{{ $owner->username }}"
                                                     data-shop="{{ $owner->shop?->name }}"
                                                     {{ (string) old('existing_user_id') === (string) $owner->id ? 'selected' : '' }}
                                                 >
-                                                    {{ $owner->name }} ({{ $owner->email }}) {{ $owner->shop ? '— ' . $owner->shop->name : '' }}
+                                                    {{ $owner->name }} ({{ $owner->phone ?: ($owner->username ? '@'.$owner->username : $owner->email) }}) {{ $owner->shop ? '— ' . $owner->shop->name : '' }}
                                                 </option>
                                             @endforeach
                                         </select>
@@ -248,11 +250,41 @@
                                             <x-core::input
                                                 name="admin_name"
                                                 id="shop-admin-name-input"
-                                                label="এডমিনের নাম"
-                                                label-en="Admin Name"
+                                                label="মালিকের নাম"
+                                                label-en="Owner Name"
                                                 icon="user"
                                                 placeholder="যেমন: মোঃ রহিম উল্লাহ"
                                                 :value="old('admin_name')"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <x-core::input
+                                                type="tel"
+                                                name="admin_phone"
+                                                id="shop-admin-phone-input"
+                                                label="ফোন নম্বর"
+                                                label-en="Phone Number"
+                                                icon="phone"
+                                                placeholder="017xxxxxxxx"
+                                                :value="old('admin_phone')"
+                                                helper="লগইনের মূল নম্বর (পরবর্তীতে পরিবর্তনযোগ্য নয়)"
+                                                helper-en="Primary login number (cannot be changed later)"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:12px;">
+                                        <div>
+                                            <x-core::input
+                                                name="admin_username"
+                                                id="shop-admin-username-input"
+                                                label="ইউজারনেম (ঐচ্ছিক)"
+                                                label-en="Username (Optional)"
+                                                icon="at-sign"
+                                                placeholder="যেমন: rahim101"
+                                                :value="old('admin_username')"
                                             />
                                         </div>
                                         <div>
@@ -260,8 +292,8 @@
                                                 type="email"
                                                 name="admin_email"
                                                 id="shop-admin-email-input"
-                                                label="এডমিনের ইমেইল"
-                                                label-en="Admin Email"
+                                                label="ইমেইল অ্যাড্রেস (ঐচ্ছিক)"
+                                                label-en="Email Address (Optional)"
                                                 icon="mail"
                                                 placeholder="admin@example.com"
                                                 :value="old('admin_email')"
@@ -488,8 +520,8 @@
                                 {{-- Admin Preview section --}}
                                 <div style="margin-bottom:14px; padding-top:12px; border-top:1px dashed var(--border);">
                                     <div style="font-size:11px; font-weight:700; color:var(--ink-500); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">
-                                        <span class="bn">দায়িত্বপ্রাপ্ত এডমিন</span>
-                                        <span class="en" style="display:none;">Designated Admin</span>
+                                        <span class="bn">দায়িত্বপ্রাপ্ত মালিক / এডমিন</span>
+                                        <span class="en" style="display:none;">Shop Owner / Admin</span>
                                     </div>
                                     <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
                                         <div style="display:flex; align-items:center; gap:8px; min-width:0;">
@@ -498,14 +530,17 @@
                                             </div>
                                             <div style="min-width:0;">
                                                 <div id="preview-admin-name" style="font-weight:700; font-size:13px; color:var(--ink-800); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                                                    {{ old('admin_name') ?: 'এডমিনের নাম' }}
+                                                    {{ old('admin_name') ?: 'মালিকের নাম' }}
+                                                </div>
+                                                <div id="preview-admin-phone" style="font-size:11.5px; font-family:var(--font-mono, monospace); color:var(--teal-800); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                                    {{ old('admin_phone') ?: 'ফোন নম্বর' }}
                                                 </div>
                                                 <div id="preview-admin-email" style="font-size:11px; color:var(--ink-500); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                                                    {{ old('admin_email') ?: 'admin@example.com' }}
+                                                    {{ old('admin_username') ? '@' . old('admin_username') : (old('admin_email') ?: '—') }}
                                                 </div>
                                             </div>
                                         </div>
-                                        <x-core::badge color="teal" size="xs">Admin</x-core::badge>
+                                        <x-core::badge color="teal" size="xs">Owner</x-core::badge>
                                     </div>
                                 </div>
 
@@ -734,18 +769,43 @@
             });
 
             // 5. Live Admin Info Updates
+            function updateNewOwnerPreview() {
+                var name = $('#shop-admin-name-input').val() || 'মালিকের নাম';
+                var phone = $('#shop-admin-phone-input').val() || 'ফোন নম্বর';
+                var username = $('#shop-admin-username-input').val();
+                var email = $('#shop-admin-email-input').val();
+
+                $('#preview-admin-name').text(name);
+                $('#preview-admin-phone').text(phone);
+                var subtext = username ? ('@' + username + (email ? ' · ' + email : '')) : (email || '—');
+                $('#preview-admin-email').text(subtext);
+            }
+
             function updateExistingOwnerPreview() {
                 var $selected = $('#shop-existing-user-select option:selected');
                 if ($selected.length && $selected.val()) {
                     var name = $selected.data('name');
+                    var phone = $selected.data('phone');
                     var email = $selected.data('email');
+                    var username = $selected.data('username');
+
                     if (name) $('#preview-admin-name').text(name);
-                    if (email) $('#preview-admin-email').text(email);
+                    $('#preview-admin-phone').text(phone || 'ফোন নম্বর নেই');
+                    var sub = username ? ('@' + username + (email ? ' · ' + email : '')) : (email || '—');
+                    $('#preview-admin-email').text(sub);
                 } else {
                     $('#preview-admin-name').text('বিদ্যমান মালিক নির্বাচন করুন');
+                    $('#preview-admin-phone').text('ফোন নম্বর');
                     $('#preview-admin-email').text('—');
                 }
             }
+
+            $(document).on('input', '#shop-admin-name-input, #shop-admin-phone-input, #shop-admin-username-input, #shop-admin-email-input', function () {
+                var isExisting = $('input[name="owner_type"]:checked').val() === 'existing';
+                if (!isExisting) {
+                    updateNewOwnerPreview();
+                }
+            });
 
             $(document).on('change', '.owner-type-radio', function () {
                 var val = $(this).val();
@@ -759,8 +819,7 @@
                 } else {
                     $('#section-existing-owner').hide();
                     $('#section-new-owner').show();
-                    $('#preview-admin-name').text($('#shop-admin-name-input').val() || 'এডমিনের নাম');
-                    $('#preview-admin-email').text($('#shop-admin-email-input').val() || 'admin@example.com');
+                    updateNewOwnerPreview();
                 }
             });
 
@@ -917,11 +976,7 @@
                 if (isExisting) {
                     updateExistingOwnerPreview();
                 } else {
-                    var adminNameVal = $('#shop-admin-name-input').val();
-                    if (adminNameVal) $('#preview-admin-name').text(adminNameVal);
-
-                    var adminEmailVal = $('#shop-admin-email-input').val();
-                    if (adminEmailVal) $('#preview-admin-email').text(adminEmailVal);
+                    updateNewOwnerPreview();
                 }
 
                 updateSubscriptionPreview();

@@ -5,14 +5,14 @@
     subtitle-en="Update your personal details, password and PIN codes"
     active="profile"
 >
-    <div style="max-width:980px; margin:0 auto;">
+    <div style="max-width:980px;">
         <div style="display:grid; grid-template-columns:290px 1fr; gap:20px; align-items:start;">
             {{-- Left Column: User Summary Card --}}
             <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; box-shadow:var(--shadow-card); text-align:center;">
                 <div style="position:relative; width:80px; height:80px; margin:0 auto 14px;">
                     <div id="leftAvatarWrapper" style="width:80px; height:80px; border-radius:20px; overflow:hidden; display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow-sm); border:2px solid var(--border); background:var(--card);">
                         @if ($user->avatar_url)
-                            <img id="leftAvatarImg" src="{{ $user->avatar_url }}" alt="{{ $user->name }}" style="width:100%; height:100%; object-fit:cover; display:block;">
+                            <img id="leftAvatarImg" src="{{ $user->avatar_url }}" alt="{{ $user->name }}" onerror="this.style.display='none'; document.getElementById('leftAvatarFallback').style.display='flex';" style="width:100%; height:100%; object-fit:cover; display:block;">
                             <div id="leftAvatarFallback" style="display:none; width:100%; height:100%; background:linear-gradient(135deg, #0D9488 0%, #0891B2 100%); color:#ffffff; align-items:center; justify-content:center; font-family:'Noto Sans Bengali','SolaimanLipi','Baloo Da 2',sans-serif; font-weight:800; font-size:32px;">
                                 {{ mb_substr($user->name ?? '?', 0, 1) }}
                             </div>
@@ -115,7 +115,7 @@
                     <div style="margin-bottom:24px; padding:16px; background:var(--paper); border:1px solid var(--border); border-radius:14px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
                         <div style="width:68px; height:68px; border-radius:18px; overflow:hidden; border:2px solid var(--border); background:var(--card); display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:var(--shadow-sm);">
                             @if ($user->avatar_url)
-                                <img id="formAvatarPreview" src="{{ $user->avatar_url }}" alt="{{ $user->name }}" style="width:100%; height:100%; object-fit:cover; display:block;">
+                                <img id="formAvatarPreview" src="{{ $user->avatar_url }}" alt="{{ $user->name }}" onerror="this.style.display='none'; document.getElementById('formAvatarFallback').style.display='flex';" style="width:100%; height:100%; object-fit:cover; display:block;">
                                 <div id="formAvatarFallback" style="display:none; width:100%; height:100%; background:linear-gradient(135deg, #0D9488 0%, #0891B2 100%); color:#ffffff; align-items:center; justify-content:center; font-family:'Noto Sans Bengali','SolaimanLipi','Baloo Da 2',sans-serif; font-weight:800; font-size:26px;">
                                     {{ mb_substr($user->name ?? '?', 0, 1) }}
                                 </div>
@@ -208,28 +208,41 @@
                                 size="sm"
                             />
 
-                            <x-core::input
-                                name="phone"
-                                type="text"
-                                label="ফোন নম্বর (ঐচ্ছিক)"
-                                label-en="Phone Number (Optional)"
-                                value="{{ old('phone', $user->phone) }}"
-                                placeholder="যেমন: 017xxxxxxxx"
-                                placeholder-en="e.g. 017xxxxxxxx"
-                                size="sm"
-                            />
+                            @if ($user->isShopOwner())
+                                <x-core::input
+                                    name="phone"
+                                    type="text"
+                                    label="ফোন নম্বর (মালিকের নম্বর অপরিবর্তনযোগ্য)"
+                                    label-en="Phone Number (Locked for Shop Owner)"
+                                    value="{{ $user->phone }}"
+                                    size="sm"
+                                    :readonly="true"
+                                    helper="নিরাপত্তার স্বার্থে দোকানের মালিকের ফোন নম্বর পরিবর্তন করা যাবে না।"
+                                    helper-en="For security, shop owner phone number cannot be changed."
+                                />
+                            @else
+                                <x-core::input
+                                    name="phone"
+                                    type="text"
+                                    label="ফোন নম্বর (ঐচ্ছিক)"
+                                    label-en="Phone Number (Optional)"
+                                    value="{{ old('phone', $user->phone) }}"
+                                    placeholder="যেমন: 017xxxxxxxx"
+                                    placeholder-en="e.g. 017xxxxxxxx"
+                                    size="sm"
+                                />
+                            @endif
                         </div>
 
                         <x-core::input
                             name="email"
                             type="email"
-                            label="ইমেইল অ্যাড্রেস"
-                            label-en="Email Address"
+                            label="ইমেইল অ্যাড্রেস (ঐচ্ছিক)"
+                            label-en="Email Address (Optional)"
                             value="{{ old('email', $user->email) }}"
                             placeholder="user@example.com"
                             placeholder-en="user@example.com"
                             size="sm"
-                            :required="true"
                         />
                     </div>
 

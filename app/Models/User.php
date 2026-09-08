@@ -14,7 +14,6 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Modules\Core\Observers\AuditObserver;
 use Modules\Employee\Models\Employee;
 use Modules\Shop\Models\Shop;
@@ -46,7 +45,10 @@ class User extends Authenticatable
                     return $this->avatar;
                 }
 
-                return Storage::disk('public')->url($this->avatar);
+                $clean = ltrim($this->avatar, '/');
+                $path = str_starts_with($clean, 'storage/') ? $clean : 'storage/'.$clean;
+
+                return asset($path);
             }
         );
     }
@@ -213,6 +215,29 @@ class User extends Authenticatable
         }
 
         return $this->shops()->where('shops.id', $shopId)->exists();
+    }
+
+    /**
+     * Check whether this user is registered as a shop owner.
+     */
+    public function isShopOwner(?int $shopId = null): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return false;
+        }
+
+        if ($shopId) {
+            return $this->shops()->where('shops.id', $shopId)->wherePivot('is_owner', true)->exists();
+        }
+
+        if ($this->relationLoaded('shops')) {
+            $isOwner = $this->shops->contains(fn ($s) => (bool) ($s->pivot?->is_owner ?? false));
+            if ($isOwner) {
+                return true;
+            }
+        }
+
+        return $this->shops()->wherePivot('is_owner', true)->exists();
     }
 
     /**

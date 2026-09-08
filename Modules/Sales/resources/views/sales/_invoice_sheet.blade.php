@@ -72,7 +72,7 @@
     <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:10px;">
         <div style="flex-shrink:0; width:48px; height:48px; border-radius:6px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
             @if(!empty($shop?->logo))
-                <img src="{{ asset($shop->logo) }}" alt="Shop Logo" style="max-width:48px; max-height:48px; object-fit:contain;">
+                <img src="{{ $shop->logo_url ?? asset($shop->logo) }}" alt="Shop Logo" style="max-width:48px; max-height:48px; object-fit:contain;">
             @else
                 <svg width="46" height="46" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect x="7" y="19" width="34" height="23" rx="2" fill="#38bdf8" stroke="#0f172a" stroke-width="2"/>
@@ -240,6 +240,12 @@
                 <span style="color:#334155;">সাব টোটাল</span>
                 <span style="font-weight:600;">৳{{ BanglaNumber::toBn(number_format((float) $sale->subtotal, 2)) }}</span>
             </div>
+            @if ((float) ($sale->product_discount ?? 0) > 0)
+                <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                    <span style="color:#334155;">(-) পণ্য ছাড়</span>
+                    <span>৳{{ BanglaNumber::toBn(number_format((float) $sale->product_discount, 2)) }}</span>
+                </div>
+            @endif
             <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
                 <span style="color:#334155;">(-) ছাড়</span>
                 <span>৳{{ BanglaNumber::toBn(number_format((float) $sale->discount, 2)) }}</span>
@@ -252,6 +258,12 @@
                 <span style="color:#334155;">ডেলিভারি</span>
                 <span>৳{{ BanglaNumber::toBn(number_format((float) ($sale->delivery_charge ?? 0), 2)) }}</span>
             </div>
+            @if ((float) ($sale->adjustment ?? 0) != 0)
+                <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                    <span style="color:#334155;">{{ (float) $sale->adjustment > 0 ? '(+) সমন্বয়' : '(-) সমন্বয়' }}</span>
+                    <span>৳{{ BanglaNumber::toBn(number_format(abs((float) $sale->adjustment), 2)) }}</span>
+                </div>
+            @endif
 
             <div style="border-top:1px solid #94a3b8; margin:4px 0 6px 0;"></div>
 
@@ -280,4 +292,10 @@
             </div>
         </div>
     </div>
+
+    @if(!empty($shop?->invoice_footer))
+        <div style="margin-top:16px; border-top:1px dashed #cbd5e1; padding-top:8px; font-size:11px; color:#475569; text-align:center;">
+            {{ $shop->invoice_footer }}
+        </div>
+    @endif
 </div>
