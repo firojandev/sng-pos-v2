@@ -25,6 +25,7 @@ class UpdateSaleRequest extends FormRequest
             'discount' => ['nullable', 'numeric', 'min:0'],
             'tax' => ['nullable', 'numeric', 'min:0'],
             'delivery_charge' => ['nullable', 'numeric', 'min:0'],
+            'adjustment' => ['nullable', 'numeric'],
             'employee_name' => ['nullable', 'string', 'max:255'],
             'employee_phone' => ['nullable', 'string', 'max:30'],
             'payments' => ['nullable', 'array'],
