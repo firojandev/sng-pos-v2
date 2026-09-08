@@ -218,6 +218,29 @@ class User extends Authenticatable
     }
 
     /**
+     * Check whether this user is registered as a shop owner.
+     */
+    public function isShopOwner(?int $shopId = null): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return false;
+        }
+
+        if ($shopId) {
+            return $this->shops()->where('shops.id', $shopId)->wherePivot('is_owner', true)->exists();
+        }
+
+        if ($this->relationLoaded('shops')) {
+            $isOwner = $this->shops->contains(fn ($s) => (bool) ($s->pivot?->is_owner ?? false));
+            if ($isOwner) {
+                return true;
+            }
+        }
+
+        return $this->shops()->wherePivot('is_owner', true)->exists();
+    }
+
+    /**
      * Switch current active shop to the given shop.
      */
     public function switchShop(Shop|int $shop): bool

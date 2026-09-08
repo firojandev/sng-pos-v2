@@ -362,27 +362,32 @@
                             size="sm"
                         />
 
-                        <x-core::input
-                            name="phone"
-                            id="edit_user_phone"
-                            type="text"
-                            label="ফোন নম্বর (ঐচ্ছিক)"
-                            label-en="Phone Number (Optional)"
-                            placeholder="যেমন: 017xxxxxxxx"
-                            placeholder-en="e.g. 017xxxxxxxx"
-                            size="sm"
-                        />
+                        <div>
+                            <x-core::input
+                                name="phone"
+                                id="edit_user_phone"
+                                type="text"
+                                label="ফোন নম্বর (ঐচ্ছিক)"
+                                label-en="Phone Number (Optional)"
+                                placeholder="যেমন: 017xxxxxxxx"
+                                placeholder-en="e.g. 017xxxxxxxx"
+                                size="sm"
+                            />
+                            <div id="edit_user_phone_owner_notice" style="display:none; font-size:11px; color:var(--ink-500); margin-top:4px;">
+                                <span class="bn">🔒 মালিকের ফোন নম্বর পরিবর্তন করা যাবে না।</span>
+                                <span class="en" style="display:none;">🔒 Shop owner phone cannot be modified.</span>
+                            </div>
+                        </div>
                     </div>
 
                     <x-core::input
                         name="email"
                         id="edit_user_email"
                         type="email"
-                        label="ইমেইল অ্যাড্রেস"
-                        label-en="Email Address"
+                        label="ইমেইল অ্যাড্রেস (ঐচ্ছিক)"
+                        label-en="Email Address (Optional)"
                         placeholder="user@example.com"
                         size="sm"
-                        :required="true"
                     />
 
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
@@ -640,8 +645,17 @@
                         $form.attr('action', data.update_url);
                         $('#edit_user_name').val(user.name);
                         $('#edit_user_username').val(user.username || '');
-                        $('#edit_user_email').val(user.email);
+                        $('#edit_user_email').val(user.email || '');
                         $('#edit_user_phone').val(user.phone || '');
+
+                        if (user.is_owner) {
+                            $('#edit_user_phone').prop('readonly', true).css('opacity', '0.75');
+                            $('#edit_user_phone_owner_notice').show();
+                        } else {
+                            $('#edit_user_phone').prop('readonly', false).css('opacity', '1');
+                            $('#edit_user_phone_owner_notice').hide();
+                        }
+
                         $('#edit_user_password').val('');
                         $('#edit_user_password_confirmation').val('');
                         $('#edit_user_pin').val('');

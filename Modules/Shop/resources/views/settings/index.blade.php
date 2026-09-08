@@ -12,7 +12,7 @@
         </div>
     @endif
 
-    <div style="width:100%; max-width:1160px; margin:0 auto;">
+    <div style="width:100%; max-width:1160px;">
         <div style="display:grid; grid-template-columns:310px 1fr; gap:22px; align-items:start;" class="shop-settings-grid">
             {{-- Left Column: Shop Summary & Plan Card --}}
             <div style="display:flex; flex-direction:column; gap:20px;">

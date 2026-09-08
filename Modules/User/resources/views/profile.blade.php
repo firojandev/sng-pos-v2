@@ -5,7 +5,7 @@
     subtitle-en="Update your personal details, password and PIN codes"
     active="profile"
 >
-    <div style="max-width:980px; margin:0 auto;">
+    <div style="max-width:980px;">
         <div style="display:grid; grid-template-columns:290px 1fr; gap:20px; align-items:start;">
             {{-- Left Column: User Summary Card --}}
             <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; box-shadow:var(--shadow-card); text-align:center;">
@@ -208,28 +208,41 @@
                                 size="sm"
                             />
 
-                            <x-core::input
-                                name="phone"
-                                type="text"
-                                label="ফোন নম্বর (ঐচ্ছিক)"
-                                label-en="Phone Number (Optional)"
-                                value="{{ old('phone', $user->phone) }}"
-                                placeholder="যেমন: 017xxxxxxxx"
-                                placeholder-en="e.g. 017xxxxxxxx"
-                                size="sm"
-                            />
+                            @if ($user->isShopOwner())
+                                <x-core::input
+                                    name="phone"
+                                    type="text"
+                                    label="ফোন নম্বর (মালিকের নম্বর অপরিবর্তনযোগ্য)"
+                                    label-en="Phone Number (Locked for Shop Owner)"
+                                    value="{{ $user->phone }}"
+                                    size="sm"
+                                    :readonly="true"
+                                    helper="নিরাপত্তার স্বার্থে দোকানের মালিকের ফোন নম্বর পরিবর্তন করা যাবে না।"
+                                    helper-en="For security, shop owner phone number cannot be changed."
+                                />
+                            @else
+                                <x-core::input
+                                    name="phone"
+                                    type="text"
+                                    label="ফোন নম্বর (ঐচ্ছিক)"
+                                    label-en="Phone Number (Optional)"
+                                    value="{{ old('phone', $user->phone) }}"
+                                    placeholder="যেমন: 017xxxxxxxx"
+                                    placeholder-en="e.g. 017xxxxxxxx"
+                                    size="sm"
+                                />
+                            @endif
                         </div>
 
                         <x-core::input
                             name="email"
                             type="email"
-                            label="ইমেইল অ্যাড্রেস"
-                            label-en="Email Address"
+                            label="ইমেইল অ্যাড্রেস (ঐচ্ছিক)"
+                            label-en="Email Address (Optional)"
                             value="{{ old('email', $user->email) }}"
                             placeholder="user@example.com"
                             placeholder-en="user@example.com"
                             size="sm"
-                            :required="true"
                         />
                     </div>
 
