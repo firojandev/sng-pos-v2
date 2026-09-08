@@ -102,7 +102,7 @@ class PlanDataTableTest extends TestCase
             'max_branches' => 3,
             'max_warehouses' => 2,
             'max_products' => 5000,
-            'features' => ['sales', 'stock', 'customers'],
+            'features' => ['sales', 'stock', 'customers', 'report-sales'],
             'status' => 'active',
         ]);
 
@@ -113,5 +113,40 @@ class PlanDataTableTest extends TestCase
             'price' => 1500,
             'status' => 'active',
         ]);
+
+        $plan = Plan::where('slug', 'custom-pro-plan')->firstOrFail();
+        $this->assertEqualsCanonicalizing(
+            ['sales', 'stock', 'customers', 'report-sales'],
+            $plan->features->pluck('slug')->all(),
+        );
+    }
+
+    public function test_plan_features_can_be_updated_via_put(): void
+    {
+        $user = $this->createSuperAdmin();
+
+        $plan = Plan::create([
+            'name' => 'Update Test Plan',
+            'slug' => 'update-test-plan',
+            'price' => 500,
+            'billing_cycle' => 'monthly',
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($user)->put(route('plans.update', $plan), [
+            'name' => $plan->name,
+            'slug' => $plan->slug,
+            'price' => 500,
+            'billing_cycle' => 'monthly',
+            'status' => 'active',
+            'features' => ['report-purchase', 'report-income'],
+        ]);
+
+        $response->assertRedirect(route('plans.index'));
+        $plan->refresh();
+        $this->assertEqualsCanonicalizing(
+            ['report-purchase', 'report-income'],
+            $plan->features->pluck('slug')->all(),
+        );
     }
 }

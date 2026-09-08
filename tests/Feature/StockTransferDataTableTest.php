@@ -14,7 +14,6 @@ use Modules\Product\Models\Product;
 use Modules\Product\Models\StockTransfer;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
 use Modules\Shop\Models\Branch;
-use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
 use Modules\Shop\Models\Warehouse;
 use Spatie\Permission\Models\Permission;
@@ -49,13 +48,8 @@ class StockTransferDataTableTest extends TestCase
             'name' => 'Test Shop',
             'slug' => 'test-shop',
             'status' => 'active',
-            'enabled_features' => Features::keys(),
         ]);
-
-        $standardPlan = Plan::where('slug', 'standard')->first();
-        if ($standardPlan) {
-            $this->shop->subscribe($standardPlan);
-        }
+        $this->subscribeShopToFeatures($this->shop, Features::keys());
 
         $this->user = User::create([
             'name' => 'Test Admin',

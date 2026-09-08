@@ -255,17 +255,64 @@ $navGroups = [
         ],
     ],
     [
+        'label' => ['bn' => 'রিপোর্ট', 'en' => 'Reports'],
+        'gated' => true,
+        'items' => [
+            [
+                'key' => 'report-sales',
+                'route' => 'reports.sales',
+                'bn' => 'বিক্রয় রিপোর্ট',
+                'en' => 'Sales Report',
+                'icon' => '<path d="M4 19V9m6 10V5m6 14v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+            ],
+            [
+                'key' => 'report-purchase',
+                'route' => 'reports.purchase',
+                'bn' => 'ক্রয় রিপোর্ট',
+                'en' => 'Purchase Report',
+                'icon' => '<path d="M4 19V9m6 10V5m6 14v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+            ],
+            [
+                'key' => 'report-stock',
+                'route' => 'reports.stock',
+                'bn' => 'স্টক রিপোর্ট',
+                'en' => 'Stock Report',
+                'icon' => '<path d="M4 19V9m6 10V5m6 14v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+            ],
+            [
+                'key' => 'report-products',
+                'route' => 'reports.products',
+                'bn' => 'পণ্য রিপোর্ট',
+                'en' => 'Product Report',
+                'icon' => '<path d="M4 19V9m6 10V5m6 14v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+            ],
+            [
+                'key' => 'report-profit-loss',
+                'route' => 'reports.profit-loss',
+                'bn' => 'লাভ-ক্ষতি রিপোর্ট',
+                'en' => 'Profit & Loss Report',
+                'icon' => '<path d="M4 19V9m6 10V5m6 14v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+            ],
+            [
+                'key' => 'report-income',
+                'route' => 'reports.income',
+                'bn' => 'আয় রিপোর্ট',
+                'en' => 'Income Report',
+                'icon' => '<path d="M4 19V9m6 10V5m6 14v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+            ],
+            [
+                'key' => 'report-expense',
+                'route' => 'reports.expense',
+                'bn' => 'ব্যয় রিপোর্ট',
+                'en' => 'Expense Report',
+                'icon' => '<path d="M4 19V9m6 10V5m6 14v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+            ],
+        ],
+    ],
+    [
         'label' => ['bn' => 'অন্যান্য', 'en' => 'Other'],
         'gated' => false,
         'items' => [
-            [
-                'key' => 'reports',
-                'route' => 'reports.index',
-                'bn' => 'রিপোর্ট',
-                'en' => 'Reports',
-                'icon' => '<path d="M4 19V9m6 10V5m6 14v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
-                'gated' => true,
-            ],
             [
                 'key' => 'settings',
                 'route' => 'settings.index',

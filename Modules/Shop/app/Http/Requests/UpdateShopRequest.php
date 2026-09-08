@@ -3,8 +3,6 @@
 namespace Modules\Shop\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
-use Modules\Core\Support\Features;
 
 class UpdateShopRequest extends FormRequest
 {
@@ -24,8 +22,6 @@ class UpdateShopRequest extends FormRequest
             'phone' => ['nullable', 'string', 'max:30'],
             'address' => ['nullable', 'string', 'max:255'],
             'status' => ['required', 'in:active,inactive'],
-            'features' => ['nullable', 'array'],
-            'features.*' => [Rule::in(Features::keys())],
         ];
     }
 }

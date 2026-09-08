@@ -13,7 +13,6 @@ use Modules\Product\Models\Category;
 use Modules\Product\Models\Product;
 use Modules\Product\Models\Unit;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
-use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -43,13 +42,8 @@ class StockDataTableTest extends TestCase
             'name' => 'Test Shop',
             'slug' => 'test-shop',
             'status' => 'active',
-            'enabled_features' => Features::keys(),
         ]);
-
-        $standardPlan = Plan::where('slug', 'standard')->first();
-        if ($standardPlan) {
-            $this->shop->subscribe($standardPlan);
-        }
+        $this->subscribeShopToFeatures($this->shop, Features::keys());
 
         $this->user = User::create([
             'name' => 'Test Admin',
@@ -150,8 +144,8 @@ class StockDataTableTest extends TestCase
             'name' => 'Other Shop',
             'slug' => 'other-shop',
             'status' => 'active',
-            'enabled_features' => Features::keys(),
         ]);
+        $this->subscribeShopToFeatures($otherShop, Features::keys());
 
         $otherCategory = Category::create(['shop_id' => $otherShop->id, 'name' => 'Other Category']);
         $otherProduct = Product::create([

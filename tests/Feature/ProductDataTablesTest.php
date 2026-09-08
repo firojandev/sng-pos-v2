@@ -49,13 +49,13 @@ class ProductDataTablesTest extends TestCase
             'name' => 'Test Shop',
             'slug' => 'test-shop',
             'status' => 'active',
-            'enabled_features' => Features::keys(),
         ]);
 
         $standardPlan = Plan::where('slug', 'standard')->first();
         if ($standardPlan) {
             $this->shop->subscribe($standardPlan);
         }
+        $this->subscribeShopToFeatures($this->shop, Features::keys());
 
         $this->user = User::create([
             'name' => 'Test Admin',

@@ -5,7 +5,6 @@ namespace Modules\Shop\Http\Requests;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Modules\Core\Support\Features;
 
 class StoreShopRequest extends FormRequest
 {
@@ -27,8 +26,6 @@ class StoreShopRequest extends FormRequest
             'phone' => ['nullable', 'string', 'max:30'],
             'address' => ['nullable', 'string', 'max:255'],
             'status' => ['required', 'in:active,inactive'],
-            'features' => ['nullable', 'array'],
-            'features.*' => [Rule::in(Features::keys())],
 
             'owner_type' => ['nullable', 'in:new,existing'],
             'existing_user_id' => [
@@ -56,8 +53,6 @@ class StoreShopRequest extends FormRequest
                 'min:8',
                 'confirmed',
             ],
-            'admin_role' => ['required', 'string', 'max:255', Rule::notIn(['Super Admin'])],
-
             'plan_id' => ['nullable', 'exists:plans,id'],
             'subscription_status' => ['nullable', 'string', 'in:active,trialing,trial,past_due,suspended,cancelled,expired'],
             'current_period_start' => ['nullable', 'date'],

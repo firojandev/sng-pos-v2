@@ -44,12 +44,13 @@ class AuditLogDataTableTest extends TestCase
             'name' => 'Audit Test Shop',
             'slug' => 'audit-test-shop',
             'status' => 'active',
-            'enabled_features' => Features::keys(),
         ]);
 
         $standardPlan = Plan::where('slug', 'standard')->first();
         if ($standardPlan) {
             $this->shop->subscribe($standardPlan);
+        } else {
+            $this->subscribeShopToFeatures($this->shop, Features::keys());
         }
 
         $this->adminUser = User::create([

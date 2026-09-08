@@ -50,13 +50,13 @@ class ExpenseDataTablesTest extends TestCase
             'name' => 'Finance Test Shop',
             'slug' => 'finance-test-shop',
             'status' => 'active',
-            'enabled_features' => Features::keys(),
         ]);
 
         $standardPlan = Plan::where('slug', 'standard')->first();
         if ($standardPlan) {
             $this->shop->subscribe($standardPlan);
         }
+        $this->subscribeShopToFeatures($this->shop, Features::keys());
 
         $this->user = User::create([
             'name' => 'Finance Admin',
