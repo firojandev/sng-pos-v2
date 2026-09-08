@@ -3,6 +3,7 @@
 namespace Modules\Shop\Models;
 
 use App\Models\User;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -26,9 +27,36 @@ class Shop extends Model implements Subscribable
         'slug',
         'store_code',
         'phone',
+        'email',
         'address',
+        'logo',
+        'invoice_footer',
+        'currency_symbol',
         'status',
     ];
+
+    /**
+     * Get the shop's logo URL.
+     */
+    protected function logoUrl(): Attribute
+    {
+        return Attribute::make(
+            get: function (): ?string {
+                if (! $this->logo) {
+                    return null;
+                }
+
+                if (str_starts_with($this->logo, 'http://') || str_starts_with($this->logo, 'https://')) {
+                    return $this->logo;
+                }
+
+                $clean = ltrim($this->logo, '/');
+                $path = str_starts_with($clean, 'storage/') ? $clean : 'storage/'.$clean;
+
+                return asset($path);
+            }
+        );
+    }
 
     protected static function booted(): void
     {
@@ -85,6 +113,22 @@ class Shop extends Model implements Subscribable
     public function cashAccount(): HasOne
     {
         return $this->hasOne(Account::class, 'shop_id')->where('type', 'cash');
+    }
+
+    /**
+     * Branches belonging to this shop.
+     */
+    public function branches(): HasMany
+    {
+        return $this->hasMany(Branch::class, 'shop_id');
+    }
+
+    /**
+     * Warehouses belonging to this shop.
+     */
+    public function warehouses(): HasMany
+    {
+        return $this->hasMany(Warehouse::class, 'shop_id');
     }
 
     /**

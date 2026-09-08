@@ -251,34 +251,33 @@ class MultiShopOwnerTest extends TestCase
         ]);
         $superAdmin->assignRole('Super Admin');
 
-        $existingOwner = User::create([
-            'name' => 'Chain Owner',
-            'email' => 'chain@owner.test',
-            'password' => Hash::make('existingpassword'),
-        ]);
-        $existingOwner->assignRole('Owner');
-
-        // Create first shop
+        // Create first shop with a new owner
         $this->actingAs($superAdmin)->post(route('shops.store'), [
             'name' => 'Chain Branch 1',
             'slug' => 'chain-branch-1',
             'store_code' => 'CHAIN-01',
             'phone' => '01711111111',
             'status' => 'active',
+            'owner_type' => 'new',
             'admin_name' => 'Chain Owner',
+            'admin_phone' => '01900000001',
             'admin_email' => 'chain@owner.test',
+            'admin_password' => 'Password123!',
+            'admin_password_confirmation' => 'Password123!',
             'admin_role' => 'Owner',
         ]);
 
-        // Create second shop with same owner email
+        $existingOwner = User::where('phone', '01900000001')->firstOrFail();
+
+        // Create second shop selecting the existing owner
         $this->actingAs($superAdmin)->post(route('shops.store'), [
             'name' => 'Chain Branch 2',
             'slug' => 'chain-branch-2',
             'store_code' => 'CHAIN-02',
             'phone' => '01722222222',
             'status' => 'active',
-            'admin_name' => 'Chain Owner',
-            'admin_email' => 'chain@owner.test',
+            'owner_type' => 'existing',
+            'existing_user_id' => $existingOwner->id,
             'admin_role' => 'Owner',
         ]);
 
@@ -384,6 +383,7 @@ class MultiShopOwnerTest extends TestCase
             'status' => 'active',
             'owner_type' => 'new',
             'admin_name' => 'Monthly Owner',
+            'admin_phone' => '01711223301',
             'admin_email' => 'monthly@owner.test',
             'admin_password' => 'password123',
             'admin_password_confirmation' => 'password123',
@@ -427,6 +427,7 @@ class MultiShopOwnerTest extends TestCase
             'status' => 'active',
             'owner_type' => 'new',
             'admin_name' => 'Yearly Owner',
+            'admin_phone' => '01711223302',
             'admin_email' => 'yearly@owner.test',
             'admin_password' => 'password123',
             'admin_password_confirmation' => 'password123',

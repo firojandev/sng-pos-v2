@@ -195,7 +195,7 @@ class SaleController extends Controller
                 ? Customer::where('id', $customerId)->lockForUpdate()->first()
                 : null;
 
-            [$subtotal, $discount, $tax, $deliveryCharge, $total] = $this->calculateBaseTotals($items, $data);
+            [$subtotal, $discount, $tax, $deliveryCharge, $total, $productDiscount, $adjustment] = $this->calculateBaseTotals($items, $data);
             $profit = $this->calculateProfit($items, $discount);
 
             $customerPreviousDue = 0.0;
@@ -223,6 +223,12 @@ class SaleController extends Controller
                 ]);
             }
 
+            if (! $customer && $total > 0 && round($total - $totalSubmittedPaid, 2) > 0.01) {
+                throw ValidationException::withMessages([
+                    'payments' => 'ওয়াক-ইন গ্রাহকের ক্ষেত্রে বাকি বিক্রয় সম্ভব নয়। সম্পূর্ণ মূল্য পরিশোধ করতে হবে অথবা গ্রাহক নির্বাচন করুন। / Walk-in customers cannot have due sales. Full payment is required or select a customer.',
+                ]);
+            }
+
             $salePaid = min($totalSubmittedPaid, $total);
             $saleDue = round(max($total - $salePaid, 0), 2);
             $saleStatus = $saleDue <= 0 ? 'paid' : ($salePaid <= 0 ? 'due' : 'partial');
@@ -233,8 +239,10 @@ class SaleController extends Controller
                 'sale_date' => $data['sale_date'],
                 'subtotal' => $subtotal,
                 'discount' => $discount,
+                'product_discount' => $productDiscount,
                 'tax' => $tax,
                 'delivery_charge' => $deliveryCharge,
+                'adjustment' => $adjustment,
                 'total' => $total,
                 'paid_amount' => $salePaid,
                 'due_amount' => $saleDue,
@@ -290,7 +298,7 @@ class SaleController extends Controller
                 ? Customer::where('id', $customerId)->lockForUpdate()->first()
                 : null;
 
-            [$subtotal, $discount, $tax, $deliveryCharge, $total] = $this->calculateBaseTotals($items, $data);
+            [$subtotal, $discount, $tax, $deliveryCharge, $total, $productDiscount, $adjustment] = $this->calculateBaseTotals($items, $data);
             $profit = $this->calculateProfit($items, $discount);
 
             $customerPreviousDue = 0.0;
@@ -318,6 +326,12 @@ class SaleController extends Controller
                 ]);
             }
 
+            if (! $customer && $total > 0 && round($total - $totalSubmittedPaid, 2) > 0.01) {
+                throw ValidationException::withMessages([
+                    'payments' => 'ওয়াক-ইন গ্রাহকের ক্ষেত্রে বাকি বিক্রয় সম্ভব নয়। সম্পূর্ণ মূল্য পরিশোধ করতে হবে অথবা গ্রাহক নির্বাচন করুন। / Walk-in customers cannot have due sales. Full payment is required or select a customer.',
+                ]);
+            }
+
             $salePaid = min($totalSubmittedPaid, $total);
             $saleDue = round(max($total - $salePaid, 0), 2);
             $saleStatus = $saleDue <= 0 ? 'paid' : ($salePaid <= 0 ? 'due' : 'partial');
@@ -328,8 +342,10 @@ class SaleController extends Controller
                 'invoice_no' => $data['invoice_no'] ?? $sale->invoice_no,
                 'subtotal' => $subtotal,
                 'discount' => $discount,
+                'product_discount' => $productDiscount,
                 'tax' => $tax,
                 'delivery_charge' => $deliveryCharge,
+                'adjustment' => $adjustment,
                 'total' => $total,
                 'paid_amount' => $salePaid,
                 'due_amount' => $saleDue,
@@ -403,12 +419,14 @@ class SaleController extends Controller
     }
 
     /**
-     * @return array{0: float, 1: float, 2: float, 3: float, 4: float}
+     * @return array{0: float, 1: float, 2: float, 3: float, 4: float, 5: float, 6: float}
      */
     private function calculateBaseTotals(array $items, array $data): array
     {
         $subtotal = round((float) collect($items)->sum(fn ($item) => $this->lineAmount($item)), 2);
         $discount = round((float) ($data['discount'] ?? 0), 2);
+
+        $productDiscount = round((float) collect($items)->sum(fn ($item) => (float) ($item['discount'] ?? 0)), 2);
 
         $productVatMap = Product::whereIn('id', collect($items)->pluck('product_id'))
             ->get(['id', 'is_vat', 'vat_percentage'])
@@ -426,9 +444,10 @@ class SaleController extends Controller
         }), 2);
 
         $deliveryCharge = round((float) ($data['delivery_charge'] ?? 0), 2);
-        $total = round(max($subtotal - $discount + $tax + $deliveryCharge, 0), 2);
+        $adjustment = round((float) ($data['adjustment'] ?? 0), 2);
+        $total = round(max($subtotal - $discount + $tax + $deliveryCharge + $adjustment, 0), 2);
 
-        return [$subtotal, $discount, $tax, $deliveryCharge, $total];
+        return [$subtotal, $discount, $tax, $deliveryCharge, $total, $productDiscount, $adjustment];
     }
 
     /**

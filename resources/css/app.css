@@ -2368,6 +2368,7 @@ table.pos-table{width:100%; border-collapse:collapse; min-width:820px;}
   flex:1;
   max-height:600px;
   max-height:min(580px, calc(100vh - 360px));
+  min-height:300px;
   overflow-y:auto;
   overflow-x:hidden;
   padding:0 18px;
@@ -2472,7 +2473,7 @@ table.pos-table{width:100%; border-collapse:collapse; min-width:820px;}
 .cart-item{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px; box-shadow:var(--shadow-sm);}
 .cart-item .ci-head{display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap; position:relative;}
 .cart-item .ci-head .thumb{width:32px; height:32px; border-radius:8px; background:var(--paper); display:flex; align-items:center; justify-content:center; flex:0 0 auto; color:var(--ink-600);}
-.cart-item .ci-head .nm{font-weight:700; font-size:13px; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1 1 auto; max-width:none;}
+.cart-item .ci-head .nm{font-weight:700; font-size:13px; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1 1 auto; max-width:60%;}
 .cart-item .ci-actions{display:flex; gap:5px; flex:0 0 auto; margin-left:auto;}
 .cart-item .ci-actions button{width:26px; height:26px; border-radius:8px; border:1px solid var(--border); background:var(--paper); display:flex; align-items:center; justify-content:center; color:var(--ink-700); position:relative; cursor:pointer;}
 .cart-item .ci-actions button.active{background:var(--blue-100); border-color:var(--blue-ic-bg); color:var(--blue-ink);}
@@ -2538,16 +2539,20 @@ body.lang-en .ci-head-popovers .item-popover label.en{display:inline !important;
 .ci-head-popovers .barcode-popover input{width:240px; max-width:100%;}
 .ci-head-popovers .validity-popover .ci-batch-input{width:100px;}
 .ci-head-popovers .validity-popover .ci-mfg-input, .ci-head-popovers .validity-popover .ci-expiry-input{width:130px; font-size:11.5px;}
-.ci-head-popovers .warranty-popover{gap:6px;}
-.ci-head-popovers .warranty-presets{display:flex; gap:4px; margin-bottom:0;}
-.ci-head-popovers .warranty-presets button{border:1px solid var(--border); background:var(--card); border-radius:6px; padding:3px 6px; font-size:10.5px; font-weight:600; color:var(--ink-700); cursor:pointer;}
-.ci-head-popovers .warranty-presets button:hover{border-color:var(--teal-800); background:var(--teal-100); color:var(--teal-800);}
-.ci-head-popovers .warranty-custom{display:flex; gap:4px; align-items:center;}
-.ci-head-popovers .warranty-custom input{width:55px; height:28px; padding:3px 6px; font-size:11px;}
-.ci-head-popovers .warranty-custom select{height:28px; padding:2px 5px; font-size:11px;}
-.ci-head-popovers .warranty-custom .btn{height:28px; padding:0 8px; font-size:11px; display:inline-flex; align-items:center;}
-.ci-head-popovers .warranty-clear{margin-top:0;}
-.ci-head-popovers .warranty-clear button{background:none; border:none; color:var(--red-600); font-size:10.5px; font-weight:700; cursor:pointer;}
+.cart-item .ci-head > .warranty-popover{display:none; flex-direction:column; gap:0; padding:0; border:1px solid var(--border); border-radius:12px; background:var(--card); box-shadow:var(--shadow-card); overflow:hidden; position:absolute; right:0; top:100%; z-index:20; max-width:250px; width:250px; margin-top:4px; animation:popoverFadeIn .15s ease-in-out;}
+.cart-item .ci-head > .warranty-popover.open{display:flex;}
+.cart-item .ci-head > .warranty-popover .warranty-title{padding:10px 14px 6px; font-size:13px; font-weight:700; color:var(--ink-900); font-family:'Noto Sans Bengali','SolaimanLipi','Plus Jakarta Sans',sans-serif;}
+.cart-item .ci-head > .warranty-popover .warranty-presets{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; padding:4px 14px 8px; margin-bottom:0;}
+.cart-item .ci-head > .warranty-popover .warranty-presets button{border:1px solid var(--border); background:var(--card); border-radius:8px; padding:6px 4px; font-size:11px; font-weight:600; color:var(--ink-700); cursor:pointer; text-align:center; transition:all .15s ease; font-family:'Noto Sans Bengali','SolaimanLipi',sans-serif;}
+.cart-item .ci-head > .warranty-popover .warranty-presets button:hover{border-color:var(--teal-800); background:var(--teal-100); color:var(--teal-800);}
+.cart-item .ci-head > .warranty-popover .warranty-presets button.selected{border-color:var(--teal-800); background:var(--teal-100); color:var(--teal-800);}
+.cart-item .ci-head > .warranty-popover .warranty-custom{display:flex; gap:6px; align-items:center; padding:4px 14px 10px;}
+.cart-item .ci-head > .warranty-popover .warranty-custom input{flex:1; min-width:0; height:34px; border:1px solid var(--border); border-radius:8px; padding:4px 10px; font-size:12px; background:var(--card); color:var(--ink-900); outline:none; font-family:'Noto Sans Bengali','SolaimanLipi',sans-serif; transition:border-color .15s ease, box-shadow .15s ease;}
+.cart-item .ci-head > .warranty-popover .warranty-custom input:focus{border-color:var(--teal-800); box-shadow:var(--form-focus-ring);}
+.cart-item .ci-head > .warranty-popover .warranty-custom select{height:34px; border:1px solid var(--border); border-radius:8px; padding:4px 8px; font-size:12px; background:var(--card); color:var(--ink-900); outline:none; font-family:'Noto Sans Bengali','SolaimanLipi',sans-serif; transition:border-color .15s ease, box-shadow .15s ease; flex-shrink:0;}
+.cart-item .ci-head > .warranty-popover .warranty-custom select:focus{border-color:var(--teal-800); box-shadow:var(--form-focus-ring);}
+.cart-item .ci-head > .warranty-popover .warranty-set-main-btn{display:block; width:calc(100% - 28px); margin:0 14px 12px; padding:8px 0; border:none; border-radius:8px; background:var(--teal-800); color:#fff; font-size:13px; font-weight:700; cursor:pointer; text-align:center; font-family:'Noto Sans Bengali','SolaimanLipi','Plus Jakarta Sans',sans-serif; transition:background .15s ease, opacity .15s ease;}
+.cart-item .ci-head > .warranty-popover .warranty-set-main-btn:hover{opacity:.88;}
 
 .cart-item .ci-actions .warranty-toggle-btn.has-value{width:auto; height:auto; min-height:26px; padding:4px 8px; gap:5px;}
 .cart-item .ci-actions .warranty-toggle-btn .ci-warranty-label{display:none;}

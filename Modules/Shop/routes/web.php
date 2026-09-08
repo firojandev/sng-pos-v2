@@ -5,6 +5,7 @@ use Modules\Shop\Http\Controllers\BranchController;
 use Modules\Shop\Http\Controllers\PlanController;
 use Modules\Shop\Http\Controllers\ShopController;
 use Modules\Shop\Http\Controllers\ShopSelectionController;
+use Modules\Shop\Http\Controllers\ShopSettingsController;
 use Modules\Shop\Http\Controllers\SubscriptionController;
 use Modules\Shop\Http\Controllers\WarehouseController;
 
@@ -40,4 +41,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('subscription', [SubscriptionController::class, 'show'])
         ->name('subscription.show')
         ->middleware('feature:subscription');
+    Route::get('settings', [ShopSettingsController::class, 'edit'])->name('settings.index');
+    Route::put('settings', [ShopSettingsController::class, 'update'])->name('settings.update');
 });

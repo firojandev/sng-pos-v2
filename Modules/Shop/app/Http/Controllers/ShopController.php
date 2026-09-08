@@ -139,22 +139,18 @@ class ShopController extends Controller
                     $admin->save();
                 }
             } else {
+                $adminPhone = $request->validated('admin_phone');
                 $adminEmail = $request->validated('admin_email');
-                $admin = User::where('email', $adminEmail)->first();
+                $adminUsername = $request->validated('admin_username');
 
-                if (! $admin) {
-                    $admin = User::create([
-                        'shop_id' => $shop->id,
-                        'name' => $request->validated('admin_name'),
-                        'email' => $adminEmail,
-                        'password' => Hash::make($request->validated('admin_password')),
-                    ]);
-                } else {
-                    if (! $admin->shop_id) {
-                        $admin->shop_id = $shop->id;
-                        $admin->save();
-                    }
-                }
+                $admin = User::create([
+                    'shop_id' => $shop->id,
+                    'name' => $request->validated('admin_name'),
+                    'username' => $adminUsername ?: null,
+                    'email' => $adminEmail ?: null,
+                    'phone' => $adminPhone,
+                    'password' => Hash::make($request->validated('admin_password')),
+                ]);
             }
 
             $roleName = 'Admin';

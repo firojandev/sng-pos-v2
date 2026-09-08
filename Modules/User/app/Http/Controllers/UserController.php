@@ -136,6 +136,7 @@ class UserController extends Controller
                     'has_pin' => ! empty($user->pin),
                     'support_pin' => $user->support_pin,
                     'role' => $user->roles->first()?->name ?? '',
+                    'is_owner' => $user->isShopOwner(),
                 ],
                 'roles' => $this->assignableRoles()->map(fn ($r) => ['id' => $r->id, 'name' => $r->name]),
                 'update_url' => route('users.update', $user),
@@ -154,7 +155,10 @@ class UserController extends Controller
         $user->name = $request->validated('name');
         $user->username = $request->validated('username');
         $user->email = $request->validated('email');
-        $user->phone = $request->validated('phone');
+
+        if (! $user->isShopOwner()) {
+            $user->phone = $request->validated('phone');
+        }
 
         if ($request->filled('password')) {
             $user->password = Hash::make($request->validated('password'));
