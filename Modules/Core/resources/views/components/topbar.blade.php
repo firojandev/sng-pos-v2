@@ -39,7 +39,56 @@
                 ? $authUser->activeShops()->get()
                 : collect();
             $currentShop = $authUser?->shop;
+            $canQuickSale = $authUser && $currentShop && $currentShop->hasFeature('quick-sale') && $authUser->can('quick-sale.create');
         @endphp
+
+        @if ($canQuickSale)
+            <style>
+                .btn-quick-sale-topbar {
+                    display: inline-flex; align-items: center; gap: 6px;
+                    font-weight: 600; font-size: 12px; padding: 5px 12px;
+                    border-radius: 8px; border: 1px solid var(--border);
+                    background: var(--card); color: var(--ink-800);
+                    cursor: pointer; height: 32px; transition: all 0.15s ease;
+                }
+                .btn-quick-sale-topbar:hover {
+                    border-color: #0d9488; color: #0f766e;
+                    background: rgba(13, 148, 136, 0.08);
+                }
+                [data-theme="dark"] .btn-quick-sale-topbar,
+                :root[data-theme="dark"] .btn-quick-sale-topbar {
+                    color: #cbd5e1;
+                }
+                [data-theme="dark"] .btn-quick-sale-topbar:hover,
+                :root[data-theme="dark"] .btn-quick-sale-topbar:hover {
+                    color: #2dd4bf; border-color: #0d9488;
+                    background: rgba(20, 184, 166, 0.18);
+                }
+                .quick-sale-kbd {
+                    font-size: 10px; font-family: monospace;
+                    background: var(--paper-line); color: var(--ink-500);
+                    padding: 1px 5px; border-radius: 4px;
+                }
+                [data-theme="dark"] .quick-sale-kbd,
+                :root[data-theme="dark"] .quick-sale-kbd {
+                    background: rgba(255, 255, 255, 0.08); color: #94a3b8;
+                }
+            </style>
+            <button
+                type="button"
+                class="btn-quick-sale-topbar"
+                data-quick-sale-trigger="true"
+                title="দ্রুত বেচা (Alt+Q) / Quick Sale"
+            >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--teal-800);">
+                    <circle cx="12" cy="12" r="9.2"/>
+                    <path d="M12 7.5v9M8.7 15.3c0 1.2 1.2 2.1 3.3 2.1s3.3-.9 3.3-2.1c0-3-6.6-1.2-6.6-4.1 0-1.2 1.2-2.1 3.3-2.1s3.3.9 3.3 2.1"/>
+                </svg>
+                <span class="bn">দ্রুত বেচা</span>
+                <span class="en" style="display:none;">Quick Sale</span>
+                <span class="quick-sale-kbd">Alt+Q</span>
+            </button>
+        @endif
 
         @if ($accessibleShops->count() > 1)
             <style>

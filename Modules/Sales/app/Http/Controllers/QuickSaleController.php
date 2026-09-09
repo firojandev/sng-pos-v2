@@ -25,7 +25,7 @@ class QuickSaleController extends Controller
         return view('sales::quick-sale.create', compact('accounts', 'bankAccounts', 'defaultCashAccount', 'defaultBankAccount'));
     }
 
-    public function store(StoreQuickSaleRequest $request): RedirectResponse
+    public function store(StoreQuickSaleRequest $request): RedirectResponse|JsonResponse
     {
         $data = $request->validated();
         $customer = $this->resolveCustomer($data);
@@ -106,6 +106,26 @@ class QuickSaleController extends Controller
 
             return $sale;
         });
+
+        if ($request->wantsJson() || $request->ajax()) {
+            $canPrint = auth()->user()?->can('sales.print') ?? true;
+
+            return response()->json([
+                'success' => true,
+                'message' => 'দ্রুত বেচা সফলভাবে সম্পন্ন হয়েছে',
+                'message_en' => 'Quick sale completed successfully',
+                'sale' => [
+                    'id' => $sale->id,
+                    'invoice_no' => $sale->invoice_no,
+                    'total' => (float) $sale->total,
+                    'paid_amount' => (float) $sale->paid_amount,
+                    'payment_method' => $sale->payment_method,
+                    'customer_name' => $customer?->name ?? 'ওয়াক-ইন গ্রাহক (Walk-in)',
+                    'print_url' => $canPrint ? route('sales.print-invoice', $sale) : null,
+                    'invoice_modal_url' => route('sales.invoice-modal', $sale),
+                ],
+            ]);
+        }
 
         return redirect()->route('sales.index')
             ->with('status', 'দ্রুত বেচা সফলভাবে যোগ করা হয়েছে')

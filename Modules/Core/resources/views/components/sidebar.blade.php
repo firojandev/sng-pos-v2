@@ -411,7 +411,7 @@ $isNavItemVisible = function (array $item, bool $groupGated, $user) {
                         @endif
 
                         @foreach ($visibleItems as $item)
-                            <a href="{{ route($item['route']) }}" class="nav-item {{ ($active === $item['key'] || ($item['key'] === 'due-ledger' && $active === 'sales-due-ledger')) ? 'active' : '' }}">
+                            <a href="{{ route($item['route']) }}" class="nav-item {{ ($active === $item['key'] || ($item['key'] === 'due-ledger' && $active === 'sales-due-ledger')) ? 'active' : '' }}" @if($item['key'] === 'quick-sale') data-quick-sale-trigger="true" @endif>
                                 <svg viewBox="0 0 24 24" fill="none">{!! $item['icon'] !!}</svg>
                                 <span class="bn">{{ $item['bn'] }}</span>
                                 <span class="en">{{ $item['en'] }}</span>

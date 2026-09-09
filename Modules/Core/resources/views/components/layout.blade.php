@@ -91,6 +91,8 @@
 
 <div class="toast" id="toast"></div>
 
+@include('sales::quick-sale._modal')
+
 @if (session('status') || session('success') || session('error'))
     <script>
         (function () {
