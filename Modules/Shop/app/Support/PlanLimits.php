@@ -3,6 +3,7 @@
 namespace Modules\Shop\Support;
 
 use Modules\Shop\Models\Shop;
+use Revoltify\Subscriptionify\Services\FeatureResolver;
 
 class PlanLimits
 {
@@ -25,14 +26,20 @@ class PlanLimits
         $featureSlug = str_replace('_', '-', $limitKey);
 
         if ($shop->subscribed()) {
-            if ($shop->isUnlimitedUsage($featureSlug)) {
-                return null;
-            }
+            $resolver = resolve(FeatureResolver::class);
+            $resolved = $resolver->resolve($shop, $featureSlug);
 
-            if (! $shop->canConsume($featureSlug, 1)) {
-                $planName = $shop->subscription()?->getPlan()?->getName() ?? 'বর্তমান';
+            if ($resolved) {
+                if ($resolved->isUnlimited()) {
+                    return null;
+                }
 
-                return "আপনার '{$planName}' প্ল্যানে এই রিসোর্সের সীমা পূর্ণ হয়েছে। আরও যোগ করতে প্ল্যান আপগ্রেড করুন।";
+                $limit = (int) $resolved->limit;
+                if ($limit > 0 && $currentCount >= $limit) {
+                    $planName = $shop->subscription()?->getPlan()?->getName() ?? 'বর্তমান';
+
+                    return "আপনার '{$planName}' প্ল্যানে এই রিসোর্সের সীমা পূর্ণ হয়েছে। আরও যোগ করতে প্ল্যান আপগ্রেড করুন।";
+                }
             }
         }
 

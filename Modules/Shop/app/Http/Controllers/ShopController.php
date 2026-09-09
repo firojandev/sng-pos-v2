@@ -191,11 +191,16 @@ class ShopController extends Controller
                         ? Carbon::parse($request->validated('trial_ends_at'))
                         : null;
 
+                    $subStatus = $request->validated('subscription_status', 'active');
+                    if ($subStatus === 'trial') {
+                        $subStatus = 'trialing';
+                    }
+
                     $shop->subscriptions()->create([
                         'subscribable_type' => Shop::class,
                         'subscribable_id' => $shop->id,
                         'plan_id' => $plan->id,
-                        'status' => $request->validated('subscription_status', 'active'),
+                        'status' => $subStatus,
                         'trial_ends_at' => $trialEndsAt,
                         'starts_at' => $startDate,
                         'ends_at' => $endDate,
@@ -274,6 +279,11 @@ class ShopController extends Controller
                 ? Carbon::parse($request->validated('trial_ends_at'))
                 : null;
 
+            $subStatus = $request->validated('subscription_status') ?? $request->validated('status', 'active');
+            if ($subStatus === 'trial') {
+                $subStatus = 'trialing';
+            }
+
             $shop->subscriptions()->updateOrCreate(
                 [
                     'subscribable_type' => Shop::class,
@@ -281,7 +291,7 @@ class ShopController extends Controller
                 ],
                 [
                     'plan_id' => $plan->id,
-                    'status' => $request->validated('status', 'active'),
+                    'status' => $subStatus,
                     'trial_ends_at' => $trialEndsAt,
                     'starts_at' => $startDate,
                     'ends_at' => $endDate,

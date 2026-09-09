@@ -14,7 +14,7 @@ class StoreShopRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        if (! $this->filled('admin_phone') && $this->filled('phone')) {
+        if ($this->input('owner_type') !== 'existing' && ! $this->filled('admin_phone') && $this->filled('phone')) {
             $this->merge(['admin_phone' => $this->input('phone')]);
         }
     }
@@ -49,20 +49,20 @@ class StoreShopRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:30',
-                Rule::unique('users', 'phone'),
+                Rule::when(! $isExisting, [Rule::unique('users', 'phone')]),
             ],
             'admin_username' => [
                 'nullable',
                 'string',
                 'max:50',
                 'alpha_dash',
-                Rule::unique('users', 'username'),
+                Rule::when(! $isExisting, [Rule::unique('users', 'username')]),
             ],
             'admin_email' => [
                 'nullable',
                 'email',
                 'max:255',
-                Rule::unique('users', 'email'),
+                Rule::when(! $isExisting, [Rule::unique('users', 'email')]),
             ],
             'admin_password' => [
                 Rule::requiredIf(! $isExisting),

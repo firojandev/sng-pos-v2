@@ -6,7 +6,6 @@ use App\DataTables\BaseDataTable;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Illuminate\Support\Facades\Blade;
 use Modules\Shop\Models\Shop;
-use Modules\Shop\Models\Subscription;
 use Revoltify\Subscriptionify\Enums\SubscriptionStatus;
 use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
@@ -61,7 +60,7 @@ class ShopsDataTable extends BaseDataTable
                         default => 'grey',
                     };
 
-                    $label = Subscription::statusLabels()[$statusKey]['bn'] ?? $statusKey;
+                    $label = $subscription->statusLabel()['bn'] ?? $statusKey;
                     $statusBadge = Blade::render('<x-core::badge :color="$color" size="xs" variant="soft">{{ $label }}</x-core::badge>', ['color' => $color, 'label' => $label]);
 
                     return '<div style="display:flex; flex-direction:column; align-items:flex-start; gap:3px;">'

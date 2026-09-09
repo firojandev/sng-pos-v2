@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Hash;
 use Modules\Core\Observers\AuditObserver;
 use Modules\Employee\Models\Employee;
 use Modules\Shop\Models\Shop;
+use Spatie\Permission\Contracts\Role;
 use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'username', 'email', 'phone', 'avatar', 'password', 'pin', 'support_pin', 'shop_id', 'email_verified_at'])]
@@ -273,10 +274,34 @@ class User extends Authenticatable
             ->exists();
     }
 
+    protected function resolvePermissionsTeamId(mixed ...$roles): int|string
+    {
+        foreach ($roles as $role) {
+            if ($role instanceof Role && ! empty($role->shop_id)) {
+                return $role->shop_id;
+            }
+            if (is_array($role)) {
+                foreach ($role as $r) {
+                    if ($r instanceof Role && ! empty($r->shop_id)) {
+                        return $r->shop_id;
+                    }
+                }
+            }
+        }
+
+        $currentTeamId = getPermissionsTeamId();
+        if ($currentTeamId !== null && $currentTeamId !== 0 && $currentTeamId !== '') {
+            return $currentTeamId;
+        }
+
+        return $this->shop_id ?? 0;
+    }
+
     public function assignRole(...$roles): static
     {
         $previousTeamId = getPermissionsTeamId();
-        setPermissionsTeamId($this->shop_id ?? 0);
+        $targetTeamId = $this->resolvePermissionsTeamId(...$roles);
+        setPermissionsTeamId($targetTeamId);
 
         try {
             return $this->spatieAssignRole(...$roles);
@@ -288,7 +313,8 @@ class User extends Authenticatable
     public function syncRoles(...$roles): static
     {
         $previousTeamId = getPermissionsTeamId();
-        setPermissionsTeamId($this->shop_id ?? 0);
+        $targetTeamId = $this->resolvePermissionsTeamId(...$roles);
+        setPermissionsTeamId($targetTeamId);
 
         try {
             return $this->spatieSyncRoles(...$roles);
@@ -300,7 +326,8 @@ class User extends Authenticatable
     public function removeRole($role): static
     {
         $previousTeamId = getPermissionsTeamId();
-        setPermissionsTeamId($this->shop_id ?? 0);
+        $targetTeamId = $this->resolvePermissionsTeamId($role);
+        setPermissionsTeamId($targetTeamId);
 
         try {
             return $this->spatieRemoveRole($role);
