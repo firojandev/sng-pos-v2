@@ -264,4 +264,110 @@ class SaleTaxAndWholesaleFeatureTest extends TestCase
         $this->assertEquals(7500.00, (float) $sale->total);
         $this->assertEquals(7500.00, (float) $sale->paid_amount);
     }
+
+    public function test_sale_creation_form_exposes_product_discount_data(): void
+    {
+        $discountProduct = Product::create([
+            'shop_id' => $this->shop->id,
+            'category_id' => $this->taxProduct->category_id,
+            'name' => 'ডিসকাউন্ট পণ্য',
+            'barcode' => '777888999',
+            'sku' => 'DISC-001',
+            'purchase_price' => 400,
+            'sale_price' => 500,
+            'has_discount' => true,
+            'discount_type' => 'percentage',
+            'discount_value' => 10.00,
+            'status' => 'active',
+        ]);
+
+        Batch::create([
+            'shop_id' => $this->shop->id,
+            'product_id' => $discountProduct->id,
+            'warehouse_id' => $this->warehouse->id,
+            'batch_no' => 'BATCH-DISC-01',
+            'quantity' => 50,
+            'purchase_price' => 400,
+            'sale_price' => 500,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($this->user)->get(route('sales.create'));
+        $response->assertOk();
+
+        $content = $response->getContent();
+        $this->assertStringContainsString('hasDiscount', $content);
+        $this->assertStringContainsString('discountType', $content);
+        $this->assertStringContainsString('discountValue', $content);
+        $this->assertStringContainsString('percentage', $content);
+        $this->assertStringContainsString('ci-discount-raw', $content);
+        $this->assertStringContainsString('ci-discount-type', $content);
+    }
+
+    public function test_sale_stores_with_item_product_discount(): void
+    {
+        $discountProduct = Product::create([
+            'shop_id' => $this->shop->id,
+            'category_id' => $this->taxProduct->category_id,
+            'name' => 'ডিসকাউন্ট পণ্য ফ্ল্যাট',
+            'barcode' => '1234567890',
+            'sku' => 'DISC-FLAT-001',
+            'purchase_price' => 300,
+            'sale_price' => 500,
+            'has_discount' => true,
+            'discount_type' => 'flat',
+            'discount_value' => 50.00,
+            'status' => 'active',
+        ]);
+
+        Batch::create([
+            'shop_id' => $this->shop->id,
+            'product_id' => $discountProduct->id,
+            'warehouse_id' => $this->warehouse->id,
+            'batch_no' => 'BATCH-DISC-FLAT-01',
+            'quantity' => 50,
+            'purchase_price' => 300,
+            'sale_price' => 500,
+            'status' => 'active',
+        ]);
+
+        $payload = [
+            'warehouse_id' => $this->warehouse->id,
+            'customer_id' => $this->customer->id,
+            'sale_date' => now()->toDateString(),
+            'discount' => 0,
+            'delivery_charge' => 0,
+            'items' => [
+                [
+                    'product_id' => $discountProduct->id,
+                    'quantity' => 2,
+                    'unit_price' => 500.00,
+                    'discount' => 100.00, // 50 flat x 2
+                ],
+            ],
+            'payments' => [
+                [
+                    'account_id' => $this->cashAccount->id,
+                    'method' => 'cash',
+                    'amount' => 900.00,
+                ],
+            ],
+        ];
+
+        $response = $this->actingAs($this->user)->post(route('sales.store'), $payload);
+        $response->assertRedirect(route('sales.index'));
+
+        $sale = Sale::latest('id')->first();
+        $this->assertNotNull($sale);
+        $this->assertEquals(900.00, (float) $sale->subtotal);
+        $this->assertEquals(100.00, (float) $sale->product_discount);
+        $this->assertEquals(900.00, (float) $sale->total);
+        $this->assertEquals(900.00, (float) $sale->paid_amount);
+        $this->assertEquals(0.00, (float) $sale->due_amount);
+        $this->assertEquals('paid', $sale->payment_status);
+
+        $item = $sale->items()->first();
+        $this->assertEquals(100.00, (float) $item->discount);
+        $this->assertEquals(900.00, (float) $item->total);
+    }
 }

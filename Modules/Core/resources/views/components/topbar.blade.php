@@ -23,14 +23,14 @@
         @endif
     </div>
 
-    <div class="top-search">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
-            <path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-        <input placeholder="খুঁজুন..." class="bn-ph" aria-label="Search">
-        <span class="search-kbd">⌘K</span>
-    </div>
+{{--    <div class="top-search">--}}
+{{--        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">--}}
+{{--            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>--}}
+{{--            <path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>--}}
+{{--        </svg>--}}
+{{--        <input placeholder="খুঁজুন..." class="bn-ph" aria-label="Search">--}}
+{{--        <span class="search-kbd">⌘K</span>--}}
+{{--    </div>--}}
 
     <div class="top-actions">
         @php
@@ -258,12 +258,12 @@
             <x-core::lang-switcher />
         </div>
 
-        <div class="icbtn" onclick="toast('৩টি নতুন নোটিফিকেশন','3 new notifications')" title="নোটিফিকেশন / Notifications" aria-label="Notifications">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M12 3C9 3 7 5.3 7 8.2V11c0 1-.4 2-1.1 2.7L5 14.6V16h14v-1.4l-.9-.9C17.4 13 17 12 17 11V8.2C17 5.3 15 3 12 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
-            </svg>
-            <div class="dot"></div>
-        </div>
+{{--        <div class="icbtn" onclick="toast('৩টি নতুন নোটিফিকেশন','3 new notifications')" title="নোটিফিকেশন / Notifications" aria-label="Notifications">--}}
+{{--            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">--}}
+{{--                <path d="M12 3C9 3 7 5.3 7 8.2V11c0 1-.4 2-1.1 2.7L5 14.6V16h14v-1.4l-.9-.9C17.4 13 17 12 17 11V8.2C17 5.3 15 3 12 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>--}}
+{{--            </svg>--}}
+{{--            <div class="dot"></div>--}}
+{{--        </div>--}}
 
         <div class="user-menu-dropdown">
             <button
