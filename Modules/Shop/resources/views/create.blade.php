@@ -224,7 +224,7 @@
                                 {{-- Section: Existing Owner Selection --}}
                                 <div id="section-existing-owner" style="{{ old('owner_type') === 'existing' ? '' : 'display:none;' }} margin-bottom:14px;">
                                     <x-core::form-group name="existing_user_id" label="বিদ্যমান মালিক নির্বাচন করুন" label-en="Select Existing Owner" icon="user-check">
-                                        <select name="existing_user_id" id="shop-existing-user-select" class="form-control form-select">
+                                        <select name="existing_user_id" id="shop-existing-user-select" class="form-control form-select" {{ old('owner_type') === 'existing' ? 'required' : 'disabled' }}>
                                             <option value="" disabled {{ old('existing_user_id') ? '' : 'selected' }}>-- তালিকা থেকে মালিক বেছে নিন --</option>
                                             @foreach ($existingOwners ?? [] as $owner)
                                                 <option
@@ -255,7 +255,8 @@
                                                 icon="user"
                                                 placeholder="যেমন: মোঃ রহিম উল্লাহ"
                                                 :value="old('admin_name')"
-                                                required
+                                                :required="old('owner_type', 'new') === 'new'"
+                                                :disabled="old('owner_type', 'new') !== 'new'"
                                             />
                                         </div>
                                         <div>
@@ -270,7 +271,8 @@
                                                 :value="old('admin_phone')"
                                                 helper="লগইনের মূল নম্বর (পরবর্তীতে পরিবর্তনযোগ্য নয়)"
                                                 helper-en="Primary login number (cannot be changed later)"
-                                                required
+                                                :required="old('owner_type', 'new') === 'new'"
+                                                :disabled="old('owner_type', 'new') !== 'new'"
                                             />
                                         </div>
                                     </div>
@@ -285,6 +287,7 @@
                                                 icon="at-sign"
                                                 placeholder="যেমন: rahim101"
                                                 :value="old('admin_username')"
+                                                :disabled="old('owner_type', 'new') !== 'new'"
                                             />
                                         </div>
                                         <div>
@@ -297,6 +300,7 @@
                                                 icon="mail"
                                                 placeholder="admin@example.com"
                                                 :value="old('admin_email')"
+                                                :disabled="old('owner_type', 'new') !== 'new'"
                                             />
                                         </div>
                                     </div>
@@ -312,6 +316,7 @@
                                                 label-en="Password"
                                                 icon="lock"
                                                 placeholder="কমপক্ষে ৮ অক্ষর"
+                                                :disabled="old('owner_type', 'new') !== 'new'"
                                             />
                                         </div>
                                         <div>
@@ -324,6 +329,7 @@
                                                 label-en="Confirm Password"
                                                 icon="lock"
                                                 placeholder="পাসওয়ার্ড পুনরায় দিন"
+                                                :disabled="old('owner_type', 'new') !== 'new'"
                                             />
                                         </div>
                                     </div>
@@ -412,10 +418,14 @@
                                     </div>
 
                                     <div>
+                                        @php
+                                            $rawCreateSubStatus = old('subscription_status', 'active');
+                                            $currentCreateSubStatus = $rawCreateSubStatus === 'trial' ? 'trialing' : $rawCreateSubStatus;
+                                        @endphp
                                         <x-core::form-group name="subscription_status" label="সাবস্ক্রিপশন অবস্থা" label-en="Subscription Status" icon="check-circle">
                                             <select name="subscription_status" id="subscription-status-select" class="form-control form-select">
                                                 @foreach (\Modules\Shop\Models\Subscription::statusLabels() as $key => $label)
-                                                    <option value="{{ $key }}" {{ old('subscription_status', 'active') === $key ? 'selected' : '' }}>
+                                                    <option value="{{ $key }}" {{ $currentCreateSubStatus === $key ? 'selected' : '' }}>
                                                         {{ $label['bn'] }} ({{ $label['en'] }})
                                                     </option>
                                                 @endforeach
@@ -433,7 +443,7 @@
                                             label="মেয়াদ শুরু (Start Date)"
                                             label-en="Start Date"
                                             icon="calendar"
-                                            :value="old('current_period_start', date('Y-m-d'))"
+                                            :value="old('current_period_start')"
                                         />
                                     </div>
                                     <div>
@@ -444,7 +454,7 @@
                                             label="মেয়াদ সমাপ্তি (End Date)"
                                             label-en="End Date"
                                             icon="calendar"
-                                            :value="old('current_period_end', date('Y-m-d', strtotime('+30 days')))"
+                                            :value="old('current_period_end')"
                                         />
                                     </div>
                                     <div>
@@ -807,20 +817,34 @@
                 }
             });
 
+            function setOwnerType(ownerType) {
+                if (ownerType === 'existing') {
+                    $('#section-new-owner').hide();
+                    $('#section-new-owner').find('input, select, textarea').prop('disabled', true).prop('required', false);
+
+                    $('#section-existing-owner').show();
+                    $('#shop-existing-user-select').prop('disabled', false).prop('required', true);
+
+                    updateExistingOwnerPreview();
+                } else {
+                    $('#section-existing-owner').hide();
+                    $('#shop-existing-user-select').prop('disabled', true).prop('required', false);
+
+                    $('#section-new-owner').show();
+                    $('#section-new-owner').find('input, select, textarea').prop('disabled', false);
+                    $('#shop-admin-name-input').prop('required', true);
+                    $('#shop-admin-phone-input').prop('required', true);
+
+                    updateNewOwnerPreview();
+                }
+            }
+
             $(document).on('change', '.owner-type-radio', function () {
                 var val = $(this).val();
                 $('.owner-type-card').removeClass('active');
                 $(this).closest('.owner-type-card').addClass('active');
 
-                if (val === 'existing') {
-                    $('#section-new-owner').hide();
-                    $('#section-existing-owner').show();
-                    updateExistingOwnerPreview();
-                } else {
-                    $('#section-existing-owner').hide();
-                    $('#section-new-owner').show();
-                    updateNewOwnerPreview();
-                }
+                setOwnerType(val);
             });
 
             $(document).on('change', '#shop-existing-user-select', function () {
@@ -884,6 +908,9 @@
                 var planId = $selectedPlan.val();
 
                 if (!planId) {
+                    $('#subscription-start-input').val('');
+                    $('#subscription-end-input').val('');
+                    $('#subscription-trial-input').val('');
                     updateSubscriptionPreview();
                     return;
                 }
@@ -910,6 +937,8 @@
                     var trialDate = new Date(startDate.getTime());
                     trialDate.setDate(trialDate.getDate() + trialDays);
                     $('#subscription-trial-input').val(formatYMD(trialDate));
+                } else {
+                    $('#subscription-trial-input').val('');
                 }
 
                 updateSubscriptionPreview();
@@ -921,17 +950,27 @@
 
             $(document).on('change', '#subscription-start-input', function () {
                 var startVal = $(this).val();
-                if (startVal) {
-                    var $selectedPlan = $('#shop-plan-select option:selected');
+                var $selectedPlan = $('#shop-plan-select option:selected');
+                var planId = $selectedPlan.val();
+
+                if (startVal && planId) {
                     var cycle = String($selectedPlan.data('billing-cycle') || 'month').toLowerCase();
+                    var trialDays = parseInt($selectedPlan.data('trial-days') || 0, 10);
                     var d = new Date(startVal);
                     if (!isNaN(d.getTime())) {
+                        var endD = new Date(d.getTime());
                         if (cycle === 'yearly' || cycle === 'year' || cycle === 'annual') {
-                            d.setDate(d.getDate() + 365);
+                            endD.setDate(endD.getDate() + 365);
                         } else {
-                            d.setDate(d.getDate() + 30);
+                            endD.setDate(endD.getDate() + 30);
                         }
-                        $('#subscription-end-input').val(formatYMD(d));
+                        $('#subscription-end-input').val(formatYMD(endD));
+
+                        if (trialDays > 0) {
+                            var trialD = new Date(d.getTime());
+                            trialD.setDate(trialD.getDate() + trialDays);
+                            $('#subscription-trial-input').val(formatYMD(trialD));
+                        }
                     }
                 }
                 updateSubscriptionPreview();
@@ -972,14 +1011,14 @@
                 var addressVal = $('#shop-address-input').val();
                 if (addressVal) $('#preview-shop-address').text(addressVal);
 
-                var isExisting = $('input[name="owner_type"]:checked').val() === 'existing';
-                if (isExisting) {
-                    updateExistingOwnerPreview();
-                } else {
-                    updateNewOwnerPreview();
-                }
+                var initialOwnerType = $('input[name="owner_type"]:checked').val() || 'new';
+                setOwnerType(initialOwnerType);
 
-                updateSubscriptionPreview();
+                if ($('#shop-plan-select').val() && !$('#subscription-start-input').val()) {
+                    calculateDatesForPlan();
+                } else {
+                    updateSubscriptionPreview();
+                }
 
                 if (slugVal || codeVal) {
                     performAvailabilityCheck();

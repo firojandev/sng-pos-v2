@@ -163,6 +163,11 @@ class SubscriptionifySeeder extends Seeder
             $toggles = $planData['toggles'];
             unset($planData['limits'], $planData['toggles']);
 
+            $planData['max_users'] = $limits['max-users'] ?? null;
+            $planData['max_branches'] = $limits['max-branches'] ?? null;
+            $planData['max_warehouses'] = $limits['max-warehouses'] ?? null;
+            $planData['max_products'] = $limits['max-products'] ?? null;
+
             $plan = Plan::updateOrCreate(['slug' => $planData['slug']], $planData);
 
             $attachData = [];
