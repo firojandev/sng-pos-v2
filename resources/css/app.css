@@ -3428,8 +3428,12 @@ input.numeric-input,
 
 
 
-/* Select Control Custom Arrow */
-.form-select {
+/* Select Control Custom Arrow & Vertical Alignment */
+.form-select,
+select.form-control {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  line-height: normal !important;
   padding-right: 36px !important;
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='m6 9 6 6 6-6'/%3e%3c/svg%3e");
   background-repeat: no-repeat;
@@ -3437,10 +3441,27 @@ input.numeric-input,
   background-size: 16px 16px;
   cursor: pointer;
 }
-.form-select[multiple] {
+[data-theme="dark"] .form-select,
+[data-theme="dark"] select.form-control,
+:root[data-theme="dark"] .form-select,
+:root[data-theme="dark"] select.form-control {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='m6 9 6 6 6-6'/%3e%3c/svg%3e");
+}
+.form-select[multiple],
+select.form-control[multiple] {
   height: auto;
   background-image: none;
+  padding-top: var(--form-py) !important;
+  padding-bottom: var(--form-py) !important;
   padding-right: var(--form-px) !important;
+  line-height: 1.5 !important;
+}
+.form-select option,
+select.form-control option {
+  padding: 6px 10px;
+  font-family: inherit;
+  background-color: var(--card);
+  color: var(--ink-900);
 }
 
 /* Textarea Control */
