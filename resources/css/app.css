@@ -551,6 +551,82 @@ html.sidebar-collapsed-init .side-user-card .av{
   box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.25);
 }
 
+/* ============ TOPBAR THEME & LANG SWITCHER ANTI-FLICKER ============ */
+:root[data-theme="dark"] .theme-segmented-switcher .switch-opt-light {
+  color: var(--ink-400) !important;
+  font-weight: 600 !important;
+}
+:root[data-theme="dark"] .theme-segmented-switcher .switch-opt-dark {
+  color: #2DD4BF !important;
+  font-weight: 700 !important;
+}
+:root[data-theme="dark"] .theme-segmented-switcher .segmented-switch-slider {
+  background-color: var(--teal-800) !important;
+  border-color: var(--teal-800) !important;
+}
+:root[data-theme="dark"] .theme-segmented-switcher .segmented-switch-slider::before {
+  transform: translateX(14px) !important;
+}
+
+:root[data-theme="light"] .theme-segmented-switcher .switch-opt-dark {
+  color: var(--ink-400) !important;
+  font-weight: 600 !important;
+}
+:root[data-theme="light"] .theme-segmented-switcher .switch-opt-light {
+  color: var(--teal-800) !important;
+  font-weight: 700 !important;
+}
+:root[data-theme="light"] .theme-segmented-switcher .segmented-switch-slider {
+  background-color: var(--secondary-border, #CBD5E1) !important;
+  border-color: var(--border) !important;
+}
+:root[data-theme="light"] .theme-segmented-switcher .segmented-switch-slider::before {
+  transform: translateX(0) !important;
+}
+
+html.lang-en .lang-segmented-switcher .switch-opt-bn {
+  color: var(--ink-400) !important;
+  font-weight: 600 !important;
+}
+html.lang-en .lang-segmented-switcher .switch-opt-en {
+  color: var(--teal-800) !important;
+  font-weight: 700 !important;
+}
+:root[data-theme="dark"].lang-en .lang-segmented-switcher .switch-opt-en,
+:root[data-theme="dark"] html.lang-en .lang-segmented-switcher .switch-opt-en {
+  color: #2DD4BF !important;
+}
+html.lang-en .lang-segmented-switcher .segmented-switch-slider {
+  background-color: var(--teal-800) !important;
+  border-color: var(--teal-800) !important;
+}
+html.lang-en .lang-segmented-switcher .segmented-switch-slider::before {
+  transform: translateX(14px) !important;
+}
+
+html:not(.lang-en) .lang-segmented-switcher .switch-opt-en {
+  color: var(--ink-400) !important;
+  font-weight: 600 !important;
+}
+html:not(.lang-en) .lang-segmented-switcher .switch-opt-bn {
+  color: var(--teal-800) !important;
+  font-weight: 700 !important;
+}
+:root[data-theme="dark"]:not(.lang-en) .lang-segmented-switcher .switch-opt-bn {
+  color: #2DD4BF !important;
+}
+html:not(.lang-en) .lang-segmented-switcher .segmented-switch-slider {
+  background-color: var(--secondary-border, #CBD5E1) !important;
+  border-color: var(--border) !important;
+}
+:root[data-theme="dark"]:not(.lang-en) .lang-segmented-switcher .segmented-switch-slider {
+  background-color: #334155 !important;
+  border-color: #475569 !important;
+}
+html:not(.lang-en) .lang-segmented-switcher .segmented-switch-slider::before {
+  transform: translateX(0) !important;
+}
+
 /* ============ STATUS SEGMENTED SWITCHER ============ */
 .status-toggle-wrapper {
   display: flex;

@@ -196,10 +196,16 @@ function printSection(id) {
 function setTheme(theme) {
     if (theme === 'light' || theme === 'dark') {
         $('html').attr('data-theme', theme);
-        try { localStorage.setItem('theme', theme); } catch (e) {}
+        try {
+            localStorage.setItem('theme', theme);
+            document.cookie = "theme=" + theme + ";path=/;max-age=31536000;SameSite=Lax";
+        } catch (e) {}
     } else {
         $('html').removeAttr('data-theme');
-        try { localStorage.removeItem('theme'); } catch (e) {}
+        try {
+            localStorage.removeItem('theme');
+            document.cookie = "theme=;path=/;max-age=0;SameSite=Lax";
+        } catch (e) {}
     }
     updateThemeButtons();
 }
@@ -359,7 +365,10 @@ function setLang(lang) {
     initSelectOptionsLang();
     updateSelectOptionsText(isEn);
 
-    localStorage.setItem('lang', lang);
+    try {
+        localStorage.setItem('lang', lang);
+        document.cookie = "lang=" + lang + ";path=/;max-age=31536000;SameSite=Lax";
+    } catch (e) {}
 }
 
 function initLang() {
