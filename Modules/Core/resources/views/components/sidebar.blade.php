@@ -354,7 +354,10 @@ $isNavItemVisible = function (array $item, bool $groupGated, $user) {
         return false;
     }
     if ($item['key'] === 'subscription') {
-        return (bool) ($user && $user->shop && $user->shop->hasFeature('subscription'));
+        return (bool) ($user && $user->shop && ($user->isSuperAdmin() || $user->shop->hasFeature('subscription')));
+    }
+    if ($item['key'] === 'settings') {
+        return (bool) ($user && $user->isShopAdmin());
     }
     $gated = $item['gated'] ?? $groupGated;
     if (! $gated) {
