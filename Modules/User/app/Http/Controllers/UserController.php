@@ -53,6 +53,11 @@ class UserController extends Controller
             $remainingSlotsText = "প্যাকেজ: {$planName}";
         }
 
+        $subscription = $shop->subscription();
+        if ($subscription) {
+            $subscription->loadMissing(['plan']);
+        }
+
         $metrics = [
             'totalUsers' => $totalUsers,
             'adminUsers' => $adminUsers,
@@ -64,7 +69,7 @@ class UserController extends Controller
 
         $roles = $this->assignableRoles();
 
-        return $dataTable->render('user::index', compact('metrics', 'roles'));
+        return $dataTable->render('user::index', compact('metrics', 'roles', 'subscription'));
     }
 
     public function create(): View
@@ -107,6 +112,10 @@ class UserController extends Controller
 
         setPermissionsTeamId($user->shop_id);
         $user->assignRole($role);
+        $user->shops()->updateExistingPivot($user->shop_id, [
+            'role' => $role->name,
+            'is_owner' => false,
+        ]);
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([

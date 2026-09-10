@@ -39,6 +39,16 @@
         $inputValue = old($name);
     }
 
+    if (is_string($inputValue)) {
+        $inputValue = htmlspecialchars_decode($inputValue, ENT_QUOTES);
+    }
+    if (is_string($placeholder)) {
+        $placeholder = htmlspecialchars_decode($placeholder, ENT_QUOTES);
+    }
+    if (is_string($placeholderEn)) {
+        $placeholderEn = htmlspecialchars_decode($placeholderEn, ENT_QUOTES);
+    }
+
     if (($type === 'number' || $type === 'tel')) {
         if ($inputValue !== null) {
             $inputValue = \Modules\Core\Support\BanglaNumber::toEn($inputValue);

@@ -28,10 +28,6 @@ class PageController extends Controller
 
         $isOwnerOrAdmin = $user->isShopAdmin();
 
-        if (! $isOwnerOrAdmin && ! $user->can('dashboard.view')) {
-            abort(403, 'ড্যাশবোর্ড দেখার অনুমতি নেই');
-        }
-
         $can = fn (string $perm): bool => $isOwnerOrAdmin || $user->can($perm);
 
         $canViewBalance = $can('dashboard.stat-balance');
