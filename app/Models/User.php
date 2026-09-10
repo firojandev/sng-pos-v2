@@ -242,6 +242,54 @@ class User extends Authenticatable
     }
 
     /**
+     * Check whether this user is an admin of the given or active shop.
+     */
+    public function isShopAdmin(?Shop $shop = null): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        $shop = $shop ?? $this->shop;
+        if (! $shop) {
+            return false;
+        }
+
+        $userRoles = DB::table('model_has_roles')
+            ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+            ->where('model_has_roles.model_id', $this->id)
+            ->where('model_has_roles.model_type', static::class)
+            ->where(function ($q) use ($shop) {
+                $q->where('roles.shop_id', $shop->id)
+                    ->orWhereNull('roles.shop_id')
+                    ->orWhere('roles.shop_id', 0);
+            })
+            ->pluck('roles.name');
+
+        if ($userRoles->isNotEmpty()) {
+            return $userRoles->intersect(['Admin', 'Shop Admin', 'Owner', 'Shop Owner'])->isNotEmpty();
+        }
+
+        $pivot = DB::table('shop_user')
+            ->where('shop_id', $shop->id)
+            ->where('user_id', $this->id)
+            ->first();
+
+        if ($pivot) {
+            if (in_array($pivot->role, ['Admin', 'Shop Admin', 'Owner', 'Shop Owner'], true)) {
+                return true;
+            }
+            if ($pivot->is_owner) {
+                return true;
+            }
+
+            return false;
+        }
+
+        return false;
+    }
+
+    /**
      * Switch current active shop to the given shop.
      */
     public function switchShop(Shop|int $shop): bool

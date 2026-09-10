@@ -551,6 +551,82 @@ html.sidebar-collapsed-init .side-user-card .av{
   box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.25);
 }
 
+/* ============ TOPBAR THEME & LANG SWITCHER ANTI-FLICKER ============ */
+:root[data-theme="dark"] .theme-segmented-switcher .switch-opt-light {
+  color: var(--ink-400) !important;
+  font-weight: 600 !important;
+}
+:root[data-theme="dark"] .theme-segmented-switcher .switch-opt-dark {
+  color: #2DD4BF !important;
+  font-weight: 700 !important;
+}
+:root[data-theme="dark"] .theme-segmented-switcher .segmented-switch-slider {
+  background-color: var(--teal-800) !important;
+  border-color: var(--teal-800) !important;
+}
+:root[data-theme="dark"] .theme-segmented-switcher .segmented-switch-slider::before {
+  transform: translateX(14px) !important;
+}
+
+:root[data-theme="light"] .theme-segmented-switcher .switch-opt-dark {
+  color: var(--ink-400) !important;
+  font-weight: 600 !important;
+}
+:root[data-theme="light"] .theme-segmented-switcher .switch-opt-light {
+  color: var(--teal-800) !important;
+  font-weight: 700 !important;
+}
+:root[data-theme="light"] .theme-segmented-switcher .segmented-switch-slider {
+  background-color: var(--secondary-border, #CBD5E1) !important;
+  border-color: var(--border) !important;
+}
+:root[data-theme="light"] .theme-segmented-switcher .segmented-switch-slider::before {
+  transform: translateX(0) !important;
+}
+
+html.lang-en .lang-segmented-switcher .switch-opt-bn {
+  color: var(--ink-400) !important;
+  font-weight: 600 !important;
+}
+html.lang-en .lang-segmented-switcher .switch-opt-en {
+  color: var(--teal-800) !important;
+  font-weight: 700 !important;
+}
+:root[data-theme="dark"].lang-en .lang-segmented-switcher .switch-opt-en,
+:root[data-theme="dark"] html.lang-en .lang-segmented-switcher .switch-opt-en {
+  color: #2DD4BF !important;
+}
+html.lang-en .lang-segmented-switcher .segmented-switch-slider {
+  background-color: var(--teal-800) !important;
+  border-color: var(--teal-800) !important;
+}
+html.lang-en .lang-segmented-switcher .segmented-switch-slider::before {
+  transform: translateX(14px) !important;
+}
+
+html:not(.lang-en) .lang-segmented-switcher .switch-opt-en {
+  color: var(--ink-400) !important;
+  font-weight: 600 !important;
+}
+html:not(.lang-en) .lang-segmented-switcher .switch-opt-bn {
+  color: var(--teal-800) !important;
+  font-weight: 700 !important;
+}
+:root[data-theme="dark"]:not(.lang-en) .lang-segmented-switcher .switch-opt-bn {
+  color: #2DD4BF !important;
+}
+html:not(.lang-en) .lang-segmented-switcher .segmented-switch-slider {
+  background-color: var(--secondary-border, #CBD5E1) !important;
+  border-color: var(--border) !important;
+}
+:root[data-theme="dark"]:not(.lang-en) .lang-segmented-switcher .segmented-switch-slider {
+  background-color: #334155 !important;
+  border-color: #475569 !important;
+}
+html:not(.lang-en) .lang-segmented-switcher .segmented-switch-slider::before {
+  transform: translateX(0) !important;
+}
+
 /* ============ STATUS SEGMENTED SWITCHER ============ */
 .status-toggle-wrapper {
   display: flex;
@@ -2473,13 +2549,14 @@ table.pos-table{width:100%; border-collapse:collapse; min-width:820px;}
 .cart-item{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px; box-shadow:var(--shadow-sm);}
 .cart-item .ci-head{display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap; position:relative;}
 .cart-item .ci-head .thumb{width:32px; height:32px; border-radius:8px; background:var(--paper); display:flex; align-items:center; justify-content:center; flex:0 0 auto; color:var(--ink-600);}
-.cart-item .ci-head .nm{font-weight:700; font-size:13px; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1 1 auto; max-width:60%;}
-.cart-item .ci-actions{display:flex; gap:5px; flex:0 0 auto; margin-left:auto;}
+.cart-item .ci-head .nm{font-weight:700; font-size:13px; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1 1 auto;}
+.cart-item .ci-actions{display:flex; gap:6px; flex:0 0 auto; margin-left:auto; align-items:center;}
 .cart-item .ci-actions button{width:26px; height:26px; border-radius:8px; border:1px solid var(--border); background:var(--paper); display:flex; align-items:center; justify-content:center; color:var(--ink-700); position:relative; cursor:pointer;}
 .cart-item .ci-actions button.active{background:var(--blue-100); border-color:var(--blue-ic-bg); color:var(--blue-ink);}
 .cart-item .ci-actions button.has-value{background:var(--gold-100); border-color:var(--gold-500); color:var(--gold-ink);}
 .cart-item .ci-actions .ci-remove{background:var(--red-100); border-color:var(--red-100); color:var(--red-600);}
 .cart-item .ci-tax-badge{display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; padding:2px 8px; border-radius:6px; background:var(--blue-100); border:1px solid var(--blue-ic-bg); color:var(--blue-ink); white-space:nowrap; flex:0 0 auto;}
+.cart-item .ci-discount-offer-badge{display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; padding:2px 7px; border-radius:6px; background:var(--red-100); border:1px solid var(--red-100); color:var(--red-600); white-space:nowrap; flex:0 0 auto;}
 .cart-item .ci-actions .ci-wholesale-toggle{display:inline-flex; align-items:center; gap:5px; padding:0 8px; height:26px; border-radius:8px; border:1px solid var(--border); background:var(--paper); color:var(--ink-700); cursor:pointer; font-size:11px; font-weight:600; user-select:none; transition:all .15s ease; flex:0 0 auto;}
 .cart-item .ci-actions .ci-wholesale-toggle:hover{background:var(--paper-line); border-color:var(--teal-800);}
 .cart-item .ci-actions .ci-wholesale-toggle.is-active{background:var(--teal-100); border-color:var(--teal-800); color:var(--teal-800);}
@@ -2487,11 +2564,15 @@ table.pos-table{width:100%; border-collapse:collapse; min-width:820px;}
 html.lang-en .cart-item .ci-wholesale-toggle .bn,
 body.lang-en .cart-item .ci-wholesale-toggle .bn,
 html.lang-en .cart-item .ci-tax-badge .bn,
-body.lang-en .cart-item .ci-tax-badge .bn{display:none !important;}
+body.lang-en .cart-item .ci-tax-badge .bn,
+html.lang-en .cart-item .ci-discount-offer-badge .bn,
+body.lang-en .cart-item .ci-discount-offer-badge .bn{display:none !important;}
 html.lang-en .cart-item .ci-wholesale-toggle .en,
 body.lang-en .cart-item .ci-wholesale-toggle .en,
 html.lang-en .cart-item .ci-tax-badge .en,
-body.lang-en .cart-item .ci-tax-badge .en{display:inline !important;}
+body.lang-en .cart-item .ci-tax-badge .en,
+html.lang-en .cart-item .ci-discount-offer-badge .en,
+body.lang-en .cart-item .ci-discount-offer-badge .en{display:inline !important;}
 .cart-item .ci-grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;}
 .cart-item .ci-grid.ci-grid-5{grid-template-columns:1fr 1fr 0.7fr 1fr 1fr;}
 .cart-item .ci-grid.ci-grid-6{grid-template-columns:0.7fr 0.9fr 0.9fr 0.9fr 1.2fr 0.9fr; gap:6px;}
@@ -4740,40 +4821,169 @@ table.dataTable thead th.dt-orderable-none::after {
 }
 
 /* ============ SWEETALERT2 STYLES ============ */
+.swal2-container {
+  background: rgba(15, 23, 42, 0.65) !important;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 99999 !important;
+}
+
+.swal2-popup,
 .app-swal-popup {
   font-family: 'Noto Sans Bengali', 'SolaimanLipi', 'Hind Siliguri', 'Plus Jakarta Sans', 'Inter', sans-serif !important;
+  background: var(--card) !important;
+  color: var(--ink-900) !important;
   border-radius: var(--radius, 14px) !important;
   border: 1px solid var(--border) !important;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.18) !important;
+  box-shadow: var(--shadow-card, 0 20px 40px rgba(0,0,0,0.3)) !important;
   padding: 24px !important;
 }
+
+.swal2-popup .swal2-title,
 .app-swal-popup .swal2-title {
-  font-size: 19px !important;
+  font-family: 'Noto Sans Bengali', 'SolaimanLipi', 'Baloo Da 2', 'Plus Jakarta Sans', sans-serif !important;
+  font-size: 18px !important;
   font-weight: 700 !important;
   color: var(--ink-900) !important;
   margin-bottom: 8px !important;
 }
-.app-swal-popup .swal2-html-container {
+
+.swal2-popup .swal2-html-container,
+.app-swal-popup .swal2-html-container,
+#swal2-html-container {
   font-size: 13.5px !important;
   color: var(--ink-600) !important;
   margin: 8px 0 16px !important;
   line-height: 1.5 !important;
+  padding-top: 0 !important;
 }
 
-#swal2-html-container {
-    padding-top: 0 !important;
+.swal2-popup .swal2-close {
+  color: var(--ink-400) !important;
+  transition: color 0.15s ease;
+}
+.swal2-popup .swal2-close:hover {
+  color: var(--ink-900) !important;
 }
 
+/* Success icon animation masks in dark/light mode */
+.swal2-icon.swal2-success .swal2-success-circular-line-left,
+.swal2-icon.swal2-success .swal2-success-circular-line-right,
+.swal2-icon.swal2-success .swal2-success-fix {
+  background-color: var(--card) !important;
+}
+.swal2-icon.swal2-success {
+  border-color: #10b981 !important;
+  color: #10b981 !important;
+}
+.swal2-icon.swal2-success [class^='swal2-success-line'] {
+  background-color: #10b981 !important;
+}
+.swal2-icon.swal2-success .swal2-success-ring {
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+.swal2-icon.swal2-warning {
+  border-color: var(--gold-500, #f59e0b) !important;
+  color: var(--gold-500, #f59e0b) !important;
+}
+.swal2-icon.swal2-error {
+  border-color: var(--red-600, #e11d48) !important;
+  color: var(--red-600, #e11d48) !important;
+}
+.swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
+  background-color: var(--red-600, #e11d48) !important;
+}
+.swal2-icon.swal2-info {
+  border-color: var(--blue-600, #2563eb) !important;
+  color: var(--blue-600, #2563eb) !important;
+}
+.swal2-icon.swal2-question {
+  border-color: var(--teal-700, #0f766e) !important;
+  color: var(--teal-700, #0f766e) !important;
+}
+
+/* Form controls inside SweetAlert */
+.swal2-popup .swal2-input,
+.swal2-popup .swal2-file,
+.swal2-popup .swal2-textarea,
+.swal2-popup .swal2-select {
+  background: var(--paper) !important;
+  color: var(--ink-900) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  font-family: 'Noto Sans Bengali', sans-serif !important;
+  font-size: 13px !important;
+  box-shadow: none !important;
+}
+.swal2-popup .swal2-input:focus,
+.swal2-popup .swal2-textarea:focus,
+.swal2-popup .swal2-select:focus {
+  border-color: var(--teal-700, #0f766e) !important;
+  outline: none !important;
+}
+
+.swal2-popup .swal2-validation-message {
+  background: var(--red-100) !important;
+  color: var(--red-ink, var(--red-600)) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  font-size: 12.5px !important;
+  font-family: 'Noto Sans Bengali', sans-serif !important;
+}
+
+.swal2-popup .swal2-footer {
+  border-top: 1px solid var(--border) !important;
+  color: var(--ink-500) !important;
+  font-size: 12px !important;
+  padding-top: 12px !important;
+}
+
+/* Actions & Buttons */
+.swal2-popup .swal2-actions,
 .app-swal-popup .swal2-actions {
   gap: 10px !important;
   margin-top: 14px !important;
 }
-.app-swal-popup .swal2-confirm,
-.app-swal-popup .swal2-cancel {
-  border-radius: 9px !important;
+
+.swal2-popup .swal2-confirm,
+.app-swal-popup .swal2-confirm {
+  border-radius: 8px !important;
   font-weight: 700 !important;
   font-size: 13px !important;
-  padding: 10px 20px !important;
+  padding: 9px 20px !important;
   box-shadow: none !important;
+  font-family: 'Noto Sans Bengali', sans-serif !important;
+  cursor: pointer !important;
+}
+
+.swal2-popup .swal2-cancel,
+.app-swal-popup .swal2-cancel {
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  padding: 9px 20px !important;
+  box-shadow: none !important;
+  background-color: var(--paper-line) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--ink-700) !important;
+  font-family: 'Noto Sans Bengali', sans-serif !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+.swal2-popup .swal2-cancel:hover,
+.app-swal-popup .swal2-cancel:hover {
+  background-color: var(--paper) !important;
+  color: var(--ink-900) !important;
+  border-color: var(--border) !important;
+}
+
+.swal2-popup .swal2-deny {
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  padding: 9px 20px !important;
+  box-shadow: none !important;
+  font-family: 'Noto Sans Bengali', sans-serif !important;
 }
 

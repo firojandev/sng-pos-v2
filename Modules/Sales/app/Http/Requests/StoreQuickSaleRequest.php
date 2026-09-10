@@ -13,6 +13,13 @@ class StoreQuickSaleRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        if ($this->has('customer_id') && ($this->input('customer_id') === '' || $this->input('customer_id') === null)) {
+            $this->merge(['customer_id' => null]);
+        }
+        if ($this->has('account_id') && ($this->input('account_id') === '' || $this->input('account_id') === null)) {
+            $this->merge(['account_id' => null]);
+        }
+
         $paymentType = $this->input('payment_type');
         if (! $paymentType) {
             $method = (string) $this->input('payment_method', '');

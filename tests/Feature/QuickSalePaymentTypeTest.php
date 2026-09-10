@@ -197,4 +197,67 @@ class QuickSalePaymentTypeTest extends TestCase
 
         $response->assertSessionHasErrors(['amount', 'cash_amount']);
     }
+
+    public function test_quick_sale_ajax_submission_returns_json_and_completes_sale(): void
+    {
+        $response = $this->actingAs($this->user)->postJson(route('quick-sale.store'), [
+            'payment_type' => 'cash',
+            'amount' => 1500.00,
+            'sale_date' => now()->toDateString(),
+            'customer_name' => 'Walk In Customer',
+            'note' => 'Ajax Quick Sale',
+        ]);
+
+        $response->assertOk();
+        $response->assertJsonStructure([
+            'success',
+            'message',
+            'sale' => [
+                'id',
+                'invoice_no',
+                'total',
+                'paid_amount',
+                'payment_method',
+                'customer_name',
+                'print_url',
+                'invoice_modal_url',
+            ],
+        ]);
+
+        $sale = Sale::latest('id')->first();
+        $this->assertNotNull($sale);
+        $this->assertEquals(1500.00, (float) $sale->total);
+        $this->assertEquals(1500.00, (float) $sale->paid_amount);
+        $this->assertEquals('Walk In Customer', $sale->customer->name);
+    }
+
+    public function test_quick_sale_ajax_validation_error_returns_422_json(): void
+    {
+        $response = $this->actingAs($this->user)->postJson(route('quick-sale.store'), [
+            'amount' => '',
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['amount']);
+    }
+
+    public function test_quick_sale_modal_is_rendered_in_global_layout(): void
+    {
+        $response = $this->actingAs($this->user)->get(route('dashboard'));
+
+        $response->assertOk();
+        $response->assertSee('id="quickSaleModal"', false);
+        $response->assertSee('id="quickSaleGlobalForm"', false);
+        $response->assertSee('data-quick-sale-trigger="true"', false);
+        $response->assertSee('Alt+Q', false);
+    }
+
+    public function test_quick_sale_create_page_renders_modal_and_auto_open(): void
+    {
+        $response = $this->actingAs($this->user)->get(route('quick-sale.create'));
+
+        $response->assertOk();
+        $response->assertSee('id="quickSaleModal"', false);
+        $response->assertSee('openQuickSaleModal()', false);
+    }
 }

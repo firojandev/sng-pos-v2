@@ -11,6 +11,9 @@
             <span>{{ session('status') }}</span>
         </div>
     @endif
+    @php
+        $authUser = auth()->user();
+    @endphp
 
     <div style="width:100%; max-width:1160px;">
         <div style="display:grid; grid-template-columns:310px 1fr; gap:22px; align-items:start;" class="shop-settings-grid">
@@ -126,7 +129,7 @@
                 </div>
 
                 {{-- Subscription Plan Card --}}
-                @if ($subscription && $subscription->plan)
+                @if ($subscription && $subscription->plan && ($authUser?->isSuperAdmin() || ($shop ?? $authUser?->shop)?->hasFeature('subscription')))
                     <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:18px; box-shadow:var(--shadow-card);">
                         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
                             <div style="display:flex; align-items:center; gap:8px;">

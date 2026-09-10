@@ -354,7 +354,13 @@ $isNavItemVisible = function (array $item, bool $groupGated, $user) {
         return false;
     }
     if ($item['key'] === 'subscription') {
-        return (bool) ($user && $user->shop && $user->shop->hasFeature('subscription'));
+        return (bool) ($user && $user->shop && ($user->isSuperAdmin() || $user->shop->hasFeature('subscription')));
+    }
+    if ($item['key'] === 'settings') {
+        return (bool) ($user && $user->isShopAdmin());
+    }
+    if ($item['key'] === 'dashboard') {
+        return (bool) ($user && ($user->isSuperAdmin() || $user->isShopAdmin() || $user->can('dashboard.view')));
     }
     $gated = $item['gated'] ?? $groupGated;
     if (! $gated) {
@@ -411,7 +417,7 @@ $isNavItemVisible = function (array $item, bool $groupGated, $user) {
                         @endif
 
                         @foreach ($visibleItems as $item)
-                            <a href="{{ route($item['route']) }}" class="nav-item {{ ($active === $item['key'] || ($item['key'] === 'due-ledger' && $active === 'sales-due-ledger')) ? 'active' : '' }}">
+                            <a href="{{ route($item['route']) }}" class="nav-item {{ ($active === $item['key'] || ($item['key'] === 'due-ledger' && $active === 'sales-due-ledger')) ? 'active' : '' }}" @if($item['key'] === 'quick-sale') data-quick-sale-trigger="true" @endif>
                                 <svg viewBox="0 0 24 24" fill="none">{!! $item['icon'] !!}</svg>
                                 <span class="bn">{{ $item['bn'] }}</span>
                                 <span class="en">{{ $item['en'] }}</span>
