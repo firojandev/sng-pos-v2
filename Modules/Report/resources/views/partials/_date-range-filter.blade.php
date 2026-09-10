@@ -6,8 +6,20 @@
         'year' => ['bn' => 'এই বছর', 'en' => 'This Year'],
         'custom' => ['bn' => 'কাস্টম রেঞ্জ', 'en' => 'Custom Range'],
     ];
-    $routeName = request()->route()->getName();
+    $routeName = request()->route()?->getName();
     $currentShop = auth()->user()?->shop;
+
+    $reportPermissions = [
+        'reports.sales' => 'report-sales.print',
+        'reports.purchase' => 'report-purchase.print',
+        'reports.stock' => 'report-stock.print',
+        'reports.products' => 'report-products.print',
+        'reports.profit-loss' => 'report-profit-loss.print',
+        'reports.income' => 'report-income.print',
+        'reports.expense' => 'report-expense.print',
+    ];
+    $printPerm = $printPermission ?? ($reportPermissions[$routeName] ?? null);
+    $canPrint = $printPerm ? (auth()->user()?->can($printPerm) ?? false) : false;
 @endphp
 
 {{-- Screen Toolbar: Filters & Right-side PDF Export Button --}}
@@ -38,21 +50,24 @@
     </div>
 
     {{-- Right-side PDF Export Button --}}
-    <div class="report-actions" style="display:flex; align-items:center; gap:8px; margin-left:auto;">
-        <x-core::button
-            type="button"
-            variant="secondary"
-            size="sm"
-            icon="file-text"
-            id="btn-report-export-pdf"
-            title="পিডিএফ এক্সপোর্ট / প্রিন্ট"
-        >
-            <span class="bn">পিডিএফ এক্সপোর্ট</span>
-            <span class="en" style="display:none;">Export PDF</span>
-        </x-core::button>
-    </div>
+    @if ($canPrint)
+        <div class="report-actions" style="display:flex; align-items:center; gap:8px; margin-left:auto;">
+            <x-core::button
+                type="button"
+                variant="secondary"
+                size="sm"
+                icon="file-text"
+                id="btn-report-export-pdf"
+                title="পিডিএফ এক্সপোর্ট / প্রিন্ট"
+            >
+                <span class="bn">পিডিএফ এক্সপোর্ট</span>
+                <span class="en" style="display:none;">Export PDF</span>
+            </x-core::button>
+        </div>
+    @endif
 </div>
 
+@if ($canPrint)
 {{-- Print-only Executive Header (Shown only when printing / saving as PDF) --}}
 <div class="report-print-header" style="display:none;">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #0d9488; padding-bottom:12px; margin-bottom:16px;">
@@ -303,3 +318,12 @@ $(function () {
 });
 </script>
 @endpush
+@else
+<style>
+@media print {
+    .report-printable-area {
+        display: none !important;
+    }
+}
+</style>
+@endif

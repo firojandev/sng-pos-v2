@@ -26,17 +26,17 @@ class ReportAccessFeatureTest extends TestCase
         }
     }
 
-    private function createShopUserWithReport(string $reportKey): User
+    private function createShopUserWithReport(string $reportKey, ?array $permissions = null): User
     {
         $shop = Shop::create([
             'name' => 'Report Test Shop',
-            'slug' => 'report-test-shop-'.$reportKey,
+            'slug' => 'report-test-shop-'.$reportKey.'-'.uniqid(),
             'status' => 'active',
         ]);
         $this->subscribeShopToFeatures($shop, [$reportKey]);
 
         $role = Role::firstOrCreate(['shop_id' => $shop->id, 'name' => 'Admin', 'guard_name' => 'web']);
-        $role->syncPermissions(["{$reportKey}.view", "{$reportKey}.print"]);
+        $role->syncPermissions($permissions ?? ["{$reportKey}.view", "{$reportKey}.print"]);
 
         $user = User::factory()->create(['shop_id' => $shop->id]);
         setPermissionsTeamId($shop->id);
@@ -118,5 +118,18 @@ class ReportAccessFeatureTest extends TestCase
         $plResponse->assertSee('Particulars / Description');
         $plResponse->assertSee('পরিমাণ');
         $plResponse->assertSee('Amount');
+    }
+
+    public function test_report_pdf_export_button_hidden_when_user_lacks_print_permission(): void
+    {
+        $user = $this->createShopUserWithReport('report-sales', ['report-sales.view']);
+
+        $response = $this->actingAs($user)->get(route('reports.sales'));
+
+        $response->assertOk();
+        $response->assertSee('মোট বিক্রয়');
+        $response->assertDontSee('btn-report-export-pdf');
+        $response->assertDontSee('পিডিএফ এক্সপোর্ট');
+        $response->assertDontSee('Export PDF');
     }
 }

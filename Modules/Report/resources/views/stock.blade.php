@@ -11,6 +11,7 @@
         @include('report::partials._date-range-filter', [
             'reportTitle' => 'স্টক রিপোর্ট',
             'reportTitleEn' => 'Stock Report',
+            'printPermission' => 'report-stock.print',
         ])
 
         <div class="stat-grid" style="grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); margin-bottom:16px;">
@@ -78,6 +79,7 @@
             </div>
         </div>
 
+        @can('report-stock.print')
         <div class="report-print-footer" style="display:none;">
             <div>
                 <span class="bn">এটি একটি কম্পিউটার প্রস্তুতকৃত রিপোর্ট &middot; {{ auth()->user()?->shop?->name ?? 'POS' }}</span>
@@ -88,5 +90,6 @@
                 <span class="en" style="display:none;">Printed: {{ now()->format('d M Y, h:i A') }}</span>
             </div>
         </div>
+        @endcan
     </div>
 </x-core::layout>

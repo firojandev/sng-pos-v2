@@ -11,6 +11,7 @@
         @include('report::partials._date-range-filter', [
             'reportTitle' => 'লাভ-ক্ষতি রিপোর্ট',
             'reportTitleEn' => 'Profit & Loss Report',
+            'printPermission' => 'report-profit-loss.print',
         ])
 
         <div class="table-container table-teal">
@@ -90,6 +91,7 @@
             </div>
         </div>
 
+        @can('report-profit-loss.print')
         <div class="report-print-footer" style="display:none;">
             <div>
                 <span class="bn">এটি একটি কম্পিউটার প্রস্তুতকৃত রিপোর্ট &middot; {{ auth()->user()?->shop?->name ?? 'POS' }}</span>
@@ -100,5 +102,6 @@
                 <span class="en" style="display:none;">Printed: {{ now()->format('d M Y, h:i A') }}</span>
             </div>
         </div>
+        @endcan
     </div>
 </x-core::layout>
