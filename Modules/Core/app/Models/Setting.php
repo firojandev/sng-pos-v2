@@ -118,4 +118,25 @@ class Setting extends Model
     {
         static::set('landing_page_enabled', $enabled, 'boolean', 'system');
     }
+
+    /**
+     * Check if self-service shop registration is enabled.
+     */
+    public static function isRegistrationEnabled(): bool
+    {
+        $value = static::get('registration_enabled', null);
+        if ($value === null) {
+            return (bool) config('app.registration_enabled', true);
+        }
+
+        return (bool) $value;
+    }
+
+    /**
+     * Enable or disable self-service shop registration.
+     */
+    public static function setRegistrationEnabled(bool $enabled): void
+    {
+        static::set('registration_enabled', $enabled, 'boolean', 'system');
+    }
 }

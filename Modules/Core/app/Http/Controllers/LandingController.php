@@ -50,7 +50,8 @@ class LandingController extends Controller
 
         $user = auth()->user();
         $content = LandingPageContent::all();
+        $isRegistrationEnabled = Setting::isRegistrationEnabled();
 
-        return view('core::landing.index', compact('plans', 'user', 'isPreview', 'content'));
+        return view('core::landing.index', compact('plans', 'user', 'isPreview', 'content', 'isRegistrationEnabled'));
     }
 }

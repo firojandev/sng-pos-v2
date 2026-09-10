@@ -19,8 +19,9 @@ class SystemSettingsController extends Controller
     {
         $settings = LandingPageContent::all();
         $activeTab = $request->get('tab', session('active_tab', 'general'));
+        $registrationEnabled = Setting::isRegistrationEnabled();
 
-        return view('shop::settings.system', compact('settings', 'activeTab'));
+        return view('shop::settings.system', compact('settings', 'activeTab', 'registrationEnabled'));
     }
 
     /**
@@ -31,6 +32,7 @@ class SystemSettingsController extends Controller
         $defaults = LandingPageContent::defaults();
         $rules = [
             'landing_page_enabled' => ['nullable', 'boolean'],
+            'registration_enabled' => ['nullable', 'boolean'],
             'active_tab' => ['nullable', 'string'],
         ];
 
@@ -48,9 +50,13 @@ class SystemSettingsController extends Controller
             Setting::setLandingPageEnabled($request->boolean('landing_page_enabled'));
         }
 
+        if ($request->has('registration_enabled')) {
+            Setting::setRegistrationEnabled($request->boolean('registration_enabled'));
+        }
+
         $cleanData = [];
         foreach ($validated as $key => $val) {
-            if ($key === 'landing_page_enabled' || $key === 'active_tab') {
+            if ($key === 'landing_page_enabled' || $key === 'registration_enabled' || $key === 'active_tab') {
                 continue;
             }
 
@@ -95,6 +101,25 @@ class SystemSettingsController extends Controller
             'message' => $newState
                 ? 'ল্যান্ডিং পেজ সক্রিয় করা হয়েছে (Landing page enabled)'
                 : 'ল্যান্ডিং পেজ নিষ্ক্রিয় করা হয়েছে (Landing page disabled)',
+        ]);
+    }
+
+    /**
+     * AJAX Toggle for shop registration state.
+     */
+    public function toggleRegistration(Request $request): JsonResponse
+    {
+        $current = Setting::isRegistrationEnabled();
+        $newState = $request->has('state') ? $request->boolean('state') : ! $current;
+
+        Setting::setRegistrationEnabled($newState);
+
+        return response()->json([
+            'success' => true,
+            'enabled' => $newState,
+            'message' => $newState
+                ? 'অনলাইন দোকান রেজিস্ট্রেশন সক্রিয় করা হয়েছে (Online registration enabled)'
+                : 'অনলাইন দোকান রেজিস্ট্রেশন বন্ধ করা হয়েছে (Online registration disabled)',
         ]);
     }
 }

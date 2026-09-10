@@ -22,6 +22,7 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::get('system-settings', [SystemSettingsController::class, 'index'])->name('system-settings.index');
     Route::post('system-settings', [SystemSettingsController::class, 'update'])->name('system-settings.update');
     Route::post('system-settings/toggle-landing', [SystemSettingsController::class, 'toggleLanding'])->name('system-settings.toggle-landing');
+    Route::post('system-settings/toggle-registration', [SystemSettingsController::class, 'toggleRegistration'])->name('system-settings.toggle-registration');
 });
 
 Route::middleware(['auth', 'feature:branches'])->group(function () {

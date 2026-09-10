@@ -17,9 +17,9 @@ class LandingPageContent
             // General / Brand
             'site_title' => 'MasterPOS',
             'brand_tag' => 'Cloud POS & ERP',
-            'trial_button_text_bn' => 'ফ্রি ট্রায়াল',
-            'trial_button_text_en' => 'Free Trial',
-            'trial_button_url' => '/login',
+            'trial_button_text_bn' => 'রেজিস্ট্রেশন করুন',
+            'trial_button_text_en' => 'Registration',
+            'trial_button_url' => '/register',
 
             // Hero Section
             'hero_badge_bn' => '⚡ বাংলাদেশের #১ ক্লাউড POS সফটওয়্যার',
@@ -33,9 +33,9 @@ class LandingPageContent
             'hero_btn_primary_text_bn' => 'সরাসরি ব্যবহার দেখুন',
             'hero_btn_primary_text_en' => 'Explore Demo',
             'hero_btn_primary_url' => '#simulator',
-            'hero_btn_secondary_text_bn' => '১৪ দিনের ফ্রি ট্রায়াল',
-            'hero_btn_secondary_text_en' => '14-Day Free Trial',
-            'hero_btn_secondary_url' => '/login',
+            'hero_btn_secondary_text_bn' => 'রেজিস্ট্রেশন করুন',
+            'hero_btn_secondary_text_en' => 'Registration',
+            'hero_btn_secondary_url' => '/register',
             'hero_active_users' => '৫,০০০+ ব্যবসায়ী যুক্ত',
             'hero_trust_text_bn' => 'ক্রেডিট কার্ডের প্রয়োজন নেই • ২ মিনিটে সেটআপ • ২৪/৭ ব্যাকআপ',
             'hero_trust_text_en' => 'No Credit Card Needed • 2-Min Setup • 24/7 Cloud Backup',
@@ -308,11 +308,11 @@ class LandingPageContent
             // Final CTA Banner
             'cta_title_bn' => 'আজই আপনার দোকানের হিসাব ডিজিটাল করুন',
             'cta_title_en' => 'Modernize Your Store Operations Today',
-            'cta_subtitle_bn' => 'মাত্র ২ মিনিটে অ্যাকাউন্ট খুলে শুরু করুন ১৪ দিনের ফ্রি ট্রায়াল। কোনো ক্রেডিট কার্ড বা অগ্রিম পেমেন্টের প্রয়োজন নেই।',
-            'cta_subtitle_en' => 'Get started in 2 minutes with our 14-day free trial. No credit card or upfront deposit required.',
-            'cta_btn_text_bn' => 'ফ্রি ট্রায়াল শুরু করুন',
-            'cta_btn_text_en' => 'Start Free Trial',
-            'cta_btn_url' => '/login',
+            'cta_subtitle_bn' => 'মাত্র ২ মিনিটে অ্যাকাউন্ট খুলে শুরু করুন আপনার নতুন দোকান ও ফ্রি প্যাকেজ। কোনো ক্রেডিট কার্ড বা অগ্রিম পেমেন্টের প্রয়োজন নেই।',
+            'cta_subtitle_en' => 'Get started in 2 minutes with our free package. No credit card or upfront deposit required.',
+            'cta_btn_text_bn' => 'রেজিস্ট্রেশন করুন',
+            'cta_btn_text_en' => 'Registration',
+            'cta_btn_url' => '/register',
             'cta_phone_btn_text' => '+880 1886 861430',
             'cta_phone_btn_url' => 'tel:+8801886861430',
 

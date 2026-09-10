@@ -38,13 +38,27 @@ class LandingPageTest extends TestCase
     public function test_root_renders_landing_page_when_enabled(): void
     {
         Setting::setLandingPageEnabled(true);
+        Setting::setRegistrationEnabled(true);
 
         $response = $this->get('/');
 
         $response->assertOk();
         $response->assertSee('MasterPOS');
-        $response->assertSee('Free Trial');
+        $response->assertSee('Registration');
         $response->assertSee('Demo Simulator');
+        $response->assertSee(route('register'));
+    }
+
+    public function test_landing_page_hides_registration_button_when_registration_disabled(): void
+    {
+        Setting::setLandingPageEnabled(true);
+        Setting::setRegistrationEnabled(false);
+
+        $response = $this->get('/');
+
+        $response->assertOk();
+        $response->assertDontSee(route('register'));
+        $response->assertSee(route('login'));
     }
 
     public function test_preview_route_always_renders_landing_page(): void
@@ -56,7 +70,7 @@ class LandingPageTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('MasterPOS');
-        $response->assertSee('Free Trial');
+        $response->assertSee('Registration');
         $response->assertSee('Preview Mode');
     }
 

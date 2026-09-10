@@ -15,16 +15,17 @@
             </div>
         @endif
 
-        {{-- Header Card with Live Toggle & Quick Links --}}
-        <div style="background:var(--card); border:1px solid var(--border); border-radius:14px; padding:22px 26px; margin-bottom:24px; box-shadow:var(--shadow-card);">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:18px;">
-                <div style="display:flex; gap:16px; align-items:center;">
-                    <div style="width:50px; height:50px; border-radius:12px; background:linear-gradient(135deg, rgba(37,99,235,0.15), rgba(14,165,233,0.2)); color:var(--brand-primary, #2563EB); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                        <x-core::icon name="globe" size="26" />
+        {{-- Header Cards with Live Toggles & Quick Links --}}
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:18px; margin-bottom:24px;">
+            {{-- Card 1: Public Landing Page --}}
+            <div style="background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px 22px; box-shadow:var(--shadow-card); display:flex; flex-direction:column; justify-content:space-between; gap:16px;">
+                <div style="display:flex; gap:14px; align-items:flex-start;">
+                    <div style="width:46px; height:46px; border-radius:12px; background:linear-gradient(135deg, rgba(37,99,235,0.15), rgba(14,165,233,0.2)); color:var(--brand-primary, #2563EB); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <x-core::icon name="globe" size="24" />
                     </div>
                     <div>
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <h3 style="margin:0; font-size:19px; font-weight:700; color:var(--ink-900);">
+                        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                            <h3 style="margin:0; font-size:17px; font-weight:700; color:var(--ink-900);">
                                 <span class="bn">পাবলিক ল্যান্ডিং পেজ</span>
                                 <span class="en">Public Landing Page</span>
                             </h3>
@@ -37,22 +38,14 @@
                                 :label-en="$settings['landing_page_enabled'] ? 'Active' : 'Disabled'"
                             />
                         </div>
-                        <p style="margin:4px 0 0; font-size:13px; color:var(--ink-500); line-height:1.5;">
-                            <span class="bn">ল্যান্ডিং পেজ চালু থাকলে ডোমেইনের শুরুতে (/) আধুনিক ল্যান্ডিং পেজটি প্রদর্শিত হবে। বন্ধ থাকলে সরাসরি লগইন পেজে চলে যাবে।</span>
-                            <span class="en">When enabled, the root URL (/) displays the marketing SaaS landing page. When disabled, visitors are redirected directly to login.</span>
+                        <p style="margin:4px 0 0; font-size:12.5px; color:var(--ink-500); line-height:1.4;">
+                            <span class="bn">চালু থাকলে সাইটের শুরুতে আধুনিক ল্যান্ডিং পেজ প্রদর্শিত হবে। বন্ধ থাকলে সরাসরি লগইন পেজে চলে যাবে।</span>
+                            <span class="en">When enabled, root URL (/) displays the marketing SaaS landing page. When disabled, redirects to login.</span>
                         </p>
                     </div>
                 </div>
 
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <x-core::toggle
-                        id="landing_page_toggle"
-                        name="landing_page_toggle"
-                        :checked="(bool) $settings['landing_page_enabled']"
-                        size="md"
-                        color="primary"
-                    />
-
+                <div style="display:flex; align-items:center; justify-content:space-between; padding-top:12px; border-top:1px dashed var(--border);">
                     <x-core::button
                         variant="secondary"
                         size="sm"
@@ -63,6 +56,76 @@
                         <span class="bn">লাইভ প্রিভিউ দেখুন</span>
                         <span class="en">View Preview</span>
                     </x-core::button>
+
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:12px; font-weight:600; color:var(--ink-600);">
+                            <span class="bn">ল্যান্ডিং পেজ:</span>
+                            <span class="en" style="display:none;">Landing Page:</span>
+                        </span>
+                        <x-core::toggle
+                            id="landing_page_toggle"
+                            name="landing_page_toggle"
+                            :checked="(bool) $settings['landing_page_enabled']"
+                            size="md"
+                            color="primary"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {{-- Card 2: Online Shop Registration --}}
+            <div style="background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px 22px; box-shadow:var(--shadow-card); display:flex; flex-direction:column; justify-content:space-between; gap:16px;">
+                <div style="display:flex; gap:14px; align-items:flex-start;">
+                    <div style="width:46px; height:46px; border-radius:12px; background:var(--teal-100); color:var(--teal-800); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <x-core::icon name="user-plus" size="24" />
+                    </div>
+                    <div>
+                        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                            <h3 style="margin:0; font-size:17px; font-weight:700; color:var(--ink-900);">
+                                <span class="bn">অনলাইন দোকান রেজিস্ট্রেশন</span>
+                                <span class="en">Online Shop Registration</span>
+                            </h3>
+                            <x-core::badge
+                                id="registrationStatusBadge"
+                                :color="$registrationEnabled ? 'green' : 'grey'"
+                                size="sm"
+                                :dot="true"
+                                :label="$registrationEnabled ? 'চালু আছে (Active)' : 'বন্ধ আছে (Disabled)'"
+                                :label-en="$registrationEnabled ? 'Active' : 'Disabled'"
+                            />
+                        </div>
+                        <p style="margin:4px 0 0; font-size:12.5px; color:var(--ink-500); line-height:1.4;">
+                            <span class="bn">চালু থাকলে নতুন গ্রাহক নিজে ৩-ধাপে রেজিস্ট্রেশন করে ফ্রি প্যাকেজ নিতে পারবে। বন্ধ থাকলে রেজিস্ট্রেশন বন্ধ থাকবে।</span>
+                            <span class="en">When enabled, visitors can register a new shop with the free package. When disabled, registration is closed.</span>
+                        </p>
+                    </div>
+                </div>
+
+                <div style="display:flex; align-items:center; justify-content:space-between; padding-top:12px; border-top:1px dashed var(--border);">
+                    <x-core::button
+                        variant="secondary"
+                        size="sm"
+                        icon="external-link"
+                        :href="route('register')"
+                        target="_blank"
+                    >
+                        <span class="bn">রেজিস্ট্রেশন পেজ</span>
+                        <span class="en">Register Page</span>
+                    </x-core::button>
+
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:12px; font-weight:600; color:var(--ink-600);">
+                            <span class="bn">রেজিস্ট্রেশন পারমিশন:</span>
+                            <span class="en" style="display:none;">Registration:</span>
+                        </span>
+                        <x-core::toggle
+                            id="registration_toggle"
+                            name="registration_toggle"
+                            :checked="(bool) $registrationEnabled"
+                            size="md"
+                            color="primary"
+                        />
+                    </div>
                 </div>
             </div>
         </div>
@@ -121,6 +184,7 @@
             @csrf
             <input type="hidden" name="active_tab" id="activeTabInput" value="{{ $activeTab ?? 'general' }}">
             <input type="hidden" name="landing_page_enabled" id="hiddenLandingEnabled" value="{{ $settings['landing_page_enabled'] ? '1' : '0' }}">
+            <input type="hidden" name="registration_enabled" id="hiddenRegistrationEnabled" value="{{ $registrationEnabled ? '1' : '0' }}">
 
             {{-- 1. General & SEO Tab --}}
             <div class="tab-pane {{ ($activeTab ?? 'general') === 'general' ? 'active' : '' }}" id="tab-general">
@@ -962,6 +1026,47 @@
                                 icon: 'error',
                                 title: 'ত্রুটি',
                                 text: 'সেটিংস পরিবর্তন করতে ব্যর্থ হয়েছে।'
+                            });
+                        }
+                    }
+                });
+            });
+
+            // 3b. AJAX Registration Toggle
+            $('#registration_toggle').on('change', function () {
+                const isChecked = $(this).is(':checked');
+                $('#hiddenRegistrationEnabled').val(isChecked ? '1' : '0');
+
+                $.ajax({
+                    url: "{{ route('system-settings.toggle-registration') }}",
+                    method: 'POST',
+                    data: {
+                        _token: "{{ csrf_token() }}",
+                        state: isChecked ? 1 : 0
+                    },
+                    success: function (res) {
+                        if (res.success) {
+                            if (window.toast) {
+                                window.toast(res.message, res.message);
+                            }
+                            const badge = $('#registrationStatusBadge');
+                            if (res.enabled) {
+                                badge.removeClass('badge-grey').addClass('badge-green');
+                                badge.find('.bn').text('চালু আছে (Active)');
+                                badge.find('.en').text('Active');
+                            } else {
+                                badge.removeClass('badge-green').addClass('badge-grey');
+                                badge.find('.bn').text('বন্ধ আছে (Disabled)');
+                                badge.find('.en').text('Disabled');
+                            }
+                        }
+                    },
+                    error: function () {
+                        if (window.Swal) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'ত্রুটি',
+                                text: 'রেজিস্ট্রেশন সেটিংস পরিবর্তন করতে ব্যর্থ হয়েছে।'
                             });
                         }
                     }

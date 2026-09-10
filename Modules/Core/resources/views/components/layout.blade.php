@@ -58,13 +58,20 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script>
         (function () {
-            if (window.$ && window.$.ajaxPrefilter) {
-                window.$.ajaxPrefilter(function (options, originalOptions, xhr) {
-                    var token = $('meta[name="csrf-token"]').attr('content');
-                    if (token) {
-                        xhr.setRequestHeader('X-CSRF-TOKEN', token);
-                    }
-                });
+            if (window.$) {
+                if (!window.$.trim) {
+                    window.$.trim = function (str) {
+                        return str == null ? '' : (str + '').trim();
+                    };
+                }
+                if (window.$.ajaxPrefilter) {
+                    window.$.ajaxPrefilter(function (options, originalOptions, xhr) {
+                        var token = $('meta[name="csrf-token"]').attr('content');
+                        if (token) {
+                            xhr.setRequestHeader('X-CSRF-TOKEN', token);
+                        }
+                    });
+                }
             }
         })();
     </script>

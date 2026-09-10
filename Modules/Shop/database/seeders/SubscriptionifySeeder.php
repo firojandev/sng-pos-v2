@@ -94,6 +94,27 @@ class SubscriptionifySeeder extends Seeder
         // 3. Define Standard Plans
         $plans = [
             [
+                'name' => 'ফ্রি প্ল্যান (Free)',
+                'slug' => 'free',
+                'description' => 'নতুন শুরু করা দোকান বা ক্ষুদ্র ব্যবসার জন্য আজীবন বিনামূল্যে',
+                'price' => 0.00,
+                'is_free' => true,
+                'is_active' => true,
+                'trial_days' => 0,
+                'billing_period' => 1,
+                'billing_interval' => Interval::Month,
+                'grace_days' => 0,
+                'sort_order' => 0,
+                'status' => 'active',
+                'limits' => [
+                    'max-users' => 1,
+                    'max-branches' => 1,
+                    'max-warehouses' => 1,
+                    'max-products' => 100,
+                ],
+                'toggles' => ['sales', 'purchase', 'cashbox', 'quick-sale', 'stock', 'products', 'branches', 'customers', 'suppliers', 'subscription'],
+            ],
+            [
                 'name' => 'বেসিক (Starter)',
                 'slug' => 'starter',
                 'description' => 'ছোট দোকান বা নতুন ব্যবসার জন্য উপযুক্ত',

@@ -55,6 +55,26 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&family=Baloo+Da+2:wght@500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.maateen.me/solaiman-lipi/font.css">
 
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>
+        (function () {
+            if (window.$) {
+                if (!window.$.trim) {
+                    window.$.trim = function (str) {
+                        return str == null ? '' : (str + '').trim();
+                    };
+                }
+                if (window.$.ajaxPrefilter) {
+                    window.$.ajaxPrefilter(function (options, originalOptions, xhr) {
+                        var token = $('meta[name="csrf-token"]').attr('content');
+                        if (token) {
+                            xhr.setRequestHeader('X-CSRF-TOKEN', token);
+                        }
+                    });
+                }
+            }
+        })();
+    </script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         .auth-shell {

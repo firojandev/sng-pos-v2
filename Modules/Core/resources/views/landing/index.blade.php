@@ -108,10 +108,12 @@
                         <span class="bn">লগ ইন</span>
                         <span class="en">Log In</span>
                     </a>
-                    <a href="{{ $content['trial_button_url'] ?? route('login') }}" class="lp-btn lp-btn-sm lp-btn-primary">
-                        <span class="bn">{{ $content['trial_button_text_bn'] ?? 'ফ্রি ট্রায়াল' }}</span>
-                        <span class="en">{{ $content['trial_button_text_en'] ?? 'Free Trial' }}</span>
-                    </a>
+                    @if ($isRegistrationEnabled)
+                        <a href="{{ route('register') }}" class="lp-btn lp-btn-sm lp-btn-primary">
+                            <span class="bn">রেজিস্ট্রেশন করুন</span>
+                            <span class="en">Registration</span>
+                        </a>
+                    @endif
                 @endif
 
                 <button type="button" class="lp-burger" id="lpBurger" aria-label="Open menu">
@@ -152,10 +154,12 @@
                 <span class="bn">লগ ইন</span>
                 <span class="en">Log In</span>
             </a>
-            <a href="{{ $content['trial_button_url'] ?? route('login') }}" class="lp-btn lp-btn-md lp-btn-primary" style="width:100%;">
-                <span class="bn">{{ $content['trial_button_text_bn'] ?? 'ফ্রি ট্রায়াল শুরু করুন' }}</span>
-                <span class="en">{{ $content['trial_button_text_en'] ?? 'Start Free Trial' }}</span>
-            </a>
+            @if ($isRegistrationEnabled)
+                <a href="{{ route('register') }}" class="lp-btn lp-btn-md lp-btn-primary" style="width:100%;">
+                    <span class="bn">রেজিস্ট্রেশন করুন</span>
+                    <span class="en">Registration</span>
+                </a>
+            @endif
         @endif
     </div>
 </div>
@@ -198,14 +202,25 @@
                         <span class="en">{{ $content['hero_btn_primary_text_en'] ?? 'Explore Demo' }}</span>
                     </a>
 
-                    <a href="{{ $content['hero_btn_secondary_url'] ?? route('login') }}" class="lp-btn lp-btn-lg lp-btn-secondary">
-                        <span class="bn">{{ $content['hero_btn_secondary_text_bn'] ?? '১৪ দিনের ফ্রি ট্রায়াল' }}</span>
-                        <span class="en">{{ $content['hero_btn_secondary_text_en'] ?? '14-Day Free Trial' }}</span>
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                            <polyline points="12 5 19 12 12 19"></polyline>
-                        </svg>
-                    </a>
+                    @if ($isRegistrationEnabled)
+                        <a href="{{ route('register') }}" class="lp-btn lp-btn-lg lp-btn-secondary">
+                            <span class="bn">{{ $content['hero_btn_secondary_text_bn'] ?? 'রেজিস্ট্রেশন করুন' }}</span>
+                            <span class="en">{{ $content['hero_btn_secondary_text_en'] ?? 'Registration' }}</span>
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </a>
+                    @else
+                        <a href="{{ route('login') }}" class="lp-btn lp-btn-lg lp-btn-secondary">
+                            <span class="bn">লগ ইন</span>
+                            <span class="en">Log In</span>
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </a>
+                    @endif
                 </div>
 
                 <div class="lp-trust-badges">
@@ -648,10 +663,17 @@
                         <span class="period plan-period-display">/ মাস</span>
                     </div>
 
-                    <a href="{{ route('login') }}" class="lp-btn {{ $isPopular ? 'lp-btn-primary' : 'lp-btn-secondary' }}" style="width:100%; margin-bottom:24px;">
-                        <span class="bn">১৪ দিনের ট্রায়াল শুরু করুন</span>
-                        <span class="en">Start 14-Day Trial</span>
-                    </a>
+                    @if ($isRegistrationEnabled)
+                        <a href="{{ route('register') }}" class="lp-btn {{ $isPopular ? 'lp-btn-primary' : 'lp-btn-secondary' }}" style="width:100%; margin-bottom:24px;">
+                            <span class="bn">রেজিস্ট্রেশন করুন</span>
+                            <span class="en">Registration</span>
+                        </a>
+                    @else
+                        <a href="{{ route('login') }}" class="lp-btn {{ $isPopular ? 'lp-btn-primary' : 'lp-btn-secondary' }}" style="width:100%; margin-bottom:24px;">
+                            <span class="bn">লগইন করুন</span>
+                            <span class="en">Login</span>
+                        </a>
+                    @endif
 
                     <ul class="lp-plan-features">
                         @if ($plan->features && $plan->features->count())
@@ -687,7 +709,17 @@
                         <span class="amount">৯৯৯</span>
                         <span class="period">/ মাস</span>
                     </div>
-                    <a href="{{ route('login') }}" class="lp-btn lp-btn-primary" style="width:100%; margin-bottom:24px;">১৪ দিনের ফ্রি ট্রায়াল শুরু করুন</a>
+                    @if ($isRegistrationEnabled)
+                        <a href="{{ route('register') }}" class="lp-btn lp-btn-primary" style="width:100%; margin-bottom:24px;">
+                            <span class="bn">রেজিস্ট্রেশন করুন</span>
+                            <span class="en">Registration</span>
+                        </a>
+                    @else
+                        <a href="{{ route('login') }}" class="lp-btn lp-btn-primary" style="width:100%; margin-bottom:24px;">
+                            <span class="bn">লগইন করুন</span>
+                            <span class="en">Login</span>
+                        </a>
+                    @endif
                 </div>
             @endforelse
         </div>
@@ -786,15 +818,23 @@
                 <span class="en">{{ $content['cta_title_en'] ?? 'Modernize Your Store Operations Today' }}</span>
             </h2>
             <p>
-                <span class="bn">{{ $content['cta_subtitle_bn'] ?? 'মাত্র ২ মিনিটে অ্যাকাউন্ট খুলে শুরু করুন ১৪ দিনের ফ্রি ট্রায়াল। কোনো ক্রেডিট কার্ড বা অগ্রিম পেমেন্টের প্রয়োজন নেই।' }}</span>
-                <span class="en">{{ $content['cta_subtitle_en'] ?? 'Get started in 2 minutes with our 14-day free trial. No credit card or upfront deposit required.' }}</span>
+                <span class="bn">{{ $content['cta_subtitle_bn'] ?? 'মাত্র ২ মিনিটে অ্যাকাউন্ট খুলে শুরু করুন আপনার নতুন দোকান ও ফ্রি প্যাকেজ। কোনো ক্রেডিট কার্ড বা অগ্রিম পেমেন্টের প্রয়োজন নেই।' }}</span>
+                <span class="en">{{ $content['cta_subtitle_en'] ?? 'Get started in 2 minutes with our free package. No credit card or upfront deposit required.' }}</span>
             </p>
             <div style="display:flex; gap:16px; flex-wrap:wrap; justify-content:center;">
-                <a href="{{ $content['cta_btn_url'] ?? route('login') }}" class="lp-btn lp-btn-lg lp-btn-primary">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                    <span class="bn">{{ $content['cta_btn_text_bn'] ?? 'ফ্রি ট্রায়াল শুরু করুন' }}</span>
-                    <span class="en">{{ $content['cta_btn_text_en'] ?? 'Start Free Trial' }}</span>
-                </a>
+                @if ($isRegistrationEnabled)
+                    <a href="{{ route('register') }}" class="lp-btn lp-btn-lg lp-btn-primary">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <span class="bn">{{ $content['cta_btn_text_bn'] ?? 'রেজিস্ট্রেশন করুন' }}</span>
+                        <span class="en">{{ $content['cta_btn_text_en'] ?? 'Registration' }}</span>
+                    </a>
+                @else
+                    <a href="{{ route('login') }}" class="lp-btn lp-btn-lg lp-btn-primary">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <span class="bn">লগইন করুন</span>
+                        <span class="en">Login</span>
+                    </a>
+                @endif
                 <a href="tel:{{ preg_replace('/[^0-9+]/', '', $phone) }}" class="lp-btn lp-btn-lg lp-btn-secondary">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
                     <span>{{ $content['cta_phone_btn_text'] ?? $phone }}</span>
