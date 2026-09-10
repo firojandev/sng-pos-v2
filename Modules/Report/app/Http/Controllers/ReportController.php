@@ -260,17 +260,18 @@ class ReportController extends Controller
      */
     private function resolveDateRange(Request $request): array
     {
-        $range = $request->query('range', 'month');
-        $range = in_array($range, ['week', 'month', 'year', 'custom'], true) ? $range : 'month';
+        $range = $request->query('range', 'today');
+        $range = in_array($range, ['today', 'week', 'month', 'year', 'custom'], true) ? $range : 'today';
 
         if ($range === 'custom') {
-            $from = $request->query('from', now()->startOfMonth()->toDateString());
+            $from = $request->query('from', now()->toDateString());
             $to = $request->query('to', now()->toDateString());
         } else {
             $from = match ($range) {
                 'week' => now()->startOfWeek()->toDateString(),
+                'month' => now()->startOfMonth()->toDateString(),
                 'year' => now()->startOfYear()->toDateString(),
-                default => now()->startOfMonth()->toDateString(),
+                default => now()->toDateString(),
             };
             $to = now()->toDateString();
         }

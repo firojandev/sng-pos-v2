@@ -75,4 +75,48 @@ class ReportAccessFeatureTest extends TestCase
         $response->assertSee(route('reports.income'));
         $response->assertDontSee(route('reports.expense'));
     }
+
+    public function test_report_renders_today_filter_and_pdf_export_button(): void
+    {
+        $user = $this->createShopUserWithReport('report-sales');
+
+        $response = $this->actingAs($user)->get(route('reports.sales', ['range' => 'today']));
+
+        $response->assertOk();
+        $response->assertSee('আজ');
+        $response->assertSee('Today');
+        $response->assertSee('btn-report-export-pdf');
+        $response->assertSee('পিডিএফ এক্সপোর্ট');
+        $response->assertSee('Export PDF');
+    }
+
+    public function test_reports_default_to_today_filter(): void
+    {
+        $user = $this->createShopUserWithReport('report-sales');
+
+        $response = $this->actingAs($user)->get(route('reports.sales'));
+
+        $response->assertOk();
+        $response->assertViewHas('range', 'today');
+        $response->assertViewHas('from', now()->toDateString());
+        $response->assertViewHas('to', now()->toDateString());
+    }
+
+    public function test_reports_have_table_headers(): void
+    {
+        $salesUser = $this->createShopUserWithReport('report-sales');
+        $salesResponse = $this->actingAs($salesUser)->get(route('reports.sales'));
+        $salesResponse->assertOk();
+        $salesResponse->assertSee('<thead>', false);
+        $salesResponse->assertSee('Invoice');
+
+        $plUser = $this->createShopUserWithReport('report-profit-loss');
+        $plResponse = $this->actingAs($plUser)->get(route('reports.profit-loss'));
+        $plResponse->assertOk();
+        $plResponse->assertSee('<thead>', false);
+        $plResponse->assertSee('খাত / বিবরণ');
+        $plResponse->assertSee('Particulars / Description');
+        $plResponse->assertSee('পরিমাণ');
+        $plResponse->assertSee('Amount');
+    }
 }
