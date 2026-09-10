@@ -58,10 +58,10 @@
                 size="sm"
                 icon="file-text"
                 id="btn-report-export-pdf"
-                title="পিডিএফ এক্সপোর্ট / প্রিন্ট"
+                title="প্রিন্ট"
             >
-                <span class="bn">পিডিএফ এক্সপোর্ট</span>
-                <span class="en" style="display:none;">Export PDF</span>
+                <span class="bn">প্রিন্ট</span>
+                <span class="en" style="display:none;">Print</span>
             </x-core::button>
         </div>
     @endif
