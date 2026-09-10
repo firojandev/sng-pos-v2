@@ -7,8 +7,115 @@
         'delete' => ['bn' => 'মুছে ফেলা', 'en' => 'Delete'],
     ];
     $allActionLabels = \Modules\Core\Support\Permissions::actionLabels();
+    $dashboardStatCards = [
+        'stat-balance' => [
+            'icon' => 'wallet',
+            'color' => 'teal',
+            'title_bn' => 'মোট ব্যালেন্স',
+            'title_en' => 'Total Balance',
+            'desc_bn' => 'মোট চলতি ব্যালেন্স ও ক্যাশ',
+            'desc_en' => 'Cash in hand & liquid accounts',
+        ],
+        'stat-sales' => [
+            'icon' => 'shopping-cart',
+            'color' => 'teal',
+            'title_bn' => 'মোট বিক্রি',
+            'title_en' => 'Total Sales',
+            'desc_bn' => 'ফিল্টার অনুসারে মোট বিক্রির পরিমাণ',
+            'desc_en' => 'Gross sales revenue in selected range',
+        ],
+        'stat-purchase' => [
+            'icon' => 'shopping-bag',
+            'color' => 'blue',
+            'title_bn' => 'মোট ক্রয়',
+            'title_en' => 'Total Purchases',
+            'desc_bn' => 'ফিল্টার অনুসারে মোট ক্রয়ের পরিমাণ',
+            'desc_en' => 'Total purchase volume in range',
+        ],
+        'stat-expense' => [
+            'icon' => 'trending-up',
+            'color' => 'gold',
+            'title_bn' => 'মোট খরচ',
+            'title_en' => 'Total Expense',
+            'desc_bn' => 'দোকানের যাবতীয় পরিচালন খরচ',
+            'desc_en' => 'Shop operating expenses in range',
+        ],
+        'stat-product-profit' => [
+            'icon' => 'tag',
+            'color' => 'teal',
+            'title_bn' => 'পণ্য বিক্রি লাভ',
+            'title_en' => 'Product Profit',
+            'desc_bn' => 'বিক্রয়মূল্য - ক্রয়মূল্যের মোট পার্থক্য',
+            'desc_en' => 'Gross profit margin on sold items',
+        ],
+        'stat-total-profit' => [
+            'icon' => 'coins',
+            'color' => 'green',
+            'title_bn' => 'প্রকৃত নিট লাভ',
+            'title_en' => 'Net Profit',
+            'desc_bn' => 'খরচ বাদে ব্যবসার প্রকৃত নিট লাভ',
+            'desc_en' => 'True bottom-line net profit',
+        ],
+        'stat-stock-value' => [
+            'icon' => 'banknote',
+            'color' => 'gold',
+            'title_bn' => 'মোট মজুদ মূল্য',
+            'title_en' => 'Stock Valuation',
+            'desc_bn' => 'ক্রয়মূল্য অনুসারে মোট গুদাম মজুদ মূল্য',
+            'desc_en' => 'Total inventory valuation at cost',
+        ],
+        'stat-stock-qty' => [
+            'icon' => 'package',
+            'color' => 'blue',
+            'title_bn' => 'মোট মজুদ একক',
+            'title_en' => 'Total Stock Units',
+            'desc_bn' => 'সকল পণ্যের সর্বমোট বর্তমান স্টক সংখ্যা',
+            'desc_en' => 'Total units of all stock batches',
+        ],
+        'stat-receivable' => [
+            'icon' => 'wallet',
+            'color' => 'green',
+            'title_bn' => 'মোট পাবো (বাকি)',
+            'title_en' => 'Total Receivable',
+            'desc_bn' => 'গ্রাহকদের কাছে মোট পাওনা টাকা',
+            'desc_en' => 'Customer outstanding due amounts',
+        ],
+        'stat-payable' => [
+            'icon' => 'credit-card',
+            'color' => 'red',
+            'title_bn' => 'মোট দিবো (দেনা)',
+            'title_en' => 'Total Payable',
+            'desc_bn' => 'সরবরাহকারীদের কাছে মোট দেনা টাকা',
+            'desc_en' => 'Supplier outstanding dues to pay',
+        ],
+        'stat-cash' => [
+            'icon' => 'cash',
+            'color' => 'green',
+            'title_bn' => 'নগদ ক্যাশ বাক্স',
+            'title_en' => 'Cash in Hand',
+            'desc_bn' => 'দোকানের ক্যাশবাক্সের বর্তমান ব্যালেন্স',
+            'desc_en' => 'Physical cash register balance',
+        ],
+        'stat-bank' => [
+            'icon' => 'landmark',
+            'color' => 'blue',
+            'title_bn' => 'ব্যাংক হিসাবসমূহ',
+            'title_en' => 'Bank Accounts',
+            'desc_bn' => 'সকল ব্যাংক অ্যাকাউন্টের মোট জমা',
+            'desc_en' => 'Total balance across bank accounts',
+        ],
+        'stat-mfs' => [
+            'icon' => 'smartphone',
+            'color' => 'gold',
+            'title_bn' => 'মোবাইল ব্যাংকিং (MFS)',
+            'title_en' => 'Mobile Banking (MFS)',
+            'desc_bn' => 'বিকাশ, নগদ ও রকেট হিসাবের মোট ব্যালেন্স',
+            'desc_en' => 'bKash, Nagad, Rocket wallets balance',
+        ],
+    ];
 
     $featureMeta = [
+        'dashboard' => ['icon' => 'layout-dashboard', 'desc_bn' => 'ব্যবসার সারসংক্ষেপ ও পরিসংখ্যান মেট্রিক্স', 'desc_en' => 'Business Summary & KPI Metrics'],
         'sales' => ['icon' => 'shopping-cart', 'desc_bn' => 'পণ্য বিক্রয় ও ইনভয়েস', 'desc_en' => 'Sales & Invoicing'],
         'quick-sale' => ['icon' => 'sparkles', 'desc_bn' => 'কাউন্টারে দ্রুত বিক্রয়', 'desc_en' => 'Fast Counter POS'],
         'customers' => ['icon' => 'users', 'desc_bn' => 'গ্রাহক তথ্য ও বাকির খাতা', 'desc_en' => 'Customers & Due Ledger'],
@@ -36,6 +143,15 @@
     ];
 
     $domainDefinitions = [
+        'dashboard_overview' => [
+            'title_bn' => 'ড্যাশবোর্ড ও পরিসংখ্যান',
+            'title_en' => 'Dashboard & Statistics',
+            'subtitle_bn' => 'ড্যাশবোর্ড প্রবেশাধিকার এবং প্রতিটি পরিসংখ্যান কার্ডের অনুমতি',
+            'subtitle_en' => 'Dashboard access and permissions for individual stat cards',
+            'icon' => 'layout-dashboard',
+            'badge_color' => 'teal',
+            'keys' => ['dashboard'],
+        ],
         'sales_customer' => [
             'title_bn' => 'বিক্রয় ও গ্রাহক সেবা',
             'title_en' => 'Sales & Customers',
@@ -80,7 +196,10 @@
     foreach ($domainDefinitions as $domKey => $domain) {
         $domFeatures = [];
         foreach ($domain['keys'] as $fKey) {
-            if (isset($features[$fKey])) {
+            if ($fKey === 'dashboard') {
+                $domFeatures['dashboard'] = ['bn' => 'ড্যাশবোর্ড', 'en' => 'Dashboard'];
+                $assignedFeatureKeys[] = 'dashboard';
+            } elseif (isset($features[$fKey])) {
                 $domFeatures[$fKey] = $features[$fKey];
                 $assignedFeatureKeys[] = $fKey;
             }
@@ -225,6 +344,65 @@
     flex-wrap: wrap;
     gap: 12px;
 }
+.dashboard-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+    padding: 18px 20px;
+}
+.dashboard-stat-tile {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s ease;
+}
+.dashboard-stat-tile:hover {
+    background: var(--paper);
+    border-color: var(--teal-600);
+    box-shadow: var(--shadow-sm);
+}
+.dashboard-stat-tile.is-active,
+.dashboard-stat-tile:has(input:checked) {
+    background: var(--teal-50) !important;
+    border-color: var(--teal-600) !important;
+    box-shadow: 0 0 0 1px var(--teal-600);
+}
+.stat-tile-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.stat-tile-ic-teal {
+    background: var(--teal-100);
+    color: var(--teal-800);
+}
+.stat-tile-ic-blue {
+    background: var(--blue-100);
+    color: var(--blue-ink);
+}
+.stat-tile-ic-gold {
+    background: var(--gold-100);
+    color: var(--gold-ink);
+}
+.stat-tile-ic-green {
+    background: var(--green-100);
+    color: var(--green-ink);
+}
+.stat-tile-ic-red {
+    background: var(--red-100);
+    color: var(--red-600);
+}
 </style>
 
 {{-- TOP SECTION: Role Info & Selection Overview --}}
@@ -241,15 +419,7 @@
                 :value="old('name', $role->name)"
                 placeholder="যেমন: ক্যাশিয়ার, ম্যানেজার, হিসাবরক্ষক"
                 required
-                :readonly="$role->name === 'Admin'"
             />
-            @if ($role->name === 'Admin')
-                <div style="font-size:12px; color:var(--gold-ink); background:var(--gold-100); padding:6px 10px; border-radius:6px; margin-top:8px; display:flex; align-items:center; gap:6px;">
-                    <x-core::icon name="info" size="xs" />
-                    <span class="bn">ডিফল্ট এডমিন রোলের নাম পরিবর্তন করা যাবে না, তবে পারমিশন কাস্টমাইজ করতে পারেন।</span>
-                    <span class="en" style="display:none;">Default Admin role name cannot be changed, but its permissions can be customized.</span>
-                </div>
-            @endif
         </div>
         <div style="font-size:12px; color:var(--ink-600); line-height:1.5;">
             <span class="bn">নির্দিষ্ট রোলের ইউজাররা সিস্টেমে কী কী সুবিধা ও মেনু দেখতে পারবে, তা নিচের মডিউলভিত্তিক চেকবক্স থেকে নির্ধারণ করুন।</span>
@@ -444,144 +614,219 @@
                 </div>
             </div>
 
-            <div class="table-wrap" style="overflow-x:auto;">
-                <table class="data-table" style="width:100%; border-collapse:collapse;">
-                    <thead>
-                        <tr style="background:var(--paper); border-bottom:1px solid var(--border);">
-                            <th style="padding:8px 10px; text-align:center; width:48px;">
-                                <div style="display:inline-flex; flex-direction:column; align-items:center; gap:4px;">
-                                    <span style="font-size:11px; font-weight:600;"><span class="bn">সব</span><span class="en" style="display:none;">All</span></span>
+            @if ($domKey === 'dashboard_overview')
+                {{-- DEDICATED DASHBOARD & STATS SELECTOR UI --}}
+                <div style="padding:16px 20px; background:var(--paper); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        @php
+                            $isDashboardViewChecked = in_array('dashboard.view', $currentPermissions);
+                        @endphp
+                        <x-core::checkbox
+                            size="md"
+                            color="primary"
+                            name="permissions[]"
+                            value="dashboard.view"
+                            class="perm-checkbox perm-col-view perm-domain-dashboard_overview"
+                            :checked="$isDashboardViewChecked"
+                        >
+                            <span style="font-size:13px; font-weight:700; color:var(--ink-900);">
+                                <span class="bn">ড্যাশবোর্ড প্রবেশাধিকার (Dashboard View Access)</span>
+                                <span class="en" style="display:none;">Dashboard View Access</span>
+                            </span>
+                        </x-core::checkbox>
+                        <span style="font-size:12px; color:var(--ink-600);">
+                            <span class="bn">— মূল ড্যাশবোর্ড পেজে প্রবেশের অনুমতি</span>
+                            <span class="en" style="display:none;">— Permission to view main dashboard page</span>
+                        </span>
+                    </div>
+
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <x-core::button type="button" size="sm" variant="secondary" class="btn-dashboard-select-all" icon="check">
+                            <span class="bn">সব কার্ড নির্বাচন</span>
+                            <span class="en" style="display:none;">Select All Stats</span>
+                        </x-core::button>
+                        <x-core::button type="button" size="sm" variant="secondary" class="btn-dashboard-deselect-all" icon="x">
+                            <span class="bn">সব কার্ড বাতিল</span>
+                            <span class="en" style="display:none;">Deselect All Stats</span>
+                        </x-core::button>
+                    </div>
+                </div>
+
+                <div class="dashboard-stat-grid">
+                    @foreach ($dashboardStatCards as $statKey => $card)
+                        @php
+                            $permKey = "dashboard.{$statKey}";
+                            $isChecked = in_array($permKey, $currentPermissions);
+                            $searchKeywords = strtolower("{$statKey} {$card['title_bn']} {$card['title_en']} {$card['desc_bn']} {$card['desc_en']}");
+                        @endphp
+                        <label class="dashboard-stat-tile {{ $isChecked ? 'is-active' : '' }}" data-search="{{ $searchKeywords }}">
+                            <div class="stat-tile-icon stat-tile-ic-{{ $card['color'] ?? 'teal' }}">
+                                <x-core::icon :name="$card['icon']" size="md" />
+                            </div>
+                            <div style="flex:1; min-width:0;">
+                                <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:3px;">
+                                    <div style="font-size:13px; font-weight:700; color:var(--ink-900); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                        <span class="bn">{{ $card['title_bn'] }}</span>
+                                        <span class="en" style="display:none;">{{ $card['title_en'] }}</span>
+                                    </div>
                                     <x-core::checkbox
                                         size="sm"
                                         color="primary"
-                                        class="check-domain-all-rows"
-                                        data-domain="{{ $domKey }}"
-                                        title="Toggle all rows in this section"
+                                        name="permissions[]"
+                                        value="{{ $permKey }}"
+                                        class="perm-checkbox perm-domain-dashboard_overview"
+                                        :checked="$isChecked"
                                     />
                                 </div>
-                            </th>
-                            <th style="padding:10px 16px; text-align:left; font-size:12px; font-weight:600; color:var(--ink-700); min-width:220px;">
-                                <span class="bn">ফিচার / মডিউল</span>
-                                <span class="en" style="display:none;">Feature / Module</span>
-                            </th>
-                            @foreach ($standardActions as $colKey => $colLabels)
-                                <th style="padding:8px 8px; text-align:center; font-size:12px; font-weight:600; color:var(--ink-700); width:80px;">
+                                <div style="font-size:11px; color:var(--ink-600); line-height:1.4;">
+                                    <span class="bn">{{ $card['desc_bn'] }}</span>
+                                    <span class="en" style="display:none;">{{ $card['desc_en'] }}</span>
+                                </div>
+                            </div>
+                        </label>
+                    @endforeach
+                </div>
+            @else
+                <div class="table-wrap" style="overflow-x:auto;">
+                    <table class="data-table" style="width:100%; border-collapse:collapse;">
+                        <thead>
+                            <tr style="background:var(--paper); border-bottom:1px solid var(--border);">
+                                <th style="padding:8px 10px; text-align:center; width:48px;">
                                     <div style="display:inline-flex; flex-direction:column; align-items:center; gap:4px;">
-                                        <span>
-                                            <span class="bn">{{ $colLabels['bn'] }}</span>
-                                            <span class="en" style="display:none;">{{ $colLabels['en'] }}</span>
-                                        </span>
+                                        <span style="font-size:11px; font-weight:600;"><span class="bn">সব</span><span class="en" style="display:none;">All</span></span>
                                         <x-core::checkbox
                                             size="sm"
                                             color="primary"
-                                            class="check-domain-col"
-                                            data-col="{{ $colKey }}"
+                                            class="check-domain-all-rows"
                                             data-domain="{{ $domKey }}"
-                                            title="Toggle all {{ $colLabels['en'] }} in this section"
+                                            title="Toggle all rows in this section"
                                         />
                                     </div>
                                 </th>
-                            @endforeach
-                            <th style="padding:10px 16px; text-align:left; font-size:12px; font-weight:600; color:var(--ink-700); min-width:260px;">
-                                <span class="bn">বিশেষ অ্যাকশন ও সুবিধা</span>
-                                <span class="en" style="display:none;">Special Actions</span>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($group['features'] as $key => $labels)
-                            @php
-                                $featureActions = \Modules\Core\Support\Permissions::actionsFor($key);
-                                $specialActions = array_diff($featureActions, array_keys($standardActions));
-                                $meta = $featureMeta[$key] ?? ['icon' => 'sliders', 'desc_bn' => '', 'desc_en' => ''];
-                                $searchHaystack = strtolower($key . ' ' . $labels['bn'] . ' ' . $labels['en'] . ' ' . ($meta['desc_bn'] ?? '') . ' ' . ($meta['desc_en'] ?? ''));
-                            @endphp
-                            <tr class="module-row" data-module="{{ $key }}" data-search="{{ $searchHaystack }}" style="border-bottom:1px solid var(--border); transition:background 0.15s ease;">
-                                <td style="padding:10px 10px; text-align:center; vertical-align:middle; width:48px;">
-                                    <div style="display:inline-flex; justify-content:center; align-items:center;">
-                                        <x-core::checkbox
-                                            size="sm"
-                                            color="primary"
-                                            class="check-row-master"
-                                            data-module="{{ $key }}"
-                                            title="এই রোলের সব পারমিশন নির্বাচন করুন / Select all for this row"
-                                        />
-                                    </div>
-                                </td>
-                                <td style="padding:12px 16px; vertical-align:middle;">
-                                    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-                                        <div style="display:flex; align-items:center; gap:10px;">
-                                            <div style="width:30px; height:30px; border-radius:6px; background:var(--paper); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; color:var(--ink-700); flex-shrink:0;">
-                                                <x-core::icon :name="$meta['icon']" size="sm" />
-                                            </div>
-                                            <div>
-                                                <div style="font-size:13px; font-weight:600; color:var(--ink-900);">
-                                                    <span class="bn">{{ $labels['bn'] }}</span>
-                                                    <span class="en" style="display:none;">{{ $labels['en'] }}</span>
-                                                </div>
-                                                <div style="font-size:11px; color:var(--ink-400); margin-top:1px;">
-                                                    <span class="bn">{{ $meta['desc_bn'] }}</span>
-                                                    <span class="en" style="display:none;">{{ $meta['desc_en'] }}</span>
-                                                </div>
-                                            </div>
+                                <th style="padding:10px 16px; text-align:left; font-size:12px; font-weight:600; color:var(--ink-700); min-width:220px;">
+                                    <span class="bn">ফিচার / মডিউল</span>
+                                    <span class="en" style="display:none;">Feature / Module</span>
+                                </th>
+                                @foreach ($standardActions as $colKey => $colLabels)
+                                    <th style="padding:8px 8px; text-align:center; font-size:12px; font-weight:600; color:var(--ink-700); width:80px;">
+                                        <div style="display:inline-flex; flex-direction:column; align-items:center; gap:4px;">
+                                            <span>
+                                                <span class="bn">{{ $colLabels['bn'] }}</span>
+                                                <span class="en" style="display:none;">{{ $colLabels['en'] }}</span>
+                                            </span>
+                                            <x-core::checkbox
+                                                size="sm"
+                                                color="primary"
+                                                class="check-domain-col"
+                                                data-col="{{ $colKey }}"
+                                                data-domain="{{ $domKey }}"
+                                                title="Toggle all {{ $colLabels['en'] }} in this section"
+                                            />
                                         </div>
-                                        <span class="row-count-badge" data-module="{{ $key }}" style="font-size:11px; color:var(--ink-600); font-weight:500; background:var(--paper); padding:2px 6px; border-radius:4px; border:1px solid var(--border); flex-shrink:0;">
-                                            0 / 0
-                                        </span>
-                                    </div>
-                                </td>
-                                @foreach (['view', 'create', 'edit', 'delete'] as $act)
-                                    <td style="padding:10px 8px; text-align:center; vertical-align:middle;">
-                                        @if (in_array($act, $featureActions))
-                                            @php
-                                                $actPermVal = "{$key}.{$act}";
-                                                $isActChecked = in_array($actPermVal, $currentPermissions);
-                                            @endphp
-                                            <div style="display:inline-flex; justify-content:center;">
-                                                <x-core::checkbox
-                                                    size="sm"
-                                                    color="primary"
-                                                    name="permissions[]"
-                                                    :value="$actPermVal"
-                                                    class="perm-checkbox perm-col-{{ $act }} perm-row-{{ $key }} perm-domain-{{ $domKey }}"
-                                                    :checked="$isActChecked"
-                                                />
+                                    </th>
+                                @endforeach
+                                <th style="padding:10px 16px; text-align:left; font-size:12px; font-weight:600; color:var(--ink-700); min-width:260px;">
+                                    <span class="bn">বিশেষ অ্যাকশন ও সুবিধা</span>
+                                    <span class="en" style="display:none;">Special Actions</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($group['features'] as $key => $labels)
+                                @php
+                                    $featureActions = \Modules\Core\Support\Permissions::actionsFor($key);
+                                    $specialActions = array_diff($featureActions, array_keys($standardActions));
+                                    $meta = $featureMeta[$key] ?? ['icon' => 'sliders', 'desc_bn' => '', 'desc_en' => ''];
+                                    $specialSearchText = implode(' ', array_map(fn ($act) => ($allActionLabels[$act]['bn'] ?? '') . ' ' . ($allActionLabels[$act]['en'] ?? '') . ' ' . $act, $specialActions));
+                                    $searchHaystack = strtolower($key . ' ' . $labels['bn'] . ' ' . $labels['en'] . ' ' . ($meta['desc_bn'] ?? '') . ' ' . ($meta['desc_en'] ?? '') . ' ' . $specialSearchText);
+                                @endphp
+                                <tr class="module-row" data-module="{{ $key }}" data-search="{{ $searchHaystack }}" style="border-bottom:1px solid var(--border); transition:background 0.15s ease;">
+                                    <td style="padding:10px 10px; text-align:center; vertical-align:middle; width:48px;">
+                                        <div style="display:inline-flex; justify-content:center; align-items:center;">
+                                            <x-core::checkbox
+                                                size="sm"
+                                                color="primary"
+                                                class="check-row-master"
+                                                data-module="{{ $key }}"
+                                                title="এই রোলের সব পারমিশন নির্বাচন করুন / Select all for this row"
+                                            />
+                                        </div>
+                                    </td>
+                                    <td style="padding:12px 16px; vertical-align:middle;">
+                                        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                                            <div style="display:flex; align-items:center; gap:10px;">
+                                                <div style="width:30px; height:30px; border-radius:6px; background:var(--paper); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; color:var(--ink-700); flex-shrink:0;">
+                                                    <x-core::icon :name="$meta['icon']" size="sm" />
+                                                </div>
+                                                <div>
+                                                    <div style="font-size:13px; font-weight:600; color:var(--ink-900);">
+                                                        <span class="bn">{{ $labels['bn'] }}</span>
+                                                        <span class="en" style="display:none;">{{ $labels['en'] }}</span>
+                                                    </div>
+                                                    <div style="font-size:11px; color:var(--ink-400); margin-top:1px;">
+                                                        <span class="bn">{{ $meta['desc_bn'] }}</span>
+                                                        <span class="en" style="display:none;">{{ $meta['desc_en'] }}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <span class="row-count-badge" data-module="{{ $key }}" style="font-size:11px; color:var(--ink-600); font-weight:500; background:var(--paper); padding:2px 6px; border-radius:4px; border:1px solid var(--border); flex-shrink:0;">
+                                                0 / 0
+                                            </span>
+                                        </div>
+                                    </td>
+                                    @foreach (['view', 'create', 'edit', 'delete'] as $act)
+                                        <td style="padding:10px 8px; text-align:center; vertical-align:middle;">
+                                            @if (in_array($act, $featureActions))
+                                                @php
+                                                    $actPermVal = "{$key}.{$act}";
+                                                    $isActChecked = in_array($actPermVal, $currentPermissions);
+                                                @endphp
+                                                <div style="display:inline-flex; justify-content:center;">
+                                                    <x-core::checkbox
+                                                        size="sm"
+                                                        color="primary"
+                                                        name="permissions[]"
+                                                        :value="$actPermVal"
+                                                        class="perm-checkbox perm-col-{{ $act }} perm-row-{{ $key }} perm-domain-{{ $domKey }}"
+                                                        :checked="$isActChecked"
+                                                    />
+                                                </div>
+                                            @else
+                                                <span style="color:var(--ink-400); font-size:13px; user-select:none;">&mdash;</span>
+                                            @endif
+                                        </td>
+                                    @endforeach
+                                    <td style="padding:10px 16px; vertical-align:middle;">
+                                        @if (count($specialActions) > 0)
+                                            <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
+                                                @foreach ($specialActions as $act)
+                                                    @php
+                                                        $permVal = "{$key}.{$act}";
+                                                        $isChecked = in_array($permVal, $currentPermissions);
+                                                    @endphp
+                                                    <x-core::checkbox
+                                                        size="sm"
+                                                        color="primary"
+                                                        name="permissions[]"
+                                                        value="{{ $permVal }}"
+                                                        class="special-action-pill {{ $isChecked ? 'is-active' : '' }}"
+                                                        :checked="$isChecked"
+                                                    >
+                                                        <span class="bn">{{ $allActionLabels[$act]['bn'] ?? $act }}</span>
+                                                        <span class="en" style="display:none;">{{ $allActionLabels[$act]['en'] ?? $act }}</span>
+                                                    </x-core::checkbox>
+                                                @endforeach
                                             </div>
                                         @else
-                                            <span style="color:var(--ink-400); font-size:13px; user-select:none;">&mdash;</span>
+                                            <span style="color:var(--ink-400); font-size:12px; user-select:none;">&mdash;</span>
                                         @endif
                                     </td>
-                                @endforeach
-                                <td style="padding:10px 16px; vertical-align:middle;">
-                                    @if (count($specialActions) > 0)
-                                        <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
-                                            @foreach ($specialActions as $act)
-                                                @php
-                                                    $permVal = "{$key}.{$act}";
-                                                    $isChecked = in_array($permVal, $currentPermissions);
-                                                @endphp
-                                                <x-core::checkbox
-                                                    size="sm"
-                                                    color="primary"
-                                                    name="permissions[]"
-                                                    value="{{ $permVal }}"
-                                                    class="special-action-pill {{ $isChecked ? 'is-active' : '' }}"
-                                                    :checked="$isChecked"
-                                                >
-                                                    <span class="bn">{{ $allActionLabels[$act]['bn'] ?? $act }}</span>
-                                                    <span class="en" style="display:none;">{{ $allActionLabels[$act]['en'] ?? $act }}</span>
-                                                </x-core::checkbox>
-                                            @endforeach
-                                        </div>
-                                    @else
-                                        <span style="color:var(--ink-400); font-size:12px; user-select:none;">&mdash;</span>
-                                    @endif
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
         </div>
     @endforeach
 @endif
@@ -715,9 +960,29 @@ $(function () {
             var isChecked = $(this).find('input[type="checkbox"]').is(':checked');
             $(this).toggleClass('is-active', isChecked);
         });
+
+        $('.dashboard-stat-tile').each(function () {
+            var isChecked = $(this).find('input[type="checkbox"]').is(':checked');
+            $(this).toggleClass('is-active', isChecked);
+        });
     }
 
     $(document).on('change', 'input[name="permissions[]"]', function () {
+        updateMetrics();
+    });
+
+    // Dashboard-specific Select All / Deselect All Stat Cards
+    $(document).on('click', '.btn-dashboard-select-all', function (e) {
+        e.preventDefault();
+        var $dashInputs = $('[data-domain-card="dashboard_overview"]').find('input[name="permissions[]"]');
+        $dashInputs.prop('checked', true);
+        updateMetrics();
+    });
+
+    $(document).on('click', '.btn-dashboard-deselect-all', function (e) {
+        e.preventDefault();
+        var $dashInputs = $('[data-domain-card="dashboard_overview"]').find('input[name="permissions[]"]');
+        $dashInputs.prop('checked', false);
         updateMetrics();
     });
 
@@ -812,6 +1077,7 @@ $(function () {
         'cashier': function () {
             $('input[name="permissions[]"]').prop('checked', false);
             var perms = [
+                'dashboard.view', 'dashboard.stat-sales', 'dashboard.stat-cash', 'dashboard.stat-receivable',
                 'sales.view', 'sales.create', 'sales.print',
                 'quick-sale.view', 'quick-sale.create',
                 'customers.view', 'customers.create', 'customers.payment',
@@ -827,6 +1093,7 @@ $(function () {
         'inventory': function () {
             $('input[name="permissions[]"]').prop('checked', false);
             var perms = [
+                'dashboard.view', 'dashboard.stat-purchase', 'dashboard.stat-stock-qty', 'dashboard.stat-stock-value',
                 'products.view', 'products.create', 'products.edit',
                 'stock.view', 'stock.create', 'stock.edit', 'stock.adjust', 'stock.transfer',
                 'purchase.view', 'purchase.create', 'purchase.edit', 'purchase.receive', 'purchase.return', 'purchase.print',
@@ -841,6 +1108,9 @@ $(function () {
         'accountant': function () {
             $('input[name="permissions[]"]').prop('checked', false);
             var perms = [
+                'dashboard.view', 'dashboard.stat-balance', 'dashboard.stat-sales', 'dashboard.stat-purchase',
+                'dashboard.stat-expense', 'dashboard.stat-product-profit', 'dashboard.stat-total-profit',
+                'dashboard.stat-receivable', 'dashboard.stat-payable', 'dashboard.stat-cash', 'dashboard.stat-bank', 'dashboard.stat-mfs',
                 'income.view', 'income.create', 'income.edit',
                 'expense.view', 'expense.create', 'expense.edit',
                 'accounts.view', 'accounts.create', 'accounts.edit', 'accounts.transfer',
@@ -876,25 +1146,51 @@ $(function () {
 
         $('[data-domain-card]').each(function () {
             var $card = $(this);
-            var $rows = $card.find('.module-row');
-            var matchedRows = 0;
+            var domainKey = $card.attr('data-domain-card');
+            var matchedItems = 0;
 
-            $rows.each(function () {
-                var $row = $(this);
-                var searchData = $row.attr('data-search') || '';
-                if (!query || searchData.indexOf(query) !== -1) {
-                    $row.show();
-                    matchedRows++;
+            if (domainKey === 'dashboard_overview') {
+                var $tiles = $card.find('.dashboard-stat-tile');
+                var dashBannerText = 'dashboard ড্যাশবোর্ড পরিসংখ্যান';
+                var bannerMatched = !query || dashBannerText.indexOf(query) !== -1;
+
+                $tiles.each(function () {
+                    var $tile = $(this);
+                    var searchData = $tile.attr('data-search') || '';
+                    if (!query || bannerMatched || searchData.indexOf(query) !== -1) {
+                        $tile.show();
+                        matchedItems++;
+                    } else {
+                        $tile.hide();
+                    }
+                });
+
+                if (matchedItems > 0 || bannerMatched) {
+                    $card.show();
+                    visibleDomains++;
                 } else {
-                    $row.hide();
+                    $card.hide();
                 }
-            });
-
-            if (matchedRows > 0) {
-                $card.show();
-                visibleDomains++;
             } else {
-                $card.hide();
+                var $rows = $card.find('.module-row');
+
+                $rows.each(function () {
+                    var $row = $(this);
+                    var searchData = $row.attr('data-search') || '';
+                    if (!query || searchData.indexOf(query) !== -1) {
+                        $row.show();
+                        matchedItems++;
+                    } else {
+                        $row.hide();
+                    }
+                });
+
+                if (matchedItems > 0) {
+                    $card.show();
+                    visibleDomains++;
+                } else {
+                    $card.hide();
+                }
             }
         });
 

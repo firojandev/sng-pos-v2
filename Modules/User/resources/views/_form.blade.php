@@ -51,12 +51,13 @@
             <x-core::input
                 name="phone"
                 type="text"
-                label="ফোন নম্বর (ঐচ্ছিক)"
-                label-en="Phone Number (Optional)"
-                value="{{ old('phone', $user->phone) }}"
+                label="{{ $isEdit ? 'ফোন নম্বর (ঐচ্ছিক)' : 'ফোন নম্বর' }}"
+                label-en="{{ $isEdit ? 'Phone Number (Optional)' : 'Phone Number' }}"
+                :value="old('phone', $user->phone)"
                 placeholder="যেমন: 017xxxxxxxx"
                 placeholder-en="e.g. 017xxxxxxxx"
                 size="sm"
+                :required="!$isEdit"
             />
         @endif
     </div>
@@ -66,7 +67,7 @@
         type="email"
         label="ইমেইল অ্যাড্রেস (ঐচ্ছিক)"
         label-en="Email Address (Optional)"
-        value="{{ old('email', $user->email) }}"
+        :value="old('email', $user->email)"
         placeholder="user@example.com"
         placeholder-en="user@example.com"
         size="sm"

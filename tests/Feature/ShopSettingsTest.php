@@ -8,6 +8,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Modules\Shop\Models\Shop;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class ShopSettingsTest extends TestCase
@@ -165,5 +166,55 @@ class ShopSettingsTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors(['name', 'email']);
+    }
+
+    public function test_non_admin_cannot_access_or_update_shop_settings(): void
+    {
+        $shop = Shop::create([
+            'name' => 'স্টোর',
+            'slug' => 'store-009',
+            'status' => 'active',
+        ]);
+
+        $cashierRole = Role::firstOrCreate([
+            'shop_id' => $shop->id,
+            'name' => 'Cashier',
+            'guard_name' => 'web',
+        ]);
+
+        $cashier = User::factory()->create([
+            'shop_id' => $shop->id,
+        ]);
+        $cashier->assignRole($cashierRole);
+
+        // Cannot view settings
+        $response = $this->actingAs($cashier)->get(route('settings.index'));
+        $response->assertStatus(403);
+
+        // Cannot update settings
+        $updateResponse = $this->actingAs($cashier)->put(route('settings.update'), [
+            'name' => 'অননুমোদিত পরিবর্তন',
+        ]);
+        $updateResponse->assertStatus(403);
+    }
+
+    public function test_shop_name_with_ampersand_does_not_double_encode_in_settings_input(): void
+    {
+        $shop = Shop::create([
+            'name' => 'Ahang Fashion & Crafts Ltd',
+            'slug' => 'ahang-fashion-crafts-ltd',
+            'store_code' => 'shop-010',
+            'status' => 'active',
+        ]);
+
+        $user = User::factory()->create([
+            'shop_id' => $shop->id,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('settings.index'));
+
+        $response->assertStatus(200);
+        $response->assertSee('value="Ahang Fashion &amp; Crafts Ltd"', false);
+        $response->assertDontSee('&amp;amp;', false);
     }
 }

@@ -19,6 +19,9 @@
             'isWholesale' => (bool) $product->is_wholesale,
             'wholesalePrice' => (float) ($product->wholesale_price ?? 0),
             'wholesaleMinQty' => (float) ($product->wholesale_min_qty ?? 1),
+            'hasDiscount' => (bool) $product->has_discount,
+            'discountType' => $product->discount_type ?? 'flat',
+            'discountValue' => (float) ($product->discount_value ?? 0),
             'units' => $product->units->map(function ($u) {
                 $raw = (float) $u->pivot->conversion_factor;
 
@@ -668,14 +671,15 @@
 
     let cart = initialItems.map((row) => ({
         productId: row.product_id,
-        qty: parseFloat(row.qty) || 1,
-        unitId: row.unitId || (productData[row.product_id]?.baseUnitId ?? ''),
-        price: parseFloat(row.price) || 0,
+        qty: parseFloat(row.qty || row.quantity) || 1,
+        unitId: row.unitId || row.unit_id || (productData[row.product_id]?.baseUnitId ?? ''),
+        price: parseFloat(row.price || row.unit_price) || 0,
         discountRaw: parseFloat(row.discount) || 0,
         discountType: 'flat',
         barcode: row.barcode || '',
-        warrantyExpiresAt: row.warrantyExpiresAt || '',
-        isWholesale: !!row.isWholesale,
+        warrantyExpiresAt: row.warrantyExpiresAt || row.warranty_expires_at || '',
+        isWholesale: !!(row.isWholesale || row.is_wholesale),
+        manuallyDiscounted: true,
     }));
 
     function escapeHtml(str) {
@@ -699,7 +703,8 @@
 
     function lineDiscountAmount(item) {
         const gross = item.qty * item.price;
-        const amount = item.discountType === 'percent' ? gross * (item.discountRaw / 100) : item.discountRaw;
+        const isPercent = item.discountType === 'percent' || item.discountType === 'percentage';
+        const amount = isPercent ? gross * (item.discountRaw / 100) : item.discountRaw;
         return Math.min(Math.max(amount, 0), gross);
     }
 
@@ -760,9 +765,13 @@
         catalogList.innerHTML = ids.map((pid) => {
             const p = productData[pid];
             const count = cartQtyFor(pid);
+            const hasDiscountOffer = p.hasDiscount && p.discountValue > 0;
+            const discountBadge = hasDiscountOffer
+                ? ' <span style="color:var(--red-600); font-weight:700; font-size:11.5px;">(-' + ((p.discountType === 'percentage' || p.discountType === 'percent') ? p.discountValue + '%' : '৳' + fmt(p.discountValue)) + ')</span>'
+                : '';
             return '<div class="catalog-item" data-id="' + pid + '">' +
                 '<div class="thumb"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="8" height="8" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="13" y="4" width="8" height="8" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="14" width="8" height="6" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="13" y="14" width="8" height="6" rx="1.6" stroke="currentColor" stroke-width="1.6"/></svg></div>' +
-                '<div class="info"><div class="nm">' + escapeHtml(p.name) + '</div><div class="meta">৳' + fmt(p.price) + ' | স্টক: ' + fmt(p.stock).replace(/\.00$/, '') + '</div></div>' +
+                '<div class="info"><div class="nm">' + escapeHtml(p.name) + '</div><div class="meta">৳' + fmt(p.price) + discountBadge + ' | স্টক: ' + fmt(p.stock).replace(/\.00$/, '') + '</div></div>' +
                 '<div class="add-btn">' +
                     '<button type="button" class="decrease-from-cart-btn" data-id="' + pid + '" title="পরিমাণ হ্রাস করুন"' + (count > 0 ? '' : ' disabled') + '><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>' +
                     (count ? '<span class="count">' + fmt(count).replace(/\.00$/, '') + '</span>' : '') +
@@ -778,15 +787,31 @@
         const existing = cart.find((c) => String(c.productId) === String(productId));
         if (existing) {
             existing.qty += 1;
+            if (p.hasDiscount && (p.discountType === 'flat') && !existing.manuallyDiscounted) {
+                const factor = unitFactor(p, existing.unitId);
+                existing.discountRaw = Math.round(p.discountValue * factor * existing.qty * 100) / 100;
+            }
         } else {
             let warrantyExpiresAt = '';
             if (p.hasWarranty && p.warrantyDuration && p.warrantyType) {
                 warrantyExpiresAt = addDuration(document.getElementById('sale-date-input').value, p.warrantyDuration, p.warrantyType);
             }
+            const isPercent = p.hasDiscount && (p.discountType === 'percentage' || p.discountType === 'percent');
+            const initialDiscountType = isPercent ? 'percent' : 'flat';
+            const factor = unitFactor(p, p.baseUnitId || '');
+            const initialDiscountRaw = p.hasDiscount ? (isPercent ? p.discountValue : Math.round(p.discountValue * factor * 100) / 100) : 0;
+
             cart.push({
-                productId: productId, qty: 1, unitId: p.baseUnitId || '', price: p.price,
-                discountRaw: 0, discountType: 'flat', barcode: p.barcode || '', warrantyExpiresAt: warrantyExpiresAt,
+                productId: productId,
+                qty: 1,
+                unitId: p.baseUnitId || '',
+                price: p.price,
+                discountRaw: initialDiscountRaw,
+                discountType: initialDiscountType,
+                barcode: p.barcode || '',
+                warrantyExpiresAt: warrantyExpiresAt,
                 isWholesale: false,
+                manuallyDiscounted: false,
             });
         }
         renderAll();
@@ -798,6 +823,11 @@
 
         if (cart[index].qty > 1) {
             cart[index].qty -= 1;
+            const p = productData[productId];
+            if (p && p.hasDiscount && (p.discountType === 'flat') && !cart[index].manuallyDiscounted) {
+                const factor = unitFactor(p, cart[index].unitId);
+                cart[index].discountRaw = Math.round(p.discountValue * factor * cart[index].qty * 100) / 100;
+            }
         } else {
             cart.splice(index, 1);
         }
@@ -880,21 +910,29 @@
             const hasTax = p.isVat && p.vatPercentage > 0;
             const itemTax = lineTaxAmount(item);
             const hasWholesale = p.isWholesale && (p.wholesalePrice > 0 || p.wholesaleMinQty > 0);
+            const hasDiscountOffer = p.hasDiscount && p.discountValue > 0;
+            const discountLabel = hasDiscountOffer
+                ? ((p.discountType === 'percentage' || p.discountType === 'percent') ? p.discountValue + '%' : '৳' + fmt(p.discountValue))
+                : '';
 
             return '<div class="cart-item" data-index="' + i + '">' +
                 '<div class="ci-head">' +
                     '<div class="thumb"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="8" height="8" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="13" y="4" width="8" height="8" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="14" width="8" height="6" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="13" y="14" width="8" height="6" rx="1.6" stroke="currentColor" stroke-width="1.6"/></svg></div>' +
                     '<div class="nm" title="' + escapeHtml(p.name) + '">' + escapeHtml(p.name) + '</div>' +
-                    (hasTax ? '<div class="ci-tax-badge" title="ভ্যাট প্রযোজ্য (' + p.vatPercentage + '%)">' +
-                        '<span class="bn">ভ্যাট (' + p.vatPercentage + '%): ৳<span class="ci-item-tax-amt">' + fmt(itemTax) + '</span></span>' +
-                        '<span class="en" style="display:none;">Tax (' + p.vatPercentage + '%): ৳<span class="ci-item-tax-amt">' + fmt(itemTax) + '</span></span>' +
-                    '</div>' : '') +
                     '<div class="ci-head-popovers">' +
                         '<div class="item-popover barcode-popover">' +
                             '<div class="fld"><label class="bn">বারকোড</label><label class="en" style="display:none;">Barcode</label><input type="text" class="ci-barcode-input" value="' + escapeHtml(item.barcode) + '" placeholder="বারকোড স্ক্যান/লিখুন"></div>' +
                         '</div>' +
                     '</div>' +
                     '<div class="ci-actions">' +
+                        (hasTax ? '<div class="ci-tax-badge" title="ভ্যাট প্রযোজ্য (' + p.vatPercentage + '%)">' +
+                            '<span class="bn">ভ্যাট (' + p.vatPercentage + '%): ৳<span class="ci-item-tax-amt">' + fmt(itemTax) + '</span></span>' +
+                            '<span class="en" style="display:none;">Tax (' + p.vatPercentage + '%): ৳<span class="ci-item-tax-amt">' + fmt(itemTax) + '</span></span>' +
+                        '</div>' : '') +
+                        (hasDiscountOffer ? '<div class="ci-discount-offer-badge" title="ছাড় প্রযোজ্য">' +
+                            '<span class="bn">ছাড়: ' + discountLabel + '</span>' +
+                            '<span class="en" style="display:none;">Discount: ' + discountLabel + '</span>' +
+                        '</div>' : '') +
                         (hasWholesale ? '<label class="ci-wholesale-toggle' + (item.isWholesale ? ' is-active' : '') + '" title="পাইকারি বিক্রয় / Wholesale">' +
                             '<input type="checkbox" class="ci-wholesale-chk" ' + (item.isWholesale ? 'checked' : '') + '>' +
                             '<span class="bn">পাইকারি</span><span class="en" style="display:none;">Wholesale</span>' +
@@ -930,7 +968,7 @@
                     '<div><label class="bn">ছাড়</label><label class="en" style="display:none;">Discount</label>' +
                         '<div class="disc-row ci-disc-row">' +
                             '<input type="number" step="0.01" min="0" class="ci-discount-raw" value="' + item.discountRaw + '">' +
-                            '<select class="ci-discount-type"><option value="flat"' + (item.discountType === 'flat' ? ' selected' : '') + '>৳</option><option value="percent"' + (item.discountType === 'percent' ? ' selected' : '') + '>%</option></select>' +
+                            '<select class="ci-discount-type"><option value="flat"' + (item.discountType === 'flat' ? ' selected' : '') + '>৳</option><option value="percent"' + (item.discountType === 'percent' || item.discountType === 'percentage' ? ' selected' : '') + '>%</option></select>' +
                         '</div>' +
                     '</div>' +
                     '<div><label class="bn">মোট</label><label class="en" style="display:none;">Amount</label><input type="text" class="ci-total" value="' + fmt(lineAmount(item)) + '" readonly></div>' +
@@ -1242,6 +1280,9 @@
                 item.qty = 1;
                 item.price = Math.round(p.price * factor * 100) / 100;
             }
+            if (p && p.hasDiscount && (p.discountType === 'flat') && !item.manuallyDiscounted) {
+                item.discountRaw = Math.round(p.discountValue * factor * item.qty * 100) / 100;
+            }
             renderAll();
             return;
         }
@@ -1252,7 +1293,24 @@
             item.unitId = e.target.value;
             const basePrice = item.isWholesale ? (p.wholesalePrice || p.price) : p.price;
             item.price = Math.round(basePrice * factor * 100) / 100;
+            if (p && p.hasDiscount && (p.discountType === 'flat') && !item.manuallyDiscounted) {
+                item.discountRaw = Math.round(p.discountValue * factor * item.qty * 100) / 100;
+            }
             renderAll();
+            return;
+        }
+
+        if (e.target.classList.contains('ci-discount-type')) {
+            item.discountType = e.target.value;
+            item.manuallyDiscounted = true;
+            row.querySelector('.ci-total').value = fmt(lineAmount(item));
+            const p = productData[item.productId];
+            if (p && p.isVat && p.vatPercentage > 0) {
+                const taxEl = row.querySelector('.ci-item-tax-amt');
+                if (taxEl) taxEl.textContent = fmt(lineTaxAmount(item));
+            }
+            renderHiddenFields();
+            recalcGrand();
             return;
         }
     });
@@ -1283,10 +1341,22 @@
             } else {
                 item.qty = newQty;
             }
+            if (p && p.hasDiscount && (p.discountType === 'flat') && !item.manuallyDiscounted) {
+                const factor = unitFactor(p, item.unitId);
+                item.discountRaw = Math.round(p.discountValue * factor * item.qty * 100) / 100;
+                const discInput = row.querySelector('.ci-discount-raw');
+                if (discInput) discInput.value = item.discountRaw;
+            }
         }
         if (e.target.classList.contains('ci-price')) item.price = parseFloat(e.target.value) || 0;
-        if (e.target.classList.contains('ci-discount-raw')) item.discountRaw = parseFloat(e.target.value) || 0;
-        if (e.target.classList.contains('ci-discount-type')) item.discountType = e.target.value;
+        if (e.target.classList.contains('ci-discount-raw')) {
+            item.discountRaw = parseFloat(e.target.value) || 0;
+            item.manuallyDiscounted = true;
+        }
+        if (e.target.classList.contains('ci-discount-type')) {
+            item.discountType = e.target.value;
+            item.manuallyDiscounted = true;
+        }
         if (e.target.classList.contains('ci-barcode-input')) {
             item.barcode = e.target.value;
             const btn = row.querySelector('.barcode-toggle-btn');
@@ -1522,6 +1592,17 @@
 
         $form.find('.is-invalid').removeClass('is-invalid');
         $form.find('.dynamic-error').remove();
+
+        const openingDueVal = parseFloat($('#quick_customer_opening_due').val());
+        if (!isNaN(openingDueVal) && openingDueVal < 0) {
+            const $field = $('#quick_customer_opening_due');
+            $field.addClass('is-invalid');
+            const msg = $('body').hasClass('lang-en') ? 'Opening due cannot be negative.' : 'প্রারম্ভিক বাকি ঋণাত্মক হতে পারবে না।';
+            $field.closest('.form-group, .field, div').append('<div class="field-error dynamic-error" style="color:var(--red-600); font-size:11.5px; margin-top:3px; font-weight:600;">' + msg + '</div>');
+            $field.focus();
+            return false;
+        }
+
         $btn.prop('disabled', true);
 
         $.ajax({

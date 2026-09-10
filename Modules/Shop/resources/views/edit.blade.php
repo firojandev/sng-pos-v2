@@ -236,10 +236,14 @@
                                         </x-core::form-group>
                                     </div>
                                     <div>
-                                        <x-core::form-group name="status" label="সাবস্ক্রিপশন অবস্থা" label-en="Subscription Status" icon="check-circle" required>
-                                            <select name="status" id="edit-subscription-status-select" class="form-control form-select" required>
+                                        @php
+                                            $rawSubStatus = old('subscription_status', old('status', $subscription?->status instanceof \BackedEnum ? $subscription->status->value : ($subscription?->status ?? 'active')));
+                                            $currentSubStatus = $rawSubStatus === 'trial' ? 'trialing' : $rawSubStatus;
+                                        @endphp
+                                        <x-core::form-group name="subscription_status" label="সাবস্ক্রিপশন অবস্থা" label-en="Subscription Status" icon="check-circle" required>
+                                            <select name="subscription_status" id="edit-subscription-status-select" class="form-control form-select" required>
                                                 @foreach (\Modules\Shop\Models\Subscription::statusLabels() as $key => $label)
-                                                    <option value="{{ $key }}" {{ old('status', $subscription->status ?? 'active') === $key ? 'selected' : '' }}>
+                                                    <option value="{{ $key }}" {{ $currentSubStatus === $key ? 'selected' : '' }}>
                                                         {{ $label['bn'] }} ({{ $label['en'] }})
                                                     </option>
                                                 @endforeach
@@ -248,18 +252,19 @@
                                     </div>
                                 </div>
 
+                                @php
+                                    $formatDateVal = function ($val) {
+                                        if (! $val) return '';
+                                        if ($val instanceof \DateTimeInterface) return $val->format('Y-m-d');
+                                        if (is_string($val)) return substr($val, 0, 10);
+                                        return '';
+                                    };
+                                    $startDateVal = old('current_period_start', $formatDateVal($subscription?->current_period_start ?? $subscription?->starts_at));
+                                    $endDateVal = old('current_period_end', $formatDateVal($subscription?->current_period_end ?? $subscription?->ends_at));
+                                    $trialDateVal = old('trial_ends_at', $formatDateVal($subscription?->trial_ends_at));
+                                @endphp
+
                                 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:16px;">
-                                    <div>
-                                        <x-core::input
-                                            type="date"
-                                            name="trial_ends_at"
-                                            id="edit-subscription-trial-input"
-                                            label="ট্রায়াল সমাপ্তির তারিখ"
-                                            label-en="Trial Ends At"
-                                            icon="calendar"
-                                            :value="old('trial_ends_at', optional($subscription->trial_ends_at ?? null)->format('Y-m-d'))"
-                                        />
-                                    </div>
                                     <div>
                                         <x-core::input
                                             type="date"
@@ -268,7 +273,7 @@
                                             label="বর্তমান মেয়াদ শুরু"
                                             label-en="Period Start Date"
                                             icon="calendar"
-                                            :value="old('current_period_start', optional($subscription->current_period_start ?? null)->format('Y-m-d'))"
+                                            :value="$startDateVal"
                                         />
                                     </div>
                                     <div>
@@ -279,7 +284,18 @@
                                             label="বর্তমান মেয়াদ শেষ"
                                             label-en="Period End Date"
                                             icon="calendar"
-                                            :value="old('current_period_end', optional($subscription->current_period_end ?? null)->format('Y-m-d'))"
+                                            :value="$endDateVal"
+                                        />
+                                    </div>
+                                    <div>
+                                        <x-core::input
+                                            type="date"
+                                            name="trial_ends_at"
+                                            id="edit-subscription-trial-input"
+                                            label="ট্রায়াল সমাপ্তির তারিখ"
+                                            label-en="Trial Ends At"
+                                            icon="calendar"
+                                            :value="$trialDateVal"
                                         />
                                     </div>
                                 </div>

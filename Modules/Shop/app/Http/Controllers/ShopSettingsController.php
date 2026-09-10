@@ -29,6 +29,10 @@ class ShopSettingsController extends Controller
             abort(403, 'কোনো দোকান নির্বাচন বা বরাদ্দ করা নেই (No shop assigned)।');
         }
 
+        if (! $user->isShopAdmin($shop)) {
+            abort(403, 'দোকান সেটিংস দেখার বা পরিচালনা করার অনুমতি শুধুমাত্র শপ এডমিনের রয়েছে (Only shop admin can access shop settings)।');
+        }
+
         $subscription = $shop->subscription();
         if ($subscription) {
             $subscription->loadMissing(['plan']);
@@ -56,6 +60,10 @@ class ShopSettingsController extends Controller
 
         if (! $shop) {
             abort(403, 'কোনো দোকান নির্বাচন বা বরাদ্দ করা নেই (No shop assigned)।');
+        }
+
+        if (! $user->isShopAdmin($shop)) {
+            abort(403, 'দোকানের সেটিংস পরিবর্তন করার অনুমতি শুধুমাত্র শপ এডমিনের রয়েছে (Only shop admin can update shop settings)।');
         }
 
         $shop->name = $request->validated('name');

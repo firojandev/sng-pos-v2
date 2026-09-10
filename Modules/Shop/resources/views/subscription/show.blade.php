@@ -92,9 +92,14 @@
                             @foreach ($quotaItems as $key => $meta)
                                 @php
                                     $used = $usage[$key] ?? 0;
-                                    $isUnlimited = $shop->isUnlimitedUsage($key);
-                                    $limit = $isUnlimited ? null : ($shop->subscription()?->getPlan()?->features()->where('slug', $key)->first()?->pivot?->value ?? $subscription->plan->{'max_' . $key} ?? null);
-                                    $percent = ($limit && $limit > 0) ? min(100, round(($used / $limit) * 100)) : ($isUnlimited ? 15 : 0);
+                                    $featureSlug = 'max-' . $key;
+                                    $featurePivot = $shop->subscription()?->getPlan()?->features()->where('slug', $featureSlug)->first()?->pivot?->value;
+                                    $columnLimit = $subscription->plan->{'max_' . $key} ?? null;
+                                    $isUnlimited = ($featurePivot !== null && (int) $featurePivot === 0)
+                                        || ($featurePivot === null && $columnLimit === null)
+                                        || $shop->isUnlimitedUsage($featureSlug);
+                                    $limit = $isUnlimited ? null : ($featurePivot !== null && (int) $featurePivot > 0 ? (int) $featurePivot : ($columnLimit !== null ? (int) $columnLimit : null));
+                                    $percent = ($limit && $limit > 0) ? min(100, round(($used / $limit) * 100)) : 0;
                                 @endphp
                                 <div style="background:var(--paper); padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border);">
                                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:12.5px;">

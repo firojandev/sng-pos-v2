@@ -99,4 +99,27 @@ class ShopSubscriptionFeatureTest extends TestCase
         $shop->refresh()->clearSubscriptionCache();
         $this->assertTrue($shop->hasFeature('subscription'));
     }
+
+    public function test_super_admin_can_see_subscription_link_in_settings_and_dashboard(): void
+    {
+        $superAdminRole = Role::create(['name' => 'Super Admin', 'guard_name' => 'web']);
+        $shop = Shop::create([
+            'name' => 'Admin Shop',
+            'slug' => 'admin-shop',
+            'status' => 'active',
+        ]);
+        $this->subscribeShopToFeatures($shop, ['sales']);
+
+        $superAdmin = User::factory()->create();
+        $superAdmin->assignRole($superAdminRole);
+        $superAdmin->update(['shop_id' => $shop->id]);
+
+        $response = $this->actingAs($superAdmin)->get(route('settings.index'));
+        $response->assertStatus(200);
+        $response->assertSee(route('subscription.show'));
+
+        $shopsResponse = $this->actingAs($superAdmin)->get(route('shops.index'));
+        $shopsResponse->assertStatus(200);
+        $shopsResponse->assertSee(route('subscription.show'));
+    }
 }

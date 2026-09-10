@@ -196,10 +196,16 @@ function printSection(id) {
 function setTheme(theme) {
     if (theme === 'light' || theme === 'dark') {
         $('html').attr('data-theme', theme);
-        try { localStorage.setItem('theme', theme); } catch (e) {}
+        try {
+            localStorage.setItem('theme', theme);
+            document.cookie = "theme=" + theme + ";path=/;max-age=31536000;SameSite=Lax";
+        } catch (e) {}
     } else {
         $('html').removeAttr('data-theme');
-        try { localStorage.removeItem('theme'); } catch (e) {}
+        try {
+            localStorage.removeItem('theme');
+            document.cookie = "theme=;path=/;max-age=0;SameSite=Lax";
+        } catch (e) {}
     }
     updateThemeButtons();
 }
@@ -359,7 +365,10 @@ function setLang(lang) {
     initSelectOptionsLang();
     updateSelectOptionsText(isEn);
 
-    localStorage.setItem('lang', lang);
+    try {
+        localStorage.setItem('lang', lang);
+        document.cookie = "lang=" + lang + ";path=/;max-age=31536000;SameSite=Lax";
+    } catch (e) {}
 }
 
 function initLang() {
@@ -476,12 +485,9 @@ $(function () {
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#dc2626',
-            cancelButtonColor: '#64748b',
             confirmButtonText: isEn ? 'Yes, Log Out' : 'হ্যাঁ, লগআউট করুন',
             cancelButtonText: isEn ? 'Cancel' : 'বাতিল',
             reverseButtons: true,
-            background: isDark ? '#111827' : '#ffffff',
-            color: isDark ? '#f8fafc' : '#0f172a',
         }).then((result) => {
             if (result.isConfirmed) {
                 $('#user-menu-logout-form').submit();
@@ -669,12 +675,9 @@ function confirmDelete(options = {}) {
         icon: options.icon || 'warning',
         showCancelButton: true,
         confirmButtonColor: '#E11D48',
-        cancelButtonColor: isDark ? '#334155' : '#64748B',
         confirmButtonText: options.confirmButtonText || defaultConfirmText,
         cancelButtonText: options.cancelButtonText || defaultCancelText,
         reverseButtons: true,
-        background: isDark ? '#111827' : '#FFFFFF',
-        color: isDark ? '#F8FAFC' : '#0F172A',
         customClass: {
             popup: 'app-swal-popup'
         }
@@ -1077,6 +1080,28 @@ function initEnglishNumberInputBehaviors() {
         });
         numberInputObserver.observe(document.body, { childList: true, subtree: true });
     }
+
+    // 9. Prevent negative values on non-negative inputs (opening_due, min="0")
+    $(document).on('keydown', function (e) {
+        if (e.key === '-' || e.key === 'Minus') {
+            const el = e.target;
+            if (el && (el.name === 'opening_due' || el.getAttribute('min') === '0' || (el.name && el.name.endsWith('[opening_due]')))) {
+                e.preventDefault();
+            }
+        }
+    });
+
+    $(document).on('input', function (e) {
+        const el = e.target;
+        if (el && (el.name === 'opening_due' || el.getAttribute('min') === '0' || (el.name && el.name.endsWith('[opening_due]')))) {
+            if (typeof el.value === 'string' && el.value.includes('-')) {
+                el.value = el.value.replace(/-/g, '');
+            }
+            if (parseFloat(el.value) < 0) {
+                el.value = '0';
+            }
+        }
+    });
 }
 
 /* ---------------- Modern Number Input Stepper ---------------- */

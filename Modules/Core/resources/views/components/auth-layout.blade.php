@@ -9,8 +9,15 @@
     'maxWidth' => '400px',
 ])
 
+@php
+    $cookieTheme = request()->cookie('theme');
+    $cookieLang = request()->cookie('lang');
+    $isDark = $cookieTheme === 'dark';
+    $isEn = $cookieLang === 'en';
+@endphp
+
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="{{ $isEn ? 'en' : 'bn' }}" @if($cookieTheme) data-theme="{{ $cookieTheme }}" @endif class="{{ $isEn ? 'lang-en' : '' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,6 +31,20 @@
                 var t = localStorage.getItem('theme');
                 if (t === 'light' || t === 'dark') {
                     document.documentElement.setAttribute('data-theme', t);
+                    if (!document.cookie.includes('theme=' + t)) {
+                        document.cookie = "theme=" + t + ";path=/;max-age=31536000;SameSite=Lax";
+                    }
+                }
+                var l = localStorage.getItem('lang');
+                if (l === 'en' || l === 'bn') {
+                    if (l === 'en') {
+                        document.documentElement.classList.add('lang-en');
+                    } else {
+                        document.documentElement.classList.remove('lang-en');
+                    }
+                    if (!document.cookie.includes('lang=' + l)) {
+                        document.cookie = "lang=" + l + ";path=/;max-age=31536000;SameSite=Lax";
+                    }
                 }
             } catch (e) {}
         })();

@@ -11,6 +11,9 @@
             <span>{{ session('status') }}</span>
         </div>
     @endif
+    @php
+        $authUser = auth()->user();
+    @endphp
 
     <div style="width:100%; max-width:1160px;">
         <div style="display:grid; grid-template-columns:310px 1fr; gap:22px; align-items:start;" class="shop-settings-grid">
@@ -126,7 +129,7 @@
                 </div>
 
                 {{-- Subscription Plan Card --}}
-                @if ($subscription && $subscription->plan)
+                @if ($subscription && $subscription->plan && ($authUser?->isSuperAdmin() || ($shop ?? $authUser?->shop)?->hasFeature('subscription')))
                     <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:18px; box-shadow:var(--shadow-card);">
                         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
                             <div style="display:flex; align-items:center; gap:8px;">
@@ -256,7 +259,7 @@
                             name="name"
                             label="দোকানের নাম"
                             label-en="Shop Name"
-                            value="{{ old('name', $shop->name) }}"
+                            :value="old('name', $shop->name)"
                             placeholder="দোকানের নাম লিখুন"
                             placeholder-en="Enter shop name"
                             size="sm"
@@ -269,7 +272,7 @@
                                 name="store_code_display"
                                 label="দোকান কোড (সিস্টেম আইডি)"
                                 label-en="Store Code (System ID)"
-                                value="{{ $shop->store_code ? '#' . $shop->store_code : 'N/A' }}"
+                                :value="$shop->store_code ? '#' . $shop->store_code : 'N/A'"
                                 size="sm"
                                 icon="hash"
                                 :readonly="true"
@@ -281,7 +284,7 @@
                                 name="slug_display"
                                 label="দোকান স্লাগ (ইউনিক আইডি)"
                                 label-en="Shop Slug (Unique ID)"
-                                value="{{ $shop->slug }}"
+                                :value="$shop->slug"
                                 size="sm"
                                 icon="link"
                                 :readonly="true"
@@ -306,7 +309,7 @@
                                 name="phone"
                                 label="মোবাইল / ফোন নম্বর"
                                 label-en="Phone Number"
-                                value="{{ old('phone', $shop->phone) }}"
+                                :value="old('phone', $shop->phone)"
                                 placeholder="যেমন: 017xxxxxxxx"
                                 placeholder-en="e.g. 017xxxxxxxx"
                                 size="sm"
@@ -318,7 +321,7 @@
                                 type="email"
                                 label="অফিসিয়াল ইমেইল"
                                 label-en="Official Email"
-                                value="{{ old('email', $shop->email) }}"
+                                :value="old('email', $shop->email)"
                                 placeholder="যেমন: contact@example.com"
                                 placeholder-en="e.g. contact@example.com"
                                 size="sm"
@@ -330,11 +333,11 @@
                             name="address"
                             label="দোকানের পূর্ণ ঠিকানা"
                             label-en="Shop Address"
-                            value="{{ old('address', $shop->address) }}"
+                            :value="old('address', $shop->address)"
                             placeholder="যেমন: বাড়ি ১২, রোড ৪, সেক্টর ৭, উত্তরা, ঢাকা"
                             placeholder-en="e.g. House 12, Road 4, Sector 7, Uttara, Dhaka"
                             size="sm"
-                            rows="3"
+                            :rows="3"
                             icon="map-pin"
                         />
                     </div>
@@ -354,7 +357,7 @@
                                 name="currency_symbol"
                                 label="মুদ্রা প্রতীক"
                                 label-en="Currency Symbol"
-                                value="{{ old('currency_symbol', $shop->currency_symbol ?? '৳') }}"
+                                :value="old('currency_symbol', $shop->currency_symbol ?? '৳')"
                                 placeholder="যেমন: ৳ বা $"
                                 placeholder-en="e.g. ৳ or $"
                                 size="sm"
@@ -368,11 +371,11 @@
                             name="invoice_footer"
                             label="ইনভয়েস ফুটার নোট / শর্তাবলী"
                             label-en="Invoice Footer Note / Terms"
-                            value="{{ old('invoice_footer', $shop->invoice_footer) }}"
+                            :value="old('invoice_footer', $shop->invoice_footer)"
                             placeholder="যেমন: বিক্রীত পণ্য ৭ দিনের মধ্যে পরিবর্তনের সুযোগ রয়েছে। ক্যাশ মেমো সাথে রাখবেন। ধন্যবাদ!"
                             placeholder-en="e.g. Sold items can be exchanged within 7 days. Please bring cash memo. Thank you!"
                             size="sm"
-                            rows="3"
+                            :rows="3"
                             icon="file-text"
                             helper="ইনভয়েস বা বিক্রয় রসিদের নিচে এই লেখাটি মুদ্রিত হবে"
                             helper-en="This note will be printed at the bottom of customer invoices"

@@ -58,9 +58,8 @@ class PlanController extends Controller
     }
 
     /**
-     * Sync the plan's granted module/feature toggles against Subscriptionify's
-     * real feature_plan pivot (the flat `plans.features` JSON column this
-     * used to write to has been retired in favor of this relation).
+     * Sync the plan's granted module/feature toggles and resource limits
+     * against Subscriptionify's real feature_plan pivot.
      *
      * @param  string[]  $slugs
      */

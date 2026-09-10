@@ -4,8 +4,13 @@
     'showFull' => false,
 ])
 
+@php
+    $cookieLang = request()->cookie('lang');
+    $isEn = $cookieLang === 'en';
+@endphp
+
 <div {{ $attributes->merge(['class' => 'segmented-switcher lang-segmented-switcher switcher-' . $size]) }}>
-    <span class="switch-opt switch-opt-bn active" data-action="set-lang-bn" title="বাংলা ভাষা / Bengali" aria-label="Bangla Language">
+    <span class="switch-opt switch-opt-bn {{ ! $isEn ? 'active' : '' }}" data-action="set-lang-bn" title="বাংলা ভাষা / Bengali" aria-label="Bangla Language">
         @if ($showFull)
             <span class="bn">বাংলা</span>
             <span class="en" style="display:none;">Bangla</span>
@@ -15,11 +20,17 @@
     </span>
 
     <label class="segmented-switch-track form-toggle-wrap" for="{{ $id }}" title="ভাষা পরিবর্তন / Toggle Language">
-        <input type="checkbox" id="{{ $id }}" class="segmented-switch-input" aria-label="Language Toggle Switch" />
+        <input type="checkbox" id="{{ $id }}" class="segmented-switch-input" aria-label="Language Toggle Switch" {{ $isEn ? 'checked' : '' }} />
         <span class="segmented-switch-slider"></span>
     </label>
+    <script>
+        (function() {
+            var el = document.getElementById('{{ $id }}');
+            if (el) el.checked = document.documentElement.classList.contains('lang-en');
+        })();
+    </script>
 
-    <span class="switch-opt switch-opt-en" data-action="set-lang-en" title="English Language" aria-label="English Language">
+    <span class="switch-opt switch-opt-en {{ $isEn ? 'active' : '' }}" data-action="set-lang-en" title="English Language" aria-label="English Language">
         <span>EN</span>
     </span>
 </div>

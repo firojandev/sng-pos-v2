@@ -330,14 +330,6 @@ $navGroups = [
         'gated' => false,
         'items' => [
             [
-                'key' => 'styleguide',
-                'route' => 'styleguide',
-                'bn' => 'কম্পোনেন্ট গাইড',
-                'en' => 'UI Style Guide',
-                'icon' => '<rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.6"/><rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.6"/><rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.6"/>',
-                'gated' => false,
-            ],
-            [
                 'key' => 'subscription',
                 'route' => 'subscription.show',
                 'bn' => 'সাবস্ক্রিপশন',
@@ -354,8 +346,12 @@ $isNavItemVisible = function (array $item, bool $groupGated, $user) {
         return false;
     }
     if ($item['key'] === 'subscription') {
-        return (bool) ($user && $user->shop && $user->shop->hasFeature('subscription'));
+        return (bool) ($user && $user->shop && ($user->isSuperAdmin() || $user->shop->hasFeature('subscription')));
     }
+    if ($item['key'] === 'settings') {
+        return (bool) ($user && $user->isShopAdmin());
+    }
+
     $gated = $item['gated'] ?? $groupGated;
     if (! $gated) {
         return true;
@@ -411,7 +407,7 @@ $isNavItemVisible = function (array $item, bool $groupGated, $user) {
                         @endif
 
                         @foreach ($visibleItems as $item)
-                            <a href="{{ route($item['route']) }}" class="nav-item {{ ($active === $item['key'] || ($item['key'] === 'due-ledger' && $active === 'sales-due-ledger')) ? 'active' : '' }}">
+                            <a href="{{ route($item['route']) }}" class="nav-item {{ ($active === $item['key'] || ($item['key'] === 'due-ledger' && $active === 'sales-due-ledger')) ? 'active' : '' }}" @if($item['key'] === 'quick-sale') data-quick-sale-trigger="true" @endif>
                                 <svg viewBox="0 0 24 24" fill="none">{!! $item['icon'] !!}</svg>
                                 <span class="bn">{{ $item['bn'] }}</span>
                                 <span class="en">{{ $item['en'] }}</span>
