@@ -22,6 +22,13 @@ $superAdminGroups = [
                 'en' => 'Plans',
                 'icon' => '<path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
             ],
+            [
+                'key' => 'system-settings',
+                'route' => 'system-settings.index',
+                'bn' => 'সিস্টেম সেটিংস',
+                'en' => 'System Settings',
+                'icon' => '<circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/><path d="M19 12a7 7 0 0 0-.14-1.4l2-1.5-2-3.5-2.3.9a7 7 0 0 0-2.4-1.4L14 2h-4l-.16 2.1a7 7 0 0 0-2.4 1.4l-2.3-.9-2 3.5 2 1.5A7 7 0 0 0 5 12a7 7 0 0 0 .14 1.4l-2 1.5 2 3.5 2.3-.9a7 7 0 0 0 2.4 1.4L10 22h4l.16-2.1a7 7 0 0 0 2.4-1.4l2.3.9 2-3.5-2-1.5c.09-.46.14-.93.14-1.4Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>',
+            ],
         ],
     ],
 ];

@@ -15,6 +15,41 @@
         $authUser = auth()->user();
     @endphp
 
+    @if ($authUser && $authUser->isSuperAdmin())
+        <div style="background:var(--card); border:1px solid var(--border); border-left:4px solid var(--primary-600); border-radius:12px; padding:14px 18px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:36px; height:36px; border-radius:8px; background:rgba(37,99,235,0.1); color:var(--blue-ink); display:flex; align-items:center; justify-content:center;">
+                    <x-core::icon name="globe" size="18" />
+                </div>
+                <div>
+                    <div style="font-weight:700; font-size:14px; color:var(--ink-900);">
+                        <span class="bn">সিস্টেম ও ল্যান্ডিং পেজ সেটিংস</span>
+                        <span class="en">System & Landing Page Settings</span>
+                    </div>
+                    <div style="font-size:12px; color:var(--ink-500); margin-top:2px;">
+                        <span class="bn">পাবলিক ল্যান্ডিং পেজ চালু/বন্ধ ও সিস্টেম ইনফো পরিবর্তন করুন। বর্তমান অবস্থা:</span>
+                        <span class="en">Toggle public landing page & system info. Current status:</span>
+                        <strong>{{ \Modules\Core\Models\Setting::isLandingPageEnabled() ? 'চালু (Active)' : 'বন্ধ (Disabled)' }}</strong>
+                    </div>
+                </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <a href="{{ route('landing') }}" target="_blank" style="text-decoration:none;">
+                    <x-core::button size="sm" variant="secondary" icon="external-link">
+                        <span class="bn">প্রিভিউ</span>
+                        <span class="en">Preview</span>
+                    </x-core::button>
+                </a>
+                <a href="{{ route('system-settings.index') }}" style="text-decoration:none;">
+                    <x-core::button size="sm" color="primary" icon="settings">
+                        <span class="bn">সিস্টেম সেটিংস পরিচালনা</span>
+                        <span class="en">Manage System</span>
+                    </x-core::button>
+                </a>
+            </div>
+        </div>
+    @endif
+
     <div style="width:100%; max-width:1160px;">
         <div style="display:grid; grid-template-columns:310px 1fr; gap:22px; align-items:start;" class="shop-settings-grid">
             {{-- Left Column: Shop Summary & Plan Card --}}
