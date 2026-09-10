@@ -70,7 +70,7 @@ class Setting extends Model
     {
         $rawValue = match ($type) {
             'boolean', 'bool' => $value ? '1' : '0',
-            'json', 'array' => is_string($value) ? $value : json_encode($value),
+            'json', 'array' => is_string($value) ? $value : json_encode($value, JSON_UNESCAPED_UNICODE),
             default => (string) $value,
         };
 

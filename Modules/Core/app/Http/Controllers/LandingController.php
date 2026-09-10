@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Modules\Core\Models\Setting;
+use Modules\Core\Support\LandingPageContent;
 use Modules\Shop\Models\Plan;
 
 class LandingController extends Controller
@@ -48,7 +49,8 @@ class LandingController extends Controller
             ->get();
 
         $user = auth()->user();
+        $content = LandingPageContent::all();
 
-        return view('core::landing.index', compact('plans', 'user', 'isPreview'));
+        return view('core::landing.index', compact('plans', 'user', 'isPreview', 'content'));
     }
 }
