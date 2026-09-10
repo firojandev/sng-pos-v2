@@ -279,4 +279,54 @@ class SupplierDataTableTest extends TestCase
         $response->assertRedirect(route('suppliers.index'));
         $this->assertDatabaseMissing('suppliers', ['id' => $supplier->id]);
     }
+
+    public function test_supplier_create_rejects_negative_opening_due_and_allows_positive(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+
+        // Negative opening due (-3000) should be rejected with 422
+        $responseNegative = $this->actingAs($user)->postJson(route('suppliers.store'), [
+            'name' => 'Negative Supplier',
+            'opening_due' => -3000,
+            'status' => 'active',
+        ]);
+
+        $responseNegative->assertStatus(422);
+        $responseNegative->assertJsonValidationErrors(['opening_due']);
+
+        // Positive opening due (3000) should be allowed
+        $responsePositive = $this->actingAs($user)->postJson(route('suppliers.store'), [
+            'name' => 'Positive Supplier',
+            'opening_due' => 3000,
+            'status' => 'active',
+        ]);
+
+        $responsePositive->assertOk();
+        $this->assertDatabaseHas('suppliers', [
+            'shop_id' => $shop->id,
+            'name' => 'Positive Supplier',
+            'opening_due' => 3000,
+        ]);
+    }
+
+    public function test_supplier_update_rejects_negative_opening_due(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+
+        $supplier = Supplier::create([
+            'shop_id' => $shop->id,
+            'name' => 'Original Supplier',
+            'opening_due' => 500,
+            'status' => 'active',
+        ]);
+
+        $responseNegative = $this->actingAs($user)->putJson(route('suppliers.update', $supplier), [
+            'name' => 'Updated Supplier',
+            'opening_due' => -3000,
+            'status' => 'active',
+        ]);
+
+        $responseNegative->assertStatus(422);
+        $responseNegative->assertJsonValidationErrors(['opening_due']);
+    }
 }

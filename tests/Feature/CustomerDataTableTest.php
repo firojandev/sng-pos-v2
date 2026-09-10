@@ -352,4 +352,54 @@ class CustomerDataTableTest extends TestCase
             'status' => 'inactive',
         ]);
     }
+
+    public function test_customer_create_rejects_negative_opening_due_and_allows_positive(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+
+        // Negative opening due (-3000) should be rejected with 422
+        $responseNegative = $this->actingAs($user)->postJson(route('customers.store'), [
+            'name' => 'Negative Customer',
+            'opening_due' => -3000,
+            'status' => 'active',
+        ]);
+
+        $responseNegative->assertStatus(422);
+        $responseNegative->assertJsonValidationErrors(['opening_due']);
+
+        // Positive opening due (3000) should be allowed
+        $responsePositive = $this->actingAs($user)->postJson(route('customers.store'), [
+            'name' => 'Positive Customer',
+            'opening_due' => 3000,
+            'status' => 'active',
+        ]);
+
+        $responsePositive->assertOk();
+        $this->assertDatabaseHas('customers', [
+            'shop_id' => $shop->id,
+            'name' => 'Positive Customer',
+            'opening_due' => 3000,
+        ]);
+    }
+
+    public function test_customer_update_rejects_negative_opening_due(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+
+        $customer = Customer::create([
+            'shop_id' => $shop->id,
+            'name' => 'Original Customer',
+            'opening_due' => 500,
+            'status' => 'active',
+        ]);
+
+        $responseNegative = $this->actingAs($user)->putJson(route('customers.update', $customer), [
+            'name' => 'Updated Customer',
+            'opening_due' => -3000,
+            'status' => 'active',
+        ]);
+
+        $responseNegative->assertStatus(422);
+        $responseNegative->assertJsonValidationErrors(['opening_due']);
+    }
 }

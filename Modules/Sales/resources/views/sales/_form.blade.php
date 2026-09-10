@@ -1592,6 +1592,17 @@
 
         $form.find('.is-invalid').removeClass('is-invalid');
         $form.find('.dynamic-error').remove();
+
+        const openingDueVal = parseFloat($('#quick_customer_opening_due').val());
+        if (!isNaN(openingDueVal) && openingDueVal < 0) {
+            const $field = $('#quick_customer_opening_due');
+            $field.addClass('is-invalid');
+            const msg = $('body').hasClass('lang-en') ? 'Opening due cannot be negative.' : 'প্রারম্ভিক বাকি ঋণাত্মক হতে পারবে না।';
+            $field.closest('.form-group, .field, div').append('<div class="field-error dynamic-error" style="color:var(--red-600); font-size:11.5px; margin-top:3px; font-weight:600;">' + msg + '</div>');
+            $field.focus();
+            return false;
+        }
+
         $btn.prop('disabled', true);
 
         $.ajax({
