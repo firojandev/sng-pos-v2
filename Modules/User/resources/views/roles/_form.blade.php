@@ -419,15 +419,7 @@
                 :value="old('name', $role->name)"
                 placeholder="যেমন: ক্যাশিয়ার, ম্যানেজার, হিসাবরক্ষক"
                 required
-                :readonly="$role->name === 'Admin'"
             />
-            @if ($role->name === 'Admin')
-                <div style="font-size:12px; color:var(--gold-ink); background:var(--gold-100); padding:6px 10px; border-radius:6px; margin-top:8px; display:flex; align-items:center; gap:6px;">
-                    <x-core::icon name="info" size="xs" />
-                    <span class="bn">ডিফল্ট এডমিন রোলের নাম পরিবর্তন করা যাবে না, তবে পারমিশন কাস্টমাইজ করতে পারেন।</span>
-                    <span class="en" style="display:none;">Default Admin role name cannot be changed, but its permissions can be customized.</span>
-                </div>
-            @endif
         </div>
         <div style="font-size:12px; color:var(--ink-600); line-height:1.5;">
             <span class="bn">নির্দিষ্ট রোলের ইউজাররা সিস্টেমে কী কী সুবিধা ও মেনু দেখতে পারবে, তা নিচের মডিউলভিত্তিক চেকবক্স থেকে নির্ধারণ করুন।</span>
