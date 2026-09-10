@@ -689,6 +689,21 @@
         </div>
 
         <div style="margin-top:20px;">
+            <div id="supplier-due-warning" style="display:none; align-items:center; gap:8px; padding:8px 12px; margin-bottom:14px; background:var(--red-100); border:1px solid var(--red-ic-bg); border-radius:8px; color:var(--red-ink); font-size:12px; font-weight:600;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span>
+                    <span class="bn">সরবরাহকারী নির্বাচন ছাড়া বাকি ক্রয় সম্ভব নয়। সম্পূর্ণ মূল্য পরিশোধ করতে হবে অথবা সরবরাহকারী নির্বাচন করুন।</span>
+                    <span class="en" style="display:none;">Purchases with due cannot be created without a supplier. Full payment is required or select a supplier.</span>
+                </span>
+            </div>
+            <div id="drawer-overpayment-warning" style="display:none; align-items:center; gap:8px; padding:8px 12px; margin-bottom:14px; background:var(--red-100); border:1px solid var(--red-ic-bg); border-radius:8px; color:var(--red-ink); font-size:12px; font-weight:600;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span>
+                    <span class="bn">প্রদেয় টাকার পরিমাণ মোট প্রদেয় (সর্বমোট) এর চেয়ে বেশি হতে পারে না (সর্বোচ্চ: ৳<span id="overpayment-max-display">0.00</span>)।</span>
+                    <span class="en" style="display:none;">Payment amount cannot be greater than total payable (Maximum: ৳<span id="overpayment-max-display-en">0.00</span>).</span>
+                </span>
+            </div>
+
             <x-core::button
                 type="button"
                 color="primary"
@@ -1010,6 +1025,46 @@
             }
         }
 
+        function hasNoSupplier() {
+            const supplierId = $('#supplier-id-select').val();
+            const phone = $('#supplier-phone-input').length && $('#supplier-phone-input').val() ? $('#supplier-phone-input').val().trim() : '';
+            const name = $('#supplier-name-input').length && $('#supplier-name-input').val() ? $('#supplier-name-input').val().trim() : '';
+            return (!supplierId || supplierId === '__create_new__') && phone === '' && name === '';
+        }
+
+        function checkSupplierDueWarning(remainingDue) {
+            const $warning = $('#supplier-due-warning');
+            const isDue = hasNoSupplier() && remainingDue > 0.01;
+            if (isDue) {
+                $warning.slideDown(120);
+            } else {
+                $warning.slideUp(120);
+            }
+            return isDue;
+        }
+
+        function checkOverpaymentWarning(totalPaid, maxTotal) {
+            const $overWarning = $('#drawer-overpayment-warning');
+            const isOver = (totalPaid - maxTotal) > 0.01;
+            if (isOver) {
+                $('#overpayment-max-display').text(fmt(maxTotal));
+                $('#overpayment-max-display-en').text(fmt(maxTotal));
+                $overWarning.slideDown(120);
+                return true;
+            } else {
+                $overWarning.slideUp(120);
+                return false;
+            }
+        }
+
+        function syncSaveButtonState(isSupplierDue, isOverpaid) {
+            if (isSupplierDue || isOverpaid) {
+                $('#drawer-save-btn').prop('disabled', true).css('opacity', '0.6').css('cursor', 'not-allowed');
+            } else {
+                $('#drawer-save-btn').prop('disabled', false).css('opacity', '1').css('cursor', 'pointer');
+            }
+        }
+
         function updateBothAmountsSummary() {
             const total = calcGrandTotalCost();
             const cashVal = parseFloat($('#drawer-cash-amount-input').val()) || 0;
@@ -1019,6 +1074,10 @@
 
             $('#drawer-both-total-paid').text(fmt(totalPaid));
             $('#drawer-both-remaining-due').text(fmt(remainingDue));
+
+            const isSupplierDue = checkSupplierDueWarning(remainingDue);
+            const isOverpaid = checkOverpaymentWarning(totalPaid, total);
+            syncSaveButtonState(isSupplierDue, isOverpaid);
         }
 
         function updateSingleAmountSummary() {
@@ -1028,6 +1087,10 @@
 
             $('#drawer-single-total-paid').text(fmt(paidVal));
             $('#drawer-single-remaining-due').text(fmt(remainingDue));
+
+            const isSupplierDue = checkSupplierDueWarning(remainingDue);
+            const isOverpaid = checkOverpaymentWarning(paidVal, total);
+            syncSaveButtonState(isSupplierDue, isOverpaid);
         }
 
         $(document).on('input', '#drawer-amount-input', function () {
@@ -1267,10 +1330,22 @@
             }
 
             if (mode === 'due') {
+                if (hasNoSupplier()) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'সরবরাহকারী নির্বাচন বাধ্যতামূলক',
+                        text: 'সরবরাহকারী নির্বাচন ছাড়া বাকি ক্রয় সম্ভব নয়। সম্পূর্ণ মূল্য পরিশোধ করতে হবে অথবা সরবরাহকারী নির্বাচন করুন।',
+                        confirmButtonText: 'ঠিক আছে',
+                    });
+                    return;
+                }
                 document.getElementById('drawer-amount-input').value = '0';
                 $('#drawer-amount-input').val('0');
                 $('#drawer-cash-amount-input').val('0');
                 $('#drawer-bank-amount-input').val('0');
+                amountManuallyEdited = true;
+                bothCashManuallyEdited = true;
+                bothBankManuallyEdited = true;
             } else {
                 $('#drawer-amount-input').val(fmt(total));
                 $('#drawer-cash-amount-input').val(fmt(total));
@@ -1517,11 +1592,23 @@
                 if (addressInput) addressInput.value = match ? (match.address || '') : '';
 
                 updateSupplierDueNotice(val);
+                const currentPayType = $('#drawer-payment-type-select').val() || 'cash';
+                if (currentPayType === 'both') {
+                    updateBothAmountsSummary();
+                } else {
+                    updateSingleAmountSummary();
+                }
             });
         }
 
         $(document).on('change', '#supplier-id-select', function () {
             updateSupplierDueNotice($(this).val());
+            const currentPayType = $('#drawer-payment-type-select').val() || 'cash';
+            if (currentPayType === 'both') {
+                updateBothAmountsSummary();
+            } else {
+                updateSingleAmountSummary();
+            }
         });
 
         const supplierNameInput = document.getElementById('supplier-name-input');
@@ -1553,10 +1640,12 @@
             const bankMethod = selectedAccountType === 'mfs' ? 'mobile_banking' : 'bank';
 
             let paymentsToSubmit = [];
+            let enteredTotalPayment = 0;
 
             if (paymentType === 'cash') {
                 let amount = parseFloat(document.getElementById('drawer-amount-input').value) || 0;
                 if (drawerMode === 'cash' && amount <= 0 && !amountManuallyEdited) amount = total;
+                enteredTotalPayment = amount;
                 amount = Math.min(Math.max(amount, 0), total);
                 if (amount > 0) {
                     paymentsToSubmit.push({
@@ -1568,6 +1657,7 @@
             } else if (paymentType === 'bank') {
                 let amount = parseFloat(document.getElementById('drawer-amount-input').value) || 0;
                 if (drawerMode === 'cash' && amount <= 0 && !amountManuallyEdited) amount = total;
+                enteredTotalPayment = amount;
                 amount = Math.min(Math.max(amount, 0), total);
                 if (amount > 0) {
                     paymentsToSubmit.push({
@@ -1581,6 +1671,7 @@
                 let bankAmount = parseFloat(document.getElementById('drawer-bank-amount-input').value) || 0;
                 cashAmount = Math.max(0, cashAmount);
                 bankAmount = Math.max(0, bankAmount);
+                enteredTotalPayment = cashAmount + bankAmount;
 
                 if (cashAmount + bankAmount > total) {
                     if (cashAmount > total) {
@@ -1605,6 +1696,29 @@
                         amount: fmt(bankAmount),
                     });
                 }
+            }
+
+            if (Math.round((enteredTotalPayment - total) * 100) / 100 > 0.01) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'অতিরিক্ত পরিশোধ সম্ভব নয়',
+                    text: 'প্রদেয় টাকার পরিমাণ মোট প্রদেয় (সর্বমোট) এর চেয়ে বেশি হতে পারে না (সর্বোচ্চ: ৳' + fmt(total) + ')।',
+                    confirmButtonText: 'ঠিক আছে',
+                });
+                return;
+            }
+
+            const totalPaidToSubmit = paymentsToSubmit.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+            const remainingDueToSubmit = Math.max(0, total - totalPaidToSubmit);
+
+            if (hasNoSupplier() && remainingDueToSubmit > 0.01) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'সরবরাহকারী নির্বাচন বাধ্যতামূলক',
+                    text: 'সরবরাহকারী নির্বাচন ছাড়া বাকি ক্রয় সম্ভব নয়। সম্পূর্ণ মূল্য পরিশোধ করতে হবে অথবা সরবরাহকারী নির্বাচন করুন।',
+                    confirmButtonText: 'ঠিক আছে',
+                });
+                return;
             }
 
             const $hiddenPayments = $('#hidden-payments-container');

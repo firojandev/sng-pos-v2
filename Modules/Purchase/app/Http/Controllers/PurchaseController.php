@@ -449,6 +449,13 @@ class PurchaseController extends Controller
                 ]);
             }
 
+            if (! $supplier && $total > 0 && round($total - $totalSubmittedPaid, 2) > 0.01) {
+                throw ValidationException::withMessages([
+                    'supplier_id' => 'সরবরাহকারী নির্বাচন ছাড়া বাকি ক্রয় সম্ভব নয়। সম্পূর্ণ মূল্য পরিশোধ করতে হবে অথবা সরবরাহকারী নির্বাচন করুন। / Purchases with due cannot be created without a supplier. Full payment is required or select a supplier.',
+                    'payments' => 'সরবরাহকারী নির্বাচন ছাড়া বাকি ক্রয় সম্ভব নয়। সম্পূর্ণ মূল্য পরিশোধ করতে হবে অথবা সরবরাহকারী নির্বাচন করুন। / Purchases with due cannot be created without a supplier. Full payment is required or select a supplier.',
+                ]);
+            }
+
             $purchasePaid = min($totalSubmittedPaid, $total);
             $purchaseDue = round(max($total - $purchasePaid, 0), 2);
             $purchaseStatus = $purchaseDue <= 0 ? 'paid' : ($purchasePaid <= 0 ? 'due' : 'partial');
@@ -573,6 +580,13 @@ class PurchaseController extends Controller
             if (! $supplier && round($totalSubmittedPaid - $total, 2) > 0.01) {
                 throw ValidationException::withMessages([
                     'payments' => 'পরিশোধের পরিমাণ ক্রয়ের মোট মূল্যের চেয়ে বেশি হতে পারে না (সর্বোচ্চ: ৳'.number_format($total, 2).') / Payment amount cannot exceed purchase total.',
+                ]);
+            }
+
+            if (! $supplier && $total > 0 && round($total - $totalSubmittedPaid, 2) > 0.01) {
+                throw ValidationException::withMessages([
+                    'supplier_id' => 'সরবরাহকারী নির্বাচন ছাড়া বাকি ক্রয় সম্ভব নয়। সম্পূর্ণ মূল্য পরিশোধ করতে হবে অথবা সরবরাহকারী নির্বাচন করুন। / Purchases with due cannot be created without a supplier. Full payment is required or select a supplier.',
+                    'payments' => 'সরবরাহকারী নির্বাচন ছাড়া বাকি ক্রয় সম্ভব নয়। সম্পূর্ণ মূল্য পরিশোধ করতে হবে অথবা সরবরাহকারী নির্বাচন করুন। / Purchases with due cannot be created without a supplier. Full payment is required or select a supplier.',
                 ]);
             }
 
