@@ -351,9 +351,7 @@ $isNavItemVisible = function (array $item, bool $groupGated, $user) {
     if ($item['key'] === 'settings') {
         return (bool) ($user && $user->isShopAdmin());
     }
-    if ($item['key'] === 'dashboard') {
-        return (bool) ($user && ($user->isSuperAdmin() || $user->isShopAdmin() || $user->can('dashboard.view')));
-    }
+
     $gated = $item['gated'] ?? $groupGated;
     if (! $gated) {
         return true;
