@@ -261,6 +261,15 @@
                     <span>সকল লেনদেন (All Records)</span>
                 @endif
             </div>
+            @if(!empty($selectedSupplier))
+                <div>
+                    <b>সরবরাহকারী: </b>
+                    <span>{{ $selectedSupplier->name }}</span>
+                    @if($selectedSupplier->phone)
+                        <span class="mono" style="font-size:11px; color:#64748b;">({{ $selectedSupplier->phone }})</span>
+                    @endif
+                </div>
+            @endif
             <div>
                 <b>পেমেন্ট অবস্থা: </b>
                 @if(($filters['status'] ?? 'all') === 'paid')

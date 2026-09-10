@@ -66,7 +66,7 @@ class CustomerController extends Controller
     public function store(StoreCustomerRequest $request): RedirectResponse|JsonResponse
     {
         $data = $request->validated();
-        $data['opening_due'] = $data['opening_due'] ?? 0;
+        $data['opening_due'] = max(0, (float) ($data['opening_due'] ?? 0));
         $customer = Customer::create($data);
 
         if ($request->ajax() || $request->wantsJson()) {
@@ -103,7 +103,7 @@ class CustomerController extends Controller
     {
         $data = $request->validated();
         if (array_key_exists('opening_due', $data)) {
-            $data['opening_due'] = $data['opening_due'] ?? 0;
+            $data['opening_due'] = max(0, (float) ($data['opening_due'] ?? 0));
         }
         $customer->update($data);
 

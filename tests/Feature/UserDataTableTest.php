@@ -154,6 +154,7 @@ class UserDataTableTest extends TestCase
             ->postJson(route('users.store'), [
                 'name' => 'New Staff Member',
                 'email' => 'newstaff@usershop.test',
+                'phone' => '01711223399',
                 'password' => 'secret1234',
                 'password_confirmation' => 'secret1234',
                 'role' => 'Admin',
@@ -166,6 +167,7 @@ class UserDataTableTest extends TestCase
 
         $this->assertDatabaseHas('users', [
             'email' => 'newstaff@usershop.test',
+            'phone' => '01711223399',
             'shop_id' => $this->shop->id,
         ]);
     }
@@ -271,6 +273,7 @@ class UserDataTableTest extends TestCase
             ->postJson(route('users.store'), [
                 'name' => 'Invalid PIN User',
                 'email' => 'badpin@usershop.test',
+                'phone' => '01799887700',
                 'password' => 'secret1234',
                 'password_confirmation' => 'secret1234',
                 'pin' => '123', // 3 digits instead of 4
@@ -279,6 +282,43 @@ class UserDataTableTest extends TestCase
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['pin']);
+    }
+
+    public function test_user_store_succeeds_without_email_when_phone_is_provided(): void
+    {
+        $response = $this->actingAs($this->adminUser)
+            ->postJson(route('users.store'), [
+                'name' => 'No Email User',
+                'phone' => '01812345678',
+                'password' => 'secret1234',
+                'password_confirmation' => 'secret1234',
+                'role' => 'Admin',
+            ]);
+
+        $response->assertOk();
+        $response->assertJson(['success' => true]);
+
+        $this->assertDatabaseHas('users', [
+            'name' => 'No Email User',
+            'phone' => '01812345678',
+            'email' => null,
+            'shop_id' => $this->shop->id,
+        ]);
+    }
+
+    public function test_user_store_fails_without_phone(): void
+    {
+        $response = $this->actingAs($this->adminUser)
+            ->postJson(route('users.store'), [
+                'name' => 'No Phone User',
+                'email' => 'nophone@usershop.test',
+                'password' => 'secret1234',
+                'password_confirmation' => 'secret1234',
+                'role' => 'Admin',
+            ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['phone']);
     }
 
     public function test_user_update_with_new_pin_and_regenerate_support_pin(): void
@@ -291,6 +331,7 @@ class UserDataTableTest extends TestCase
             'pin' => '1111',
             'support_pin' => '112233',
         ]);
+        $member->shops()->updateExistingPivot($this->shop->id, ['is_owner' => false]);
         $member->syncRoles([$this->adminRole]);
 
         $response = $this->actingAs($this->adminUser)

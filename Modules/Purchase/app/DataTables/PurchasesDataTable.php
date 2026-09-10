@@ -163,6 +163,11 @@ class PurchasesDataTable extends BaseDataTable
             }
         }
 
+        $supplierId = request('supplier_id') ?: request('supplier');
+        if ($supplierId && $supplierId !== 'all') {
+            $query->where('purchases.supplier_id', $supplierId);
+        }
+
         if ($search = request('search.value') ?: request('q')) {
             $searchClean = ltrim($search, '#');
             $query->where(function ($q) use ($search, $searchClean) {
@@ -200,6 +205,7 @@ class PurchasesDataTable extends BaseDataTable
                 data.from = $("#filter-from").val();
                 data.to = $("#filter-to").val();
                 data.status = $("#filter-status").val();
+                data.supplier_id = $("#filter-supplier").val();
             ');
     }
 

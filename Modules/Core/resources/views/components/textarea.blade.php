@@ -32,6 +32,16 @@
         $textValue = old($name);
     }
 
+    if (is_string($textValue)) {
+        $textValue = htmlspecialchars_decode($textValue, ENT_QUOTES);
+    }
+    if (is_string($placeholder)) {
+        $placeholder = htmlspecialchars_decode($placeholder, ENT_QUOTES);
+    }
+    if (is_string($placeholderEn)) {
+        $placeholderEn = htmlspecialchars_decode($placeholderEn, ENT_QUOTES);
+    }
+
     $hasError = (bool) ($error || ($name && isset($errors) && $errors->has($name)));
     $errorMessage = $error ?? ($name && isset($errors) && $errors->has($name) ? $errors->first($name) : null);
 

@@ -25,18 +25,18 @@
                 @forelse ($roles as $role)
                     <div class="mini-card pm-card" style="position:relative; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:14px 16px;">
                         <div class="mini-card-actions" style="position:absolute; top:12px; right:12px; display:flex; align-items:center; gap:6px;">
-                            @can('users.edit')
-                                <x-core::button
-                                    tag="a"
-                                    size="sm"
-                                    variant="ghost"
-                                    color="secondary"
-                                    icon="edit"
-                                    href="{{ route('roles.edit', $role) }}"
-                                    title="Edit"
-                                />
-                            @endcan
                             @if ($role->name !== 'Admin')
+                                @can('users.edit')
+                                    <x-core::button
+                                        tag="a"
+                                        size="sm"
+                                        variant="ghost"
+                                        color="secondary"
+                                        icon="edit"
+                                        href="{{ route('roles.edit', $role) }}"
+                                        title="Edit"
+                                    />
+                                @endcan
                                 @can('users.delete')
                                     <form method="POST" action="{{ route('roles.destroy', $role) }}" class="delete-form" data-title="রোল মুছে ফেলতে চান?" data-text="এই রোলটি স্থায়ীভাবে মুছে ফেলা হবে।">
                                         @csrf
@@ -59,11 +59,19 @@
                                 <x-core::badge size="xs" color="primary" variant="subtle" style="margin-left:6px;">
                                     <span class="bn">ডিফল্ট</span><span class="en" style="display:none;">Default</span>
                                 </x-core::badge>
+                                <x-core::badge size="xs" color="success" variant="subtle" style="margin-left:4px;">
+                                    <span class="bn">সম্পূর্ণ এক্সেস</span><span class="en" style="display:none;">Full Access</span>
+                                </x-core::badge>
                             @endif
                         </div>
                         <div class="sub" style="color:var(--ink-600); font-size:12px; margin-top:6px;">
-                            <span class="bn">{{ $role->permissions_count }}টি পারমিশন &middot; {{ $role->users_count }} জন ইউজার</span>
-                            <span class="en" style="display:none;">{{ $role->permissions_count }} permissions &middot; {{ $role->users_count }} users</span>
+                            @if ($role->name === 'Admin')
+                                <span class="bn">ডিফল্ট সিস্টেম রোল &middot; {{ $role->users_count }} জন ইউজার</span>
+                                <span class="en" style="display:none;">Default System Role &middot; {{ $role->users_count }} users</span>
+                            @else
+                                <span class="bn">{{ $role->permissions_count }}টি পারমিশন &middot; {{ $role->users_count }} জন ইউজার</span>
+                                <span class="en" style="display:none;">{{ $role->permissions_count }} permissions &middot; {{ $role->users_count }} users</span>
+                            @endif
                         </div>
                     </div>
                 @empty

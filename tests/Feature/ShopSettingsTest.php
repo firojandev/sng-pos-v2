@@ -197,4 +197,24 @@ class ShopSettingsTest extends TestCase
         ]);
         $updateResponse->assertStatus(403);
     }
+
+    public function test_shop_name_with_ampersand_does_not_double_encode_in_settings_input(): void
+    {
+        $shop = Shop::create([
+            'name' => 'Ahang Fashion & Crafts Ltd',
+            'slug' => 'ahang-fashion-crafts-ltd',
+            'store_code' => 'shop-010',
+            'status' => 'active',
+        ]);
+
+        $user = User::factory()->create([
+            'shop_id' => $shop->id,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('settings.index'));
+
+        $response->assertStatus(200);
+        $response->assertSee('value="Ahang Fashion &amp; Crafts Ltd"', false);
+        $response->assertDontSee('&amp;amp;', false);
+    }
 }

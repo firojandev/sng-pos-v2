@@ -499,6 +499,16 @@
                 var csrfToken = $('meta[name="csrf-token"]').attr('content');
 
                 clearFormErrors($form);
+
+                var openingDueVal = parseFloat($('#create_customer_opening_due').val());
+                if (!isNaN(openingDueVal) && openingDueVal < 0) {
+                    showFormErrors($form, {
+                        opening_due: [$('body').hasClass('lang-en') ? 'Opening due cannot be negative.' : 'প্রারম্ভিক বাকি ঋণাত্মক হতে পারবে না।']
+                    });
+                    $('#create_customer_opening_due').focus();
+                    return false;
+                }
+
                 $btn.prop('disabled', true);
 
                 if (csrfToken) {
@@ -577,6 +587,16 @@
                 var csrfToken = $('meta[name="csrf-token"]').attr('content');
 
                 clearFormErrors($form);
+
+                var openingDueVal = parseFloat($('#edit_customer_opening_due').val());
+                if (!isNaN(openingDueVal) && openingDueVal < 0) {
+                    showFormErrors($form, {
+                        opening_due: [$('body').hasClass('lang-en') ? 'Opening due cannot be negative.' : 'প্রারম্ভিক বাকি ঋণাত্মক হতে পারবে না।']
+                    });
+                    $('#edit_customer_opening_due').focus();
+                    return false;
+                }
+
                 $btn.prop('disabled', true);
 
                 if (csrfToken) {

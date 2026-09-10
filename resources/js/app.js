@@ -1080,6 +1080,28 @@ function initEnglishNumberInputBehaviors() {
         });
         numberInputObserver.observe(document.body, { childList: true, subtree: true });
     }
+
+    // 9. Prevent negative values on non-negative inputs (opening_due, min="0")
+    $(document).on('keydown', function (e) {
+        if (e.key === '-' || e.key === 'Minus') {
+            const el = e.target;
+            if (el && (el.name === 'opening_due' || el.getAttribute('min') === '0' || (el.name && el.name.endsWith('[opening_due]')))) {
+                e.preventDefault();
+            }
+        }
+    });
+
+    $(document).on('input', function (e) {
+        const el = e.target;
+        if (el && (el.name === 'opening_due' || el.getAttribute('min') === '0' || (el.name && el.name.endsWith('[opening_due]')))) {
+            if (typeof el.value === 'string' && el.value.includes('-')) {
+                el.value = el.value.replace(/-/g, '');
+            }
+            if (parseFloat(el.value) < 0) {
+                el.value = '0';
+            }
+        }
+    });
 }
 
 /* ---------------- Modern Number Input Stepper ---------------- */

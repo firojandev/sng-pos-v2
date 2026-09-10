@@ -16,6 +16,20 @@
         $rangeLabel = $rangeLabels[$range];
     @endphp
 
+    @if (collect([
+    $canViewSales,
+    $canViewPurchase,
+    $canViewExpense,
+    $canViewProductProfit,
+    $canViewTotalProfit,
+    $canViewStockValue,
+    $canViewStockQty,
+    $canViewReceivable,
+    $canViewPayable,
+    $canViewCash,
+    $canViewBank,
+    $canViewMfs,
+])->contains(true))
     <div class="section-row">
         @if ($canViewBalance)
             <div class="total-pill {{ $balance < 0 ? 'pill-red' : 'pill-green' }}">
@@ -37,6 +51,7 @@
             <span class="bn">রিফ্রেশ</span><span class="en" style="display:none;">Refresh</span>
         </x-core::button>
     </div>
+    @endif
 
     <div class="stat-grid" style="grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));">
         @if ($canViewSales)
@@ -180,16 +195,6 @@
                 subtext="বিকাশ / নগদ / রকেট"
                 subtext-en="bKash, Nagad, Rocket, etc."
             />
-        @endif
-
-        @if (! $hasAnyVisibleCard)
-            <div style="grid-column: 1 / -1; padding: 40px 20px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; text-align: center;">
-                <x-core::table.empty
-                    icon="bar-chart-2"
-                    title="আপনার দেখার মতো কোনো পরিসংখ্যান নেই"
-                    title-en="No dashboard statistics available for your account"
-                />
-            </div>
         @endif
     </div>
 </x-core::layout>
