@@ -40,8 +40,28 @@ class PurchaseController extends Controller
 
     public function ledger(PurchasesDataTable $dataTable)
     {
-        $totals = Purchase::query()
-            ->selectRaw('
+        $query = Purchase::query();
+
+        if ($from = request('from')) {
+            $query->whereDate('purchase_date', '>=', $from);
+        }
+
+        if ($to = request('to')) {
+            $query->whereDate('purchase_date', '<=', $to);
+        }
+
+        if ($status = request('status')) {
+            if (in_array($status, ['paid', 'partial', 'due'], true)) {
+                $query->where('payment_status', $status);
+            }
+        }
+
+        $supplierId = request('supplier_id') ?: request('supplier');
+        if ($supplierId && $supplierId !== 'all') {
+            $query->where('supplier_id', $supplierId);
+        }
+
+        $totals = $query->selectRaw('
                 COALESCE(SUM(total), 0) as total_amount,
                 COALESCE(SUM(paid_amount), 0) as total_paid,
                 COALESCE(SUM(due_amount), 0) as total_due,
@@ -54,7 +74,9 @@ class PurchaseController extends Controller
         $totalDue = (float) ($totals->total_due ?? 0);
         $totalCount = (int) ($totals->total_count ?? 0);
 
-        return $dataTable->render('purchase::purchase.ledger', compact('totalAmount', 'totalPaid', 'totalDue', 'totalCount'));
+        $suppliers = Supplier::orderBy('name')->get(['id', 'name', 'phone']);
+
+        return $dataTable->render('purchase::purchase.ledger', compact('totalAmount', 'totalPaid', 'totalDue', 'totalCount', 'suppliers'));
     }
 
     public function printLedger(Request $request): View
@@ -62,6 +84,7 @@ class PurchaseController extends Controller
         $from = $request->query('from');
         $to = $request->query('to');
         $status = $request->query('status');
+        $supplierId = $request->query('supplier_id') ?: $request->query('supplier');
         $search = trim((string) $request->query('q', ''));
 
         $query = Purchase::with(['supplier', 'items.product', 'warehouse'])
@@ -75,6 +98,9 @@ class PurchaseController extends Controller
         }
         if ($status && in_array($status, ['paid', 'partial', 'due'], true)) {
             $query->where('payment_status', $status);
+        }
+        if ($supplierId && $supplierId !== 'all') {
+            $query->where('supplier_id', $supplierId);
         }
         if ($search !== '') {
             $searchClean = ltrim($search, '#');
@@ -105,6 +131,7 @@ class PurchaseController extends Controller
 
         $purchases = $query->get();
         $shop = Auth::user()?->shop;
+        $selectedSupplier = ($supplierId && $supplierId !== 'all') ? Supplier::find($supplierId) : null;
 
         return view('purchase::purchase.print-ledger', [
             'purchases' => $purchases,
@@ -114,8 +141,10 @@ class PurchaseController extends Controller
                 'from' => $from,
                 'to' => $to,
                 'status' => $status,
+                'supplier_id' => $supplierId,
                 'search' => $search,
             ],
+            'selectedSupplier' => $selectedSupplier,
         ]);
     }
 

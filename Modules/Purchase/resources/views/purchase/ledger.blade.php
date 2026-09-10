@@ -94,6 +94,22 @@
                     title="শেষ তারিখ / To Date"
                 />
             </div>
+            <div style="width:180px; flex-shrink:0;">
+                <x-core::select
+                    name="supplier_id"
+                    id="filter-supplier"
+                    size="sm"
+                    :no-margin="true"
+                    title="সরবরাহকারী ফিল্টার / Filter by Supplier"
+                >
+                    <option value="all" data-text-bn="সকল সরবরাহকারী" data-text-en="All Suppliers">সকল সরবরাহকারী</option>
+                    @foreach ($suppliers as $s)
+                        <option value="{{ $s->id }}" @selected((string) (request('supplier_id') ?: request('supplier')) === (string) $s->id)>
+                            {{ $s->name }}{{ $s->phone ? ' (' . $s->phone . ')' : '' }}
+                        </option>
+                    @endforeach
+                </x-core::select>
+            </div>
             <div style="width:150px; flex-shrink:0;">
                 <x-core::select
                     name="status"
@@ -234,7 +250,7 @@
             });
 
             // Filters change triggers reload
-            $(document).on('change', '#filter-from, #filter-to, #filter-status', function () {
+            $(document).on('change', '#filter-from, #filter-to, #filter-status, #filter-supplier', function () {
                 reloadPurchaseTable();
             });
 
@@ -244,6 +260,7 @@
                 $('#filter-from').val('');
                 $('#filter-to').val('');
                 $('#filter-status').val('all');
+                $('#filter-supplier').val('all');
 
                 var tableId = 'purchases-data-table';
                 if (window.LaravelDataTables && window.LaravelDataTables[tableId]) {
@@ -270,6 +287,7 @@
                     from: $('#filter-from').val() || '',
                     to: $('#filter-to').val() || '',
                     status: $('#filter-status').val() || 'all',
+                    supplier_id: $('#filter-supplier').val() || 'all',
                     q: searchVal
                 };
 
