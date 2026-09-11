@@ -1428,9 +1428,9 @@
 
         <div class="lp-footer-bottom">
             <span>
-                © {{ date('Y') }} {{ $siteName }}. <span class="bn">সর্বস্বত্ব সংরক্ষিত।</span><span class="en">All rights reserved.</span>
-                &middot; <a href="{{ route('privacy-policy') }}" style="color:var(--text-dim, #94a3b8); text-decoration:none;"><span class="bn">গোপনীয়তা নীতি</span><span class="en">Privacy Policy</span></a>
-                &middot; <a href="{{ route('terms') }}" style="color:var(--text-dim, #94a3b8); text-decoration:none;"><span class="bn">শর্তাবলী</span><span class="en">Terms</span></a>
+                © {{ date('Y') }} {{ $siteName }}. <span class="bn">সর্বস্বত্ব সংরক্ষিত।</span><span class="en">All rights reserved. Developed by</span>
+                &middot; <a href="https://softngear.com" style="color:var(--text-dim, #94a3b8); text-decoration:none;"><span class="bn">Soft N Gear</span><span class="en">Soft N Gear</span></a>
+               
             </span>
             <button type="button" class="lp-back-top" id="backToTopBtn" aria-label="Back to top" title="উপরে যান / Back to top">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"></polyline></svg>
