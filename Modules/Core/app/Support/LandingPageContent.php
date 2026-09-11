@@ -44,15 +44,19 @@ class LandingPageContent
 
             // Social Proof / Stats
             'stat_1_number' => '৯৯.৯%',
+            'stat_1_number_en' => '99.9%',
             'stat_1_label_bn' => 'সিস্টেম আপটাইম গ্যারান্টি',
             'stat_1_label_en' => 'System Uptime Guarantee',
             'stat_2_number' => '৫০,০০০+',
+            'stat_2_number_en' => '50,000+',
             'stat_2_label_bn' => 'প্রতিদিনের সফল লেনদেন',
             'stat_2_label_en' => 'Daily Successful Invoices',
             'stat_3_number' => '৩ সেকেন্ড',
+            'stat_3_number_en' => '3s',
             'stat_3_label_bn' => 'দ্রুততম ক্যাশ মেমো প্রিন্ট',
             'stat_3_label_en' => 'Fastest Invoice Print',
             'stat_4_number' => '২৪/৭',
+            'stat_4_number_en' => '24/7',
             'stat_4_label_bn' => 'গ্রাহক সহায়তা ও ব্যাকআপ',
             'stat_4_label_en' => 'Customer Support & Backup',
 
@@ -338,8 +342,24 @@ class LandingPageContent
     {
         $defaults = self::defaults();
         $defaultVal = $defaults[$key] ?? $fallback;
+        $val = Setting::get($key, $defaultVal);
 
-        return Setting::get($key, $defaultVal);
+        if ($key === 'verticals_list' && is_array($val) && isset($defaults['verticals_list'])) {
+            foreach ($val as $idx => &$row) {
+                if (is_array($row) && isset($defaults['verticals_list'][$idx])) {
+                    $defRow = $defaults['verticals_list'][$idx];
+                    if (empty($row['tag_en']) && ! empty($defRow['tag_en'])) {
+                        $row['tag_en'] = $defRow['tag_en'];
+                    }
+                    if (empty($row['desc_en']) && ! empty($defRow['desc_en'])) {
+                        $row['desc_en'] = $defRow['desc_en'];
+                    }
+                }
+            }
+            unset($row);
+        }
+
+        return $val;
     }
 
     /**
@@ -353,7 +373,24 @@ class LandingPageContent
         $result = [];
 
         foreach ($defaults as $key => $defaultVal) {
-            $result[$key] = Setting::get($key, $defaultVal);
+            $val = Setting::get($key, $defaultVal);
+
+            if ($key === 'verticals_list' && is_array($val) && isset($defaults['verticals_list'])) {
+                foreach ($val as $idx => &$row) {
+                    if (is_array($row) && isset($defaults['verticals_list'][$idx])) {
+                        $defRow = $defaults['verticals_list'][$idx];
+                        if (empty($row['tag_en']) && ! empty($defRow['tag_en'])) {
+                            $row['tag_en'] = $defRow['tag_en'];
+                        }
+                        if (empty($row['desc_en']) && ! empty($defRow['desc_en'])) {
+                            $row['desc_en'] = $defRow['desc_en'];
+                        }
+                    }
+                }
+                unset($row);
+            }
+
+            $result[$key] = $val;
         }
 
         $result['landing_page_enabled'] = Setting::isLandingPageEnabled();

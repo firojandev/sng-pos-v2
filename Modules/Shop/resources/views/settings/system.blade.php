@@ -420,49 +420,81 @@
                                 <div class="item-box">
                                     <h5
                                         style="margin-bottom:12px; color:var(--brand-primary, #2563EB); font-weight:700;">
-                                        কাউন্টার ১</h5>
-                                    <x-core::input name="stat_1_number" label="মান / সংখ্যা (Value)" size="sm"
-                                        :value="old('stat_1_number', $settings['stat_1_number'])" placeholder="৯৯.৯%" />
-                                    <div style="margin-top:10px;"><x-core::input name="stat_1_label_bn"
-                                            label="লেবেল (বাংলা)" size="sm" :value="old('stat_1_label_bn', $settings['stat_1_label_bn'])" /></div>
-                                    <div style="margin-top:10px;"><x-core::input name="stat_1_label_en"
-                                            label="Label (English)" size="sm" :value="old('stat_1_label_en', $settings['stat_1_label_en'])" /></div>
+                                        <span class="bn">কাউন্টার ১</span>
+                                        <span class="en">Counter 1</span>
+                                    </h5>
+                                    <div class="grid-2">
+                                        <x-core::input name="stat_1_number" label="মান / সংখ্যা (বাংলা)" size="sm"
+                                            :value="old('stat_1_number', $settings['stat_1_number'])" placeholder="৯৯.৯%" />
+                                        <x-core::input name="stat_1_number_en" label="Value / Number (English)" size="sm"
+                                            :value="old('stat_1_number_en', $settings['stat_1_number_en'] ?? '')" placeholder="99.9%" />
+                                    </div>
+                                    <div class="grid-2" style="margin-top:10px;">
+                                        <x-core::input name="stat_1_label_bn"
+                                            label="লেবেল (বাংলা)" size="sm" :value="old('stat_1_label_bn', $settings['stat_1_label_bn'])" />
+                                        <x-core::input name="stat_1_label_en"
+                                            label="Label (English)" size="sm" :value="old('stat_1_label_en', $settings['stat_1_label_en'])" />
+                                    </div>
                                 </div>
 
                                 <div class="item-box">
                                     <h5
                                         style="margin-bottom:12px; color:var(--brand-primary, #2563EB); font-weight:700;">
-                                        কাউন্টার ২</h5>
-                                    <x-core::input name="stat_2_number" label="মান / সংখ্যা (Value)" size="sm"
-                                        :value="old('stat_2_number', $settings['stat_2_number'])" placeholder="৫০,০০০+" />
-                                    <div style="margin-top:10px;"><x-core::input name="stat_2_label_bn"
-                                            label="লেবেল (বাংলা)" size="sm" :value="old('stat_2_label_bn', $settings['stat_2_label_bn'])" /></div>
-                                    <div style="margin-top:10px;"><x-core::input name="stat_2_label_en"
-                                            label="Label (English)" size="sm" :value="old('stat_2_label_en', $settings['stat_2_label_en'])" /></div>
+                                        <span class="bn">কাউন্টার ২</span>
+                                        <span class="en">Counter 2</span>
+                                    </h5>
+                                    <div class="grid-2">
+                                        <x-core::input name="stat_2_number" label="মান / সংখ্যা (বাংলা)" size="sm"
+                                            :value="old('stat_2_number', $settings['stat_2_number'])" placeholder="৫০,০০০+" />
+                                        <x-core::input name="stat_2_number_en" label="Value / Number (English)" size="sm"
+                                            :value="old('stat_2_number_en', $settings['stat_2_number_en'] ?? '')" placeholder="50,000+" />
+                                    </div>
+                                    <div class="grid-2" style="margin-top:10px;">
+                                        <x-core::input name="stat_2_label_bn"
+                                            label="লেবেল (বাংলা)" size="sm" :value="old('stat_2_label_bn', $settings['stat_2_label_bn'])" />
+                                        <x-core::input name="stat_2_label_en"
+                                            label="Label (English)" size="sm" :value="old('stat_2_label_en', $settings['stat_2_label_en'])" />
+                                    </div>
                                 </div>
 
                                 <div class="item-box">
                                     <h5
                                         style="margin-bottom:12px; color:var(--brand-primary, #2563EB); font-weight:700;">
-                                        কাউন্টার ৩</h5>
-                                    <x-core::input name="stat_3_number" label="মান / সংখ্যা (Value)" size="sm"
-                                        :value="old('stat_3_number', $settings['stat_3_number'])" placeholder="৩ সেকেন্ড" />
-                                    <div style="margin-top:10px;"><x-core::input name="stat_3_label_bn"
-                                            label="লেবেল (বাংলা)" size="sm" :value="old('stat_3_label_bn', $settings['stat_3_label_bn'])" /></div>
-                                    <div style="margin-top:10px;"><x-core::input name="stat_3_label_en"
-                                            label="Label (English)" size="sm" :value="old('stat_3_label_en', $settings['stat_3_label_en'])" /></div>
+                                        <span class="bn">কাউন্টার ৩</span>
+                                        <span class="en">Counter 3</span>
+                                    </h5>
+                                    <div class="grid-2">
+                                        <x-core::input name="stat_3_number" label="মান / সংখ্যা (বাংলা)" size="sm"
+                                            :value="old('stat_3_number', $settings['stat_3_number'])" placeholder="৩ সেকেন্ড" />
+                                        <x-core::input name="stat_3_number_en" label="Value / Number (English)" size="sm"
+                                            :value="old('stat_3_number_en', $settings['stat_3_number_en'] ?? '')" placeholder="3s" />
+                                    </div>
+                                    <div class="grid-2" style="margin-top:10px;">
+                                        <x-core::input name="stat_3_label_bn"
+                                            label="লেবেল (বাংলা)" size="sm" :value="old('stat_3_label_bn', $settings['stat_3_label_bn'])" />
+                                        <x-core::input name="stat_3_label_en"
+                                            label="Label (English)" size="sm" :value="old('stat_3_label_en', $settings['stat_3_label_en'])" />
+                                    </div>
                                 </div>
 
                                 <div class="item-box">
                                     <h5
                                         style="margin-bottom:12px; color:var(--brand-primary, #2563EB); font-weight:700;">
-                                        কাউন্টার ৪</h5>
-                                    <x-core::input name="stat_4_number" label="মান / সংখ্যা (Value)" size="sm"
-                                        :value="old('stat_4_number', $settings['stat_4_number'])" placeholder="২৪/৭" />
-                                    <div style="margin-top:10px;"><x-core::input name="stat_4_label_bn"
-                                            label="লেবেল (বাংলা)" size="sm" :value="old('stat_4_label_bn', $settings['stat_4_label_bn'])" /></div>
-                                    <div style="margin-top:10px;"><x-core::input name="stat_4_label_en"
-                                            label="Label (English)" size="sm" :value="old('stat_4_label_en', $settings['stat_4_label_en'])" /></div>
+                                        <span class="bn">কাউন্টার ৪</span>
+                                        <span class="en">Counter 4</span>
+                                    </h5>
+                                    <div class="grid-2">
+                                        <x-core::input name="stat_4_number" label="মান / সংখ্যা (বাংলা)" size="sm"
+                                            :value="old('stat_4_number', $settings['stat_4_number'])" placeholder="২৪/৭" />
+                                        <x-core::input name="stat_4_number_en" label="Value / Number (English)" size="sm"
+                                            :value="old('stat_4_number_en', $settings['stat_4_number_en'] ?? '')" placeholder="24/7" />
+                                    </div>
+                                    <div class="grid-2" style="margin-top:10px;">
+                                        <x-core::input name="stat_4_label_bn"
+                                            label="লেবেল (বাংলা)" size="sm" :value="old('stat_4_label_bn', $settings['stat_4_label_bn'])" />
+                                        <x-core::input name="stat_4_label_en"
+                                            label="Label (English)" size="sm" :value="old('stat_4_label_en', $settings['stat_4_label_en'])" />
+                                    </div>
                                 </div>
                             </div>
 
@@ -668,17 +700,44 @@
                                         :value="old('vert_badge_bn', $settings['vert_badge_bn'])" />
                                 </div>
                                 <div>
+                                    <x-core::input name="vert_badge_en" label="Section Badge (English)" size="sm"
+                                        :value="old('vert_badge_en', $settings['vert_badge_en'] ?? '')" />
+                                </div>
+                                <div>
                                     <x-core::input name="vert_title_bn" label="সেকশন শিরোনাম (বাংলা)" size="sm"
                                         :value="old('vert_title_bn', $settings['vert_title_bn'])" />
+                                </div>
+                                <div>
+                                    <x-core::input name="vert_title_en" label="Section Title (English)" size="sm"
+                                        :value="old('vert_title_en', $settings['vert_title_en'] ?? '')" />
+                                </div>
+                            </div>
+                            <div class="grid-2" style="margin-top:16px;">
+                                <div>
+                                    <x-core::textarea name="vert_subtitle_bn" label="উপ-শিরোনাম / বিবরণ (বাংলা)" size="sm" rows="2"
+                                        :value="old('vert_subtitle_bn', $settings['vert_subtitle_bn'])" />
+                                </div>
+                                <div>
+                                    <x-core::textarea name="vert_subtitle_en" label="Subtitle / Description (English)" size="sm" rows="2"
+                                        :value="old('vert_subtitle_en', $settings['vert_subtitle_en'] ?? '')" />
                                 </div>
                             </div>
 
                             <div class="grid-2" style="gap:16px; margin-top:24px;">
                                 @foreach ($settings['verticals_list'] as $i => $vert)
                                     <div class="item-box">
-                                        <h5
-                                            style="margin-bottom:10px; font-weight:700; color:var(--brand-primary, #2563EB);">
-                                            {{ $vert['name_bn'] ?? '' }}</h5>
+                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                                            <h5 style="margin:0; font-weight:700; color:var(--brand-primary, #2563EB);">
+                                                <span class="bn">ব্যবসায়ের ধরন #{{ $i + 1 }}: {{ $vert['name_bn'] ?? '' }}</span>
+                                                <span class="en">Vertical #{{ $i + 1 }}: {{ $vert['name_en'] ?? ($vert['name_bn'] ?? '') }}</span>
+                                            </h5>
+                                            @if(!empty($vert['tag_bn']) || !empty($vert['tag_en']))
+                                                <x-core::badge color="blue" size="sm">
+                                                    <span class="bn">{{ $vert['tag_bn'] ?? '' }}</span>
+                                                    <span class="en">{{ $vert['tag_en'] ?? ($vert['tag_bn'] ?? '') }}</span>
+                                                </x-core::badge>
+                                            @endif
+                                        </div>
                                         <div class="grid-2">
                                             <x-core::input name="verticals_list[{{ $i }}][name_bn]"
                                                 label="নাম (বাংলা)" size="sm" :value="$vert['name_bn'] ?? ''" />
@@ -686,13 +745,24 @@
                                                 label="Name (English)" size="sm" :value="$vert['name_en'] ?? ''" />
                                             <x-core::input name="verticals_list[{{ $i }}][tag_bn]"
                                                 label="ট্যাগ (বাংলা)" size="sm" :value="$vert['tag_bn'] ?? ''" />
+                                            <x-core::input name="verticals_list[{{ $i }}][tag_en]"
+                                                label="Tag (English)" size="sm" :value="$vert['tag_en'] ?? ''" />
+                                        </div>
+                                        <div style="margin-top:10px;">
                                             <x-core::input name="verticals_list[{{ $i }}][icon]"
                                                 label="আইকন (Lucide)" size="sm" :value="$vert['icon'] ?? 'shopping-cart'" />
                                         </div>
-                                        <div style="margin-top:10px;">
-                                            <x-core::textarea name="verticals_list[{{ $i }}][desc_bn]"
-                                                label="বিবরণ (বাংলা)" size="sm" rows="2"
-                                                :value="$vert['desc_bn'] ?? ''" />
+                                        <div class="grid-2" style="margin-top:10px;">
+                                            <div>
+                                                <x-core::textarea name="verticals_list[{{ $i }}][desc_bn]"
+                                                    label="বিবরণ (বাংলা)" size="sm" rows="2"
+                                                    :value="$vert['desc_bn'] ?? ''" />
+                                            </div>
+                                            <div>
+                                                <x-core::textarea name="verticals_list[{{ $i }}][desc_en]"
+                                                    label="Description (English)" size="sm" rows="2"
+                                                    :value="$vert['desc_en'] ?? ''" />
+                                            </div>
                                         </div>
                                     </div>
                                 @endforeach

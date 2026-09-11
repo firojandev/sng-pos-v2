@@ -112,4 +112,71 @@ class LandingPageDynamicContentTest extends TestCase
         $pageResponse->assertSee('আজই বদলে ফেলুন আপনার ব্যবসার ভবিষ্যৎ');
         $pageResponse->assertSee('এক্ষুনি জয়েন করুন');
     }
+
+    public function test_super_admin_can_update_stats_value_en_and_verticals_tag_and_desc_en(): void
+    {
+        $settingsView = $this->actingAs($this->superAdmin)
+            ->get(route('system-settings.index', ['tab' => 'stats']));
+        $settingsView->assertOk();
+        $settingsView->assertSee('stat_1_number_en');
+        $settingsView->assertSee('stat_2_number_en');
+        $settingsView->assertSee('stat_3_number_en');
+        $settingsView->assertSee('stat_4_number_en');
+
+        $customVerticals = [
+            [
+                'icon' => 'shopping-cart',
+                'name_bn' => 'মুদি দোকান',
+                'name_en' => 'Grocery Shop',
+                'tag_bn' => 'দ্রুত ক্যাশ মেমো',
+                'tag_en' => 'Fast Checkout',
+                'desc_bn' => 'মুদি দোকানের জন্য সম্পূর্ণ পিওএস সিস্টেম।',
+                'desc_en' => 'Complete POS system tailored for grocery shops.',
+            ],
+        ];
+
+        $response = $this->actingAs($this->superAdmin)
+            ->post(route('system-settings.update'), [
+                'active_tab' => 'stats',
+                'stat_1_number' => '৯৯.৯%',
+                'stat_1_number_en' => '99.9%',
+                'stat_2_number' => '৫০,০০০+',
+                'stat_2_number_en' => '50,000+',
+                'stat_3_number' => '৩ সেকেন্ড',
+                'stat_3_number_en' => '3s',
+                'stat_4_number' => '২৪/৭',
+                'stat_4_number_en' => '24/7',
+                'verticals_list' => $customVerticals,
+            ]);
+
+        $response->assertRedirect(route('system-settings.index', ['tab' => 'stats']));
+
+        $this->assertEquals('99.9%', LandingPageContent::get('stat_1_number_en'));
+        $this->assertEquals('50,000+', LandingPageContent::get('stat_2_number_en'));
+        $this->assertEquals('3s', LandingPageContent::get('stat_3_number_en'));
+        $this->assertEquals('24/7', LandingPageContent::get('stat_4_number_en'));
+
+        $vertList = LandingPageContent::get('verticals_list');
+        $this->assertEquals('Fast Checkout', $vertList[0]['tag_en']);
+        $this->assertEquals('Complete POS system tailored for grocery shops.', $vertList[0]['desc_en']);
+
+        // Check verticals tab in settings page
+        $vertView = $this->actingAs($this->superAdmin)
+            ->get(route('system-settings.index', ['tab' => 'verticals']));
+        $vertView->assertOk();
+        $vertView->assertSee('Fast Checkout');
+        $vertView->assertSee('Complete POS system tailored for grocery shops.');
+
+        // Landing page in Bengali & English
+        $pageResponse = $this->get('/');
+        $pageResponse->assertOk();
+        $pageResponse->assertSee('৯৯.৯%');
+        $pageResponse->assertSee('99.9%');
+        $pageResponse->assertSee('২৪/৭');
+        $pageResponse->assertSee('24/7');
+        $pageResponse->assertSee('দ্রুত ক্যাশ মেমো');
+        $pageResponse->assertSee('Fast Checkout');
+        $pageResponse->assertSee('মুদি দোকানের জন্য সম্পূর্ণ পিওএস সিস্টেম।');
+        $pageResponse->assertSee('Complete POS system tailored for grocery shops.');
+    }
 }

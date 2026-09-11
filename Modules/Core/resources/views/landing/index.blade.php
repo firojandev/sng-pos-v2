@@ -442,28 +442,46 @@
     <div class="lp-container">
         <div class="lp-proof-grid">
             <div class="lp-proof-item lp-reveal lp-delay-1">
-                <h3 class="lp-counter" data-target="99.9" data-suffix="%" data-decimals="1">{{ $content['stat_1_number'] ?? '৯৯.৯%' }}</h3>
+                <h3 class="lp-counter" data-target="99.9" data-suffix="%" data-decimals="1"
+                    data-final-bn="{{ $content['stat_1_number'] ?? '৯৯.৯%' }}"
+                    data-final-en="{{ $content['stat_1_number_en'] ?? '99.9%' }}">
+                    <span class="bn">{{ $content['stat_1_number'] ?? '৯৯.৯%' }}</span>
+                    <span class="en">{{ $content['stat_1_number_en'] ?? '99.9%' }}</span>
+                </h3>
                 <p>
                     <span class="bn">{{ $content['stat_1_label_bn'] ?? 'সিস্টেম আপটাইম গ্যারান্টি' }}</span>
                     <span class="en">{{ $content['stat_1_label_en'] ?? 'System Uptime Guarantee' }}</span>
                 </p>
             </div>
             <div class="lp-proof-item lp-reveal lp-delay-2">
-                <h3 class="lp-counter" data-target="50000" data-suffix="+" data-decimals="0">{{ $content['stat_2_number'] ?? '৫০,০০০+' }}</h3>
+                <h3 class="lp-counter" data-target="50000" data-suffix="+" data-decimals="0"
+                    data-final-bn="{{ $content['stat_2_number'] ?? '৫০,০০০+' }}"
+                    data-final-en="{{ $content['stat_2_number_en'] ?? '50,000+' }}">
+                    <span class="bn">{{ $content['stat_2_number'] ?? '৫০,০০০+' }}</span>
+                    <span class="en">{{ $content['stat_2_number_en'] ?? '50,000+' }}</span>
+                </h3>
                 <p>
                     <span class="bn">{{ $content['stat_2_label_bn'] ?? 'প্রতিদিনের সফল লেনদেন' }}</span>
                     <span class="en">{{ $content['stat_2_label_en'] ?? 'Daily Successful Invoices' }}</span>
                 </p>
             </div>
             <div class="lp-proof-item lp-reveal lp-delay-3">
-                <h3 class="lp-counter" data-target="3" data-suffix=" সেকেন্ড" data-suffix-en="s" data-decimals="0">{{ $content['stat_3_number'] ?? '৩ সেকেন্ড' }}</h3>
+                <h3 class="lp-counter" data-target="3" data-suffix=" সেকেন্ড" data-suffix-en="s" data-decimals="0"
+                    data-final-bn="{{ $content['stat_3_number'] ?? '৩ সেকেন্ড' }}"
+                    data-final-en="{{ $content['stat_3_number_en'] ?? '3s' }}">
+                    <span class="bn">{{ $content['stat_3_number'] ?? '৩ সেকেন্ড' }}</span>
+                    <span class="en">{{ $content['stat_3_number_en'] ?? '3s' }}</span>
+                </h3>
                 <p>
                     <span class="bn">{{ $content['stat_3_label_bn'] ?? 'দ্রুততম ক্যাশ মেমো প্রিন্ট' }}</span>
                     <span class="en">{{ $content['stat_3_label_en'] ?? 'Fastest Invoice Print' }}</span>
                 </p>
             </div>
             <div class="lp-proof-item lp-reveal lp-delay-4">
-                <h3 class="lp-counter" data-text-fixed="২৪/৭" data-text-fixed-en="24/7">{{ $content['stat_4_number'] ?? '২৪/৭' }}</h3>
+                <h3 class="lp-counter">
+                    <span class="bn">{{ $content['stat_4_number'] ?? '২৪/৭' }}</span>
+                    <span class="en">{{ $content['stat_4_number_en'] ?? '24/7' }}</span>
+                </h3>
                 <p>
                     <span class="bn">{{ $content['stat_4_label_bn'] ?? 'গ্রাহক সহায়তা ও ব্যাকআপ' }}</span>
                     <span class="en">{{ $content['stat_4_label_en'] ?? 'Customer Support & Backup' }}</span>
@@ -708,15 +726,15 @@
                     </div>
                     <h3>
                         <span class="bn">{{ $vert['name_bn'] ?? '' }}</span>
-                        <span class="en">{{ $vert['name_en'] ?? '' }}</span>
+                        <span class="en">{{ !empty($vert['name_en']) ? $vert['name_en'] : ($vert['name_bn'] ?? '') }}</span>
                     </h3>
                     <p>
                         <span class="bn">{{ $vert['desc_bn'] ?? '' }}</span>
-                        <span class="en">{{ $vert['desc_en'] ?? '' }}</span>
+                        <span class="en">{{ !empty($vert['desc_en']) ? $vert['desc_en'] : ($vert['desc_bn'] ?? '') }}</span>
                     </p>
                     <span class="lp-vert-tag">
                         <span class="bn">{{ $vert['tag_bn'] ?? '' }}</span>
-                        <span class="en">{{ $vert['tag_en'] ?? '' }}</span>
+                        <span class="en">{{ !empty($vert['tag_en']) ? $vert['tag_en'] : ($vert['tag_bn'] ?? '') }}</span>
                     </span>
                 </div>
             @endforeach
@@ -1624,11 +1642,9 @@ $(function () {
         const target = parseFloat($el.data('target'));
         const suffix = $el.data('suffix') || '';
         const decimals = parseInt($el.data('decimals') || 0, 10);
-        const fixedText = $el.data('text-fixed');
 
         if (isNaN(target)) return;
 
-        const isEnglish = $('html').hasClass('lang-en');
         const duration = 1600;
         const startTime = performance.now();
 
@@ -1644,14 +1660,22 @@ $(function () {
                 maximumFractionDigits: decimals
             });
 
-            if (!isEnglish) {
-                formattedVal = toBnNum(formattedVal) + suffix;
-            } else {
-                const suffixEn = $el.data('suffix-en') || suffix;
-                formattedVal = formattedVal + suffixEn;
+            const suffixEn = $el.data('suffix-en') !== undefined ? $el.data('suffix-en') : suffix;
+            let bnVal = toBnNum(formattedVal) + suffix;
+            let enVal = formattedVal + suffixEn;
+
+            if (progress >= 1) {
+                if ($el.data('final-bn')) bnVal = $el.data('final-bn');
+                if ($el.data('final-en')) enVal = $el.data('final-en');
             }
 
-            $el.text(formattedVal);
+            if ($el.find('.bn').length && $el.find('.en').length) {
+                $el.find('.bn').text(bnVal);
+                $el.find('.en').text(enVal);
+            } else {
+                const isEnglish = $('html').hasClass('lang-en');
+                $el.text(isEnglish ? enVal : bnVal);
+            }
 
             if (progress < 1) {
                 requestAnimationFrame(updateTicker);

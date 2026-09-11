@@ -290,6 +290,7 @@ html:not(.lang-en) .lang-segmented-switcher .segmented-switch-slider::before {
 .lp-proof-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; text-align: center; }
 .lp-proof-item { display: flex; flex-direction: column; gap: 4px; }
 .lp-proof-item h3 { font-size: 34px; font-weight: 800; color: #fff; letter-spacing: -0.02em; background: linear-gradient(135deg, #fff 30%, #94A3B8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.lp-proof-item h3 span { background: inherit; -webkit-background-clip: inherit; -webkit-text-fill-color: inherit; }
 .lp-proof-item p { font-size: 13.5px; color: var(--text-muted); }
 
 /* Common Section Headers */
