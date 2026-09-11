@@ -1,8 +1,6 @@
 <x-core::auth-layout
     title="লগইন"
     title-en="Login"
-    card-title="মাস্টারপস-এ লগইন করুন"
-    card-title-en="Sign in to MasterPOS"
     card-subtitle="আপনার হিসাব পরিচালনা করতে লগইন করুন"
     card-subtitle-en="Sign in to manage your business account"
 >

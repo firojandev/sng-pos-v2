@@ -88,8 +88,8 @@ class LandingPageDynamicContentTest extends TestCase
                 'author' => 'কাজী আশরাফুল আলম',
                 'shop' => 'আশরাফ জেনারেল স্টোর',
                 'city' => 'বগুড়া',
-                'quote_bn' => 'মাস্টারপস ব্যবহারে আমাদের প্রতিদিন ২ ঘণ্টা সময় বাঁচছে।',
-                'quote_en' => 'MasterPOS saves us 2 hours daily.',
+                'quote_bn' => 'এসএনজিপস ব্যবহারে আমাদের প্রতিদিন ২ ঘণ্টা সময় বাঁচছে।',
+                'quote_en' => 'SNGPOS saves us 2 hours daily.',
                 'rating' => 5,
             ],
         ];
@@ -108,7 +108,7 @@ class LandingPageDynamicContentTest extends TestCase
         $pageResponse->assertOk();
         $pageResponse->assertSee('কাজী আশরাফুল আলম');
         $pageResponse->assertSee('আশরাফ জেনারেল স্টোর');
-        $pageResponse->assertSee('মাস্টারপস ব্যবহারে আমাদের প্রতিদিন ২ ঘণ্টা সময় বাঁচছে।');
+        $pageResponse->assertSee('এসএনজিপস ব্যবহারে আমাদের প্রতিদিন ২ ঘণ্টা সময় বাঁচছে।');
         $pageResponse->assertSee('আজই বদলে ফেলুন আপনার ব্যবসার ভবিষ্যৎ');
         $pageResponse->assertSee('এক্ষুনি জয়েন করুন');
     }

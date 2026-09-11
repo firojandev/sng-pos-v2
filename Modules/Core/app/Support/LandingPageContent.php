@@ -13,9 +13,11 @@ class LandingPageContent
      */
     public static function defaults(): array
     {
+        $siteTitle = Setting::getSiteTitle();
+
         return [
             // General / Brand
-            'site_title' => 'MasterPOS',
+            'site_title' => $siteTitle,
             'brand_tag' => 'Cloud POS & ERP',
             'trial_button_text_bn' => 'রেজিস্ট্রেশন করুন',
             'trial_button_text_en' => 'Registration',
@@ -54,11 +56,11 @@ class LandingPageContent
             'stat_4_label_bn' => 'গ্রাহক সহায়তা ও ব্যাকআপ',
             'stat_4_label_en' => 'Customer Support & Backup',
 
-            // Problem vs Solution (খাতা-কলমে বনাম MasterPOS)
+            // Problem vs Solution
             'vs_badge_bn' => 'তুলনামূলক বিশ্লেষণ',
             'vs_badge_en' => 'Direct Comparison',
-            'vs_title_bn' => 'সনাতন পদ্ধতি বনাম MasterPOS',
-            'vs_title_en' => 'Traditional Method vs MasterPOS',
+            'vs_title_bn' => 'সনাতন পদ্ধতি বনাম '.$siteTitle,
+            'vs_title_en' => 'Traditional Method vs '.$siteTitle,
             'vs_subtitle_bn' => 'কেন শত শত ব্যবসায়ী তাদের খাতা-কলমের হিসাব ছেড়ে ক্লাউড সিস্টেমে স্থানান্তর হচ্ছেন?',
             'vs_subtitle_en' => 'Why hundreds of smart retail merchants are moving from pen-and-paper to cloud software?',
             'vs_pain_items' => [
@@ -227,8 +229,8 @@ class LandingPageContent
             'reviews_badge_en' => 'Client Testimonials',
             'reviews_title_bn' => 'সফল ব্যবসায়ীদের বাস্তব অভিজ্ঞতা',
             'reviews_title_en' => 'Loved By Retail Shop Owners Across Bangladesh',
-            'reviews_subtitle_bn' => 'দেখুন কীভাবে MasterPOS তাদের দোকানের পরিচালন খরচ কমিয়েছে ও মুনাফা বাড়িয়েছে।',
-            'reviews_subtitle_en' => 'See how MasterPOS reduced operational errors and maximized profit for our clients.',
+            'reviews_subtitle_bn' => 'দেখুন কীভাবে '.$siteTitle.' তাদের দোকানের পরিচালন খরচ কমিয়েছে ও মুনাফা বাড়িয়েছে।',
+            'reviews_subtitle_en' => 'See how '.$siteTitle.' reduced operational errors and maximized profit for our clients.',
             'reviews_list' => [
                 [
                     'author' => 'মোঃ রফিকুল ইসলাম',
@@ -236,8 +238,8 @@ class LandingPageContent
                     'role_en' => 'Owner',
                     'shop' => 'আল-মদিনা ডিপার্টমেন্টাল স্টোর',
                     'city' => 'মিরপুর, ঢাকা',
-                    'quote_bn' => 'আগে প্রতিদিন রাতে বাকির খাতা মেলাতে ঘণ্টাখানেক সময় লাগত। MasterPOS নেওয়ার পর এক ক্লিকে এসএমএস চলে যায়, আর ক্যাশবক্স হিসাব এখন একদম পানির মতো পরিষ্কার!',
-                    'quote_en' => 'Before MasterPOS, reconciling daily sales and due registers took hours every night. Now customer reminders go out via automated SMS, and cashbox tracking is crystal clear.',
+                    'quote_bn' => 'আগে প্রতিদিন রাতে বাকির খাতা মেলাতে ঘণ্টাখানেক সময় লাগত। '.$siteTitle.' নেওয়ার পর এক ক্লিকে এসএমএস চলে যায়, আর ক্যাশবক্স হিসাব এখন একদম পানির মতো পরিষ্কার!',
+                    'quote_en' => 'Before '.$siteTitle.', reconciling daily sales and due registers took hours every night. Now customer reminders go out via automated SMS, and cashbox tracking is crystal clear.',
                     'rating' => 5,
                     'initials' => 'র',
                 ],
@@ -274,10 +276,10 @@ class LandingPageContent
             'faq_subtitle_en' => 'Find answers to commonly asked questions about our software and setup.',
             'faqs_list' => [
                 [
-                    'question_bn' => 'MasterPOS ব্যবহার করতে কী ধরনের কম্পিউটার বা ডিভাইস লাগবে?',
-                    'question_en' => 'What kind of hardware or computer is required to use MasterPOS?',
-                    'answer_bn' => 'যেকোনো সাধারণ ল্যাপটপ, ডেস্কটপ কম্পিউটার, ট্যাবলেট এমনকি আপনার স্মার্টফোনেও ব্রাউজারের মাধ্যমে MasterPOS ব্যবহার করা যায়। যেকোনো স্ট্যান্ডার্ড থার্মাল পিওএস প্রিন্টার ও বারকোড স্ক্যানার সরাসরি সাপোর্ট করে।',
-                    'answer_en' => 'MasterPOS runs on any standard desktop PC, laptop, tablet, or smartphone via modern web browsers. It natively supports any standard 58mm/80mm thermal receipt printer and USB/wireless barcode scanner.',
+                    'question_bn' => $siteTitle.' ব্যবহার করতে কী ধরনের কম্পিউটার বা ডিভাইস লাগবে?',
+                    'question_en' => 'What kind of hardware or computer is required to use '.$siteTitle.'?',
+                    'answer_bn' => 'যেকোনো সাধারণ ল্যাপটপ, ডেস্কটপ কম্পিউটার, ট্যাবলেট এমনকি আপনার স্মার্টফোনেও ব্রাউজারের মাধ্যমে '.$siteTitle.' ব্যবহার করা যায়। যেকোনো স্ট্যান্ডার্ড থার্মাল পিওএস প্রিন্টার ও বারকোড স্ক্যানার সরাসরি সাপোর্ট করে।',
+                    'answer_en' => $siteTitle.' runs on any standard desktop PC, laptop, tablet, or smartphone via modern web browsers. It natively supports any standard 58mm/80mm thermal receipt printer and USB/wireless barcode scanner.',
                 ],
                 [
                     'question_bn' => 'আমার দোকানের ডেটা কি নিরাপদ ও ব্যাকআপ থাকবে?',
@@ -288,8 +290,8 @@ class LandingPageContent
                 [
                     'question_bn' => 'ইন্টারনেট সাময়িক বিচ্ছিন্ন থাকলে কি বিক্রি বন্ধ হয়ে যাবে?',
                     'question_en' => 'What happens if our internet connection temporarily drops?',
-                    'answer_bn' => 'না, সাধারণ মোবাইল ডাটা বা হটস্পট সংযোগের মাধ্যমেই অতি স্বল্প ব্যান্ডউইথে MasterPOS নিরবচ্ছিন্নভাবে চালানো যায়।',
-                    'answer_en' => 'No. MasterPOS is optimized to run smoothly on low-bandwidth mobile hot-spots and 3G/4G connections without interruption.',
+                    'answer_bn' => 'না, সাধারণ মোবাইল ডাটা বা হটস্পট সংযোগের মাধ্যমেই অতি স্বল্প ব্যান্ডউইথে '.$siteTitle.' নিরবচ্ছিন্নভাবে চালানো যায়।',
+                    'answer_en' => 'No. '.$siteTitle.' is optimized to run smoothly on low-bandwidth mobile hot-spots and 3G/4G connections without interruption.',
                 ],
                 [
                     'question_bn' => 'ফ্রি ট্রায়াল শেষ হওয়ার পর কীভাবে সাবস্ক্রিপশন চালু করব?',

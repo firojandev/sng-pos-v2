@@ -2,7 +2,7 @@
     $cookieLang = request()->cookie('lang', 'bn');
     $isEn = $cookieLang === 'en';
     $content = $content ?? \Modules\Core\Support\LandingPageContent::all();
-    $siteName = $content['site_title'] ?? config('app.name', 'MasterPOS');
+    $siteName = $content['site_title'] ?? \Modules\Core\Models\Setting::getSiteTitle();
     $phone = $content['support_phone'] ?? '+880 1886 861430';
     $email = $content['support_email'] ?? 'support@softngear.com';
     $address = $content['office_address'] ?? 'Shop 407, 3rd Floor, Shwapnochura Plaza, Rajshahi';
@@ -15,7 +15,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $siteName }} — {{ $content['hero_title_bn'] ?? 'বাংলাদেশের #১ ক্লাউড POS ও ইনভেন্টরি সফটওয়্যার' }}</title>
-    <meta name="description" content="{{ $content['meta_description'] ?? 'খাতা-কলমে হিসাবের দিন শেষ। দোকানের বেচাকেনা, কাস্টমারের বাকি খাতা, লাইভ স্টক, ক্যাশবক্স ও লাভ-ক্ষতির পূর্ণাঙ্গ হিসাব — সবই MasterPOS-এ।' }}">
+    <meta name="description" content="{{ $content['meta_description'] ?? ('খাতা-কলমে হিসাবের দিন শেষ। দোকানের বেচাকেনা, কাস্টমারের বাকি খাতা, লাইভ স্টক, ক্যাশবক্স ও লাভ-ক্ষতির পূর্ণাঙ্গ হিসাব — সবই ' . $siteName . '-এ।') }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -73,7 +73,7 @@
             <nav>
                 <ul class="lp-nav-links">
                     <li><a href="#features" class="lp-nav-link"><span class="bn">ফিচারসমূহ</span><span class="en">Features</span></a></li>
-                    <li><a href="#solutions" class="lp-nav-link"><span class="bn">কেন MasterPOS</span><span class="en">Why Us</span></a></li>
+                    <li><a href="#solutions" class="lp-nav-link"><span class="bn">কেন {{ $siteName }}</span><span class="en">Why Us</span></a></li>
                     <li><a href="#simulator" class="lp-nav-link"><span class="bn">লাইভ ডেমো</span><span class="en">Demo Simulator</span></a></li>
                     @if ($plans && $plans->count())
                         <li><a href="#pricing" class="lp-nav-link"><span class="bn">প্রাইসিং</span><span class="en">Pricing</span></a></li>
@@ -139,7 +139,7 @@
     </div>
     <ul style="list-style:none; display:flex; flex-direction:column; gap:16px;">
         <li><a href="#features" class="close-drawer"><span class="bn">ফিচারসমূহ</span><span class="en">Features</span></a></li>
-        <li><a href="#solutions" class="close-drawer"><span class="bn">কেন MasterPOS</span><span class="en">Why Us</span></a></li>
+        <li><a href="#solutions" class="close-drawer"><span class="bn">কেন {{ $siteName }}</span><span class="en">Why Us</span></a></li>
         <li><a href="#simulator" class="close-drawer"><span class="bn">লাইভ ডেমো</span><span class="en">Demo</span></a></li>
         @if ($plans && $plans->count())
             <li><a href="#pricing" class="close-drawer"><span class="bn">প্রাইসিং</span><span class="en">Pricing</span></a></li>
@@ -256,7 +256,7 @@
                         <div class="lp-mockup-dot green"></div>
                         <div class="lp-mockup-search">
                             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                            <span>app.masterpos.com/pos/counter</span>
+                            <span>{{ request()->getHost() ?: 'app.pos.com' }}/pos/counter</span>
                         </div>
                     </div>
 
@@ -378,8 +378,8 @@
                 <span class="en">{{ $content['vs_badge_en'] ?? 'Direct Comparison' }}</span>
             </span>
             <h2 class="lp-sec-title">
-                <span class="bn">{{ $content['vs_title_bn'] ?? 'সনাতন পদ্ধতি বনাম MasterPOS' }}</span>
-                <span class="en">{{ $content['vs_title_en'] ?? 'Traditional Method vs MasterPOS' }}</span>
+                <span class="bn">{{ $content['vs_title_bn'] ?? ('সনাতন পদ্ধতি বনাম ' . $siteName) }}</span>
+                <span class="en">{{ $content['vs_title_en'] ?? ('Traditional Method vs ' . $siteName) }}</span>
             </h2>
             <p class="lp-sec-subtitle">
                 <span class="bn">{{ $content['vs_subtitle_bn'] ?? 'কেন শত শত ব্যবসায়ী তাদের খাতা-কলমের হিসাব ছেড়ে ক্লাউড সিস্টেমে স্থানান্তর হচ্ছেন?' }}</span>
@@ -417,8 +417,8 @@
                 <div class="lp-vs-head">
                     <div class="lp-vs-icon">✓</div>
                     <h4>
-                        <span class="bn">MasterPOS স্মার্ট অটোমেশন</span>
-                        <span class="en">MasterPOS Smart Automation</span>
+                        <span class="bn">{{ $siteName }} স্মার্ট অটোমেশন</span>
+                        <span class="en">{{ $siteName }} Smart Automation</span>
                     </h4>
                 </div>
                 <ul class="lp-vs-list">
@@ -1033,8 +1033,8 @@
                 <span class="en">{{ $content['reviews_title_en'] ?? 'Loved By Retail Shop Owners Across Bangladesh' }}</span>
             </h2>
             <p class="lp-sec-subtitle">
-                <span class="bn">{{ $content['reviews_subtitle_bn'] ?? 'দেখুন কীভাবে MasterPOS তাদের দোকানের পরিচালন খরচ কমিয়েছে ও মুনাফা বাড়িয়েছে।' }}</span>
-                <span class="en">{{ $content['reviews_subtitle_en'] ?? 'See how MasterPOS reduced operational errors and maximized profit for our clients.' }}</span>
+                <span class="bn">{{ $content['reviews_subtitle_bn'] ?? ('দেখুন কীভাবে ' . $siteName . ' তাদের দোকানের পরিচালন খরচ কমিয়েছে ও মুনাফা বাড়িয়েছে।') }}</span>
+                <span class="en">{{ $content['reviews_subtitle_en'] ?? ('See how ' . $siteName . ' reduced operational errors and maximized profit for our clients.') }}</span>
             </p>
         </div>
 
@@ -1369,7 +1369,7 @@ $(function () {
         }
 
         const total = $('#simGrandTotal').text();
-        alert('🎉 বিক্রয় সফল হয়েছে! মোট সংগৃহীত: ' + total + '\n\nMasterPOS-এ এভাবে মাত্র ৩ সেকেন্ডে প্রতিটি বিক্রয় সম্পন্ন করা যায়।');
+        alert('🎉 বিক্রয় সফল হয়েছে! মোট সংগৃহীত: ' + total + '\n\n{{ $siteName }}-এ এভাবে মাত্র ৩ সেকেন্ডে প্রতিটি বিক্রয় সম্পন্ন করা যায়।');
         cart = [];
         renderSimCart();
     });

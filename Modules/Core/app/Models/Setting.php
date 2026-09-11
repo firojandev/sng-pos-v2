@@ -37,7 +37,7 @@ class Setting extends Model
      */
     public static function get(string $key, mixed $default = null): mixed
     {
-        $cacheKey = self::CACHE_PREFIX.$key;
+        $cacheKey = self::CACHE_PREFIX . $key;
 
         try {
             return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($key, $default) {
@@ -83,9 +83,23 @@ class Setting extends Model
             ]
         );
 
-        Cache::forget(self::CACHE_PREFIX.$key);
+        Cache::forget(self::CACHE_PREFIX . $key);
+
+        if ($key === 'site_title' && ! empty($value)) {
+            config(['app.name' => (string) $value]);
+        }
 
         return $setting;
+    }
+
+    /**
+     * Retrieve the dynamic site title from settings or fallback to app name / default.
+     */
+    public static function getSiteTitle(): string
+    {
+        $title = static::get('site_title');
+
+        return ! empty($title) ? (string) $title : 'SNGPOS';
     }
 
     /**
@@ -93,7 +107,7 @@ class Setting extends Model
      */
     public static function remove(string $key): bool
     {
-        Cache::forget(self::CACHE_PREFIX.$key);
+        Cache::forget(self::CACHE_PREFIX . $key);
 
         return (bool) static::where('key', $key)->delete();
     }

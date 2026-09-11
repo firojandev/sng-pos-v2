@@ -43,7 +43,7 @@ class LandingPageTest extends TestCase
         $response = $this->get('/');
 
         $response->assertOk();
-        $response->assertSee('MasterPOS');
+        $response->assertSee('SNGPOS');
         $response->assertSee('Registration');
         $response->assertSee('Demo Simulator');
         $response->assertSee(route('register'));
@@ -69,7 +69,7 @@ class LandingPageTest extends TestCase
         $response = $this->get(route('landing'));
 
         $response->assertOk();
-        $response->assertSee('MasterPOS');
+        $response->assertSee('SNGPOS');
         $response->assertSee('Registration');
         $response->assertSee('Preview Mode');
     }
@@ -153,9 +153,9 @@ class LandingPageTest extends TestCase
         $response = $this->actingAs($this->superAdmin)
             ->post(route('system-settings.update'), [
                 'landing_page_enabled' => '1',
-                'site_title' => 'MasterPOS Pro',
+                'site_title' => 'SNGPOS Pro',
                 'support_phone' => '01700000000',
-                'support_email' => 'support@masterpos.test',
+                'support_email' => 'support@SNGPOS.test',
                 'office_address' => 'Test Address, Dhaka',
                 'meta_description' => 'Accounting & POS software for retail',
             ]);
@@ -163,9 +163,9 @@ class LandingPageTest extends TestCase
         $response->assertRedirect(route('system-settings.index'));
         $response->assertSessionHas('status', 'সিস্টেম সেটিংস সফলভাবে সংরক্ষণ করা হয়েছে (System settings saved successfully)');
 
-        $this->assertEquals('MasterPOS Pro', Setting::get('site_title'));
+        $this->assertEquals('SNGPOS Pro', Setting::get('site_title'));
         $this->assertEquals('01700000000', Setting::get('support_phone'));
-        $this->assertEquals('support@masterpos.test', Setting::get('support_email'));
+        $this->assertEquals('support@SNGPOS.test', Setting::get('support_email'));
     }
 
     public function test_artisan_landing_toggle_command(): void
