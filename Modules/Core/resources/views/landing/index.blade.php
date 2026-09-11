@@ -319,7 +319,7 @@
                     </div>
 
                     <div class="lp-floating-badge badge-bottom-left">
-                        <div class="lp-float-icon" style="background:rgba(59,130,246,0.15); color:var(--brand-cyan);">
+                        <div class="lp-float-icon" style="background:rgba(20,184,166,0.18); color:var(--brand-cyan);">
                             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"></path></svg>
                         </div>
                         <div>
@@ -1197,6 +1197,8 @@
                     @endif
                     <li><a href="#reviews"><span class="bn">রিভিউ ও মতামত</span><span class="en">Reviews</span></a></li>
                     <li><a href="#faq"><span class="bn">সাধারণ জিজ্ঞাসা</span><span class="en">FAQ</span></a></li>
+                    <li><a href="{{ route('privacy-policy') }}"><span class="bn">গোপনীয়তা নীতি</span><span class="en">Privacy Policy</span></a></li>
+                    <li><a href="{{ route('terms') }}"><span class="bn">ব্যবহারের শর্তাবলী</span><span class="en">Terms & Conditions</span></a></li>
                     <li><a href="{{ route('login') }}"><span class="bn">লগ ইন পোর্টাল</span><span class="en">Login Portal</span></a></li>
                 </ul>
             </div>
@@ -1219,7 +1221,11 @@
         </div>
 
         <div class="lp-footer-bottom">
-            <span>© {{ date('Y') }} {{ $siteName }}. সর্বস্বত্ব সংরক্ষিত (All rights reserved).</span>
+            <span>
+                © {{ date('Y') }} {{ $siteName }}. সর্বস্বত্ব সংরক্ষিত (All rights reserved).
+                &middot; <a href="{{ route('privacy-policy') }}" style="color:var(--text-dim, #94a3b8); text-decoration:none;"><span class="bn">গোপনীয়তা নীতি</span><span class="en">Privacy Policy</span></a>
+                &middot; <a href="{{ route('terms') }}" style="color:var(--text-dim, #94a3b8); text-decoration:none;"><span class="bn">শর্তাবলী</span><span class="en">Terms</span></a>
+            </span>
             <button type="button" class="lp-back-top" id="backToTopBtn" aria-label="Back to top">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"></polyline></svg>
             </button>

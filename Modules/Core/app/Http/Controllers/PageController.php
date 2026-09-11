@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Modules\Cashbox\Models\CashTransaction;
+use Modules\Core\Models\Setting;
 use Modules\Customer\Models\Customer;
 use Modules\Finance\Models\Account;
 use Modules\Finance\Models\Expense;
@@ -246,6 +247,22 @@ class PageController extends Controller
     public function styleguide(): View
     {
         return view('core::pages.styleguide');
+    }
+
+    public function privacyPolicy(): View
+    {
+        $siteTitle = Setting::getSiteTitle();
+        $siteTitleBn = $siteTitle === 'SNGPOS' ? 'এসএনজিপস' : $siteTitle;
+
+        return view('core::pages.privacy-policy', compact('siteTitle', 'siteTitleBn'));
+    }
+
+    public function terms(): View
+    {
+        $siteTitle = Setting::getSiteTitle();
+        $siteTitleBn = $siteTitle === 'SNGPOS' ? 'এসএনজিপস' : $siteTitle;
+
+        return view('core::pages.terms', compact('siteTitle', 'siteTitleBn'));
     }
 
     private function placeholder(string $active, string $title, string $titleEn, string $subtitle, string $subtitleEn): View

@@ -99,11 +99,17 @@
         .auth-shell {
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 24px;
             background: var(--paper);
             background-image: radial-gradient(circle at 15% 15%, rgba(15, 23, 42, .06), transparent 45%), radial-gradient(circle at 85% 85%, rgba(241, 245, 249, .15), transparent 45%);
+        }
+
+        .auth-footer a:hover {
+            color: var(--teal-800) !important;
+            text-decoration: underline !important;
         }
 
         .auth-card {
@@ -263,6 +269,25 @@
 
             {{ $slot }}
         </div>
+
+        <footer class="auth-footer" style="margin-top: 24px; text-align: center; font-size: 11.5px; color: var(--ink-400); display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
+            <span>&copy; {{ now()->year }} {{ $siteTitleBn }}</span>
+            <span>&middot;</span>
+            <a href="{{ route('privacy-policy') }}" style="color: var(--ink-600); text-decoration: none; transition: color 0.15s;">
+                <span class="bn">গোপনীয়তা নীতি</span>
+                <span class="en" style="display:none;">Privacy Policy</span>
+            </a>
+            <span>&middot;</span>
+            <a href="{{ route('terms') }}" style="color: var(--ink-600); text-decoration: none; transition: color 0.15s;">
+                <span class="bn">ব্যবহারের শর্তাবলী</span>
+                <span class="en" style="display:none;">Terms & Conditions</span>
+            </a>
+            <span>&middot;</span>
+            <a href="{{ route('home') }}" style="color: var(--ink-600); text-decoration: none; transition: color 0.15s;">
+                <span class="bn">মূল পাতা</span>
+                <span class="en" style="display:none;">Home</span>
+            </a>
+        </footer>
     </div>
 
     <div class="toast" id="toast"></div>
