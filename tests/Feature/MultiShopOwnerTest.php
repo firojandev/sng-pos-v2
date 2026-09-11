@@ -124,13 +124,13 @@ class MultiShopOwnerTest extends TestCase
     {
         $superAdmin = User::create([
             'name' => 'Master Super Admin',
-            'email' => 'super@masterpos.test',
+            'email' => 'super@SNGPOS.test',
             'password' => Hash::make('password123'),
         ]);
         $superAdmin->assignRole('Super Admin');
 
         $response = $this->post('/login', [
-            'email' => 'super@masterpos.test',
+            'email' => 'super@SNGPOS.test',
             'password' => 'password123',
         ]);
 

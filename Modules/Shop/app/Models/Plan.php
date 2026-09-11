@@ -21,6 +21,8 @@ class Plan extends BasePlan
         'billing_interval',
         'grace_days',
         'sort_order',
+        'is_popular',
+        'popular_label',
         'billing_cycle',
         'max_users',
         'max_branches',
@@ -38,6 +40,8 @@ class Plan extends BasePlan
     {
         return array_merge(parent::casts(), [
             'price' => 'decimal:2',
+            'is_popular' => 'boolean',
+            'sort_order' => 'integer',
         ]);
     }
 
