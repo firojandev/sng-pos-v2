@@ -216,6 +216,33 @@
             height: 16px;
             background: var(--border);
         }
+
+        @media (max-width: 640px) {
+            .auth-shell {
+                padding: 16px 12px 32px;
+                justify-content: flex-start;
+                min-height: 100vh;
+            }
+            .auth-actions {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin: 0 auto 16px auto;
+                padding: 5px 12px;
+                gap: 10px;
+            }
+            .auth-card {
+                padding: 22px 16px;
+                border-radius: 14px;
+            }
+            .auth-title {
+                font-size: 18px;
+            }
+            .auth-sub {
+                font-size: 12.5px;
+                margin-bottom: 18px;
+            }
+        }
     </style>
 </head>
 

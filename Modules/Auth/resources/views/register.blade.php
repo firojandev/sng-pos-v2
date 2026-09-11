@@ -123,14 +123,26 @@
             color: var(--ink-700);
             margin-bottom: 6px;
         }
+        /* In register wizard, let the grid handle all inter-field vertical gaps uniformly */
+        #register-wizard-form .form-group {
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+        }
+
         .availability-status {
             font-size: 11.5px;
             font-weight: 600;
-            margin-top: 3px;
-            min-height: 16px;
             display: flex;
             align-items: center;
             gap: 4px;
+        }
+        .availability-status:empty {
+            display: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        .availability-status:not(:empty) {
+            margin-top: 4px;
         }
         .text-valid {
             color: var(--green-600, #10b981);
@@ -142,11 +154,95 @@
             color: var(--red-600, #ef4444);
             font-size: 11.5px;
             font-weight: 600;
-            margin-top: 2px;
+            margin-top: 4px;
             display: none;
         }
-        .div-wrapper .form-group{
-            margin-top: 0 !important;
+
+        /* Responsive Form Grids */
+        .reg-grid {
+            display: grid;
+            gap: 14px;
+        }
+        .reg-grid-2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .reg-grid-slug {
+            grid-template-columns: 1.25fr 0.75fr;
+        }
+        .reg-col-full {
+            grid-column: 1 / -1;
+        }
+        .reg-field-item {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+        .free-plan-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .reg-plan-features-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        /* Responsive Breakpoint for Mobile & Tablet */
+        @media (max-width: 640px) {
+            .stepper-header {
+                margin-bottom: 18px;
+                padding: 0 4px;
+            }
+            .stepper-line,
+            .stepper-line-fill {
+                left: 20px;
+                right: 20px;
+                top: 16px;
+            }
+            .step-circle {
+                width: 32px;
+                height: 32px;
+                font-size: 12px;
+            }
+            .step-label {
+                font-size: 11px;
+                margin-top: 4px;
+            }
+            .reg-grid {
+                gap: 14px;
+            }
+            .reg-grid-2,
+            .reg-grid-slug {
+                grid-template-columns: 1fr;
+            }
+            .reg-plan-features-grid {
+                grid-template-columns: 1fr;
+                gap: 5px;
+            }
+            .step-footer-actions {
+                flex-direction: column-reverse;
+                align-items: stretch;
+                gap: 10px;
+                margin-top: 20px;
+                padding-top: 14px;
+            }
+            .step-footer-actions > * {
+                width: 100%;
+                justify-content: center;
+                text-align: center;
+            }
+            .step-footer-actions a {
+                justify-content: center;
+                padding: 6px 0;
+            }
+            .free-plan-card {
+                padding: 12px;
+            }
         }
     </style>
 
@@ -200,8 +296,8 @@
                 <span class="en" style="display:none;">Step 1: Shop Owner Credentials & Personal Info</span>
             </div>
 
-            <div style="display:grid; grid-template-columns:1fr 1fr; column-gap: 12px;">
-                <div style="grid-column:1 / -1;">
+            <div class="reg-grid reg-grid-2">
+                <div class="reg-col-full reg-field-item">
                     <x-core::input
                         name="name"
                         id="reg-name"
@@ -217,7 +313,7 @@
                     <div class="client-error-message" id="err-reg-name">নাম প্রদান করা আবশ্যক।</div>
                 </div>
 
-                <div>
+                <div class="reg-field-item">
                     <x-core::input
                         type="tel"
                         name="phone"
@@ -235,7 +331,7 @@
                     <div class="client-error-message" id="err-reg-phone">সঠিক মোবাইল নম্বর প্রদান করা আবশ্যক।</div>
                 </div>
 
-                <div>
+                <div class="reg-field-item">
                     <x-core::input
                         type="email"
                         name="email"
@@ -251,7 +347,7 @@
                     <div id="email-feedback" class="availability-status"></div>
                 </div>
 
-                <div style="grid-column:1 / -1;" class="div-wrapper">
+                <div class="reg-col-full reg-field-item">
                     <x-core::input
                         name="username"
                         id="reg-username"
@@ -262,12 +358,11 @@
                         icon="at-sign"
                         size="sm"
                         :value="old('username')"
-                        style="margin-top: 0 !important"
                     />
                     <div id="username-feedback" class="availability-status"></div>
                 </div>
 
-                <div class="div-wrapper">
+                <div class="reg-field-item">
                     <x-core::input
                         type="password"
                         name="password"
@@ -284,7 +379,7 @@
                     <div class="client-error-message" id="err-reg-password">পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।</div>
                 </div>
 
-                <div class="div-wrapper">
+                <div class="reg-field-item">
                     <x-core::input
                         type="password"
                         name="password_confirmation"
@@ -332,8 +427,8 @@
                 <span class="en" style="display:none;">Step 2: Your Shop Information</span>
             </div>
 
-            <div style="display:flex; flex-direction:column; gap:12px;">
-                <div>
+            <div class="reg-grid reg-grid-2">
+                <div class="reg-col-full reg-field-item">
                     <x-core::input
                         name="shop_name"
                         id="reg-shop-name"
@@ -349,8 +444,8 @@
                     <div class="client-error-message" id="err-reg-shop-name">দোকানের নাম প্রদান করা আবশ্যক।</div>
                 </div>
 
-                <div style="display:grid; grid-template-columns:1.2fr 0.8fr; gap:12px;">
-                    <div class="div-wrapper">
+                <div class="reg-col-full reg-grid reg-grid-slug" style="padding:0;">
+                    <div class="reg-field-item">
                         <x-core::input
                             name="shop_slug"
                             id="reg-shop-slug"
@@ -367,7 +462,7 @@
                         <div class="client-error-message" id="err-reg-shop-slug">দোকানের স্লাগ আবশ্যক ও শুধুমাত্র ইংরেজি অক্ষর, সংখ্যা এবং হাইফেন প্রযোজ্য।</div>
                     </div>
 
-                    <div class="div-wrapper">
+                    <div class="reg-field-item">
                         <x-core::input
                             name="currency_symbol"
                             id="reg-currency"
@@ -381,36 +476,34 @@
                     </div>
                 </div>
 
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-                    <div class="div-wrapper">
-                        <x-core::input
-                            type="tel"
-                            name="shop_phone"
-                            id="reg-shop-phone"
-                            label="দোকানের হেল্পলাইন / ফোন"
-                            label-en="Shop Helpline / Phone"
-                            placeholder="017xxxxxxxx"
-                            placeholder-en="017xxxxxxxx"
-                            icon="phone"
-                            size="sm"
-                            :value="old('shop_phone')"
-                        />
-                        <div style="font-size:11px; color:var(--ink-500); margin-top:2px;">খালি রাখলে আপনার ব্যক্তিগত ফোন নম্বরটি ব্যবহৃত হবে</div>
-                    </div>
+                <div class="reg-field-item">
+                    <x-core::input
+                        type="tel"
+                        name="shop_phone"
+                        id="reg-shop-phone"
+                        label="দোকানের হেল্পলাইন / ফোন"
+                        label-en="Shop Helpline / Phone"
+                        placeholder="017xxxxxxxx"
+                        placeholder-en="017xxxxxxxx"
+                        icon="phone"
+                        size="sm"
+                        :value="old('shop_phone')"
+                    />
+                    <div style="font-size:11px; color:var(--ink-500); margin-top:4px;">খালি রাখলে আপনার ব্যক্তিগত ফোন নম্বরটি ব্যবহৃত হবে</div>
+                </div>
 
-                    <div class="div-wrapper">
-                        <x-core::input
-                            name="shop_address"
-                            id="reg-shop-address"
-                            label="দোকানের ঠিকানা / অবস্থান"
-                            label-en="Shop Address"
-                            placeholder="যেমন: মিরপুর-১০, ঢাকা"
-                            placeholder-en="e.g. Mirpur-10, Dhaka"
-                            icon="map-pin"
-                            size="sm"
-                            :value="old('shop_address')"
-                        />
-                    </div>
+                <div class="reg-field-item">
+                    <x-core::input
+                        name="shop_address"
+                        id="reg-shop-address"
+                        label="দোকানের ঠিকানা / অবস্থান"
+                        label-en="Shop Address"
+                        placeholder="যেমন: মিরপুর-১০, ঢাকা"
+                        placeholder-en="e.g. Mirpur-10, Dhaka"
+                        icon="map-pin"
+                        size="sm"
+                        :value="old('shop_address')"
+                    />
                 </div>
             </div>
 
@@ -450,8 +543,8 @@
                 <span class="en" style="display:none;">Step 3: Initial Branch, Warehouse & Free Package Confirmation</span>
             </div>
 
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-                <div>
+            <div class="reg-grid reg-grid-2">
+                <div class="reg-field-item">
                     <x-core::input
                         name="branch_name"
                         id="reg-branch-name"
@@ -465,7 +558,7 @@
                     />
                 </div>
 
-                <div>
+                <div class="reg-field-item">
                     <x-core::input
                         name="warehouse_name"
                         id="reg-warehouse-name"
@@ -479,7 +572,7 @@
                     />
                 </div>
 
-                <div style="grid-column:1 / -1;">
+                <div class="reg-col-full reg-field-item">
                     <x-core::input
                         type="number"
                         name="opening_cash_balance"
@@ -494,13 +587,13 @@
                         min="0"
                         :value="old('opening_cash_balance', '0')"
                     />
-                    <div style="font-size:11px; color:var(--ink-500); margin-top:2px;">ক্যাশ ড্রয়ারে শুরুতে কোনো নগদ টাকা থাকলে তা লিখুন, অন্যথায় ০ রাখতে পারেন।</div>
+                    <div style="font-size:11px; color:var(--ink-500); margin-top:4px;">ক্যাশ ড্রয়ারে শুরুতে কোনো নগদ টাকা থাকলে তা লিখুন, অন্যথায় ০ রাখতে পারেন।</div>
                 </div>
             </div>
 
             {{-- Free Package Card --}}
             <div class="free-plan-card">
-                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                <div class="free-plan-card-header">
                     <div style="display:flex; align-items:center; gap:8px;">
                         <div style="width:32px; height:32px; border-radius:8px; background:var(--teal-100); color:var(--teal-800); display:flex; align-items:center; justify-content:center;">
                             <x-core::icon name="gift" size="18" />
@@ -519,7 +612,7 @@
                     </x-core::badge>
                 </div>
 
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:10px;">
+                <div class="reg-plan-features-grid">
                     <div class="plan-feature-row">
                         <x-core::icon name="check" size="14" style="color:var(--green-600, #10b981);" />
                         <span>১ জন ইউজার / এডমিন</span>
