@@ -7,6 +7,10 @@
     $email = $content['support_email'] ?? 'support@softngear.com';
     $address = $content['office_address'] ?? 'Shop 407, 3rd Floor, Shwapnochura Plaza, Rajshahi';
     $isLandingEnabled = \Modules\Core\Models\Setting::isLandingPageEnabled();
+    $plans = $plans ?? (\Modules\Shop\Models\Plan::where('status', 'active')->get());
+    $user = $user ?? auth()->user();
+    $isPreview = $isPreview ?? false;
+    $isRegistrationEnabled = $isRegistrationEnabled ?? \Modules\Core\Models\Setting::isRegistrationEnabled();
 @endphp
 <!DOCTYPE html>
 <html lang="{{ $isEn ? 'en' : 'bn' }}" class="{{ $isEn ? 'lang-en' : '' }}">
@@ -84,15 +88,7 @@
             </nav>
 
             <div class="lp-header-actions">
-                <button type="button" class="lp-lang-btn" id="langToggleBtn" title="Toggle Language">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="2" y1="12" x2="22" y2="12"></line>
-                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                    </svg>
-                    <span class="bn">EN</span>
-                    <span class="en">বাং</span>
-                </button>
+                <x-core::lang-switcher size="sm" id="landingLangToggle" />
 
                 @if ($user)
                     <a href="{{ route('dashboard') }}" class="lp-btn lp-btn-sm lp-btn-primary">
@@ -165,6 +161,9 @@
                 </a>
             @endif
         @endif
+        <div style="display:flex; justify-content:center; padding-top:14px; margin-top:4px; border-top:1px solid var(--border-dark);">
+            <x-core::lang-switcher size="sm" id="landingLangToggleMobile" />
+        </div>
     </div>
 </div>
 
@@ -247,7 +246,7 @@
                 </div>
             </div>
 
-            {{-- Mockup Visual with Floating Pills --}}
+            {{-- Mockup Visual with Floating Pills (Exact Application Dashboard Mockup) --}}
             <div class="lp-hero-visual">
                 <div class="lp-mockup-wrapper">
                     <div class="lp-mockup-header">
@@ -256,76 +255,178 @@
                         <div class="lp-mockup-dot green"></div>
                         <div class="lp-mockup-search">
                             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                            <span>{{ request()->getHost() ?: 'app.pos.com' }}/pos/counter</span>
+                            <span>{{ request()->getHost() ?: 'app.pos.com' }}/dashboard</span>
                         </div>
                     </div>
 
                     <div class="lp-dash-mock">
+                        {{-- Application Dark Sidebar Mock --}}
                         <div class="lp-dash-sidebar">
-                            <div style="height:12px; width:60%; background:rgba(255,255,255,0.15); border-radius:4px; margin-bottom:12px;"></div>
-                            <div style="height:8px; width:80%; background:rgba(255,255,255,0.06); border-radius:4px; margin-bottom:8px;"></div>
-                            <div style="height:8px; width:70%; background:rgba(255,255,255,0.06); border-radius:4px; margin-bottom:8px;"></div>
-                            <div style="height:8px; width:85%; background:rgba(255,255,255,0.06); border-radius:4px;"></div>
+                            <div class="lp-dash-side-brand">
+                                <div class="lp-dash-side-mark">{{ mb_substr($siteName, 0, 1) }}</div>
+                                <div class="lp-dash-side-title">{{ $siteName }} <span>POS</span></div>
+                            </div>
+
+                            <div class="lp-dash-nav-item active">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-9"/>
+                                </svg>
+                                <span class="bn">ড্যাশবোর্ড</span>
+                                <span class="en">Dashboard</span>
+                            </div>
+
+                            <div class="lp-dash-nav-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                                </svg>
+                                <span class="bn">বিক্রয় তালিকা</span>
+                                <span class="en">Sales</span>
+                            </div>
+
+                            <div class="lp-dash-nav-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+                                </svg>
+                                <span class="bn">ক্রয় তালিকা</span>
+                                <span class="en">Purchase</span>
+                            </div>
+
+                            <div class="lp-dash-nav-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>
+                                </svg>
+                                <span class="bn">পণ্য ও স্টক</span>
+                                <span class="en">Products</span>
+                            </div>
+
+                            <div class="lp-dash-nav-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
+                                </svg>
+                                <span class="bn">ডিজিটাল খাতা</span>
+                                <span class="en">Due Ledger</span>
+                            </div>
                         </div>
 
-                        <div class="lp-dash-body">
-                            <div class="lp-dash-stat-row">
-                                <div class="lp-dash-stat-card">
-                                    <span>দৈনিক বিক্রয় (Daily Sales)</span>
-                                    <h4>৳৮৫,৪২০</h4>
+                        {{-- Application Main & Dashboard Area --}}
+                        <div class="lp-dash-main-pane">
+                            {{-- Topbar Mock --}}
+                            <div class="lp-dash-topbar">
+                                <div class="lp-dash-topbar-titles">
+                                    <h5><span class="bn">ড্যাশবোর্ড</span><span class="en">Dashboard</span></h5>
+                                    <p><span class="bn">আজ, {{ now()->format('d M Y') }} — ব্যবসার সারসংক্ষেপ</span><span class="en">Today's business at a glance</span></p>
                                 </div>
-                                <div class="lp-dash-stat-card">
-                                    <span>বর্তমান স্টক (Current Stock)</span>
-                                    <h4>১,৪৫০ টি</h4>
-                                </div>
-                                <div class="lp-dash-stat-card">
-                                    <span>মোট আদায় (Collected)</span>
-                                    <h4>৯৮.৫%</h4>
+                                <div class="lp-dash-topbar-actions">
+                                    <div class="lp-dash-quick-sale-pill">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2"/><path d="M12 7.5v9M8.7 15.3c0 1.2 1.2 2.1 3.3 2.1s3.3-.9 3.3-2.1c0-3-6.6-1.2-6.6-4.1 0-1.2 1.2-2.1 3.3-2.1s3.3.9 3.3 2.1"/></svg>
+                                        <span class="bn">দ্রুত বেচা</span>
+                                        <span class="en">Quick Sale</span>
+                                        <kbd>Alt+Q</kbd>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div style="margin-top:14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:12px;">
-                                <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:11px; color:var(--text-dim);">
-                                    <span>সর্বশেষ লেনদেন (Live Counter Invoices)</span>
-                                    <span style="color:var(--accent-green);">● লাইভ সিঙ্ক</span>
+                            {{-- Dashboard Body Mock --}}
+                            <div class="lp-dash-body">
+                                {{-- Balance Pill & Range Tabs --}}
+                                <div class="lp-dash-control-row">
+                                    <div class="lp-dash-total-pill">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><rect x="2.5" y="6" width="19" height="13" rx="2" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12.5" r="3" stroke="currentColor" stroke-width="1.8"/></svg>
+                                        <span><span class="bn">মোট ব্যালেন্স:</span><span class="en">Balance:</span></span>
+                                        <b>৳১,৪২,৮৫০.০০</b>
+                                    </div>
+
+                                    <div class="lp-dash-range-tabs">
+                                        <div class="lp-dash-range-tab active"><span class="bn">আজকের</span><span class="en">Today</span></div>
+                                        <div class="lp-dash-range-tab"><span class="bn">সপ্তাহ</span><span class="en">Week</span></div>
+                                        <div class="lp-dash-range-tab"><span class="bn">মাস</span><span class="en">Month</span></div>
+                                        <div class="lp-dash-range-tab"><span class="bn">সর্বমোট</span><span class="en">All</span></div>
+                                    </div>
                                 </div>
-                                <div style="display:flex; flex-direction:column; gap:6px;">
-                                    <div style="display:flex; justify-content:space-between; font-size:12px; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.03);">
-                                        <span>#INV-2026-9041 • ক্যাশ বিক্রয়</span>
-                                        <strong style="color:#fff;">৳১,৮৫০</strong>
+
+                                {{-- Stat Cards Grid (Exact Application Stat-Card Layout) --}}
+                                <div class="lp-dash-stat-grid">
+                                    {{-- Daily Sales --}}
+                                    <div class="lp-dash-stat-box">
+                                        <div class="lp-dash-stat-icon" style="background:#133E37; color:#2DD4BF;">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                                        </div>
+                                        <div class="lp-dash-stat-info">
+                                            <div class="lp-dash-stat-val">৳৮৫,৪২০</div>
+                                            <div class="lp-dash-stat-lbl"><span class="bn">আজকের বিক্রি</span><span class="en">Today's Sale</span></div>
+                                            <div class="lp-dash-stat-sub"><span class="bn">মোট বিক্রির পরিমাণ</span><span class="en">Total sales</span></div>
+                                        </div>
                                     </div>
-                                    <div style="display:flex; justify-content:space-between; font-size:12px; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.03);">
-                                        <span>#INV-2026-9040 • বিকাশ পেমেন্ট</span>
-                                        <strong style="color:#fff;">৳৩,৪০০</strong>
+
+                                    {{-- Net Profit --}}
+                                    <div class="lp-dash-stat-box">
+                                        <div class="lp-dash-stat-icon" style="background:#123C27; color:#86EFAC;">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="m7 6 10 10"/></svg>
+                                        </div>
+                                        <div class="lp-dash-stat-info">
+                                            <div class="lp-dash-stat-val" style="color:#86EFAC;">৳১৮,৬৫০</div>
+                                            <div class="lp-dash-stat-lbl"><span class="bn">আজকের মোট লাভ</span><span class="en">Total Profit</span></div>
+                                            <div class="lp-dash-stat-sub"><span class="bn">খরচ বাদে প্রকৃত লাভ</span><span class="en">Net profit</span></div>
+                                        </div>
                                     </div>
-                                    <div style="display:flex; justify-content:space-between; font-size:12px; padding:4px 0;">
-                                        <span>#INV-2026-9039 • বাকি আদায় SMS</span>
-                                        <strong style="color:#fff;">৳৫,০০০</strong>
+
+                                    {{-- Customer Due Receivable --}}
+                                    <div class="lp-dash-stat-box">
+                                        <div class="lp-dash-stat-icon" style="background:#172B4D; color:#93C5FD;">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                                        </div>
+                                        <div class="lp-dash-stat-info">
+                                            <div class="lp-dash-stat-val" style="color:#93C5FD;">৳১২,৩০০</div>
+                                            <div class="lp-dash-stat-lbl"><span class="bn">মোট পাবো (বাকি)</span><span class="en">Receivable</span></div>
+                                            <div class="lp-dash-stat-sub"><span class="bn">গ্রাহকের কাছে পাওনা</span><span class="en">Customer due</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Live Recent Transactions / Orders Panel --}}
+                                <div class="lp-dash-panel">
+                                    <div class="lp-dash-panel-head">
+                                        <strong><span class="bn">সর্বশেষ পিওএস লেনদেন (Live Counter Invoices)</span><span class="en">Live Counter Invoices</span></strong>
+                                        <span style="color:var(--brand-cyan); font-size:10px; font-weight:700;">● লাইভ সিঙ্ক</span>
+                                    </div>
+                                    <div style="display:flex; flex-direction:column; gap:5px;">
+                                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
+                                            <span>#INV-2026-9041 • নগদ ক্যাশ বিক্রয়</span>
+                                            <strong style="color:#86EFAC;">+ ৳১,৮৫০</strong>
+                                        </div>
+                                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
+                                            <span>#INV-2026-9040 • বিকাশ / ডিজিটাল পেমেন্ট</span>
+                                            <strong style="color:#93C5FD;">+ ৳৩,৪০০</strong>
+                                        </div>
+                                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; padding:4px 0;">
+                                            <span>#INV-2026-9039 • বাকি আদায় SMS নোটিফিকেশন</span>
+                                            <strong style="color:#FCD34D;">+ ৳৫,০০০</strong>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    {{-- Floating KPI Pills --}}
-                    <div class="lp-floating-badge badge-top-right">
-                        <div class="lp-float-icon" style="background:rgba(16,185,129,0.15); color:var(--accent-green);">
-                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        </div>
-                        <div>
-                            <h6>বিক্রয় সম্পন্ন! (Sale Success)</h6>
-                            <span>মাত্র ২.৮ সেকেন্ডে প্রিন্ট</span>
-                        </div>
+                {{-- Floating KPI Pills (Positioned outside mockup-wrapper so overflow:hidden does not clip them) --}}
+                <div class="lp-floating-badge badge-top-right">
+                    <div class="lp-float-icon" style="background:rgba(16,185,129,0.15); color:var(--accent-green);">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
                     </div>
+                    <div>
+                        <h6><span class="bn">বিক্রয় সম্পন্ন!</span><span class="en">Sale Success!</span></h6>
+                        <span><span class="bn">মাত্র ২.৮ সেকেন্ডে প্রিন্ট</span><span class="en">Printed in 2.8s</span></span>
+                    </div>
+                </div>
 
-                    <div class="lp-floating-badge badge-bottom-left">
-                        <div class="lp-float-icon" style="background:rgba(20,184,166,0.18); color:var(--brand-cyan);">
-                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"></path></svg>
-                        </div>
-                        <div>
-                            <h6>বাকি কালেকশন SMS</h6>
-                            <span>৳২,৫০০ পরিশোধ হয়েছে</span>
-                        </div>
+                <div class="lp-floating-badge badge-bottom-left">
+                    <div class="lp-float-icon" style="background:rgba(20,184,166,0.18); color:var(--brand-cyan);">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"></path></svg>
+                    </div>
+                    <div>
+                        <h6><span class="bn">বাকি কালেকশন SMS</span><span class="en">Due Collection SMS</span></h6>
+                        <span><span class="bn">৳২,৫০০ পরিশোধ হয়েছে</span><span class="en">৳2,500 Paid</span></span>
                     </div>
                 </div>
             </div>
@@ -1226,12 +1327,19 @@
                 &middot; <a href="{{ route('privacy-policy') }}" style="color:var(--text-dim, #94a3b8); text-decoration:none;"><span class="bn">গোপনীয়তা নীতি</span><span class="en">Privacy Policy</span></a>
                 &middot; <a href="{{ route('terms') }}" style="color:var(--text-dim, #94a3b8); text-decoration:none;"><span class="bn">শর্তাবলী</span><span class="en">Terms</span></a>
             </span>
-            <button type="button" class="lp-back-top" id="backToTopBtn" aria-label="Back to top">
+            <button type="button" class="lp-back-top" id="backToTopBtn" aria-label="Back to top" title="উপরে যান / Back to top">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"></polyline></svg>
             </button>
         </div>
     </div>
 </footer>
+
+{{-- Floating Scroll to Top Button --}}
+<button type="button" class="lp-scroll-top" id="lpScrollTop" aria-label="Scroll to top" title="উপরে যান / Back to top">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="18 15 12 9 6 15"></polyline>
+    </svg>
+</button>
 
 {{-- Scripts --}}
 <script>
@@ -1256,17 +1364,32 @@ $(function () {
         $('#drawerOverlay').removeClass('open');
     });
 
-    // 3. Language Switcher (Cookie + localStorage)
-    $('#langToggleBtn').on('click', function () {
-        const isCurrentlyEn = $('html').hasClass('lang-en');
-        const newLang = isCurrentlyEn ? 'bn' : 'en';
-
-        $('html, body').toggleClass('lang-en', newLang === 'en');
+    // 3. Language Switcher (Reusable Segmented Switcher)
+    function setLandingLanguage(lang) {
+        const isEn = lang === 'en';
+        $('html, body').toggleClass('lang-en', isEn);
+        $('#landingLangToggle, #landingLangToggleMobile, .lang-segmented-switcher .segmented-switch-input').prop('checked', isEn);
+        $('.lang-segmented-switcher .switch-opt-bn').toggleClass('active', !isEn);
+        $('.lang-segmented-switcher .switch-opt-en').toggleClass('active', isEn);
 
         try {
-            localStorage.setItem('lang', newLang);
-            document.cookie = "lang=" + newLang + ";path=/;max-age=31536000;SameSite=Lax";
+            localStorage.setItem('lang', lang);
+            document.cookie = "lang=" + lang + ";path=/;max-age=31536000;SameSite=Lax";
         } catch (e) {}
+    }
+
+    $(document).on('change', '.lang-segmented-switcher .segmented-switch-input', function () {
+        setLandingLanguage($(this).is(':checked') ? 'en' : 'bn');
+    });
+
+    $(document).on('click', '[data-action="set-lang-bn"], .lang-segmented-switcher .switch-opt-bn', function (e) {
+        if ($(e.target).is('input')) return;
+        setLandingLanguage('bn');
+    });
+
+    $(document).on('click', '[data-action="set-lang-en"], .lang-segmented-switcher .switch-opt-en', function (e) {
+        if ($(e.target).is('input')) return;
+        setLandingLanguage('en');
     });
 
     // 4. Smooth Anchor Scroll
@@ -1283,8 +1406,22 @@ $(function () {
         }
     });
 
-    // 5. Back to Top Button
-    $('#backToTopBtn').on('click', function () {
+    // 5. Scroll to Top (Floating Button & Footer Button)
+    const $scrollTopBtn = $('#lpScrollTop');
+
+    function checkScrollTopVisibility() {
+        if ($(window).scrollTop() > 300) {
+            $scrollTopBtn.addClass('visible');
+        } else {
+            $scrollTopBtn.removeClass('visible');
+        }
+    }
+
+    $(window).on('scroll', checkScrollTopVisibility);
+    checkScrollTopVisibility();
+
+    $('#lpScrollTop, #backToTopBtn').on('click', function (e) {
+        e.preventDefault();
         $('html, body').animate({ scrollTop: 0 }, 400);
     });
 
