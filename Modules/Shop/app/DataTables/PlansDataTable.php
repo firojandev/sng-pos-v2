@@ -24,11 +24,24 @@ class PlansDataTable extends BaseDataTable
                 $slug = e($plan->slug);
                 $name = e($plan->name);
                 $slugBadge = Blade::render('<x-core::badge color="grey" size="xs" variant="outline">{{ $slug }}</x-core::badge>', ['slug' => $slug]);
+                $popularBadge = '';
+                if ($plan->is_popular) {
+                    $popularLabel = $plan->popular_label ?: 'জনপ্রিয় (Popular)';
+                    $popularBadge = Blade::render('<x-core::badge color="gold" size="xs" variant="soft" icon="star">{{ $label }}</x-core::badge>', ['label' => $popularLabel]);
+                }
 
-                return '<div style="display:flex; flex-direction:column; align-items:flex-start; gap:4px; max-width:180px;">'
+                return '<div style="display:flex; flex-direction:column; align-items:flex-start; gap:4px; max-width:200px;">'
+                    .'<div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">'
                     .'<span style="font-weight:700; color:var(--ink-900); font-size:13.5px; line-height:1.2; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="'.$name.'">'.$name.'</span>'
+                    .$popularBadge
+                    .'</div>'
                     .$slugBadge
                     .'</div>';
+            })
+            ->editColumn('sort_order', function (Plan $plan) {
+                $order = (int) ($plan->sort_order ?? 0);
+
+                return '<span style="font-weight:700; font-size:13px; color:var(--ink-700); font-variant-numeric:tabular-nums;">#'.$order.'</span>';
             })
             ->editColumn('price', function (Plan $plan) {
                 $cycleBn = $plan->billing_cycle === 'yearly' ? 'বছর' : 'মাস';
@@ -88,7 +101,7 @@ class PlansDataTable extends BaseDataTable
             ->addColumn('action', function (Plan $plan) {
                 return view('shop::plans.datatables-actions', compact('plan'))->render();
             })
-            ->rawColumns(['name', 'price', 'max_users', 'max_branches', 'max_warehouses', 'max_products', 'subscriptions_count', 'status', 'action'])
+            ->rawColumns(['name', 'sort_order', 'price', 'max_users', 'max_branches', 'max_warehouses', 'max_products', 'subscriptions_count', 'status', 'action'])
             ->setRowId('id');
     }
 
@@ -104,6 +117,9 @@ class PlansDataTable extends BaseDataTable
                 'plans.id',
                 'plans.name',
                 'plans.slug',
+                'plans.sort_order',
+                'plans.is_popular',
+                'plans.popular_label',
                 'plans.price',
                 'plans.billing_cycle',
                 'plans.max_users',
@@ -121,7 +137,8 @@ class PlansDataTable extends BaseDataTable
      */
     public function html(): HtmlBuilder
     {
-        return $this->defaultHtml();
+        return $this->defaultHtml()
+            ->orderBy(1, 'asc');
     }
 
     /**
@@ -132,6 +149,7 @@ class PlansDataTable extends BaseDataTable
     public function getColumns(): array
     {
         return [
+            Column::make('sort_order')->title('<span class="bn">ক্রম</span><span class="en">Order</span>')->addClass('table-cell-center')->width(65),
             Column::make('name')->title('<span class="bn">প্ল্যান</span><span class="en">Plan</span>')->width(180),
             Column::make('price')->title('<span class="bn">মূল্য</span><span class="en">Price</span>')->width(110),
             Column::make('max_users')->title('<span class="bn">ইউজার</span><span class="en">Users</span>')->addClass('table-cell-center')->width(80),

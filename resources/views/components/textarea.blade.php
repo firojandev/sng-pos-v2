@@ -3,6 +3,7 @@
     'id' => null,
     'value' => null,
     'placeholder' => null,
+    'placeholderEn' => null,
     'rows' => 3,
     'resize' => 'vertical',
     'maxLength' => null,

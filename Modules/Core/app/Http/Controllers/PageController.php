@@ -3,11 +3,14 @@
 namespace Modules\Core\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Modules\Cashbox\Models\CashTransaction;
+use Modules\Core\Models\AuditLog;
+use Modules\Core\Models\Setting;
 use Modules\Customer\Models\Customer;
 use Modules\Finance\Models\Account;
 use Modules\Finance\Models\Expense;
@@ -15,6 +18,10 @@ use Modules\Finance\Models\Income;
 use Modules\Product\Models\Batch;
 use Modules\Purchase\Models\Purchase;
 use Modules\Sales\Models\Sale;
+use Modules\Shop\Models\Plan;
+use Modules\Shop\Models\Shop;
+use Modules\Shop\Models\Subscription;
+use Modules\Shop\Models\SubscriptionPayment;
 use Modules\Supplier\Models\Supplier;
 
 class PageController extends Controller
@@ -23,7 +30,7 @@ class PageController extends Controller
     {
         $user = auth()->user();
         if ($user->isSuperAdmin()) {
-            return redirect()->route('shops.index');
+            return $this->superAdminDashboard($request);
         }
 
         $isOwnerOrAdmin = $user->isShopAdmin();
@@ -248,8 +255,154 @@ class PageController extends Controller
         return view('core::pages.styleguide');
     }
 
+    public function privacyPolicy(): View
+    {
+        $siteTitle = Setting::getSiteTitle();
+        $siteTitleBn = $siteTitle === 'SNGPOS' ? 'এসএনজিপস' : $siteTitle;
+
+        return view('core::pages.privacy-policy', compact('siteTitle', 'siteTitleBn'));
+    }
+
+    public function terms(): View
+    {
+        $siteTitle = Setting::getSiteTitle();
+        $siteTitleBn = $siteTitle === 'SNGPOS' ? 'এসএনজিপস' : $siteTitle;
+
+        return view('core::pages.terms', compact('siteTitle', 'siteTitleBn'));
+    }
+
     private function placeholder(string $active, string $title, string $titleEn, string $subtitle, string $subtitleEn): View
     {
         return view('core::pages.placeholder', compact('active', 'title', 'titleEn', 'subtitle', 'subtitleEn'));
+    }
+
+    private function superAdminDashboard(Request $request): View
+    {
+        $range = $request->query('range', 'month');
+        $range = in_array($range, ['today', 'week', 'month', 'year', 'all'], true) ? $range : 'month';
+        [$from, $to] = $this->rangeBounds($range);
+
+        $totalShops = Shop::count();
+        $activeShops = Shop::where('status', 'active')->count();
+        $inactiveShops = Shop::where('status', '!=', 'active')->count();
+
+        $newShopsPeriod = Shop::query()
+            ->when($from, fn ($q) => $q->whereDate('created_at', '>=', $from))
+            ->when($to, fn ($q) => $q->whereDate('created_at', '<=', $to))
+            ->count();
+
+        $revenuePeriod = (float) SubscriptionPayment::query()
+            ->when($from, fn ($q) => $q->whereDate('paid_at', '>=', $from))
+            ->when($to, fn ($q) => $q->whereDate('paid_at', '<=', $to))
+            ->sum('amount');
+
+        $revenueAllTime = (float) SubscriptionPayment::sum('amount');
+
+        $activeSubscriptions = Subscription::where('status', 'active')->count();
+        $trialSubscriptions = Subscription::whereIn('status', ['trial', 'trialing'])->count();
+        $expiredSubscriptions = Subscription::whereIn('status', ['expired', 'past_due', 'cancelled'])->count();
+
+        $totalUsers = User::count();
+        $totalPlans = Plan::where('is_active', true)->orWhere('status', 'active')->count();
+
+        $registrationEnabled = Setting::isRegistrationEnabled();
+        $landingPageEnabled = Setting::isLandingPageEnabled();
+
+        // 6-Month Chart Trends
+        $sixMonthsAgo = now()->subMonths(5)->startOfMonth();
+        $driver = DB::connection()->getDriverName();
+        $dateGroupShop = $driver === 'sqlite' ? "strftime('%Y-%m', created_at)" : 'DATE_FORMAT(created_at, "%Y-%m")';
+        $dateGroupPayment = $driver === 'sqlite' ? "strftime('%Y-%m', paid_at)" : 'DATE_FORMAT(paid_at, "%Y-%m")';
+
+        $monthlyShopsRaw = Shop::where('created_at', '>=', $sixMonthsAgo)
+            ->selectRaw("{$dateGroupShop} as m, count(*) as count")
+            ->groupBy('m')
+            ->pluck('count', 'm');
+
+        $monthlyRevenueRaw = SubscriptionPayment::where('paid_at', '>=', $sixMonthsAgo)
+            ->selectRaw("{$dateGroupPayment} as m, sum(amount) as total")
+            ->groupBy('m')
+            ->pluck('total', 'm');
+
+        $chartLabels = [];
+        $chartShopsData = [];
+        $chartRevenueData = [];
+
+        for ($i = 5; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $monthKey = $date->format('Y-m');
+            $chartLabels[] = $date->format('M Y');
+            $chartShopsData[] = (int) ($monthlyShopsRaw[$monthKey] ?? 0);
+            $chartRevenueData[] = (float) ($monthlyRevenueRaw[$monthKey] ?? 0.0);
+        }
+
+        // Subscription Status Breakdown
+        $statusCounts = [
+            'active' => $activeSubscriptions,
+            'trialing' => $trialSubscriptions,
+            'past_due' => Subscription::where('status', 'past_due')->count(),
+            'expired' => Subscription::whereIn('status', ['expired', 'cancelled'])->count(),
+        ];
+
+        // Plans breakdown with subscriber counts
+        $plans = Plan::withCount(['subscriptions' => function ($q) {
+            $q->whereIn('status', ['active', 'trial', 'trialing']);
+        }])->orderBy('sort_order')->get();
+
+        // Expiring Soon Subscriptions (within 14 days)
+        $expiringSubscriptions = Subscription::with(['shop', 'plan'])
+            ->whereIn('status', ['active', 'trial', 'trialing'])
+            ->where(function ($q) {
+                $q->whereBetween('ends_at', [now(), now()->addDays(14)])
+                    ->orWhereBetween('trial_ends_at', [now(), now()->addDays(14)]);
+            })
+            ->orderByRaw('COALESCE(ends_at, trial_ends_at) ASC')
+            ->limit(5)
+            ->get();
+
+        // Recent Shops
+        $recentShops = Shop::with(['activeSubscription.plan', 'users'])
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        // Recent Payments
+        $recentPayments = SubscriptionPayment::with(['subscription.shop', 'subscription.plan'])
+            ->latest('paid_at')
+            ->latest('id')
+            ->limit(5)
+            ->get();
+
+        // Recent Audit Logs
+        $recentAuditLogs = AuditLog::with(['shop', 'user'])
+            ->latest()
+            ->limit(6)
+            ->get();
+
+        return view('core::superadmin-dashboard', compact(
+            'range',
+            'totalShops',
+            'activeShops',
+            'inactiveShops',
+            'newShopsPeriod',
+            'revenuePeriod',
+            'revenueAllTime',
+            'activeSubscriptions',
+            'trialSubscriptions',
+            'expiredSubscriptions',
+            'totalUsers',
+            'totalPlans',
+            'registrationEnabled',
+            'landingPageEnabled',
+            'chartLabels',
+            'chartShopsData',
+            'chartRevenueData',
+            'statusCounts',
+            'plans',
+            'expiringSubscriptions',
+            'recentShops',
+            'recentPayments',
+            'recentAuditLogs'
+        ));
     }
 }

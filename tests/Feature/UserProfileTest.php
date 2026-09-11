@@ -7,6 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Modules\Shop\Models\Shop;
 use Tests\TestCase;
 
 class UserProfileTest extends TestCase
@@ -44,11 +45,18 @@ class UserProfileTest extends TestCase
 
     public function test_topbar_renders_user_dropdown_menu(): void
     {
+        $shop = Shop::create([
+            'name' => 'টেস্ট শপ',
+            'slug' => 'test-shop-profile',
+            'status' => 'active',
+        ]);
+
         $user = User::factory()->create([
             'name' => 'তানভীর আহমেদ',
             'username' => 'tanvir01',
             'email' => 'tanvir@example.com',
             'support_pin' => '123456',
+            'shop_id' => $shop->id,
         ]);
 
         $response = $this->actingAs($user)->get(route('dashboard'));

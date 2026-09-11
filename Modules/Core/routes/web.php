@@ -3,10 +3,18 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Core\Http\Controllers\AuditLogController;
 use Modules\Core\Http\Controllers\DueLedgerController;
+use Modules\Core\Http\Controllers\LandingController;
 use Modules\Core\Http\Controllers\PageController;
 
+Route::get('/', [LandingController::class, 'index'])->name('home');
+Route::get('/landing', [LandingController::class, 'preview'])->name('landing');
+Route::get('/privacy-policy', [PageController::class, 'privacyPolicy'])->name('privacy-policy');
+Route::get('/privacy', fn () => redirect()->route('privacy-policy', [], 301));
+Route::get('/terms-and-conditions', [PageController::class, 'terms'])->name('terms');
+Route::get('/terms', fn () => redirect()->route('terms', [], 301));
+
 Route::middleware(['auth'])->group(function () {
-    Route::get('/', [PageController::class, 'dashboard'])->name('dashboard');
+    Route::get('/dashboard', [PageController::class, 'dashboard'])->name('dashboard');
     Route::get('/styleguide', [PageController::class, 'styleguide'])->name('styleguide');
     Route::prefix('due-ledger')->name('due-ledger.')->group(function () {
         Route::get('/', [DueLedgerController::class, 'index'])->name('index');
@@ -23,7 +31,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/suppliers/{supplier}/payment', [DueLedgerController::class, 'storeSupplierPayment'])->name('supplier.payment.store')->middleware('permission:suppliers.payment');
     });
 
-    Route::middleware(['permission:audit.view', 'feature:audit'])->group(function () {
+    Route::middleware(['role_or_permission:Super Admin|audit.view', 'feature:audit'])->group(function () {
         Route::get('/audit-log', [AuditLogController::class, 'index'])->name('audit-log.index');
         Route::get('/audit-log/{auditLog}', [AuditLogController::class, 'show'])->name('audit-log.show');
     });
