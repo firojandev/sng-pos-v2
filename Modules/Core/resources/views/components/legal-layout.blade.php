@@ -687,11 +687,7 @@
                 <div class="lp-header-inner">
                     <a href="{{ route('home') }}" class="lp-brand">
                         <div class="lp-brand-icon">
-                            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="2" y="3" width="20" height="14" rx="2"></rect>
-                                <line x1="8" y1="21" x2="16" y2="21"></line>
-                                <line x1="12" y1="17" x2="12" y2="21"></line>
-                            </svg>
+                            <img src="{{ asset('images/logo.png') }}" alt="{{ $siteName }}" width="38" height="38">
                         </div>
                         <div class="lp-brand-text">
                             <span class="lp-brand-name">{{ $siteName }}</span>
@@ -756,7 +752,10 @@
         <div class="drawer-overlay" id="drawerOverlay"></div>
         <div class="mobile-drawer" id="mobileDrawer">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:28px;">
-                <span class="lp-brand-name">{{ $siteName }}</span>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <img src="{{ asset('images/logo.png') }}" alt="{{ $siteName }}" width="32" height="32" style="border-radius:8px; object-fit:contain;">
+                    <span class="lp-brand-name">{{ $siteName }}</span>
+                </div>
                 <button type="button" id="drawerCloseBtn" style="color:#fff; font-size:20px;">✕</button>
             </div>
             <ul style="list-style:none; display:flex; flex-direction:column; gap:16px;">
@@ -912,7 +911,7 @@
                     <div class="lp-footer-brand-col">
                         <a href="{{ route('home') }}" class="lp-brand">
                             <div class="lp-brand-icon">
-                                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="3" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                                <img src="{{ asset('images/logo.png') }}" alt="{{ $siteName }}" width="38" height="38">
                             </div>
                             <div class="lp-brand-text">
                                 <span class="lp-brand-name">{{ $siteName }}</span>

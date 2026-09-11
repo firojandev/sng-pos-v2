@@ -8,7 +8,7 @@
     badge-en="Privacy & Data Protection"
     last-updated="১১ সেপ্টেম্বর ২০২৬"
     last-updated-en="September 11, 2026"
-    version="v2.0.0"
+    version="v1.0.0"
     :toc="[
         ['id' => 'sec-intro', 'title_bn' => '১. ভূমিকা ও মূলনীতি', 'title_en' => '1. Introduction & Scope', 'icon' => 'info'],
         ['id' => 'sec-data-collected', 'title_bn' => '২. সংগৃহীত তথ্যাবলি', 'title_en' => '2. Information We Collect', 'icon' => 'database'],

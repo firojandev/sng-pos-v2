@@ -8,7 +8,7 @@
     badge-en="Terms of Service"
     last-updated="১১ সেপ্টেম্বর ২০২৬"
     last-updated-en="September 11, 2026"
-    version="v2.0.0"
+    version="v1.0.0"
     :toc="[
         ['id' => 'sec-terms-acceptance', 'title_bn' => '১. শর্তাবলীর গ্রহণযোগ্যতা', 'title_en' => '1. Acceptance of Terms', 'icon' => 'check-circle'],
         ['id' => 'sec-terms-eligibility', 'title_bn' => '২. যোগ্যতা ও অ্যাকাউন্ট সুরক্ষা', 'title_en' => '2. Eligibility & Accounts', 'icon' => 'user-check'],
