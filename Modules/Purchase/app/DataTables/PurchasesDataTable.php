@@ -39,16 +39,16 @@ class PurchasesDataTable extends BaseDataTable
                 $name = e($purchase->supplier->name ?? '—');
                 $initial = mb_substr($purchase->supplier->name ?? '?', 0, 1);
                 $phone = $purchase->supplier?->phone
-                    ? '<div style="font-size:11.5px; color:var(--ink-500); font-family:var(--font-mono, monospace);">'.e($purchase->supplier->phone).'</div>'
+                    ? '<div style="font-size:11.5px; color:var(--ink-500); font-family:var(--font-mono, monospace); white-space:nowrap;">'.e($purchase->supplier->phone).'</div>'
                     : '';
 
                 return '<div style="display:flex; align-items:center; gap:8px;">'
                     .'<div style="width:28px; height:28px; border-radius:6px; background:var(--teal-100); color:var(--teal-800); display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; flex-shrink:0;">'.e($initial).'</div>'
-                    .'<div><div style="font-weight:700; color:var(--ink-900);">'.$name.'</div>'.$phone.'</div>'
+                    .'<div style="min-width:0; max-width:180px;"><div style="font-weight:700; color:var(--ink-900); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word;" title="'.$name.'">'.$name.'</div>'.$phone.'</div>'
                     .'</div>';
             })
             ->editColumn('invoice_no', function (Purchase $purchase) {
-                return '<span style="font-family:var(--font-mono, monospace); font-weight:700; color:var(--ink-800); background:var(--paper-line); padding:3px 8px; border-radius:6px; border:1px solid var(--border); font-size:12px;">#'.e($purchase->invoice_no).'</span>';
+                return '<span style="font-family:var(--font-mono, monospace); font-weight:700; color:var(--ink-800); background:var(--paper-line); padding:3px 8px; border-radius:6px; border:1px solid var(--border); font-size:12px; white-space:nowrap;">#'.e($purchase->invoice_no).'</span>';
             })
             ->addColumn('batch_no', function (Purchase $purchase) {
                 $batches = $purchase->items->pluck('batch_no')->filter()->unique();
@@ -56,7 +56,9 @@ class PurchasesDataTable extends BaseDataTable
                     return '<span style="color:var(--ink-400);">—</span>';
                 }
 
-                return '<span style="font-family:var(--font-mono, monospace); font-size:12px; color:var(--ink-700);">'.e($batches->implode(', ')).'</span>';
+                $batchList = $batches->implode(', ');
+
+                return '<div style="font-family:var(--font-mono, monospace); font-size:12px; color:var(--ink-700); max-width:140px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word;" title="'.e($batchList).'">'.e($batchList).'</div>';
             })
             ->addColumn('items_count', function (Purchase $purchase) {
                 $qty = (float) $purchase->items->sum('quantity');
@@ -66,16 +68,16 @@ class PurchasesDataTable extends BaseDataTable
                     $pending = (float) $purchase->totalPendingQuantity();
                     $pendingFormatted = rtrim(rtrim(number_format($pending, 2), '0'), '.');
 
-                    return '<div>'
+                    return '<div style="white-space:nowrap;">'
                         .'<span style="font-family:var(--font-mono, monospace); color:var(--ink-700); font-weight:600;">'.$qtyFormatted.'</span>'
                         .'<div style="font-size:11px; color:var(--red-600); font-weight:700; margin-top:2px;">(বাকি: '.$pendingFormatted.')</div>'
                         .'</div>';
                 }
 
-                return '<span style="font-family:var(--font-mono, monospace); color:var(--ink-700); font-weight:600;">'.$qtyFormatted.'</span>';
+                return '<span style="font-family:var(--font-mono, monospace); color:var(--ink-700); font-weight:600; white-space:nowrap;">'.$qtyFormatted.'</span>';
             })
             ->editColumn('total', function (Purchase $purchase) {
-                return '<span style="font-family:var(--font-mono, monospace); font-weight:700; color:var(--ink-900);">৳'.number_format((float) $purchase->total, 2).'</span>';
+                return '<span style="font-family:var(--font-mono, monospace); font-weight:700; color:var(--ink-900); white-space:nowrap;">৳'.number_format((float) $purchase->total, 2).'</span>';
             })
             ->editColumn('purchase_date', function (Purchase $purchase) {
                 if (! $purchase->purchase_date) {
@@ -161,6 +163,11 @@ class PurchasesDataTable extends BaseDataTable
             }
         }
 
+        $supplierId = request('supplier_id') ?: request('supplier');
+        if ($supplierId && $supplierId !== 'all') {
+            $query->where('purchases.supplier_id', $supplierId);
+        }
+
         if ($search = request('search.value') ?: request('q')) {
             $searchClean = ltrim($search, '#');
             $query->where(function ($q) use ($search, $searchClean) {
@@ -198,6 +205,7 @@ class PurchasesDataTable extends BaseDataTable
                 data.from = $("#filter-from").val();
                 data.to = $("#filter-to").val();
                 data.status = $("#filter-status").val();
+                data.supplier_id = $("#filter-supplier").val();
             ');
     }
 

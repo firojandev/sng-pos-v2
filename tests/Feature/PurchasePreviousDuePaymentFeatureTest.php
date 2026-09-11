@@ -54,13 +54,13 @@ class PurchasePreviousDuePaymentFeatureTest extends TestCase
             'name' => 'Purchase Test Shop',
             'slug' => 'purchase-test-shop',
             'status' => 'active',
-            'enabled_features' => Features::keys(),
         ]);
 
         $standardPlan = Plan::where('slug', 'standard')->first();
         if ($standardPlan) {
             $this->shop->subscribe($standardPlan);
         }
+        $this->subscribeShopToFeatures($this->shop, Features::keys());
 
         $this->user = User::create([
             'name' => 'Purchase Admin',
@@ -392,5 +392,101 @@ class PurchasePreviousDuePaymentFeatureTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors(['payments']);
+    }
+
+    public function test_cannot_create_purchase_with_due_without_supplier(): void
+    {
+        // Purchase total = 1000.00, paid = 600.00, due = 400.00, without supplier.
+        $response = $this->actingAs($this->user)->post(route('purchase.store'), [
+            'warehouse_id' => $this->warehouse->id,
+            'supplier_id' => null,
+            'purchase_date' => now()->toDateString(),
+            'items' => [
+                [
+                    'product_id' => $this->product->id,
+                    'quantity' => 10,
+                    'purchase_price' => 100.00,
+                    'sale_price' => 150.00,
+                ],
+            ],
+            'payments' => [
+                [
+                    'account_id' => $this->cashAccount->id,
+                    'method' => 'cash',
+                    'amount' => 600.00,
+                ],
+            ],
+        ]);
+
+        $response->assertSessionHasErrors(['supplier_id', 'payments']);
+        $this->assertDatabaseMissing('purchases', [
+            'paid_amount' => 600.00,
+            'due_amount' => 400.00,
+        ]);
+    }
+
+    public function test_can_create_purchase_fully_paid_without_supplier(): void
+    {
+        // Fully paid purchase without supplier should succeed
+        $response = $this->actingAs($this->user)->post(route('purchase.store'), [
+            'warehouse_id' => $this->warehouse->id,
+            'supplier_id' => null,
+            'purchase_date' => now()->toDateString(),
+            'items' => [
+                [
+                    'product_id' => $this->product->id,
+                    'quantity' => 10,
+                    'purchase_price' => 100.00,
+                    'sale_price' => 150.00,
+                ],
+            ],
+            'payments' => [
+                [
+                    'account_id' => $this->cashAccount->id,
+                    'method' => 'cash',
+                    'amount' => 1000.00,
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect(route('purchase.index'));
+        $purchase = Purchase::latest('id')->first();
+        $this->assertNull($purchase->supplier_id);
+        $this->assertEquals(1000.00, (float) $purchase->total);
+        $this->assertEquals(1000.00, (float) $purchase->paid_amount);
+        $this->assertEquals(0.00, (float) $purchase->due_amount);
+        $this->assertEquals('paid', $purchase->payment_status);
+    }
+
+    public function test_can_create_purchase_with_due_when_supplier_is_selected(): void
+    {
+        $response = $this->actingAs($this->user)->post(route('purchase.store'), [
+            'warehouse_id' => $this->warehouse->id,
+            'supplier_id' => $this->supplier->id,
+            'purchase_date' => now()->toDateString(),
+            'items' => [
+                [
+                    'product_id' => $this->product->id,
+                    'quantity' => 10,
+                    'purchase_price' => 100.00,
+                    'sale_price' => 150.00,
+                ],
+            ],
+            'payments' => [
+                [
+                    'account_id' => $this->cashAccount->id,
+                    'method' => 'cash',
+                    'amount' => 600.00,
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect(route('purchase.index'));
+        $purchase = Purchase::latest('id')->first();
+        $this->assertEquals($this->supplier->id, $purchase->supplier_id);
+        $this->assertEquals(1000.00, (float) $purchase->total);
+        $this->assertEquals(600.00, (float) $purchase->paid_amount);
+        $this->assertEquals(400.00, (float) $purchase->due_amount);
+        $this->assertEquals('partial', $purchase->payment_status);
     }
 }

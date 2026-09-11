@@ -22,9 +22,11 @@
                     </div>
 
                     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12px; color:var(--ink-500); margin-top:6px;">
-                        <span style="display:inline-flex; align-items:center; gap:4px; background:var(--paper-line); padding:2px 8px; border-radius:6px; font-family:var(--font-mono, monospace); font-weight:700; color:var(--ink-800); border:1px solid var(--border);">
-                            <x-core::icon name="barcode" size="12" /> SKU: {{ $product->sku }}
-                        </span>
+                        @if ($product->sku)
+                            <span style="display:inline-flex; align-items:center; gap:4px; background:var(--paper-line); padding:2px 8px; border-radius:6px; font-family:var(--font-mono, monospace); font-weight:700; color:var(--ink-800); border:1px solid var(--border);">
+                                <x-core::icon name="barcode" size="12" /> SKU: {{ $product->sku }}
+                            </span>
+                        @endif
                         @if ($product->category)
                             <span style="display:inline-flex; align-items:center; gap:4px; color:var(--ink-700);">
                                 <x-core::icon name="folder" size="12" style="color:var(--ink-400);" /> {{ $product->category->name }}

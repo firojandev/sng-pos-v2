@@ -11,7 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
-use Modules\Core\Support\Features;
+use Modules\Finance\Models\Account;
+use Modules\Finance\Models\AccountTransaction;
 use Modules\Shop\DataTables\ShopsDataTable;
 use Modules\Shop\Http\Requests\StoreShopAdminRequest;
 use Modules\Shop\Http\Requests\StoreShopRequest;
@@ -63,7 +64,7 @@ class ShopController extends Controller
 
     public function show(Shop $shop): JsonResponse|RedirectResponse
     {
-        $shop->load(['admins.roles', 'activeSubscription.plan']);
+        $shop->load(['admins.roles', 'activeSubscription.plan.features']);
 
         if (request()->wantsJson() || request()->ajax()) {
             $subscription = $shop->activeSubscription;
@@ -77,7 +78,7 @@ class ShopController extends Controller
                 'phone' => $shop->phone,
                 'address' => $shop->address,
                 'status' => $shop->status,
-                'enabled_features' => $shop->enabled_features ?? [],
+                'plan_features' => $plan?->features->pluck('slug')->all() ?? [],
                 'created_at' => $shop->created_at?->format('d M, Y (h:i A)'),
                 'edit_url' => route('shops.edit', $shop),
                 'subscription' => $subscription ? [
@@ -107,8 +108,6 @@ class ShopController extends Controller
         return view('shop::create', [
             'shop' => new Shop,
             'nextStoreCode' => Shop::generateNextStoreCode(),
-            'roles' => Role::where('name', '!=', 'Super Admin')->where('guard_name', 'web')->select('name')->distinct()->orderBy('name')->get(),
-            'features' => Features::all(),
             'plans' => Plan::where('is_active', true)->orWhere('status', 'active')->orderBy('sort_order')->orderBy('price')->get(),
             'existingOwners' => User::whereDoesntHave('roles', fn ($q) => $q->where('name', 'Super Admin'))
                 ->with(['shop', 'roles'])
@@ -129,7 +128,6 @@ class ShopController extends Controller
                 'phone' => $request->validated('phone'),
                 'address' => $request->validated('address'),
                 'status' => $request->validated('status'),
-                'enabled_features' => $request->validated('features', []),
             ]);
 
             $ownerType = $request->input('owner_type', 'new');
@@ -141,25 +139,21 @@ class ShopController extends Controller
                     $admin->save();
                 }
             } else {
+                $adminPhone = $request->validated('admin_phone');
                 $adminEmail = $request->validated('admin_email');
-                $admin = User::where('email', $adminEmail)->first();
+                $adminUsername = $request->validated('admin_username');
 
-                if (! $admin) {
-                    $admin = User::create([
-                        'shop_id' => $shop->id,
-                        'name' => $request->validated('admin_name'),
-                        'email' => $adminEmail,
-                        'password' => Hash::make($request->validated('admin_password')),
-                    ]);
-                } else {
-                    if (! $admin->shop_id) {
-                        $admin->shop_id = $shop->id;
-                        $admin->save();
-                    }
-                }
+                $admin = User::create([
+                    'shop_id' => $shop->id,
+                    'name' => $request->validated('admin_name'),
+                    'username' => $adminUsername ?: null,
+                    'email' => $adminEmail ?: null,
+                    'phone' => $adminPhone,
+                    'password' => Hash::make($request->validated('admin_password')),
+                ]);
             }
 
-            $roleName = $request->validated('admin_role');
+            $roleName = 'Admin';
             setPermissionsTeamId($shop->id);
             $shopRole = Role::where('shop_id', $shop->id)->where('name', $roleName)->first()
                 ?? Role::firstOrCreate([
@@ -197,11 +191,16 @@ class ShopController extends Controller
                         ? Carbon::parse($request->validated('trial_ends_at'))
                         : null;
 
+                    $subStatus = $request->validated('subscription_status', 'active');
+                    if ($subStatus === 'trial') {
+                        $subStatus = 'trialing';
+                    }
+
                     $shop->subscriptions()->create([
                         'subscribable_type' => Shop::class,
                         'subscribable_id' => $shop->id,
                         'plan_id' => $plan->id,
-                        'status' => $request->validated('subscription_status', 'active'),
+                        'status' => $subStatus,
                         'trial_ends_at' => $trialEndsAt,
                         'starts_at' => $startDate,
                         'ends_at' => $endDate,
@@ -211,6 +210,39 @@ class ShopController extends Controller
                     $shop->clearSubscriptionCache();
                 }
             }
+
+            // Auto create default cash account because regular users cannot create cash accounts
+            $cashName = trim((string) $request->validated('cash_account_name', ''));
+            $cashOpeningBalance = max(0, (float) $request->validated('cash_opening_balance', 0));
+
+            $cashAccount = Account::withoutGlobalScopes()->firstOrCreate(
+                [
+                    'shop_id' => $shop->id,
+                    'type' => 'cash',
+                ],
+                [
+                    'name' => $cashName !== '' ? $cashName : 'নগদ টাকা (Cash)',
+                    'opening_balance' => $cashOpeningBalance,
+                    'current_balance' => $cashOpeningBalance,
+                    'is_default' => false,
+                    'status' => 'active',
+                    'note' => 'প্রধান ক্যাশ অ্যাকাউন্ট (সিস্টেম নির্ধারিত)',
+                ]
+            );
+
+            if ($cashOpeningBalance > 0 && $cashAccount->wasRecentlyCreated) {
+                AccountTransaction::create([
+                    'shop_id' => $shop->id,
+                    'account_id' => $cashAccount->id,
+                    'type' => 'in',
+                    'amount' => $cashOpeningBalance,
+                    'balance_after' => $cashOpeningBalance,
+                    'source' => 'opening_balance',
+                    'note' => 'প্রারম্ভিক ব্যালেন্স (Opening Balance)',
+                    'occurred_at' => now(),
+                    'created_by' => auth()->id() ?? $admin->id,
+                ]);
+            }
         });
 
         return redirect()->route('shops.index')->with('status', 'দোকান ও এডমিন সফলভাবে তৈরি করা হয়েছে');
@@ -218,22 +250,8 @@ class ShopController extends Controller
 
     public function edit(Shop $shop): View
     {
-        $shopRoles = Role::where('shop_id', $shop->id)
-            ->where('name', '!=', 'Super Admin')
-            ->orderBy('name')
-            ->get();
-
-        if ($shopRoles->isEmpty()) {
-            $shopRoles = Role::whereNull('shop_id')
-                ->where('name', '!=', 'Super Admin')
-                ->orderBy('name')
-                ->get();
-        }
-
         return view('shop::edit', [
             'shop' => $shop,
-            'roles' => $shopRoles,
-            'features' => Features::all(),
             'admins' => $shop->admins()->with('roles')->get(),
             'subscription' => $shop->subscription(),
             'plans' => Plan::where('is_active', true)->orWhere('status', 'active')->orderBy('price')->get(),
@@ -261,6 +279,11 @@ class ShopController extends Controller
                 ? Carbon::parse($request->validated('trial_ends_at'))
                 : null;
 
+            $subStatus = $request->validated('subscription_status') ?? $request->validated('status', 'active');
+            if ($subStatus === 'trial') {
+                $subStatus = 'trialing';
+            }
+
             $shop->subscriptions()->updateOrCreate(
                 [
                     'subscribable_type' => Shop::class,
@@ -268,7 +291,7 @@ class ShopController extends Controller
                 ],
                 [
                     'plan_id' => $plan->id,
-                    'status' => $request->validated('status', 'active'),
+                    'status' => $subStatus,
                     'trial_ends_at' => $trialEndsAt,
                     'starts_at' => $startDate,
                     'ends_at' => $endDate,
@@ -291,7 +314,6 @@ class ShopController extends Controller
             'phone' => $request->validated('phone'),
             'address' => $request->validated('address'),
             'status' => $request->validated('status'),
-            'enabled_features' => $request->validated('features', []),
         ]);
 
         return redirect()->route('shops.edit', $shop)->with('status', 'দোকানের তথ্য হালনাগাদ করা হয়েছে');
@@ -323,7 +345,7 @@ class ShopController extends Controller
             }
         }
 
-        $roleName = $request->validated('role');
+        $roleName = 'Admin';
         setPermissionsTeamId($shop->id);
         $role = Role::where('shop_id', $shop->id)->where('name', $roleName)->first()
             ?? Role::firstOrCreate([

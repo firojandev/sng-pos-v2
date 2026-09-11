@@ -1,22 +1,44 @@
-<div class="field" style="margin-top:0;">
-    <label class="bn">মূল ক্যাটাগরি</label><label class="en" style="display:none;">Parent Category</label>
-    <select name="parent_id" required>
-        <option value="">-- নির্বাচন করুন --</option>
-        @foreach ($categories as $category)
-            <option value="{{ $category->id }}" {{ (int) old('parent_id', $subCategory->parent_id ?? $subCategory->category_id) === $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
-        @endforeach
-    </select>
-    @error('parent_id') <div class="field-error">{{ $message }}</div> @enderror
-    @error('category_id') <div class="field-error">{{ $message }}</div> @enderror
-</div>
+@php
+    $categoryOptions = ['' => '-- নির্বাচন করুন --'];
+    foreach ($categories as $cat) {
+        $categoryOptions[$cat->id] = $cat->name;
+    }
+    $selectedParentId = old('parent_id', $subCategory->parent_id ?? $subCategory->category_id ?? '');
+@endphp
 
-<div class="field">
-    <label class="bn">নাম</label><label class="en" style="display:none;">Name</label>
-    <input type="text" name="name" value="{{ old('name', $subCategory->name) }}" placeholder="যেমন মোবাইল ফোন" required>
-    @error('name') <div class="field-error">{{ $message }}</div> @enderror
-</div>
+<div style="display:flex; flex-direction:column; gap:14px;">
+    <x-core::select
+        name="parent_id"
+        id="sub_category_parent_id"
+        label="মূল ক্যাটাগরি"
+        label-en="Parent Category"
+        :options="$categoryOptions"
+        :value="$selectedParentId"
+        size="sm"
+        :required="true"
+    />
 
-<div class="field">
-    <label class="bn">বিবরণ</label><label class="en" style="display:none;">Description</label>
-    <textarea name="description" placeholder="ঐচ্ছিক বিবরণ">{{ old('description', $subCategory->description) }}</textarea>
+    <x-core::input
+        name="name"
+        id="sub_category_name"
+        label="নাম"
+        label-en="Name"
+        placeholder="যেমন: মোবাইল ফোন"
+        placeholder-en="e.g. Mobile Phone"
+        :value="old('name', $subCategory->name ?? '')"
+        size="sm"
+        :required="true"
+    />
+
+    <x-core::textarea
+        name="description"
+        id="sub_category_description"
+        label="বিবরণ"
+        label-en="Description"
+        placeholder="ঐচ্ছিক বিবরণ"
+        placeholder-en="Optional description"
+        :value="old('description', $subCategory->description ?? '')"
+        rows="3"
+        size="sm"
+    />
 </div>

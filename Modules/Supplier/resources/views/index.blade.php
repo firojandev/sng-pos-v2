@@ -108,6 +108,14 @@
         </div>
     </div>
 
+    @push('styles')
+        <style>
+            #suppliers-data-table {
+                width: 100% !important;
+            }
+        </style>
+    @endpush
+
     {{-- Create Supplier Modal --}}
     <div class="modal-backdrop" id="createSupplierModal" style="z-index:999;">
         <div class="modal-box" style="width:520px; max-width:95vw; max-height:90vh; overflow-y:auto; padding:24px; border-radius:16px;">
@@ -123,7 +131,7 @@
                 </div>
                 <button type="button" class="drawer-x modal-close-btn" style="width:28px; height:28px; font-size:18px; cursor:pointer; background:none; border:none; color:var(--ink-500);">&times;</button>
             </div>
-            <form method="POST" action="{{ route('suppliers.store') }}" id="create_supplier_form">
+            <form method="POST" action="{{ route('suppliers.store', [], false) }}" id="create_supplier_form">
                 @csrf
                 <div style="display:flex; flex-direction:column; gap:14px;">
                     <x-core::input
@@ -373,7 +381,7 @@
                 var isActive = String(statusVal) === 'active';
                 var $switcher = $container.find('[data-status-switcher]');
                 var $toggle = $container.find('[data-status-toggle]');
-                var $hidden = $container.find('[data-status-input], input[type="hidden"]');
+                var $hidden = $container.find('.status-toggle-wrapper [data-status-input], .status-toggle-wrapper input[name="status"], [data-status-input]');
 
                 $toggle.prop('checked', !isActive);
                 $switcher.toggleClass('is-active', isActive).toggleClass('is-inactive', !isActive);
@@ -431,10 +439,30 @@
                 e.preventDefault();
                 var $form = $(this);
                 var $btn = $('#btn-save-create-supplier');
-                var url = $form.attr('action');
+                var url = $form.attr('action') || '{{ route("suppliers.store", [], false) }}';
+                var csrfToken = $('meta[name="csrf-token"]').attr('content');
 
                 clearFormErrors($form);
+
+                var openingDueVal = parseFloat($('#create_supplier_opening_due').val());
+                if (!isNaN(openingDueVal) && openingDueVal < 0) {
+                    showFormErrors($form, {
+                        opening_due: [$('body').hasClass('lang-en') ? 'Opening due cannot be negative.' : 'প্রারম্ভিক বাকি ঋণাত্মক হতে পারবে না।']
+                    });
+                    $('#create_supplier_opening_due').focus();
+                    return false;
+                }
+
                 $btn.prop('disabled', true);
+
+                if (csrfToken) {
+                    var $tokenInput = $form.find('input[name="_token"]');
+                    if ($tokenInput.length) {
+                        $tokenInput.val(csrfToken);
+                    } else {
+                        $form.prepend('<input type="hidden" name="_token" value="' + csrfToken + '">');
+                    }
+                }
 
                 $.ajax({
                     url: url,
@@ -442,6 +470,7 @@
                     data: $form.serialize(),
                     dataType: 'json',
                     headers: {
+                        'X-CSRF-TOKEN': csrfToken,
                         'Accept': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest'
                     },
@@ -464,6 +493,23 @@
                                     window.toast(xhr.responseJSON.message, xhr.responseJSON.message);
                                 }
                             }
+                        } else if (xhr.status === 419) {
+                            var isEn = $('body').hasClass('lang-en');
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: isEn ? 'Session Expired' : 'সেশনের মেয়াদ শেষ',
+                                    text: isEn 
+                                        ? 'Your session has expired. Please refresh the page to continue.' 
+                                        : 'আপনার সেশনের মেয়াদ শেষ হয়ে গেছে। অনুগ্রহ করে পেজটি রিফ্রেশ করুন।',
+                                    confirmButtonColor: '#0D9488',
+                                    confirmButtonText: isEn ? 'Refresh Page' : 'পেজ রিফ্রেশ করুন'
+                                }).then(function () {
+                                    window.location.reload();
+                                });
+                            } else if (typeof window.toast === 'function') {
+                                window.toast('সেশনের মেয়াদ শেষ। পেজ রিফ্রেশ করুন।', 'Session expired. Please refresh the page.');
+                            }
                         } else {
                             if (typeof window.toast === 'function') {
                                 window.toast('সরবরাহকারী যোগ করতে সমস্যা হয়েছে', 'Failed to create supplier');
@@ -479,9 +525,36 @@
                 var $form = $(this);
                 var $btn = $('#btn-update-supplier');
                 var url = $form.attr('action');
+                var csrfToken = $('meta[name="csrf-token"]').attr('content');
 
                 clearFormErrors($form);
+
+                var openingDueVal = parseFloat($('#edit_supplier_opening_due').val());
+                if (!isNaN(openingDueVal) && openingDueVal < 0) {
+                    showFormErrors($form, {
+                        opening_due: [$('body').hasClass('lang-en') ? 'Opening due cannot be negative.' : 'প্রারম্ভিক বাকি ঋণাত্মক হতে পারবে না।']
+                    });
+                    $('#edit_supplier_opening_due').focus();
+                    return false;
+                }
+
                 $btn.prop('disabled', true);
+
+                if (csrfToken) {
+                    var $tokenInput = $form.find('input[name="_token"]');
+                    if ($tokenInput.length) {
+                        $tokenInput.val(csrfToken);
+                    } else {
+                        $form.prepend('<input type="hidden" name="_token" value="' + csrfToken + '">');
+                    }
+                }
+
+                var $methodInput = $form.find('input[name="_method"]');
+                if ($methodInput.length) {
+                    $methodInput.val('PUT');
+                } else {
+                    $form.prepend('<input type="hidden" name="_method" value="PUT">');
+                }
 
                 $.ajax({
                     url: url,
@@ -489,6 +562,8 @@
                     data: $form.serialize(),
                     dataType: 'json',
                     headers: {
+                        'X-HTTP-Method-Override': 'PUT',
+                        'X-CSRF-TOKEN': csrfToken,
                         'Accept': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest'
                     },
@@ -509,6 +584,23 @@
                                 if (typeof window.toast === 'function') {
                                     window.toast(xhr.responseJSON.message, xhr.responseJSON.message);
                                 }
+                            }
+                        } else if (xhr.status === 419) {
+                            var isEn = $('body').hasClass('lang-en');
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: isEn ? 'Session Expired' : 'সেশনের মেয়াদ শেষ',
+                                    text: isEn 
+                                        ? 'Your session has expired. Please refresh the page to continue.' 
+                                        : 'আপনার সেশনের মেয়াদ শেষ হয়ে গেছে। অনুগ্রহ করে পেজটি রিফ্রেশ করুন।',
+                                    confirmButtonColor: '#0D9488',
+                                    confirmButtonText: isEn ? 'Refresh Page' : 'পেজ রিফ্রেশ করুন'
+                                }).then(function () {
+                                    window.location.reload();
+                                });
+                            } else if (typeof window.toast === 'function') {
+                                window.toast('সেশনের মেয়াদ শেষ। পেজ রিফ্রেশ করুন।', 'Session expired. Please refresh the page.');
                             }
                         } else {
                             if (typeof window.toast === 'function') {

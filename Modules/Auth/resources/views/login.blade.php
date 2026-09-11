@@ -1,8 +1,6 @@
 <x-core::auth-layout
     title="লগইন"
     title-en="Login"
-    card-title="মাস্টারপস-এ লগইন করুন"
-    card-title-en="Sign in to MasterPOS"
     card-subtitle="আপনার হিসাব পরিচালনা করতে লগইন করুন"
     card-subtitle-en="Sign in to manage your business account"
 >
@@ -19,10 +17,10 @@
         <x-core::input
             type="text"
             name="email"
-            label="ইমেইল, ইউজারনেম বা ফোন"
-            label-en="Email, Username or Phone"
-            placeholder="user@example.com / username / 017xxxxxxxx"
-            placeholder-en="Email, username or phone number"
+            label="ইউজারনেম"
+            label-en="Username"
+            placeholder="user@example.com/username/017xxxxxxxx"
+            placeholder-en="Email/username/phone number"
             icon="user"
             :value="old('email', old('login'))"
             required
@@ -33,19 +31,14 @@
         <x-core::input
             type="password"
             name="password"
-            label="পাসওয়ার্ড বা পিন"
-            label-en="Password or PIN"
+            label="পাসওয়ার্ড/পিন"
+            label-en="Password/PIN"
             placeholder="••••••••"
             placeholder-en="••••••••"
             icon="lock"
             password-toggle
             required
         />
-
-        <div style="font-size:11.5px; color:var(--ink-500); margin-top:6px; margin-bottom:4px; line-height:1.4;">
-            <span class="bn">পাসওয়ার্ড, ৪-সংখ্যার ইউজার পিন অথবা ৬-সংখ্যার সাপোর্ট পিন দিয়ে লগইন করা যাবে।</span>
-            <span class="en" style="display:none;">Sign in using your password, 4-digit user PIN, or 6-digit support PIN.</span>
-        </div>
 
         <div class="auth-row">
             <x-core::checkbox
@@ -66,5 +59,16 @@
             <span class="en">Sign In</span>
         </x-core::button>
     </form>
+
+    @if (\Modules\Core\Models\Setting::isRegistrationEnabled())
+        <div style="margin-top: 20px; text-align: center; font-size: 12.5px; color: var(--ink-600);">
+            <span class="bn">নতুন দোকান চালু করতে চান?</span>
+            <span class="en" style="display:none;">Want to open a new shop?</span>
+            <a href="{{ route('register') }}" style="color: var(--teal-800); font-weight: 700; text-decoration: none; margin-left: 4px;">
+                <span class="bn">ফ্রি অ্যাকাউন্ট তৈরি করুন</span>
+                <span class="en" style="display:none;">Create Free Account</span>
+            </a>
+        </div>
+    @endif
 </x-core::auth-layout>
 

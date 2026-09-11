@@ -5,7 +5,15 @@
     subtitle-en="Monitor stock levels, valuations, and batch adjustments"
     active="stock"
 >
-
+    {{-- Top Tab Navigation --}}
+    <div class="tabbar" style="margin-bottom:16px;">
+        <a href="{{ route('stock.index') }}" class="tabbtn active">
+            <span class="bn">স্টক খাতা</span><span class="en" style="display:none;">Stock Ledger</span>
+        </a>
+        <a href="{{ route('stock.history') }}" class="tabbtn">
+            <span class="bn">স্টকের ইতিহাস</span><span class="en" style="display:none;">Stock History</span>
+        </a>
+    </div>
     {{-- Summary Metric Cards --}}
     @if (isset($metrics))
         <div class="stat-grid" style="margin-bottom:16px; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));">

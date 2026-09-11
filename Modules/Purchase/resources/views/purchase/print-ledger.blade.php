@@ -236,48 +236,99 @@
         </div>
     </div>
 
+    @php
+        $shop = $shop ?? auth()->user()?->shop ?? \Modules\Shop\Models\Shop::first();
+    @endphp
+
     <div class="report-card">
-        <div class="header">
-            <div class="shop-info">
-                <h1>{{ $shop->name ?? 'আমার দোকান' }}</h1>
-                @if($shop?->address)<p>{{ $shop->address }}</p>@endif
-                <p>ফোন: {{ $shop?->phone ?? '—' }} @if($shop?->email) &middot; ইমেইল: {{ $shop->email }} @endif</p>
+        {{-- Top Header with Shop Info --}}
+        <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:10px;">
+            <div style="flex-shrink:0; width:48px; height:48px; border-radius:6px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+                @if(!empty($shop?->logo))
+                    <img src="{{ $shop->logo_url ?? asset($shop->logo) }}" alt="Shop Logo" style="max-width:48px; max-height:48px; object-fit:contain;">
+                @else
+                    <svg width="46" height="46" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="7" y="19" width="34" height="23" rx="2" fill="#38bdf8" stroke="#0f172a" stroke-width="2"/>
+                        <rect x="19" y="27" width="10" height="15" fill="#0f172a"/>
+                        <rect x="11" y="25" width="5" height="8" rx="1" fill="#f8fafc" stroke="#0f172a" stroke-width="1.5"/>
+                        <rect x="32" y="25" width="5" height="8" rx="1" fill="#f8fafc" stroke="#0f172a" stroke-width="1.5"/>
+                        <path d="M4 18L9 8H39L44 18H4Z" fill="#ea580c" stroke="#0f172a" stroke-width="2" stroke-linejoin="round"/>
+                        <path d="M4 18C4 20.5 6 22 8.5 22C11 22 13 20.5 13 18C13 20.5 15 22 17.5 22C20 22 22 20.5 22 18C22 20.5 24 22 26.5 22C29 22 31 20.5 31 18C31 20.5 33 22 35.5 22C38 22 40 20.5 40 18C40 20.5 41.8 22 44 22" stroke="#0f172a" stroke-width="2" fill="#f97316"/>
+                    </svg>
+                @endif
             </div>
-            <div class="report-info">
-                <h2>ক্রয় খাতা প্রতিবেদন</h2>
-                <div style="font-size:12px; color:#64748b; font-weight:600; margin-bottom:4px;">PURCHASE LEDGER REPORT</div>
-                <div class="report-meta-tag">মুদ্রণ: {{ now()->format('d M, Y · h:i A') }}</div>
+
+            <div>
+                <div style="font-size:18px; font-weight:800; color:#0f172a; line-height:1.2;">
+                    {{ $shop->name ?? 'ব্যবসা প্রতিষ্ঠান' }}
+                </div>
+                @if(!empty($shop?->address))
+                    <div style="font-size:12px; color:#475569; margin-top:2px;">
+                        {{ $shop->address }}
+                    </div>
+                @endif
+                @if(!empty($shop?->phone))
+                    <div style="font-size:12px; color:#475569; margin-top:1px;">
+                        মোবাইল : {{ $shop->phone }}
+                    </div>
+                @endif
             </div>
         </div>
 
-        <div class="filter-banner">
-            <div>
-                <b>সময়কাল: </b>
-                @if(!empty($filters['from']) || !empty($filters['to']))
-                    <span class="mono">{{ $filters['from'] ? date('d M, Y', strtotime($filters['from'])) : 'শুরু' }}</span>
-                    থেকে
-                    <span class="mono">{{ $filters['to'] ? date('d M, Y', strtotime($filters['to'])) : 'বর্তমান' }}</span>
-                @else
-                    <span>সকল লেনদেন (All Records)</span>
-                @endif
+        {{-- Centered Title with Horizontal Accent Lines --}}
+        <div style="display:flex; align-items:center; justify-content:center; gap:16px; margin:12px 0 14px 0;">
+            <div style="flex:1; height:1px; background:#94a3b8;"></div>
+            <div style="font-size:22px; font-weight:800; color:#0f172a; letter-spacing:1px; padding:0 8px;">
+                ক্রয় খাতা প্রতিবেদন
             </div>
+            <div style="flex:1; height:1px; background:#94a3b8;"></div>
+        </div>
+
+        {{-- Metadata: Information --}}
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; font-size:12px; line-height:1.6; margin-bottom:14px; color:#0f172a;">
             <div>
-                <b>পেমেন্ট অবস্থা: </b>
-                @if(($filters['status'] ?? 'all') === 'paid')
-                    <span style="color:#166534; font-weight:700;">পরিশোধিত (Paid)</span>
-                @elseif(($filters['status'] ?? 'all') === 'partial')
-                    <span style="color:#92400e; font-weight:700;">আংশিক (Partial)</span>
-                @elseif(($filters['status'] ?? 'all') === 'due')
-                    <span style="color:#991b1b; font-weight:700;">বাকি (Due)</span>
-                @else
-                    <span>সব (All)</span>
+                <div>
+                    <b>সময়কাল : </b>
+                    @if(!empty($filters['from']) || !empty($filters['to']))
+                        <span class="mono">{{ $filters['from'] ? date('d M, Y', strtotime($filters['from'])) : 'শুরু' }}</span>
+                        থেকে
+                        <span class="mono">{{ $filters['to'] ? date('d M, Y', strtotime($filters['to'])) : 'বর্তমান' }}</span>
+                    @else
+                        <span>সকল লেনদেন (All Records)</span>
+                    @endif
+                    @if(!empty($filters['search']))
+                        &nbsp;&bull;&nbsp; <b>অনুসন্ধান : </b>"{{ $filters['search'] }}"
+                    @endif
+                </div>
+                @if(!empty($selectedSupplier))
+                    <div>
+                        <b>সরবরাহকারী : </b>
+                        <span>{{ $selectedSupplier->name }}</span>
+                        @if($selectedSupplier->phone)
+                            <span class="mono" style="font-size:11px; color:#64748b;">({{ $selectedSupplier->phone }})</span>
+                        @endif
+                    </div>
                 @endif
-                @if(!empty($filters['search']))
-                    &middot; <b>অনুসন্ধান: </b>"{{ $filters['search'] }}"
-                @endif
+                <div>
+                    <b>পেমেন্ট অবস্থা : </b>
+                    @if(($filters['status'] ?? 'all') === 'paid')
+                        <span style="color:#166534; font-weight:700;">পরিশোধিত (Paid)</span>
+                    @elseif(($filters['status'] ?? 'all') === 'partial')
+                        <span style="color:#92400e; font-weight:700;">আংশিক (Partial)</span>
+                    @elseif(($filters['status'] ?? 'all') === 'due')
+                        <span style="color:#991b1b; font-weight:700;">বাকি (Due)</span>
+                    @else
+                        <span>সব (All)</span>
+                    @endif
+                </div>
             </div>
-            <div>
-                <b>প্রস্তুতকারক: </b>{{ auth()->user()?->name ?? 'Admin' }}
+            <div style="text-align:right;">
+                <div>
+                    <b>প্রস্তুতকাল : </b>{{ now()->format('d M, Y · h:i A') }}
+                </div>
+                <div>
+                    <b>প্রস্তুতকারক : </b>{{ auth()->user()?->name ?? 'Admin' }}
+                </div>
             </div>
         </div>
 

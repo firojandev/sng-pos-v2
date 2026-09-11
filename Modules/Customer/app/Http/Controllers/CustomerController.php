@@ -15,21 +15,47 @@ use Modules\Sales\Models\Sale;
 
 class CustomerController extends Controller
 {
-    public function index(CustomersDataTable $dataTable): mixed
+    /**
+     * Compute current customer metrics for stat cards.
+     *
+     * @return array<string, mixed>
+     */
+    public function getMetrics(): array
     {
-        $metrics = [
+        $openingDueSum = (float) Customer::sum('opening_due');
+        $salesDueSum = (float) Sale::whereNotNull('customer_id')->sum('due_amount');
+        $totalSalesAmount = round((float) Sale::whereNotNull('customer_id')->sum('total'), 2);
+        $totalSalesCount = Sale::whereNotNull('customer_id')->count();
+        $totalDue = round($openingDueSum + $salesDueSum, 2);
+        $paidTotal = max(0, round($totalSalesAmount - $salesDueSum, 2));
+
+        return [
             'totalCustomers' => Customer::count(),
             'activeCustomers' => Customer::where('status', 'active')->count(),
-            'totalDue' => round((float) Customer::sum('opening_due') + (float) Sale::whereNotNull('customer_id')->sum('due_amount'), 2),
+            'totalDue' => $totalDue,
             'dueCustomersCount' => Customer::where(function ($q) {
                 $q->where('opening_due', '>', 0)
                     ->orWhereHas('sales', fn ($sq) => $sq->where('due_amount', '>', 0));
             })->count(),
-            'totalSalesAmount' => round((float) Sale::whereNotNull('customer_id')->sum('total'), 2),
-            'totalSalesCount' => Sale::whereNotNull('customer_id')->count(),
+            'totalSalesAmount' => $totalSalesAmount,
+            'totalSalesCount' => $totalSalesCount,
+            'paidTotal' => $paidTotal,
         ];
+    }
+
+    public function index(CustomersDataTable $dataTable): mixed
+    {
+        $metrics = $this->getMetrics();
 
         return $dataTable->render('customer::index', compact('metrics'));
+    }
+
+    public function metrics(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'metrics' => $this->getMetrics(),
+        ]);
     }
 
     public function create(): View
@@ -40,7 +66,7 @@ class CustomerController extends Controller
     public function store(StoreCustomerRequest $request): RedirectResponse|JsonResponse
     {
         $data = $request->validated();
-        $data['opening_due'] = $data['opening_due'] ?? 0;
+        $data['opening_due'] = max(0, (float) ($data['opening_due'] ?? 0));
         $customer = Customer::create($data);
 
         if ($request->ajax() || $request->wantsJson()) {
@@ -48,6 +74,7 @@ class CustomerController extends Controller
                 'success' => true,
                 'message' => 'গ্রাহক সফলভাবে যোগ করা হয়েছে',
                 'customer' => $customer,
+                'metrics' => $this->getMetrics(),
             ]);
         }
 
@@ -76,7 +103,7 @@ class CustomerController extends Controller
     {
         $data = $request->validated();
         if (array_key_exists('opening_due', $data)) {
-            $data['opening_due'] = $data['opening_due'] ?? 0;
+            $data['opening_due'] = max(0, (float) ($data['opening_due'] ?? 0));
         }
         $customer->update($data);
 
@@ -85,6 +112,7 @@ class CustomerController extends Controller
                 'success' => true,
                 'message' => 'গ্রাহক হালনাগাদ করা হয়েছে',
                 'customer' => $customer,
+                'metrics' => $this->getMetrics(),
             ]);
         }
 
@@ -110,6 +138,7 @@ class CustomerController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'গ্রাহক মুছে ফেলা হয়েছে',
+                'metrics' => $this->getMetrics(),
             ]);
         }
 

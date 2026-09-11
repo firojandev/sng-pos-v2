@@ -89,16 +89,36 @@
         <span class="lbl bn">মোট</span><span class="lbl en" style="display:none;">Subtotal</span>
         <span class="val" style="font-family:var(--font-mono, monospace);">৳{{ number_format((float) $sale->subtotal, 2) }}</span>
     </div>
+    @if ((float) ($sale->product_discount ?? 0) > 0)
+        <div class="tx-row">
+            <span class="lbl bn">পণ্য ছাড়</span><span class="lbl en" style="display:none;">Product Discount</span>
+            <span class="val" style="font-family:var(--font-mono, monospace); color:var(--red-600);">-৳{{ number_format((float) $sale->product_discount, 2) }}</span>
+        </div>
+    @endif
     @if ((float) $sale->discount > 0)
         <div class="tx-row">
             <span class="lbl bn">ডিস্কাউন্ট</span><span class="lbl en" style="display:none;">Discount</span>
             <span class="val" style="font-family:var(--font-mono, monospace); color:var(--green-ink);">৳{{ number_format((float) $sale->discount, 2) }}</span>
         </div>
     @endif
+    @if ((float) ($sale->tax ?? 0) > 0)
+        <div class="tx-row">
+            <span class="lbl bn">ভ্যাট</span><span class="lbl en" style="display:none;">Tax / VAT</span>
+            <span class="val" style="font-family:var(--font-mono, monospace);">৳{{ number_format((float) $sale->tax, 2) }}</span>
+        </div>
+    @endif
     @if ((float) $sale->delivery_charge > 0)
         <div class="tx-row">
             <span class="lbl bn">ডেলিভারি চার্জ</span><span class="lbl en" style="display:none;">Delivery Charge</span>
             <span class="val" style="font-family:var(--font-mono, monospace);">৳{{ number_format((float) $sale->delivery_charge, 2) }}</span>
+        </div>
+    @endif
+    @if ((float) ($sale->adjustment ?? 0) != 0)
+        <div class="tx-row">
+            <span class="lbl bn">সমন্বয়</span><span class="lbl en" style="display:none;">Adjustment</span>
+            <span class="val" style="font-family:var(--font-mono, monospace); {{ (float) $sale->adjustment < 0 ? 'color:var(--red-600);' : 'color:var(--teal-700);' }}">
+                {{ (float) $sale->adjustment > 0 ? '+' : '' }}৳{{ number_format((float) $sale->adjustment, 2) }}
+            </span>
         </div>
     @endif
     <div class="tx-row">

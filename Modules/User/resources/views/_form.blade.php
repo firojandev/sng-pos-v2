@@ -20,6 +20,10 @@
         :required="true"
     />
 
+    @php
+        $isOwner = $isEdit && $user->isShopOwner();
+    @endphp
+
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
         <x-core::input
             name="username"
@@ -31,28 +35,42 @@
             size="sm"
         />
 
-        <x-core::input
-            name="phone"
-            type="text"
-            label="ফোন নম্বর (ঐচ্ছিক)"
-            label-en="Phone Number (Optional)"
-            value="{{ old('phone', $user->phone) }}"
-            placeholder="যেমন: 017xxxxxxxx"
-            placeholder-en="e.g. 017xxxxxxxx"
-            size="sm"
-        />
+        @if ($isOwner)
+            <x-core::input
+                name="phone"
+                type="text"
+                label="ফোন নম্বর (মালিকের নম্বর অপরিবর্তনযোগ্য)"
+                label-en="Phone Number (Locked for Shop Owner)"
+                value="{{ $user->phone }}"
+                size="sm"
+                :readonly="true"
+                helper="দোকানের মালিকের ফোন নম্বর পরিবর্তন করা যাবে না।"
+                helper-en="Shop owner phone number cannot be modified."
+            />
+        @else
+            <x-core::input
+                name="phone"
+                type="text"
+                label="{{ $isEdit ? 'ফোন নম্বর (ঐচ্ছিক)' : 'ফোন নম্বর' }}"
+                label-en="{{ $isEdit ? 'Phone Number (Optional)' : 'Phone Number' }}"
+                :value="old('phone', $user->phone)"
+                placeholder="যেমন: 017xxxxxxxx"
+                placeholder-en="e.g. 017xxxxxxxx"
+                size="sm"
+                :required="!$isEdit"
+            />
+        @endif
     </div>
 
     <x-core::input
         name="email"
         type="email"
-        label="ইমেইল অ্যাড্রেস"
-        label-en="Email Address"
-        value="{{ old('email', $user->email) }}"
+        label="ইমেইল অ্যাড্রেস (ঐচ্ছিক)"
+        label-en="Email Address (Optional)"
+        :value="old('email', $user->email)"
         placeholder="user@example.com"
         placeholder-en="user@example.com"
         size="sm"
-        :required="true"
     />
 
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">

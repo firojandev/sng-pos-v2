@@ -23,14 +23,14 @@
         @endif
     </div>
 
-    <div class="top-search">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
-            <path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-        <input placeholder="খুঁজুন..." class="bn-ph" aria-label="Search">
-        <span class="search-kbd">⌘K</span>
-    </div>
+{{--    <div class="top-search">--}}
+{{--        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">--}}
+{{--            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>--}}
+{{--            <path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>--}}
+{{--        </svg>--}}
+{{--        <input placeholder="খুঁজুন..." class="bn-ph" aria-label="Search">--}}
+{{--        <span class="search-kbd">⌘K</span>--}}
+{{--    </div>--}}
 
     <div class="top-actions">
         @php
@@ -39,7 +39,56 @@
                 ? $authUser->activeShops()->get()
                 : collect();
             $currentShop = $authUser?->shop;
+            $canQuickSale = $authUser && $currentShop && $currentShop->hasFeature('quick-sale') && $authUser->can('quick-sale.create');
         @endphp
+
+        @if ($canQuickSale)
+            <style>
+                .btn-quick-sale-topbar {
+                    display: inline-flex; align-items: center; gap: 6px;
+                    font-weight: 600; font-size: 12px; padding: 5px 12px;
+                    border-radius: 8px; border: 1px solid var(--border);
+                    background: var(--card); color: var(--ink-800);
+                    cursor: pointer; height: 32px; transition: all 0.15s ease;
+                }
+                .btn-quick-sale-topbar:hover {
+                    border-color: #0d9488; color: #0f766e;
+                    background: rgba(13, 148, 136, 0.08);
+                }
+                [data-theme="dark"] .btn-quick-sale-topbar,
+                :root[data-theme="dark"] .btn-quick-sale-topbar {
+                    color: #cbd5e1;
+                }
+                [data-theme="dark"] .btn-quick-sale-topbar:hover,
+                :root[data-theme="dark"] .btn-quick-sale-topbar:hover {
+                    color: #2dd4bf; border-color: #0d9488;
+                    background: rgba(20, 184, 166, 0.18);
+                }
+                .quick-sale-kbd {
+                    font-size: 10px; font-family: monospace;
+                    background: var(--paper-line); color: var(--ink-500);
+                    padding: 1px 5px; border-radius: 4px;
+                }
+                [data-theme="dark"] .quick-sale-kbd,
+                :root[data-theme="dark"] .quick-sale-kbd {
+                    background: rgba(255, 255, 255, 0.08); color: #94a3b8;
+                }
+            </style>
+            <button
+                type="button"
+                class="btn-quick-sale-topbar"
+                data-quick-sale-trigger="true"
+                title="দ্রুত বেচা (Alt+Q) / Quick Sale"
+            >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--teal-800);">
+                    <circle cx="12" cy="12" r="9.2"/>
+                    <path d="M12 7.5v9M8.7 15.3c0 1.2 1.2 2.1 3.3 2.1s3.3-.9 3.3-2.1c0-3-6.6-1.2-6.6-4.1 0-1.2 1.2-2.1 3.3-2.1s3.3.9 3.3 2.1"/>
+                </svg>
+                <span class="bn">দ্রুত বেচা</span>
+                <span class="en" style="display:none;">Quick Sale</span>
+                <span class="quick-sale-kbd">Alt+Q</span>
+            </button>
+        @endif
 
         @if ($accessibleShops->count() > 1)
             <style>
@@ -209,12 +258,12 @@
             <x-core::lang-switcher />
         </div>
 
-        <div class="icbtn" onclick="toast('৩টি নতুন নোটিফিকেশন','3 new notifications')" title="নোটিফিকেশন / Notifications" aria-label="Notifications">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M12 3C9 3 7 5.3 7 8.2V11c0 1-.4 2-1.1 2.7L5 14.6V16h14v-1.4l-.9-.9C17.4 13 17 12 17 11V8.2C17 5.3 15 3 12 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
-            </svg>
-            <div class="dot"></div>
-        </div>
+{{--        <div class="icbtn" onclick="toast('৩টি নতুন নোটিফিকেশন','3 new notifications')" title="নোটিফিকেশন / Notifications" aria-label="Notifications">--}}
+{{--            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">--}}
+{{--                <path d="M12 3C9 3 7 5.3 7 8.2V11c0 1-.4 2-1.1 2.7L5 14.6V16h14v-1.4l-.9-.9C17.4 13 17 12 17 11V8.2C17 5.3 15 3 12 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>--}}
+{{--            </svg>--}}
+{{--            <div class="dot"></div>--}}
+{{--        </div>--}}
 
         <div class="user-menu-dropdown">
             <button
@@ -296,17 +345,19 @@
                         </div>
                     </a>
 
-                    <a href="{{ route('settings.index') }}" class="user-menu-link">
-                        <svg class="user-menu-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
-                        </svg>
-                        <div class="user-menu-item-text">
-                            <span class="bn">সেটিংস</span>
-                            <span class="en" style="display:none;">Settings</span>
-                        </div>
-                    </a>
+                    @if ($authUser?->isShopAdmin())
+                        <a href="{{ route('settings.index') }}" class="user-menu-link">
+                            <svg class="user-menu-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
+                            </svg>
+                            <div class="user-menu-item-text">
+                                <span class="bn">সেটিংস</span>
+                                <span class="en" style="display:none;">Settings</span>
+                            </div>
+                        </a>
+                    @endif
 
-                    @if (! $authUser?->isSuperAdmin() && $authUser?->shop?->hasFeature('subscription') && Route::has('subscription.show'))
+                    @if ($authUser?->shop && ($authUser->isSuperAdmin() || $authUser->shop->hasFeature('subscription')) && Route::has('subscription.show'))
                         <a href="{{ route('subscription.show') }}" class="user-menu-link">
                             <svg class="user-menu-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>

@@ -20,15 +20,15 @@
 
 <style>
     .purchase-invoice-sheet {
-        background: #ffffff;
+        background: var(--card, #ffffff);
         width: 100%;
         max-width: 700px;
         margin: 0 auto;
         padding: 24px 28px;
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--border, #e2e8f0);
         border-radius: 4px;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-        color: #0f172a;
+        box-shadow: var(--shadow-card, 0 1px 4px rgba(0, 0, 0, 0.06));
+        color: var(--ink-900, #0f172a);
         font-family: 'Noto Sans Bengali', sans-serif;
         box-sizing: border-box;
     }
@@ -39,10 +39,14 @@
         table-layout: fixed !important;
         border-collapse: separate !important;
         border-spacing: 0 !important;
-        border: 1px solid #94a3b8 !important;
+        border: 1px solid var(--border, #94a3b8) !important;
         margin-top: 14px !important;
         margin-bottom: 14px !important;
         font-size: 11.5px !important;
+        color: var(--ink-900, #0f172a) !important;
+    }
+    .purchase-invoice-sheet table.invoice-items-table tbody td {
+        white-space: normal;
     }
     .purchase-invoice-sheet table.invoice-items-table th,
     .purchase-invoice-sheet table.invoice-items-table td {
@@ -51,35 +55,67 @@
         word-break: break-word !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
+        color: var(--ink-900, #0f172a);
+        border-color: var(--border, #94a3b8) !important;
+    }
+    .purchase-invoice-sheet table.invoice-items-table th {
+        background: var(--paper-line, #f8fafc);
+        color: var(--ink-900, #0f172a) !important;
+    }
+    .purchase-invoice-sheet table.invoice-items-table td.col-product-name,
+    .purchase-invoice-sheet table.invoice-items-table td.col-product-name div,
+    .purchase-invoice-sheet table.invoice-items-table .product-title {
+        white-space: normal !important;
+        word-break: break-word !important;
+        overflow-wrap: anywhere !important;
+        line-height: 1.4 !important;
+        color: var(--ink-900, #0f172a);
+    }
+    @media print {
+        .purchase-invoice-sheet {
+            background: #ffffff !important;
+            color: #000000 !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        .purchase-invoice-sheet,
+        .purchase-invoice-sheet * {
+            color: #000000 !important;
+            border-color: #94a3b8 !important;
+        }
     }
 </style>
 
 <div class="purchase-invoice-sheet" id="purchaseInvoiceSheet">
     {{-- Top Header with Shop Info --}}
     <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:10px;">
-        {{-- Shop Storefront Illustration Icon matching reference UI --}}
+        {{-- Shop Storefront Illustration Icon or Logo --}}
         <div style="flex-shrink:0; width:48px; height:48px; border-radius:6px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
-            <svg width="46" height="46" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="7" y="19" width="34" height="23" rx="2" fill="#38bdf8" stroke="#0f172a" stroke-width="2"/>
-                <rect x="19" y="27" width="10" height="15" fill="#0f172a"/>
-                <rect x="11" y="25" width="5" height="8" rx="1" fill="#f8fafc" stroke="#0f172a" stroke-width="1.5"/>
-                <rect x="32" y="25" width="5" height="8" rx="1" fill="#f8fafc" stroke="#0f172a" stroke-width="1.5"/>
-                <path d="M4 18L9 8H39L44 18H4Z" fill="#ea580c" stroke="#0f172a" stroke-width="2" stroke-linejoin="round"/>
-                <path d="M4 18C4 20.5 6 22 8.5 22C11 22 13 20.5 13 18C13 20.5 15 22 17.5 22C20 22 22 20.5 22 18C22 20.5 24 22 26.5 22C29 22 31 20.5 31 18C31 20.5 33 22 35.5 22C38 22 40 20.5 40 18C40 20.5 41.8 22 44 22" stroke="#0f172a" stroke-width="2" fill="#f97316"/>
-            </svg>
+            @if(!empty($shop?->logo))
+                <img src="{{ $shop->logo_url ?? asset($shop->logo) }}" alt="Shop Logo" style="max-width:48px; max-height:48px; object-fit:contain;">
+            @else
+                <svg width="46" height="46" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="7" y="19" width="34" height="23" rx="2" fill="#38bdf8" stroke="#0f172a" stroke-width="2"/>
+                    <rect x="19" y="27" width="10" height="15" fill="#0f172a"/>
+                    <rect x="11" y="25" width="5" height="8" rx="1" fill="#f8fafc" stroke="#0f172a" stroke-width="1.5"/>
+                    <rect x="32" y="25" width="5" height="8" rx="1" fill="#f8fafc" stroke="#0f172a" stroke-width="1.5"/>
+                    <path d="M4 18L9 8H39L44 18H4Z" fill="#ea580c" stroke="#0f172a" stroke-width="2" stroke-linejoin="round"/>
+                    <path d="M4 18C4 20.5 6 22 8.5 22C11 22 13 20.5 13 18C13 20.5 15 22 17.5 22C20 22 22 20.5 22 18C22 20.5 24 22 26.5 22C29 22 31 20.5 31 18C31 20.5 33 22 35.5 22C38 22 40 20.5 40 18C40 20.5 41.8 22 44 22" stroke="#0f172a" stroke-width="2" fill="#f97316"/>
+                </svg>
+            @endif
         </div>
 
         <div>
-            <div style="font-size:17px; font-weight:800; color:#0f172a; line-height:1.2;">
+            <div style="font-size:17px; font-weight:800; color:var(--ink-900, #0f172a); line-height:1.2;">
                 {{ $shop->name ?? 'ব্যবসা প্রতিষ্ঠান' }}
             </div>
             @if(!empty($shop->address))
-                <div style="font-size:12px; color:#475569; margin-top:2px;">
+                <div style="font-size:12px; color:var(--ink-600, #475569); margin-top:2px;">
                     {{ $shop->address }}
                 </div>
             @endif
             @if(!empty($shop->phone))
-                <div style="font-size:12px; color:#475569; margin-top:1px;">
+                <div style="font-size:12px; color:var(--ink-600, #475569); margin-top:1px;">
                     {{ $shop->phone }}
                 </div>
             @endif
@@ -87,15 +123,15 @@
     </div>
 
     {{-- Horizontal Border Line --}}
-    <div style="border-top:2px solid #94a3b8; margin:10px 0 8px 0;"></div>
+    <div style="border-top:2px solid var(--border, #94a3b8); margin:10px 0 8px 0;"></div>
 
     {{-- Large Centered Title --}}
-    <div style="text-align:center; font-size:23px; font-weight:800; color:#000000; letter-spacing:0.5px; margin-bottom:12px;">
+    <div style="text-align:center; font-size:23px; font-weight:800; color:var(--ink-900, #000000); letter-spacing:0.5px; margin-bottom:12px;">
         ইনভয়েস
     </div>
 
     {{-- Metadata: Supplier & Purchase Information --}}
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; font-size:12px; line-height:1.6; margin-bottom:16px;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; font-size:12px; line-height:1.6; margin-bottom:16px; color:var(--ink-900, #0f172a);">
         <div style="width:50%;">
             <div><b>সাপ্লায়ার:</b> {{ $purchase->supplier->name ?? 'সাধারণ সরবরাহকারী' }}</div>
             @if(!empty(trim($purchase->supplier?->phone ?? '')))
@@ -113,7 +149,7 @@
     </div>
 
     {{-- Items Table --}}
-    <table class="invoice-items-table" style="width:100%; min-width:0; max-width:100%; table-layout:fixed; border-collapse:separate !important; border-spacing:0 !important; border:1px solid #94a3b8 !important; margin-top:14px; margin-bottom:14px; font-size:11.5px;">
+    <table class="invoice-items-table" style="width:100%; min-width:0; max-width:100%; table-layout:fixed; border-collapse:separate !important; border-spacing:0 !important; border:1px solid var(--border, #94a3b8) !important; margin-top:14px; margin-bottom:14px; font-size:11.5px;">
         <colgroup>
             <col style="width:5%;">
             <col style="width:33%;">
@@ -125,15 +161,15 @@
             <col style="width:12%;">
         </colgroup>
         <thead>
-            <tr style="background:transparent;">
-                <th style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; font-weight:700;">#</th>
-                <th style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 8px; text-align:center; font-weight:700;">পণ্যের নাম</th>
-                <th style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; font-weight:700;">অর্ডার</th>
-                <th style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; font-weight:700;">গৃহীত</th>
-                <th style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; font-weight:700;">বাকি</th>
-                <th style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; font-weight:700;">ইউনিট</th>
-                <th style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 6px; text-align:center; font-weight:700;">ইউনিট মূল্য</th>
-                <th style="border-bottom:1px solid #94a3b8 !important; border-right:none; border-top:none; border-left:none; padding:6px 6px; text-align:center; font-weight:700;">মোট</th>
+            <tr style="background:var(--paper-line, #f8fafc);">
+                <th style="border-right:1px solid var(--border, #94a3b8) !important; border-bottom:1px solid var(--border, #94a3b8) !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; font-weight:700; color:var(--ink-900, #0f172a);">#</th>
+                <th style="border-right:1px solid var(--border, #94a3b8) !important; border-bottom:1px solid var(--border, #94a3b8) !important; border-top:none; border-left:none; padding:6px 8px; text-align:center; font-weight:700; color:var(--ink-900, #0f172a);">পণ্যের নাম</th>
+                <th style="border-right:1px solid var(--border, #94a3b8) !important; border-bottom:1px solid var(--border, #94a3b8) !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; font-weight:700; color:var(--ink-900, #0f172a);">অর্ডার</th>
+                <th style="border-right:1px solid var(--border, #94a3b8) !important; border-bottom:1px solid var(--border, #94a3b8) !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; font-weight:700; color:var(--ink-900, #0f172a);">গৃহীত</th>
+                <th style="border-right:1px solid var(--border, #94a3b8) !important; border-bottom:1px solid var(--border, #94a3b8) !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; font-weight:700; color:var(--ink-900, #0f172a);">বাকি</th>
+                <th style="border-right:1px solid var(--border, #94a3b8) !important; border-bottom:1px solid var(--border, #94a3b8) !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; font-weight:700; color:var(--ink-900, #0f172a);">ইউনিট</th>
+                <th style="border-right:1px solid var(--border, #94a3b8) !important; border-bottom:1px solid var(--border, #94a3b8) !important; border-top:none; border-left:none; padding:6px 6px; text-align:center; font-weight:700; color:var(--ink-900, #0f172a);">ইউনিট মূল্য</th>
+                <th style="border-bottom:1px solid var(--border, #94a3b8) !important; border-right:none; border-top:none; border-left:none; padding:6px 6px; text-align:center; font-weight:700; color:var(--ink-900, #0f172a);">মোট</th>
             </tr>
         </thead>
         <tbody>
@@ -148,55 +184,55 @@
                     $pendingQty = max(0.0, (float) $item->quantity - $receivedQty);
                 @endphp
                 <tr>
-                    <td style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; vertical-align:middle;">
+                    <td style="border-right:1px solid var(--border, #94a3b8) !important; border-bottom:1px solid var(--border, #94a3b8) !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; vertical-align:middle; color:var(--ink-900, #0f172a);">
                         {{ BanglaNumber::toBn($idx + 1) }}.
                     </td>
-                    <td style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 8px; text-align:left; vertical-align:middle;">
-                        <div style="font-weight:600; color:#0f172a;">{{ $item->product->name ?? '—' }}</div>
+                    <td class="col-product-name" style="border-right:1px solid var(--border, #94a3b8) !important; border-bottom:1px solid var(--border, #94a3b8) !important; border-top:none; border-left:none; padding:6px 8px; text-align:left; vertical-align:middle; white-space:normal !important; word-break:break-word; overflow-wrap:anywhere;">
+                        <div class="product-title" style="font-weight:600; color:var(--ink-900, #0f172a); white-space:normal !important; word-break:break-word; overflow-wrap:anywhere; line-height:1.4;">{{ $item->product->name ?? '—' }}</div>
                         @if ($barcode)
-                            <div style="font-size:10.5px; color:#64748b; margin-top:1px;">
+                            <div style="font-size:10.5px; color:var(--ink-400, #64748b); margin-top:2px; white-space:normal !important; word-break:break-word;">
                                 বারকোড: {{ $barcode }}
                             </div>
                         @endif
                     </td>
-                    <td style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; vertical-align:middle; white-space:nowrap;">
+                    <td style="border-right:1px solid var(--border, #94a3b8) !important; border-bottom:1px solid var(--border, #94a3b8) !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; vertical-align:middle; white-space:nowrap; color:var(--ink-900, #0f172a);">
                         {{ BanglaNumber::toBn(rtrim(rtrim(number_format((float) $item->quantity, 2), '0'), '.')) }}
                     </td>
-                    <td style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; vertical-align:middle; white-space:nowrap; color:#0f766e; font-weight:600;">
+                    <td style="border-right:1px solid var(--border, #94a3b8) !important; border-bottom:1px solid var(--border, #94a3b8) !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; vertical-align:middle; white-space:nowrap; color:var(--green-ink, #0f766e); font-weight:600;">
                         {{ BanglaNumber::toBn(rtrim(rtrim(number_format($receivedQty, 2), '0'), '.')) }}
                     </td>
-                    <td style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; vertical-align:middle; white-space:nowrap; {{ $pendingQty > 0 ? 'color:#dc2626; font-weight:700;' : 'color:#64748b;' }}">
+                    <td style="border-right:1px solid var(--border, #94a3b8) !important; border-bottom:1px solid var(--border, #94a3b8) !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; vertical-align:middle; white-space:nowrap; {{ $pendingQty > 0 ? 'color:var(--red-ink, #dc2626); font-weight:700;' : 'color:var(--ink-400, #64748b);' }}">
                         {{ BanglaNumber::toBn(rtrim(rtrim(number_format($pendingQty, 2), '0'), '.')) }}
                     </td>
-                    <td style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; vertical-align:middle; white-space:nowrap;">
+                    <td style="border-right:1px solid var(--border, #94a3b8) !important; border-bottom:1px solid var(--border, #94a3b8) !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; vertical-align:middle; white-space:nowrap; color:var(--ink-900, #0f172a);">
                         {{ $unitName }}
                     </td>
-                    <td style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 8px; text-align:right; vertical-align:middle; white-space:nowrap;">
+                    <td style="border-right:1px solid var(--border, #94a3b8) !important; border-bottom:1px solid var(--border, #94a3b8) !important; border-top:none; border-left:none; padding:6px 8px; text-align:right; vertical-align:middle; white-space:nowrap; color:var(--ink-900, #0f172a);">
                         {{ BanglaNumber::toBnMoney($item->purchase_price) }}
                     </td>
-                    <td style="border-bottom:1px solid #94a3b8 !important; border-right:none; border-top:none; border-left:none; padding:6px 8px; text-align:right; vertical-align:middle; white-space:nowrap;">
+                    <td style="border-bottom:1px solid var(--border, #94a3b8) !important; border-right:none; border-top:none; border-left:none; padding:6px 8px; text-align:right; vertical-align:middle; white-space:nowrap; color:var(--ink-900, #0f172a);">
                         {{ BanglaNumber::toBnMoney($item->total) }}
                     </td>
                 </tr>
             @endforeach
 
             {{-- Table Subtotal Row with all vertical grid borders intact --}}
-            <tr style="font-weight:700;">
-                <td colspan="2" style="border-right:1px solid #94a3b8 !important; border-bottom:none; border-top:none; border-left:none; padding:6px 8px; text-align:center;">
+            <tr style="font-weight:700; color:var(--ink-900, #0f172a);">
+                <td colspan="2" style="border-right:1px solid var(--border, #94a3b8) !important; border-bottom:none; border-top:none; border-left:none; padding:6px 8px; text-align:center; color:var(--ink-900, #0f172a);">
                     মোট
                 </td>
-                <td style="border-right:1px solid #94a3b8 !important; border-bottom:none; border-top:none; border-left:none; padding:6px 4px; text-align:center; white-space:nowrap;">
+                <td style="border-right:1px solid var(--border, #94a3b8) !important; border-bottom:none; border-top:none; border-left:none; padding:6px 4px; text-align:center; white-space:nowrap; color:var(--ink-900, #0f172a);">
                     {{ BanglaNumber::toBn(rtrim(rtrim(number_format((float) $purchase->items->sum('quantity'), 2), '0'), '.')) }}
                 </td>
-                <td style="border-right:1px solid #94a3b8 !important; border-bottom:none; border-top:none; border-left:none; padding:6px 4px; text-align:center; white-space:nowrap; color:#0f766e;">
+                <td style="border-right:1px solid var(--border, #94a3b8) !important; border-bottom:none; border-top:none; border-left:none; padding:6px 4px; text-align:center; white-space:nowrap; color:var(--green-ink, #0f766e);">
                     {{ BanglaNumber::toBn(rtrim(rtrim(number_format((float) $purchase->items->sum(fn ($i) => (float) ($i->received_quantity ?? $i->quantity)), 2), '0'), '.')) }}
                 </td>
-                <td style="border-right:1px solid #94a3b8 !important; border-bottom:none; border-top:none; border-left:none; padding:6px 4px; text-align:center; white-space:nowrap; color:#dc2626;">
+                <td style="border-right:1px solid var(--border, #94a3b8) !important; border-bottom:none; border-top:none; border-left:none; padding:6px 4px; text-align:center; white-space:nowrap; color:var(--red-ink, #dc2626);">
                     {{ BanglaNumber::toBn(rtrim(rtrim(number_format((float) $purchase->items->sum(fn ($i) => $i->pendingQuantity()), 2), '0'), '.')) }}
                 </td>
-                <td style="border-right:1px solid #94a3b8 !important; border-bottom:none; border-top:none; border-left:none; padding:6px 4px;"></td>
-                <td style="border-right:1px solid #94a3b8 !important; border-bottom:none; border-top:none; border-left:none; padding:6px 6px;"></td>
-                <td style="border:none; padding:6px 8px; text-align:right; white-space:nowrap;">
+                <td style="border-right:1px solid var(--border, #94a3b8) !important; border-bottom:none; border-top:none; border-left:none; padding:6px 4px;"></td>
+                <td style="border-right:1px solid var(--border, #94a3b8) !important; border-bottom:none; border-top:none; border-left:none; padding:6px 6px;"></td>
+                <td style="border:none; padding:6px 8px; text-align:right; white-space:nowrap; color:var(--ink-900, #0f172a);">
                     {{ BanglaNumber::toBnMoney($purchase->subtotal) }}
                 </td>
             </tr>
@@ -204,7 +240,7 @@
     </table>
 
     {{-- Lower Summary Section (2 Columns) --}}
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; font-size:12px; line-height:1.5; color:#0f172a;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; font-size:12px; line-height:1.5; color:var(--ink-900, #0f172a);">
         {{-- Left Column: Dues, Words & Signatures --}}
         <div style="width:48%;">
             <div style="display:flex; justify-content:space-between; max-width:210px; margin-bottom:2px;">
@@ -215,24 +251,24 @@
                 <span><b>বর্তমান বাকি:</b></span>
                 <span>৳ {{ BanglaNumber::toBnMoney($currentDue) }}</span>
             </div>
-            <div style="border-top:1px solid #94a3b8; max-width:210px; margin:4px 0 6px 0;"></div>
+            <div style="border-top:1px solid var(--border, #94a3b8); max-width:210px; margin:4px 0 6px 0;"></div>
             <div style="display:flex; justify-content:space-between; max-width:210px; margin-bottom:8px;">
                 <span><b>টোটাল বাকি:</b></span>
                 <span>৳ {{ BanglaNumber::toBnMoney($totalSupplierDue) }}</span>
             </div>
 
             <div style="margin-top:14px;">
-                <div style="font-weight:700; margin-bottom:2px;">অ্যামাউন্ট (কথায়):</div>
-                <div style="color:#1e293b; font-size:11.5px; line-height:1.4;">
+                <div style="font-weight:700; margin-bottom:2px; color:var(--ink-900, #0f172a);">অ্যামাউন্ট (কথায়):</div>
+                <div style="color:var(--ink-700, #1e293b); font-size:11.5px; line-height:1.4;">
                     {{ BanglaNumber::toBnWords($purchase->total) }}
                 </div>
             </div>
 
             <div style="margin-top:42px;">
-                <div style="border-top:1px solid #94a3b8; width:135px; text-align:center; padding-top:4px; font-size:11px; font-weight:600;">
+                <div style="border-top:1px solid var(--border, #94a3b8); width:135px; text-align:center; padding-top:4px; font-size:11px; font-weight:600; color:var(--ink-700, #334155);">
                     ক্রেতার স্বাক্ষর
                 </div>
-                <div style="font-size:9.5px; color:#64748b; margin-top:3px;">
+                <div style="font-size:9.5px; color:var(--ink-400, #64748b); margin-top:3px;">
                     প্রিন্ট করার সময়: {{ $printTime }}
                 </div>
             </div>
@@ -241,50 +277,48 @@
         {{-- Right Column: Financial Totals --}}
         <div style="width:44%;">
             <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                <span style="color:#334155;">সাব টোটাল</span>
-                <span style="font-weight:600;">{{ BanglaNumber::toBnMoney($purchase->subtotal) }}</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                <span style="color:#334155;">(-) ছাড়</span>
-                <span>৳ {{ BanglaNumber::toBnMoney($purchase->discount) }}</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                <span style="color:#334155;">ডেলিভারি</span>
-                <span>৳ {{ BanglaNumber::toBnMoney($purchase->delivery_charge) }}</span>
+                <span style="color:var(--ink-700, #334155);">সাব টোটাল</span>
+                <span style="font-weight:600; color:var(--ink-900, #0f172a);">{{ BanglaNumber::toBnMoney($purchase->subtotal) }}</span>
             </div>
             @if((float) $purchase->transportation_cost > 0)
                 <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                    <span style="color:#334155;">পরিবহন খরচ</span>
-                    <span>৳ {{ BanglaNumber::toBnMoney($purchase->transportation_cost) }}</span>
+                    <span style="color:var(--ink-700, #334155);">পরিবহন খরচ</span>
+                    <span style="color:var(--ink-900, #0f172a);">৳ {{ BanglaNumber::toBnMoney($purchase->transportation_cost) }}</span>
                 </div>
             @endif
             @if((float) $purchase->adjustment_cost != 0)
                 <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                    <span style="color:#334155;">অ্যাডজাস্টমেন্ট</span>
-                    <span>৳ {{ BanglaNumber::toBnMoney($purchase->adjustment_cost) }}</span>
+                    <span style="color:var(--ink-700, #334155);">অ্যাডজাস্টমেন্ট</span>
+                    <span style="color:var(--ink-900, #0f172a);">৳ {{ BanglaNumber::toBnMoney($purchase->adjustment_cost) }}</span>
                 </div>
             @endif
 
-            <div style="border-top:1px solid #94a3b8; margin:4px 0 6px 0;"></div>
+            <div style="border-top:1px solid var(--border, #94a3b8); margin:4px 0 6px 0;"></div>
 
-            <div style="display:flex; justify-content:space-between; margin-bottom:2px; font-weight:700;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:2px; font-weight:700; color:var(--ink-900, #0f172a);">
                 <span>মোট</span>
                 <span>{{ BanglaNumber::toBnMoney($purchase->total) }}</span>
             </div>
             <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                <span style="color:#334155;">পরিশোধিত</span>
-                <span style="font-weight:600;">{{ BanglaNumber::toBnMoney($purchase->paid_amount) }}</span>
+                <span style="color:var(--ink-700, #334155);">পরিশোধিত</span>
+                <span style="font-weight:600; color:var(--ink-900, #0f172a);">{{ BanglaNumber::toBnMoney($purchase->paid_amount) }}</span>
             </div>
             <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                <span style="color:#334155;">বাকি আছে</span>
-                <span style="font-weight:600; {{ (float)$purchase->due_amount > 0 ? 'color:#dc2626;' : '' }}">৳ {{ BanglaNumber::toBnMoney($purchase->due_amount) }}</span>
+                <span style="color:var(--ink-700, #334155);">বাকি আছে</span>
+                <span style="font-weight:600; {{ (float)$purchase->due_amount > 0 ? 'color:var(--red-ink, #dc2626);' : 'color:var(--ink-900, #0f172a);' }}">৳ {{ BanglaNumber::toBnMoney($purchase->due_amount) }}</span>
             </div>
 
             <div style="margin-top:54px; display:flex; justify-content:flex-end;">
-                <div style="border-top:1px solid #94a3b8; width:135px; text-align:center; padding-top:4px; font-size:11px; font-weight:600;">
+                <div style="border-top:1px solid var(--border, #94a3b8); width:135px; text-align:center; padding-top:4px; font-size:11px; font-weight:600; color:var(--ink-700, #334155);">
                     বিক্রেতার স্বাক্ষর
                 </div>
             </div>
         </div>
     </div>
+
+    @if(!empty($shop?->invoice_footer))
+        <div style="margin-top:16px; border-top:1px dashed var(--border, #cbd5e1); padding-top:8px; font-size:11px; color:var(--ink-600, #475569); text-align:center;">
+            {{ $shop->invoice_footer }}
+        </div>
+    @endif
 </div>

@@ -13,7 +13,6 @@ use Modules\Purchase\DataTables\PurchasesDataTable;
 use Modules\Purchase\Models\Purchase;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
 use Modules\Shop\Models\Branch;
-use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
 use Modules\Shop\Models\Warehouse;
 use Modules\Supplier\Models\Supplier;
@@ -51,13 +50,8 @@ class PurchasesDataTableTest extends TestCase
             'name' => 'Purchase Test Shop',
             'slug' => 'purchase-test-shop',
             'status' => 'active',
-            'enabled_features' => Features::keys(),
         ]);
-
-        $standardPlan = Plan::where('slug', 'standard')->first();
-        if ($standardPlan) {
-            $this->shop->subscribe($standardPlan);
-        }
+        $this->subscribeShopToFeatures($this->shop, Features::keys());
 
         $this->user = User::create([
             'name' => 'Purchase Admin',
@@ -132,7 +126,9 @@ class PurchasesDataTableTest extends TestCase
         $response->assertSee('btn-reset-filters');
         $response->assertSee('filter-from');
         $response->assertSee('filter-to');
+        $response->assertSee('filter-supplier');
         $response->assertSee('filter-status');
+        $response->assertSee('Acme Supplies');
         $response->assertSee('total-purchase-amount');
         $response->assertSee('total-paid-amount');
         $response->assertSee('total-due-amount');
@@ -344,5 +340,104 @@ class PurchasesDataTableTest extends TestCase
         $response->assertSee('800.00');
         $response->assertSee('500.00');
         $response->assertSee('300.00');
+    }
+
+    public function test_purchases_datatable_ajax_filters_by_supplier(): void
+    {
+        $supplierTwo = Supplier::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Delta Traders',
+            'phone' => '01899887766',
+            'status' => 'active',
+        ]);
+
+        Purchase::create([
+            'shop_id' => $this->shop->id,
+            'warehouse_id' => $this->warehouse->id,
+            'supplier_id' => $this->supplier->id,
+            'invoice_no' => 'INV-SUP-1',
+            'purchase_date' => '2026-09-08',
+            'subtotal' => 500,
+            'total' => 500,
+            'paid_amount' => 500,
+            'due_amount' => 0,
+            'payment_status' => 'paid',
+        ]);
+
+        Purchase::create([
+            'shop_id' => $this->shop->id,
+            'warehouse_id' => $this->warehouse->id,
+            'supplier_id' => $supplierTwo->id,
+            'invoice_no' => 'INV-SUP-2',
+            'purchase_date' => '2026-09-09',
+            'subtotal' => 750,
+            'total' => 750,
+            'paid_amount' => 250,
+            'due_amount' => 500,
+            'payment_status' => 'partial',
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->getJson(route('purchase.ledger', ['supplier_id' => $supplierTwo->id]), [
+                'X-Requested-With' => 'XMLHttpRequest',
+            ]);
+
+        $response->assertOk();
+        $json = $response->json();
+        $this->assertEquals(1, $json['recordsFiltered']);
+        $this->assertStringContainsString('INV-SUP-2', $json['data'][0]['invoice_no']);
+        $this->assertStringContainsString('Delta Traders', $json['data'][0]['supplier']);
+        $this->assertEquals('750.00', $json['totalAmount']);
+        $this->assertEquals('250.00', $json['totalPaid']);
+        $this->assertEquals('500.00', $json['totalDue']);
+    }
+
+    public function test_purchase_ledger_print_page_filters_by_supplier(): void
+    {
+        $supplierTwo = Supplier::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'Delta Traders',
+            'phone' => '01899887766',
+            'status' => 'active',
+        ]);
+
+        Purchase::create([
+            'shop_id' => $this->shop->id,
+            'warehouse_id' => $this->warehouse->id,
+            'supplier_id' => $this->supplier->id,
+            'invoice_no' => 'INV-PRINT-SUP-1',
+            'purchase_date' => now()->toDateString(),
+            'subtotal' => 400,
+            'total' => 400,
+            'paid_amount' => 400,
+            'due_amount' => 0,
+            'payment_status' => 'paid',
+        ]);
+
+        Purchase::create([
+            'shop_id' => $this->shop->id,
+            'warehouse_id' => $this->warehouse->id,
+            'supplier_id' => $supplierTwo->id,
+            'invoice_no' => 'INV-PRINT-SUP-2',
+            'purchase_date' => now()->toDateString(),
+            'subtotal' => 950,
+            'total' => 950,
+            'paid_amount' => 600,
+            'due_amount' => 350,
+            'payment_status' => 'partial',
+        ]);
+
+        $response = $this->actingAs($this->user)->get(route('purchase.ledger.print', [
+            'supplier_id' => $supplierTwo->id,
+        ]));
+
+        $response->assertOk();
+        $response->assertSee('INV-PRINT-SUP-2');
+        $response->assertDontSee('INV-PRINT-SUP-1');
+        $response->assertSee('Delta Traders');
+        $response->assertSee('01899887766');
+        $response->assertSee('950.00');
+        $response->assertSee('600.00');
+        $response->assertSee('350.00');
     }
 }

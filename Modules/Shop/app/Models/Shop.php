@@ -3,10 +3,13 @@
 namespace Modules\Shop\Models;
 
 use App\Models\User;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Modules\Finance\Models\Account;
 use Revoltify\Subscriptionify\Concerns\InteractsWithSubscriptions;
 use Revoltify\Subscriptionify\Contracts\Subscribable;
 use Revoltify\Subscriptionify\Enums\Interval;
@@ -24,14 +27,36 @@ class Shop extends Model implements Subscribable
         'slug',
         'store_code',
         'phone',
+        'email',
         'address',
+        'logo',
+        'invoice_footer',
+        'currency_symbol',
         'status',
-        'enabled_features',
     ];
 
-    protected $casts = [
-        'enabled_features' => 'array',
-    ];
+    /**
+     * Get the shop's logo URL.
+     */
+    protected function logoUrl(): Attribute
+    {
+        return Attribute::make(
+            get: function (): ?string {
+                if (! $this->logo) {
+                    return null;
+                }
+
+                if (str_starts_with($this->logo, 'http://') || str_starts_with($this->logo, 'https://')) {
+                    return $this->logo;
+                }
+
+                $clean = ltrim($this->logo, '/');
+                $path = str_starts_with($clean, 'storage/') ? $clean : 'storage/'.$clean;
+
+                return asset($path);
+            }
+        );
+    }
 
     protected static function booted(): void
     {
@@ -75,6 +100,38 @@ class Shop extends Model implements Subscribable
     }
 
     /**
+     * Accounts belonging to this shop.
+     */
+    public function accounts(): HasMany
+    {
+        return $this->hasMany(Account::class, 'shop_id');
+    }
+
+    /**
+     * The primary cash account of this shop.
+     */
+    public function cashAccount(): HasOne
+    {
+        return $this->hasOne(Account::class, 'shop_id')->where('type', 'cash');
+    }
+
+    /**
+     * Branches belonging to this shop.
+     */
+    public function branches(): HasMany
+    {
+        return $this->hasMany(Branch::class, 'shop_id');
+    }
+
+    /**
+     * Warehouses belonging to this shop.
+     */
+    public function warehouses(): HasMany
+    {
+        return $this->hasMany(Warehouse::class, 'shop_id');
+    }
+
+    /**
      * Active subscription relationship.
      */
     public function activeSubscription(): MorphOne
@@ -85,21 +142,15 @@ class Shop extends Model implements Subscribable
     }
 
     /**
-     * Check if feature is available via Subscriptionify or shop manual override.
+     * Check if a feature is granted via the shop's plan or a direct grant.
+     *
+     * Delegates to Subscriptionify's own resolution (plan features +
+     * per-shop direct grants). The alias is required because this method
+     * overrides the trait's `hasFeature` under the same name.
      */
     public function hasFeature(string $key): bool
     {
-        // 1. If manual override is explicitly configured in shop
-        if (is_array($this->enabled_features) && in_array($key, $this->enabled_features, true)) {
-            return true;
-        }
-
-        // 2. Check via Subscriptionify plan & direct grants
-        if ($this->subscribed()) {
-            return $this->subscriptionifyHasFeature($key);
-        }
-
-        return false;
+        return $this->subscriptionifyHasFeature($key);
     }
 
     public function grantFeature(

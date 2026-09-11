@@ -1,12 +1,25 @@
-<div class="field-row">
-    <div class="field" style="margin-top:0;">
-        <label class="bn">ইউনিটের নাম</label><label class="en" style="display:none;">Unit Name</label>
-        <input type="text" name="name" value="{{ old('name', $unit->name) }}" placeholder="যেমন কিলোগ্রাম" required>
-        @error('name') <div class="field-error">{{ $message }}</div> @enderror
-    </div>
-    <div class="field" style="margin-top:0;">
-        <label class="bn">সংক্ষিপ্ত কোড</label><label class="en" style="display:none;">Short Code</label>
-        <input type="text" name="short_code" value="{{ old('short_code', $unit->short_code) }}" placeholder="যেমন Kg" required>
-        @error('short_code') <div class="field-error">{{ $message }}</div> @enderror
-    </div>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+    <x-core::input
+        name="name"
+        id="unit_name"
+        label="ইউনিটের নাম"
+        label-en="Unit Name"
+        placeholder="যেমন: কিলোগ্রাম / পিস"
+        placeholder-en="e.g. Kilogram / Pcs"
+        :value="old('name', $unit->name ?? '')"
+        size="sm"
+        :required="true"
+    />
+
+    <x-core::input
+        name="short_code"
+        id="unit_short_code"
+        label="সংক্ষিপ্ত কোড"
+        label-en="Short Code"
+        placeholder="যেমন: Kg / Pcs"
+        placeholder-en="e.g. Kg / Pcs"
+        :value="old('short_code', $unit->short_code ?? '')"
+        size="sm"
+        :required="true"
+    />
 </div>

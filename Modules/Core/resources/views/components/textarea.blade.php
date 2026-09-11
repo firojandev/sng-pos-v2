@@ -3,6 +3,7 @@
     'id' => null,
     'value' => null,
     'placeholder' => null,
+    'placeholderEn' => null,
     'rows' => 3,
     'resize' => 'vertical',
     'maxLength' => null,
@@ -29,6 +30,16 @@
     $textValue = $value;
     if ($name && $value === null) {
         $textValue = old($name);
+    }
+
+    if (is_string($textValue)) {
+        $textValue = htmlspecialchars_decode($textValue, ENT_QUOTES);
+    }
+    if (is_string($placeholder)) {
+        $placeholder = htmlspecialchars_decode($placeholder, ENT_QUOTES);
+    }
+    if (is_string($placeholderEn)) {
+        $placeholderEn = htmlspecialchars_decode($placeholderEn, ENT_QUOTES);
     }
 
     $hasError = (bool) ($error || ($name && isset($errors) && $errors->has($name)));
@@ -123,7 +134,8 @@
                 @if ($name) name="{{ $name }}" @endif
                 @if ($inputId) id="{{ $inputId }}" @endif
                 rows="{{ $rows }}"
-                @if ($placeholder) placeholder="{{ $placeholder }}" @endif
+                @if ($placeholder) placeholder="{{ $placeholder }}" data-placeholder-bn="{{ $placeholder }}" @endif
+                @if ($placeholderEn) data-placeholder-en="{{ $placeholderEn }}" @endif
                 @if ($maxLength) maxlength="{{ $maxLength }}" @endif
                 @if ($required) required @endif
                 @if ($disabled) disabled @endif

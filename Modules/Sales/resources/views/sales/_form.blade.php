@@ -9,10 +9,19 @@
             'price' => (float) $product->sale_price,
             'stock' => (float) ($product->batches_sum_quantity ?? 0),
             'barcode' => $product->barcode,
+            'hasBarcode' => (bool) $product->has_barcode,
             'hasWarranty' => (bool) $product->has_warranty,
             'warrantyDuration' => $product->warranty_duration,
             'warrantyType' => $product->warranty_type,
             'baseUnitId' => $baseUnit?->id,
+            'isVat' => (bool) $product->is_vat,
+            'vatPercentage' => (float) ($product->vat_percentage ?? 0),
+            'isWholesale' => (bool) $product->is_wholesale,
+            'wholesalePrice' => (float) ($product->wholesale_price ?? 0),
+            'wholesaleMinQty' => (float) ($product->wholesale_min_qty ?? 1),
+            'hasDiscount' => (bool) $product->has_discount,
+            'discountType' => $product->discount_type ?? 'flat',
+            'discountValue' => (float) ($product->discount_value ?? 0),
             'units' => $product->units->map(function ($u) {
                 $raw = (float) $u->pivot->conversion_factor;
 
@@ -51,12 +60,15 @@
             'discount' => rtrim(rtrim(number_format($item->discount, 2, '.', ''), '0'), '.'),
             'barcode' => $item->product->barcode ?? '',
             'warrantyExpiresAt' => optional($item->warranty_expires_at)->format('Y-m-d') ?? '',
+            'isWholesale' => (bool) ($item->product?->is_wholesale && (float) $item->unit_price == (float) $item->product?->wholesale_price),
         ])->values()->toArray()
         : []
     );
 
     $initialDiscount = old('discount', $sale->discount ?? 0);
+    $initialTax = old('tax', $sale->tax ?? 0);
     $initialDeliveryCharge = old('delivery_charge', $sale->delivery_charge ?? 0);
+    $initialAdjustment = old('adjustment', $sale->adjustment ?? 0);
     $initialNote = old('note', $sale->note);
     $initialInvoiceNo = old('invoice_no', $sale->exists ? $sale->invoice_no : '');
     $initialCustomerId = old('customer_id', $sale->customer_id ?? request('customer_id'));
@@ -116,13 +128,13 @@
 </datalist>
 
 <div class="pos-header">
-    <div>
-        <div class="ttl bn">{{ $sale->exists ? 'বিক্রয় সম্পাদনা' : 'নতুন বিক্রয়' }}</div>
-        <div class="ttl en" style="display:none;">{{ $sale->exists ? 'Edit Sale' : 'New Sale' }}</div>
-        <div class="meta">
-            <span class="bn">ইনভয়েস: </span><span class="en" style="display:none;">Invoice: </span>{{ $sale->invoice_no ?? 'স্বয়ংক্রিয়ভাবে তৈরি হবে' }}
-        </div>
-    </div>
+{{--    <div>--}}
+{{--        <div class="ttl bn">{{ $sale->exists ? 'বিক্রয় সম্পাদনা' : 'নতুন বিক্রয়' }}</div>--}}
+{{--        <div class="ttl en" style="display:none;">{{ $sale->exists ? 'Edit Sale' : 'New Sale' }}</div>--}}
+{{--        <div class="meta">--}}
+{{--            <span class="bn">ইনভয়েস: </span><span class="en" style="display:none;">Invoice: </span>{{ $sale->invoice_no ?? 'স্বয়ংক্রিয়ভাবে তৈরি হবে' }}--}}
+{{--        </div>--}}
+{{--    </div>--}}
 
     @if ($sale->exists)
         <div class="fld">
@@ -135,7 +147,10 @@
             <label class="bn">গুদাম</label><label class="en" style="display:none;">Warehouse</label>
             <select onchange="window.location.href = '{{ route('sales.create') }}?warehouse_id=' + this.value;">
                 @foreach ($warehouses as $warehouse)
-                    <option value="{{ $warehouse->id }}" {{ (string) $warehouseId === (string) $warehouse->id ? 'selected' : '' }}>
+                    <option
+                        value="{{ $warehouse->id }}" {{ (string) $warehouseId === (string) $warehouse->id ? 'selected' : '' }}
+                        data-text-bn="{{ $warehouse->name }}@if($warehouse->is_default) [ডিফল্ট]@endif @if($warehouse->branch) ({{ $warehouse->branch->name }})@endif"
+                        data-text-en="{{ $warehouse->name }}@if($warehouse->is_default) [Default]@endif @if($warehouse->branch) ({{ $warehouse->branch->name }})@endif">
                         {{ $warehouse->name }} @if($warehouse->is_default) [ডিফল্ট] @endif @if($warehouse->branch) ({{ $warehouse->branch->name }}) @endif
                     </option>
                 @endforeach
@@ -205,7 +220,21 @@
         </div>
 
         <div class="cart-totals" style="display: flex; flex-direction: column; align-items: flex-end;">
-            <span id="subtotal-display" style="display:none;">0.00</span>
+            <div id="cart-subtotal-row" style="display: none; justify-content: flex-end; align-items: baseline; gap: 8px; width: 100%; padding: 2px 0 4px;">
+                <span class="sum-label bn" style="color:var(--ink-600); font-weight:600; font-size:13px;">সাবটোটাল</span>
+                <span class="sum-label en" style="display:none; color:var(--ink-600); font-weight:600; font-size:13px;">Subtotal</span>
+                <b id="subtotal-display" style="font-family:'Plus Jakarta Sans','Manrope',sans-serif; font-weight:700; font-size:14px; color:var(--ink-900);">০.০০</b>
+            </div>
+            <div id="cart-discount-row" style="display: none; justify-content: flex-end; align-items: baseline; gap: 8px; width: 100%; padding: 2px 0 4px;">
+                <span class="sum-label bn" style="color:var(--ink-600); font-weight:600; font-size:13px;">পণ্য ছাড়</span>
+                <span class="sum-label en" style="display:none; color:var(--ink-600); font-weight:600; font-size:13px;">Product Discount</span>
+                <b id="product-discount-display" style="font-family:'Plus Jakarta Sans','Manrope',sans-serif; font-weight:700; font-size:14px; color:var(--red-600);">-৳০.০০</b>
+            </div>
+            <div id="cart-tax-row" style="display: none; justify-content: flex-end; align-items: baseline; gap: 8px; width: 100%; padding: 2px 0 4px;">
+                <span class="sum-label bn" style="color:var(--ink-600); font-weight:600; font-size:13px;">মোট ভ্যাট</span>
+                <span class="sum-label en" style="display:none; color:var(--ink-600); font-weight:600; font-size:13px;">Total VAT</span>
+                <b id="tax-display" style="font-family:'Plus Jakarta Sans','Manrope',sans-serif; font-weight:700; font-size:14px; color:var(--blue-ink);">৳০.০০</b>
+            </div>
             <div class="sum-row total" style="display: flex; justify-content: flex-end; align-items: baseline; gap: 8px; width: 100%; border-bottom: none; padding: 4px 0 10px;">
                 <span class="sum-label bn" style="color:var(--ink-900); font-weight:700; font-size:15px;">সর্বমোট</span>
                 <span class="sum-label en" style="display:none; color:var(--ink-900); font-weight:700; font-size:15px;">Total Amount</span>
@@ -230,6 +259,8 @@
 
 <div id="hidden-fields-container"></div>
 <input type="hidden" name="discount" id="discount-hidden" value="0">
+<input type="hidden" name="tax" id="tax-hidden" value="{{ $initialTax }}">
+<input type="hidden" name="adjustment" id="adjustment-hidden" value="{{ $initialAdjustment }}">
 <div id="hidden-payments-container"></div>
 
 <style>
@@ -470,6 +501,12 @@
                 <span class="en" style="color:var(--ink-700); display:none;">Subtotal</span>
                 <b style="color:var(--ink-900);">৳<span id="drawer-calc-subtotal">0.00</span></b>
             </div>
+            <div id="drawer-product-discount-row"
+                style="display:none; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:13px;">
+                <span class="bn" style="color:var(--ink-700);">পণ্য ছাড়</span>
+                <span class="en" style="color:var(--ink-700); display:none;">Product Discount</span>
+                <b style="color:var(--red-600);">-৳<span id="drawer-calc-product-discount">0.00</span></b>
+            </div>
             <div
                 style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:13px;">
                 <span class="bn" style="color:var(--ink-700);">ডিস্কাউন্ট</span>
@@ -483,6 +520,12 @@
                     </select>
                 </div>
             </div>
+            <div id="drawer-tax-row"
+                style="display:none; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:13px;">
+                <span class="bn" style="color:var(--ink-700);">ভ্যাট (ট্যাক্স)</span>
+                <span class="en" style="color:var(--ink-700); display:none;">Tax / VAT</span>
+                <b style="color:var(--blue-ink);">৳<span id="drawer-calc-tax">0.00</span></b>
+            </div>
             <div
                 style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:13px;">
                 <span class="bn" style="color:var(--ink-700);">ডেলিভারী চার্জ</span>
@@ -490,9 +533,16 @@
                 <input type="number" step="0.01" min="0" name="delivery_charge" id="delivery-charge-input" value="{{ rtrim(rtrim(number_format($initialDeliveryCharge, 2, '.', ''), '0'), '.') }}"
                        style="width:90px; text-align:right; border:1px solid var(--border); background:var(--card); color:var(--ink-900); border-radius:6px; padding:4px 8px; font-size:13px; font-family:'Noto Sans Bengali','SolaimanLipi',sans-serif; outline:none;">
             </div>
+            <div
+                style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:13px;">
+                <span class="bn" style="color:var(--ink-700);">সমন্বয়</span>
+                <span class="en" style="color:var(--ink-700); display:none;">Adjustment</span>
+                <input type="number" step="0.01" name="adjustment" id="adjustment-input" value="{{ rtrim(rtrim(number_format($initialAdjustment, 2, '.', ''), '0'), '.') }}"
+                       style="width:90px; text-align:right; border:1px solid var(--border); background:var(--card); color:var(--ink-900); border-radius:6px; padding:4px 8px; font-size:13px; font-family:'Noto Sans Bengali','SolaimanLipi',sans-serif; outline:none;">
+            </div>
             <div id="customer-due-alert"
                  style="display:none; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:13px;">
-                <span class="bn" style="color:var(--red-600); font-weight:600;">পূর্ববর্তী মোট বকেয়া</span>
+                <span class="bn" style="color:var(--red-600); font-weight:600;">পূর্ববর্তী মোট বকেয়া</span>
                 <span class="en" style="color:var(--red-600); font-weight:600; display:none;">Previous Total Due</span>
                 <b style="color:var(--red-600);">৳<span id="total_previous_due_display">0.00</span></b>
                 <input type="hidden" id="total_previous_due" value="0">
@@ -579,6 +629,21 @@
         </div>
 
         <div style="margin-top:20px;">
+            <div id="walkin-due-warning" style="display:none; align-items:center; gap:8px; padding:8px 12px; margin-top:14px; background:var(--red-100); border:1px solid var(--red-200, #fecaca); border-radius:8px; color:var(--red-600); font-size:12px; font-weight:600; margin-bottom: 20px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span>
+                    <span class="bn">ওয়াক-ইন গ্রাহকের ক্ষেত্রে বাকি বিক্রয় সম্ভব নয়। সম্পূর্ণ মূল্য পরিশোধ করতে হবে অথবা গ্রাহক নির্বাচন করুন।</span>
+                    <span class="en" style="display:none;">Walk-in customers cannot have due sales. Full payment is required or select a customer.</span>
+                </span>
+            </div>
+            <div id="drawer-overpayment-warning" style="display:none; align-items:center; gap:8px; padding:8px 12px; margin-top:14px; background:var(--red-100); border:1px solid var(--red-200, #fecaca); border-radius:8px; color:var(--red-600); font-size:12px; font-weight:600; margin-bottom: 14px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span>
+                    <span class="bn">প্রদেয় টাকার পরিমাণ মোট প্রদেয় (সর্বমোট) এর চেয়ে বেশি হতে পারে না (সর্বোচ্চ: ৳<span id="overpayment-max-display">0.00</span>)।</span>
+                    <span class="en" style="display:none;">Payment amount cannot be greater than the grand total (Maximum: ৳<span id="overpayment-max-display-en">0.00</span>).</span>
+                </span>
+            </div>
+
             <x-core::button
                 type="button"
                 color="primary"
@@ -606,13 +671,15 @@
 
     let cart = initialItems.map((row) => ({
         productId: row.product_id,
-        qty: parseFloat(row.qty) || 1,
-        unitId: row.unitId || (productData[row.product_id]?.baseUnitId ?? ''),
-        price: parseFloat(row.price) || 0,
+        qty: parseFloat(row.qty || row.quantity) || 1,
+        unitId: row.unitId || row.unit_id || (productData[row.product_id]?.baseUnitId ?? ''),
+        price: parseFloat(row.price || row.unit_price) || 0,
         discountRaw: parseFloat(row.discount) || 0,
         discountType: 'flat',
         barcode: row.barcode || '',
-        warrantyExpiresAt: row.warrantyExpiresAt || '',
+        warrantyExpiresAt: row.warrantyExpiresAt || row.warranty_expires_at || '',
+        isWholesale: !!(row.isWholesale || row.is_wholesale),
+        manuallyDiscounted: true,
     }));
 
     function escapeHtml(str) {
@@ -636,12 +703,24 @@
 
     function lineDiscountAmount(item) {
         const gross = item.qty * item.price;
-        const amount = item.discountType === 'percent' ? gross * (item.discountRaw / 100) : item.discountRaw;
+        const isPercent = item.discountType === 'percent' || item.discountType === 'percentage';
+        const amount = isPercent ? gross * (item.discountRaw / 100) : item.discountRaw;
         return Math.min(Math.max(amount, 0), gross);
     }
 
     function lineAmount(item) {
         return (item.qty * item.price) - lineDiscountAmount(item);
+    }
+
+    function lineTaxAmount(item) {
+        const p = productData[item.productId];
+        if (!p || !p.isVat || !(p.vatPercentage > 0)) return 0;
+        const net = Math.max(0, lineAmount(item));
+        return net * (p.vatPercentage / 100);
+    }
+
+    function totalTax() {
+        return cart.reduce((sum, item) => sum + lineTaxAmount(item), 0);
     }
 
     function addDuration(dateStr, amount, unit) {
@@ -686,9 +765,13 @@
         catalogList.innerHTML = ids.map((pid) => {
             const p = productData[pid];
             const count = cartQtyFor(pid);
+            const hasDiscountOffer = p.hasDiscount && p.discountValue > 0;
+            const discountBadge = hasDiscountOffer
+                ? ' <span style="color:var(--red-600); font-weight:700; font-size:11.5px;">(-' + ((p.discountType === 'percentage' || p.discountType === 'percent') ? p.discountValue + '%' : '৳' + fmt(p.discountValue)) + ')</span>'
+                : '';
             return '<div class="catalog-item" data-id="' + pid + '">' +
                 '<div class="thumb"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="8" height="8" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="13" y="4" width="8" height="8" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="14" width="8" height="6" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="13" y="14" width="8" height="6" rx="1.6" stroke="currentColor" stroke-width="1.6"/></svg></div>' +
-                '<div class="info"><div class="nm">' + escapeHtml(p.name) + '</div><div class="meta">৳' + fmt(p.price) + ' | স্টক: ' + fmt(p.stock).replace(/\.00$/, '') + '</div></div>' +
+                '<div class="info"><div class="nm">' + escapeHtml(p.name) + '</div><div class="meta">৳' + fmt(p.price) + discountBadge + ' | স্টক: ' + fmt(p.stock).replace(/\.00$/, '') + '</div></div>' +
                 '<div class="add-btn">' +
                     '<button type="button" class="decrease-from-cart-btn" data-id="' + pid + '" title="পরিমাণ হ্রাস করুন"' + (count > 0 ? '' : ' disabled') + '><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>' +
                     (count ? '<span class="count">' + fmt(count).replace(/\.00$/, '') + '</span>' : '') +
@@ -701,34 +784,50 @@
     function addToCart(productId) {
         const p = productData[productId];
         if (!p) return;
-        const existing = cart.find((c) => c.productId === productId && !c.warrantyExpiresAt);
+        const existing = cart.find((c) => String(c.productId) === String(productId));
         if (existing) {
             existing.qty += 1;
+            if (p.hasDiscount && (p.discountType === 'flat') && !existing.manuallyDiscounted) {
+                const factor = unitFactor(p, existing.unitId);
+                existing.discountRaw = Math.round(p.discountValue * factor * existing.qty * 100) / 100;
+            }
         } else {
             let warrantyExpiresAt = '';
             if (p.hasWarranty && p.warrantyDuration && p.warrantyType) {
                 warrantyExpiresAt = addDuration(document.getElementById('sale-date-input').value, p.warrantyDuration, p.warrantyType);
             }
+            const isPercent = p.hasDiscount && (p.discountType === 'percentage' || p.discountType === 'percent');
+            const initialDiscountType = isPercent ? 'percent' : 'flat';
+            const factor = unitFactor(p, p.baseUnitId || '');
+            const initialDiscountRaw = p.hasDiscount ? (isPercent ? p.discountValue : Math.round(p.discountValue * factor * 100) / 100) : 0;
+
             cart.push({
-                productId: productId, qty: 1, unitId: p.baseUnitId || '', price: p.price,
-                discountRaw: 0, discountType: 'flat', barcode: p.barcode || '', warrantyExpiresAt: warrantyExpiresAt,
+                productId: productId,
+                qty: 1,
+                unitId: p.baseUnitId || '',
+                price: p.price,
+                discountRaw: initialDiscountRaw,
+                discountType: initialDiscountType,
+                barcode: p.barcode || '',
+                warrantyExpiresAt: warrantyExpiresAt,
+                isWholesale: false,
+                manuallyDiscounted: false,
             });
         }
         renderAll();
     }
 
     function decreaseFromCart(productId) {
-        let index = -1;
-        for (let i = cart.length - 1; i >= 0; i--) {
-            if (String(cart[i].productId) === String(productId)) {
-                index = i;
-                break;
-            }
-        }
+        const index = cart.findIndex((c) => String(c.productId) === String(productId));
         if (index === -1) return;
 
         if (cart[index].qty > 1) {
             cart[index].qty -= 1;
+            const p = productData[productId];
+            if (p && p.hasDiscount && (p.discountType === 'flat') && !cart[index].manuallyDiscounted) {
+                const factor = unitFactor(p, cart[index].unitId);
+                cart[index].discountRaw = Math.round(p.discountValue * factor * cart[index].qty * 100) / 100;
+            }
         } else {
             cart.splice(index, 1);
         }
@@ -803,10 +902,19 @@
         cartList.innerHTML = cart.map((item, i) => {
             const p = productData[item.productId] || { name: 'Unknown', price: 0, units: [] };
             const factor = unitFactor(p, item.unitId);
-            const referenceUnitPrice = p.price * factor;
-            const hasBarcode = !!item.barcode;
+            const referenceUnitPrice = (item.isWholesale ? (p.wholesalePrice || p.price) : p.price) * factor;
+            const hasBarcode = !!p.hasBarcode;
+            const hasWarrantyProduct = !!p.hasWarranty;
             const hasWarranty = !!item.warrantyExpiresAt;
             const warrantyLabel = hasWarranty ? formatDisplayDate(item.warrantyExpiresAt) : '';
+            const hasTax = p.isVat && p.vatPercentage > 0;
+            const itemTax = lineTaxAmount(item);
+            const hasWholesale = p.isWholesale && (p.wholesalePrice > 0 || p.wholesaleMinQty > 0);
+            const hasDiscountOffer = p.hasDiscount && p.discountValue > 0;
+            const discountLabel = hasDiscountOffer
+                ? ((p.discountType === 'percentage' || p.discountType === 'percent') ? p.discountValue + '%' : '৳' + fmt(p.discountValue))
+                : '';
+
             return '<div class="cart-item" data-index="' + i + '">' +
                 '<div class="ci-head">' +
                     '<div class="thumb"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="8" height="8" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="13" y="4" width="8" height="8" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="14" width="8" height="6" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="13" y="14" width="8" height="6" rx="1.6" stroke="currentColor" stroke-width="1.6"/></svg></div>' +
@@ -815,26 +923,40 @@
                         '<div class="item-popover barcode-popover">' +
                             '<div class="fld"><label class="bn">বারকোড</label><label class="en" style="display:none;">Barcode</label><input type="text" class="ci-barcode-input" value="' + escapeHtml(item.barcode) + '" placeholder="বারকোড স্ক্যান/লিখুন"></div>' +
                         '</div>' +
-                        '<div class="item-popover warranty-popover">' +
-                            '<div class="warranty-presets">' +
-                                warrantyPresets.map((w) => '<button type="button" class="warranty-preset-btn" data-n="' + w.n + '" data-u="' + w.u + '">' + w.n + ' ' + warrantyUnitLabels[w.u] + '</button>').join('') +
-                            '</div>' +
-                            '<div class="warranty-custom">' +
-                                '<input type="number" min="1" class="ci-warranty-custom-n" placeholder="সংখ্যা">' +
-                                '<select class="ci-warranty-custom-u"><option value="day">দিন</option><option value="week">সপ্তাহ</option><option value="month">মাস</option><option value="year">বছর</option></select>' +
-                                '<button type="button" class="ci-warranty-set-btn btn btn-outline btn-sm">সেট করুন</button>' +
-                            '</div>' +
-                            (hasWarranty ? '<div class="warranty-clear"><button type="button" class="ci-warranty-clear-btn">ওয়ারেন্টি মুছে ফেলুন</button></div>' : '') +
-                        '</div>' +
                     '</div>' +
                     '<div class="ci-actions">' +
-                        '<button type="button" class="barcode-toggle-btn' + (hasBarcode ? ' has-value' : '') + '" title="Barcode"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 5v14M8 5v14M11 5v14M15 5v14M17 5v14M20 5v14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>' +
-                        '<button type="button" class="warranty-toggle-btn' + (hasWarranty ? ' has-value' : '') + '" title="ওয়ারেন্টি">' +
-                            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>' +
-                            (hasWarranty ? '<span class="ci-warranty-label bn">ওয়ারেন্টি</span><span class="ci-warranty-label en" style="display:none;">Warranty</span><span class="ci-warranty-date">' + warrantyLabel + '</span>' : '') +
-                        '</button>' +
+                        (hasTax ? '<div class="ci-tax-badge" title="ভ্যাট প্রযোজ্য (' + p.vatPercentage + '%)">' +
+                            '<span class="bn">ভ্যাট (' + p.vatPercentage + '%): ৳<span class="ci-item-tax-amt">' + fmt(itemTax) + '</span></span>' +
+                            '<span class="en" style="display:none;">Tax (' + p.vatPercentage + '%): ৳<span class="ci-item-tax-amt">' + fmt(itemTax) + '</span></span>' +
+                        '</div>' : '') +
+                        (hasDiscountOffer ? '<div class="ci-discount-offer-badge" title="ছাড় প্রযোজ্য">' +
+                            '<span class="bn">ছাড়: ' + discountLabel + '</span>' +
+                            '<span class="en" style="display:none;">Discount: ' + discountLabel + '</span>' +
+                        '</div>' : '') +
+                        (hasWholesale ? '<label class="ci-wholesale-toggle' + (item.isWholesale ? ' is-active' : '') + '" title="পাইকারি বিক্রয় / Wholesale">' +
+                            '<input type="checkbox" class="ci-wholesale-chk" ' + (item.isWholesale ? 'checked' : '') + '>' +
+                            '<span class="bn">পাইকারি</span><span class="en" style="display:none;">Wholesale</span>' +
+                        '</label>' : '') +
+                        (hasBarcode ? '<button type="button" class="barcode-toggle-btn has-value" title="Barcode"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 5v14M8 5v14M11 5v14M15 5v14M17 5v14M20 5v14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>' : '') +
+                        (hasWarrantyProduct ? '<button type="button" class="warranty-toggle-btn' + (hasWarranty ? ' has-value' : '') + '" title="ওয়ারেন্টি">' +
+                            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none">' +
+                                '<rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/>' +
+                                '<path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>' +
+                            '</svg>' + (hasWarranty ? '<span class="ci-warranty-label bn">ওয়ারেন্টি</span><span class="ci-warranty-label en" style="display:none;">Warranty</span><span class="ci-warranty-date">' + warrantyLabel + '</span>' : '') +
+                        '</button>' : '') +
                         '<button type="button" class="ci-remove" title="Remove">&times;</button>' +
                     '</div>' +
+                    (hasWarrantyProduct ? '<div class="warranty-popover">' +
+                        '<div class="warranty-title"><span class="bn">ওয়ারেন্টির মেয়াদ</span><span class="en" style="display:none;">Warranty Period</span></div>' +
+                        '<div class="warranty-presets">' +
+                            warrantyPresets.map((w) => '<button type="button" class="warranty-preset-btn" data-n="' + w.n + '" data-u="' + w.u + '">' + w.n + ' ' + warrantyUnitLabels[w.u] + '</button>').join('') +
+                        '</div>' +
+                        '<div class="warranty-custom">' +
+                            '<input type="number" min="1" class="ci-warranty-custom-n" placeholder="সংখ্যা">' +
+                            '<select class="ci-warranty-custom-u"><option value="day">দিন</option><option value="week">সপ্তাহ</option><option value="month" selected>মাস</option><option value="year">বছর</option></select>' +
+                        '</div>' +
+                        '<button type="button" class="ci-warranty-set-btn warranty-set-main-btn"><span class="bn">সেট করুন</span><span class="en" style="display:none;">Set</span></button>' +
+                    '</div>' : '') +
                 '</div>' +
                 '<div class="ci-grid ci-grid-6">' +
                     '<div><label class="bn">পরিমাণ</label><label class="en" style="display:none;">Qty</label><input type="number" step="0.01" min="0.01" class="ci-qty" value="' + item.qty + '"></div>' +
@@ -846,7 +968,7 @@
                     '<div><label class="bn">ছাড়</label><label class="en" style="display:none;">Discount</label>' +
                         '<div class="disc-row ci-disc-row">' +
                             '<input type="number" step="0.01" min="0" class="ci-discount-raw" value="' + item.discountRaw + '">' +
-                            '<select class="ci-discount-type"><option value="flat"' + (item.discountType === 'flat' ? ' selected' : '') + '>৳</option><option value="percent"' + (item.discountType === 'percent' ? ' selected' : '') + '>%</option></select>' +
+                            '<select class="ci-discount-type"><option value="flat"' + (item.discountType === 'flat' ? ' selected' : '') + '>৳</option><option value="percent"' + (item.discountType === 'percent' || item.discountType === 'percentage' ? ' selected' : '') + '>%</option></select>' +
                         '</div>' +
                     '</div>' +
                     '<div><label class="bn">মোট</label><label class="en" style="display:none;">Amount</label><input type="text" class="ci-total" value="' + fmt(lineAmount(item)) + '" readonly></div>' +
@@ -866,6 +988,7 @@
             html += '<input type="hidden" name="items[' + i + '][discount]" value="' + fmt(lineDiscountAmount(item)) + '">';
             html += '<input type="hidden" name="items[' + i + '][barcode]" value="' + escapeHtml(item.barcode) + '">';
             html += '<input type="hidden" name="items[' + i + '][warranty_expires_at]" value="' + item.warrantyExpiresAt + '">';
+            html += '<input type="hidden" name="items[' + i + '][is_wholesale]" value="' + (item.isWholesale ? '1' : '0') + '">';
         });
         container.innerHTML = html;
     }
@@ -883,9 +1006,11 @@
     function calcGrandTotalCost() {
         const sub = subtotal();
         const discount = Math.min(discountAmount(), sub);
+        const tax = totalTax();
         const deliveryCharge = parseFloat($('#delivery-charge-input').val()) || 0;
+        const adjustment = parseFloat($('#adjustment-input').val()) || 0;
         const prevDueVal = parseFloat($('#total_previous_due').val()) || 0;
-        return Math.max(0, sub - discount + deliveryCharge + prevDueVal);
+        return Math.max(0, sub - discount + tax + deliveryCharge + adjustment + prevDueVal);
     }
 
     let drawerMode = 'cash';
@@ -916,6 +1041,46 @@
         }
     }
 
+    function isWalkinCustomer() {
+        const customerId = $('#customer-id-select').val();
+        const phone = $('#customer-phone-input').val() ? $('#customer-phone-input').val().trim() : '';
+        const name = $('#customer-name-input').val() ? $('#customer-name-input').val().trim() : '';
+        return (!customerId || customerId === '__create_new__') && phone === '' && name === '';
+    }
+
+    function checkOverpaymentWarning(totalPaid, maxTotal) {
+        const $overWarning = $('#drawer-overpayment-warning');
+        const isOver = (totalPaid - maxTotal) > 0.01;
+        if (isOver) {
+            $('#overpayment-max-display').text(fmt(maxTotal));
+            $('#overpayment-max-display-en').text(fmt(maxTotal));
+            $overWarning.slideDown(120);
+            return true;
+        } else {
+            $overWarning.slideUp(120);
+            return false;
+        }
+    }
+
+    function syncSaveButtonState(isWalkinDue, isOverpaid) {
+        if (isWalkinDue || isOverpaid) {
+            $('#drawer-save-btn').prop('disabled', true).css('opacity', '0.6').css('cursor', 'not-allowed');
+        } else {
+            $('#drawer-save-btn').prop('disabled', false).css('opacity', '1').css('cursor', 'pointer');
+        }
+    }
+
+    function checkWalkinDueWarning(remainingDue) {
+        const $warning = $('#walkin-due-warning');
+        const isDue = isWalkinCustomer() && remainingDue > 0.01;
+        if (isDue) {
+            $warning.slideDown(120);
+        } else {
+            $warning.slideUp(120);
+        }
+        return isDue;
+    }
+
     function updateBothAmountsSummary() {
         const total = calcGrandTotalCost();
         const cashVal = parseFloat($('#drawer-cash-amount-input').val()) || 0;
@@ -925,6 +1090,10 @@
 
         $('#drawer-both-total-paid').text(fmt(totalPaid));
         $('#drawer-both-remaining-due').text(fmt(remainingDue));
+
+        const isWalkinDue = checkWalkinDueWarning(remainingDue);
+        const isOverpaid = checkOverpaymentWarning(totalPaid, total);
+        syncSaveButtonState(isWalkinDue, isOverpaid);
     }
 
     function updateSingleAmountSummary() {
@@ -934,16 +1103,29 @@
 
         $('#drawer-single-total-paid').text(fmt(paidVal));
         $('#drawer-single-remaining-due').text(fmt(remainingDue));
+
+        const isWalkinDue = checkWalkinDueWarning(remainingDue);
+        const isOverpaid = checkOverpaymentWarning(paidVal, total);
+        syncSaveButtonState(isWalkinDue, isOverpaid);
     }
 
     function updateGrandTotalCostDisplay() {
         const grandTotal = calcGrandTotalCost();
         const formatted = fmt(grandTotal);
+        const totalProductDiscount = cart.reduce((sum, item) => sum + lineDiscountAmount(item), 0);
 
         $('#grand_total_cost').val(formatted);
         $('#grand_total_cost_display').text(formatted);
-        $('#drawer-calc-subtotal').text(fmt(subtotal()));
+        $('#drawer-calc-subtotal').text(fmt(subtotal() + totalProductDiscount));
+        $('#drawer-calc-tax').text(fmt(totalTax()));
         $('#drawer-total-payable').text(formatted);
+        $('#drawer-calc-product-discount').text(fmt(totalProductDiscount));
+
+        if (totalProductDiscount > 0) {
+            $('#drawer-product-discount-row').css('display', 'flex');
+        } else {
+            $('#drawer-product-discount-row').hide();
+        }
 
         if (drawerMode === 'cash') {
             if (!amountManuallyEdited) {
@@ -968,10 +1150,39 @@
     function recalcGrand() {
         const sub = subtotal();
         const discount = Math.min(discountAmount(), sub);
+        const tax = totalTax();
+        const totalProductDiscount = cart.reduce((sum, item) => sum + lineDiscountAmount(item), 0);
         const deliveryCharge = parseFloat($('#delivery-charge-input').val()) || 0;
-        const total = Math.max(sub - discount + deliveryCharge, 0);
+        const adjustment = parseFloat($('#adjustment-input').val()) || 0;
+        const total = Math.max(sub - discount + tax + deliveryCharge + adjustment, 0);
 
-        $('#subtotal-display').text(fmt(sub));
+        $('#subtotal-display').text('৳' + fmt(sub + totalProductDiscount));
+        $('#tax-hidden').val(fmt(tax));
+        $('#tax-display').text('৳' + fmt(tax));
+        $('#drawer-calc-tax').text(fmt(tax));
+        $('#product-discount-display').text('-৳' + fmt(totalProductDiscount));
+        $('#adjustment-hidden').val(fmt(adjustment));
+
+        if (cart.length > 0) {
+            $('#cart-subtotal-row').css('display', 'flex');
+        } else {
+            $('#cart-subtotal-row').hide();
+        }
+
+        if (totalProductDiscount > 0) {
+            $('#cart-discount-row').css('display', 'flex');
+        } else {
+            $('#cart-discount-row').hide();
+        }
+
+        if (tax > 0) {
+            $('#cart-tax-row').css('display', 'flex');
+            $('#drawer-tax-row').css('display', 'flex');
+        } else {
+            $('#cart-tax-row').hide();
+            $('#drawer-tax-row').hide();
+        }
+
         $('#total-display').text(fmt(total));
         $('#discount-hidden').val(fmt(discount));
 
@@ -1004,7 +1215,8 @@
             const bcPopover = row.querySelector('.barcode-popover');
             const isOpen = bcPopover.classList.toggle('open');
             btn.classList.toggle('active', isOpen);
-            row.querySelector('.warranty-popover').classList.remove('open');
+            const warPopoverRef = row.querySelector('.warranty-popover');
+            if (warPopoverRef) warPopoverRef.classList.remove('open');
             if (warBtn) warBtn.classList.remove('active');
             if (isOpen) {
                 const input = bcPopover.querySelector('.ci-barcode-input');
@@ -1018,7 +1230,8 @@
             const warPopover = row.querySelector('.warranty-popover');
             const isOpen = warPopover.classList.toggle('open');
             btn.classList.toggle('active', isOpen);
-            row.querySelector('.barcode-popover').classList.remove('open');
+            const bcPopoverRef = row.querySelector('.barcode-popover');
+            if (bcPopoverRef) bcPopoverRef.classList.remove('open');
             if (bcBtn) bcBtn.classList.remove('active');
             return;
         }
@@ -1044,6 +1257,64 @@
         }
     });
 
+    cartList.addEventListener('change', (e) => {
+        const row = e.target.closest('.cart-item');
+        if (!row) return;
+        const index = parseInt(row.dataset.index, 10);
+        const item = cart[index];
+        if (!item) return;
+
+        if (e.target.classList.contains('ci-wholesale-chk')) {
+            const isChecked = e.target.checked;
+            item.isWholesale = isChecked;
+            const p = productData[item.productId];
+            const factor = unitFactor(p, item.unitId);
+            if (isChecked) {
+                const minQty = Math.max(1, p.wholesaleMinQty || 1);
+                if (item.qty < minQty) {
+                    item.qty = minQty;
+                }
+                const wholesaleBase = p.wholesalePrice > 0 ? p.wholesalePrice : p.price;
+                item.price = Math.round(wholesaleBase * factor * 100) / 100;
+            } else {
+                item.qty = 1;
+                item.price = Math.round(p.price * factor * 100) / 100;
+            }
+            if (p && p.hasDiscount && (p.discountType === 'flat') && !item.manuallyDiscounted) {
+                item.discountRaw = Math.round(p.discountValue * factor * item.qty * 100) / 100;
+            }
+            renderAll();
+            return;
+        }
+
+        if (e.target.classList.contains('ci-unit-select')) {
+            const p = productData[item.productId];
+            const factor = unitFactor(p, e.target.value);
+            item.unitId = e.target.value;
+            const basePrice = item.isWholesale ? (p.wholesalePrice || p.price) : p.price;
+            item.price = Math.round(basePrice * factor * 100) / 100;
+            if (p && p.hasDiscount && (p.discountType === 'flat') && !item.manuallyDiscounted) {
+                item.discountRaw = Math.round(p.discountValue * factor * item.qty * 100) / 100;
+            }
+            renderAll();
+            return;
+        }
+
+        if (e.target.classList.contains('ci-discount-type')) {
+            item.discountType = e.target.value;
+            item.manuallyDiscounted = true;
+            row.querySelector('.ci-total').value = fmt(lineAmount(item));
+            const p = productData[item.productId];
+            if (p && p.isVat && p.vatPercentage > 0) {
+                const taxEl = row.querySelector('.ci-item-tax-amt');
+                if (taxEl) taxEl.textContent = fmt(lineTaxAmount(item));
+            }
+            renderHiddenFields();
+            recalcGrand();
+            return;
+        }
+    });
+
     cartList.addEventListener('input', (e) => {
         const row = e.target.closest('.cart-item');
         if (!row) return;
@@ -1051,26 +1322,45 @@
         const item = cart[index];
         if (!item) return;
 
-        if (e.target.classList.contains('ci-qty')) item.qty = parseFloat(e.target.value) || 0;
+        if (e.target.classList.contains('ci-qty')) {
+            const newQty = parseFloat(e.target.value) || 0;
+            const p = productData[item.productId];
+            if (item.isWholesale) {
+                const minQty = Math.max(1, p.wholesaleMinQty || 1);
+                if (newQty < minQty) {
+                    item.qty = minQty;
+                    e.target.value = minQty;
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Minimum quantity',
+                        text: 'Quantity set to minimum allowed ' + minQty
+                    });
+                } else {
+                    item.qty = newQty;
+                }
+            } else {
+                item.qty = newQty;
+            }
+            if (p && p.hasDiscount && (p.discountType === 'flat') && !item.manuallyDiscounted) {
+                const factor = unitFactor(p, item.unitId);
+                item.discountRaw = Math.round(p.discountValue * factor * item.qty * 100) / 100;
+                const discInput = row.querySelector('.ci-discount-raw');
+                if (discInput) discInput.value = item.discountRaw;
+            }
+        }
         if (e.target.classList.contains('ci-price')) item.price = parseFloat(e.target.value) || 0;
-        if (e.target.classList.contains('ci-discount-raw')) item.discountRaw = parseFloat(e.target.value) || 0;
-        if (e.target.classList.contains('ci-discount-type')) item.discountType = e.target.value;
+        if (e.target.classList.contains('ci-discount-raw')) {
+            item.discountRaw = parseFloat(e.target.value) || 0;
+            item.manuallyDiscounted = true;
+        }
+        if (e.target.classList.contains('ci-discount-type')) {
+            item.discountType = e.target.value;
+            item.manuallyDiscounted = true;
+        }
         if (e.target.classList.contains('ci-barcode-input')) {
             item.barcode = e.target.value;
             const btn = row.querySelector('.barcode-toggle-btn');
             if (btn) btn.classList.toggle('has-value', !!item.barcode);
-        }
-
-        if (e.target.classList.contains('ci-unit-select')) {
-            const p = productData[item.productId];
-            const factor = unitFactor(p, e.target.value);
-            item.unitId = e.target.value;
-            // Reset the selling price to a sensible default for the newly chosen
-            // unit (base sale price x factor) so Amount stays meaningful -- the
-            // shop admin can still adjust it afterwards for a wholesale price.
-            item.price = Math.round(p.price * factor * 100) / 100;
-            renderAll();
-            return;
         }
 
         if (
@@ -1078,6 +1368,11 @@
             || e.target.classList.contains('ci-discount-raw') || e.target.classList.contains('ci-discount-type')
         ) {
             row.querySelector('.ci-total').value = fmt(lineAmount(item));
+            const p = productData[item.productId];
+            if (p && p.isVat && p.vatPercentage > 0) {
+                const taxEl = row.querySelector('.ci-item-tax-amt');
+                if (taxEl) taxEl.textContent = fmt(lineTaxAmount(item));
+            }
         }
         renderHiddenFields();
         recalcGrand();
@@ -1089,7 +1384,7 @@
         renderAll();
     });
 
-    $(document).on('input change', '#discount-raw-input, #discount-type-select, #delivery-charge-input, #total_previous_due', function () {
+    $(document).on('input change', '#discount-raw-input, #discount-type-select, #delivery-charge-input, #adjustment-input, #total_previous_due', function () {
         recalcGrand();
     });
 
@@ -1163,6 +1458,15 @@
         const total = calcGrandTotalCost();
 
         if (mode === 'due') {
+            if (isWalkinCustomer()) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'ওয়াক-ইন গ্রাহকে বাকি সম্ভব নয়',
+                    text: 'ওয়াক-ইন গ্রাহকের ক্ষেত্রে বাকি বিক্রয় করা যাবে না। অনুগ্রহ করে গ্রাহক নির্বাচন করুন অথবা সম্পূর্ণ মূল্য পরিশোধ করুন।',
+                    confirmButtonText: 'ঠিক আছে',
+                });
+                return;
+            }
             $('#drawer-amount-input').val('0.00');
             $('#drawer-cash-amount-input').val('0.00');
             $('#drawer-bank-amount-input').val('0.00');
@@ -1176,6 +1480,12 @@
         }
 
         updateGrandTotalCostDisplay();
+        const currentPayType = $('#drawer-payment-type-select').val() || 'cash';
+        if (currentPayType === 'both') {
+            updateBothAmountsSummary();
+        } else {
+            updateSingleAmountSummary();
+        }
         $('#confirmPaymentDrawer').addClass('open');
     }
 
@@ -1184,6 +1494,15 @@
     });
 
     $(document).on('click', '#open-due-btn', function () {
+        if (isWalkinCustomer()) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'ওয়াক-ইন গ্রাহকে বাকি সম্ভব নয়',
+                text: 'ওয়াক-ইন গ্রাহকের ক্ষেত্রে বাকি বিক্রয় করা যাবে না। অনুগ্রহ করে গ্রাহক নির্বাচন করুন অথবা সম্পূর্ণ মূল্য পরিশোধ করুন।',
+                confirmButtonText: 'ঠিক আছে',
+            });
+            return;
+        }
         openDrawer('due');
     });
 
@@ -1273,6 +1592,17 @@
 
         $form.find('.is-invalid').removeClass('is-invalid');
         $form.find('.dynamic-error').remove();
+
+        const openingDueVal = parseFloat($('#quick_customer_opening_due').val());
+        if (!isNaN(openingDueVal) && openingDueVal < 0) {
+            const $field = $('#quick_customer_opening_due');
+            $field.addClass('is-invalid');
+            const msg = $('body').hasClass('lang-en') ? 'Opening due cannot be negative.' : 'প্রারম্ভিক বাকি ঋণাত্মক হতে পারবে না।';
+            $field.closest('.form-group, .field, div').append('<div class="field-error dynamic-error" style="color:var(--red-600); font-size:11.5px; margin-top:3px; font-weight:600;">' + msg + '</div>');
+            $field.focus();
+            return false;
+        }
+
         $btn.prop('disabled', true);
 
         $.ajax({
@@ -1417,6 +1747,22 @@
         $('#customer-address-input').val(address);
 
         updateCustomerDueNotice(val);
+
+        const currentPayType = $('#drawer-payment-type-select').val() || 'cash';
+        if (currentPayType === 'both') {
+            updateBothAmountsSummary();
+        } else {
+            updateSingleAmountSummary();
+        }
+    });
+
+    $(document).on('input', '#customer-phone-input, #customer-name-input', function () {
+        const currentPayType = $('#drawer-payment-type-select').val() || 'cash';
+        if (currentPayType === 'both') {
+            updateBothAmountsSummary();
+        } else {
+            updateSingleAmountSummary();
+        }
     });
 
     $(document).on('click', '#drawer-save-btn', function () {
@@ -1432,10 +1778,11 @@
 
         let paymentsToSubmit = [];
 
+        let enteredTotalPayment = 0;
         if (paymentType === 'cash') {
             let amount = parseFloat($('#drawer-amount-input').val()) || 0;
             if (drawerMode === 'cash' && amount <= 0 && !amountManuallyEdited) amount = total;
-            amount = Math.min(Math.max(amount, 0), total);
+            enteredTotalPayment = amount;
             if (amount > 0) {
                 paymentsToSubmit.push({
                     account_id: defaultCashAccountId || '',
@@ -1446,7 +1793,7 @@
         } else if (paymentType === 'bank') {
             let amount = parseFloat($('#drawer-amount-input').val()) || 0;
             if (drawerMode === 'cash' && amount <= 0 && !amountManuallyEdited) amount = total;
-            amount = Math.min(Math.max(amount, 0), total);
+            enteredTotalPayment = amount;
             if (amount > 0) {
                 paymentsToSubmit.push({
                     account_id: selectedBankAccountId || '',
@@ -1459,15 +1806,7 @@
             let bankAmount = parseFloat($('#drawer-bank-amount-input').val()) || 0;
             cashAmount = Math.max(0, cashAmount);
             bankAmount = Math.max(0, bankAmount);
-
-            if (cashAmount + bankAmount > total) {
-                if (cashAmount > total) {
-                    cashAmount = total;
-                    bankAmount = 0;
-                } else {
-                    bankAmount = Math.max(0, total - cashAmount);
-                }
-            }
+            enteredTotalPayment = cashAmount + bankAmount;
 
             if (cashAmount > 0) {
                 paymentsToSubmit.push({
@@ -1485,6 +1824,16 @@
             }
         }
 
+        if (Math.round((enteredTotalPayment - total) * 100) / 100 > 0.01) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'অতিরিক্ত পরিশোধ সম্ভব নয়',
+                text: 'প্রদেয় টাকার পরিমাণ সর্বমোট খরচের চেয়ে বেশি হতে পারে না (সর্বোচ্চ: ৳' + fmt(total) + ')।',
+                confirmButtonText: 'ঠিক আছে',
+            });
+            return;
+        }
+
         const $hiddenPayments = $('#hidden-payments-container');
         $hiddenPayments.empty();
 
@@ -1495,6 +1844,19 @@
             $hiddenPayments.append(`<input type="hidden" name="payments[${idx}][method]" value="${escapeHtml(p.method)}">`);
             $hiddenPayments.append(`<input type="hidden" name="payments[${idx}][amount]" value="${p.amount}">`);
         });
+
+        const totalPaidToSubmit = paymentsToSubmit.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+        const remainingDueToSubmit = Math.max(0, total - totalPaidToSubmit);
+
+        if (isWalkinCustomer() && remainingDueToSubmit > 0.01) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'ওয়াক-ইন গ্রাহকে বাকি সম্ভব নয়',
+                text: 'ওয়াক-ইন গ্রাহকের ক্ষেত্রে বাকি বিক্রয় করা যাবে না। অনুগ্রহ করে সম্পূর্ণ মূল্য পরিশোধ করুন অথবা কাস্টমার নির্বাচন করুন।',
+                confirmButtonText: 'ঠিক আছে',
+            });
+            return;
+        }
 
         renderHiddenFields();
         document.getElementById('sale-form').submit();

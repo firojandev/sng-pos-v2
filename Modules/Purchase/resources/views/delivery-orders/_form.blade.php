@@ -98,7 +98,11 @@
                     <select name="warehouse_id" required style="width:100%; border:1px solid var(--border); background:var(--card); color:var(--ink-900); border-radius:6px; padding:6px 10px; font-size:13px;">
                         <option value="">-- গুদাম নির্বাচন করুন --</option>
                         @foreach ($warehouses as $w)
-                            <option value="{{ $w->id }}" @selected((string) $selectedWarehouseId === (string) $w->id)>
+                            <option
+                                value="{{ $w->id }}"
+                                data-text-bn="{{ $w->name }}@if($w->is_default) [ডিফল্ট]@endif @if($w->branch) ({{ $w->branch->name }})@endif"
+                                data-text-en="{{ $w->name }}@if($w->is_default) [Default]@endif @if($w->branch) ({{ $w->branch->name }})@endif"
+                                @selected((string) $selectedWarehouseId === (string) $w->id)>
                                 {{ $w->name }} @if($w->is_default) [ডিফল্ট] @endif @if($w->branch) ({{ $w->branch->name }}) @endif
                             </option>
                         @endforeach

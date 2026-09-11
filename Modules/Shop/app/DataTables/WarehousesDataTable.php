@@ -23,17 +23,17 @@ class WarehousesDataTable extends BaseDataTable
             ->editColumn('name', function (Warehouse $warehouse) {
                 $badge = '';
                 if ($warehouse->is_default) {
-                    $badge = ' <span style="display:inline-block; font-size:10.5px; font-weight:700; background:var(--gold-100); color:var(--gold-ink); padding:2px 7px; border-radius:4px; margin-left:6px; vertical-align:middle;">ডিফল্ট</span>';
+                    $badge = ' <span style="display:inline-block; font-size:10.5px; font-weight:700; background:var(--gold-100); color:var(--gold-ink); padding:2px 7px; border-radius:4px; margin-left:6px; vertical-align:middle; white-space:nowrap;">ডিফল্ট</span>';
                 }
 
                 return '<div style="font-weight:700; color:var(--ink-900); font-size:13.5px; display:flex; align-items:center;">'
-                    .'<span>'.e($warehouse->name).'</span>'
+                    .'<span style="max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="'.e($warehouse->name).'">'.e($warehouse->name).'</span>'
                     .$badge
                     .'</div>';
             })
             ->addColumn('branch', function (Warehouse $warehouse) {
                 if ($warehouse->branch) {
-                    return '<span style="font-weight:600; color:var(--ink-800); font-size:13px;">'
+                    return '<span style="font-weight:600; color:var(--ink-800); font-size:13px; max-width:140px; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="'.e($warehouse->branch->name).'">'
                         .e($warehouse->branch->name)
                         .'</span>';
                 }
@@ -45,12 +45,14 @@ class WarehousesDataTable extends BaseDataTable
                     return '<span style="color:var(--ink-400);">—</span>';
                 }
 
-                return '<span style="color:var(--ink-700); font-size:13px;">'.e($warehouse->address).'</span>';
+                return '<div style="color:var(--ink-700); font-size:13px; max-width:220px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word;" title="'.e($warehouse->address).'">'
+                    .e($warehouse->address)
+                    .'</div>';
             })
             ->editColumn('batches_count', function (Warehouse $warehouse) {
                 $count = (int) ($warehouse->batches_count ?? 0);
 
-                return Blade::render('<x-core::badge color="teal" size="xs" variant="soft">{{ $count }} টি</x-core::badge>', ['count' => $count]);
+                return '<span style="white-space:nowrap;">'.Blade::render('<x-core::badge color="teal" size="xs" variant="soft">{{ $count }} টি</x-core::badge>', ['count' => $count]).'</span>';
             })
             ->addColumn('is_default', function (Warehouse $warehouse) {
                 if ($warehouse->is_default) {
@@ -100,7 +102,6 @@ class WarehousesDataTable extends BaseDataTable
     {
         $query = $model->newQuery()
             ->with(['branch'])
-            ->withCount('batches')
             ->select([
                 'warehouses.id',
                 'warehouses.shop_id',
@@ -111,6 +112,7 @@ class WarehousesDataTable extends BaseDataTable
                 'warehouses.is_default',
                 'warehouses.created_at',
             ])
+            ->withCount('batches')
             ->orderByDesc('warehouses.is_default');
 
         if ($branchId = request('branch_id')) {
@@ -145,7 +147,7 @@ class WarehousesDataTable extends BaseDataTable
         return [
             Column::make('name')->title('<span class="bn">গুদামের নাম</span><span class="en">Warehouse Name</span>')->width(180),
             Column::computed('branch')->title('<span class="bn">শাখা</span><span class="en">Branch</span>')->width(150),
-            Column::make('address')->title('<span class="bn">ঠিকানা</span><span class="en">Address</span>'),
+            Column::make('address')->title('<span class="bn">ঠিকানা</span><span class="en">Address</span>')->width(220),
             Column::make('batches_count')->title('<span class="bn">ব্যাচ সংখ্যা</span><span class="en">Batches</span>')->addClass('table-cell-center')->width(110)->searchable(false),
             Column::computed('is_default')->title('<span class="bn">ডিফল্ট</span><span class="en">Default</span>')->addClass('table-cell-center')->width(100)->orderable(false)->searchable(false),
             Column::make('status')->title('<span class="bn">অবস্থা</span><span class="en">Status</span>')->addClass('table-cell-center')->width(90),

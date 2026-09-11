@@ -238,7 +238,7 @@ class SaleInvoiceModalFeatureTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('id="saleInvoiceModal"', false);
-        $response->assertSee('Successful');
+        $response->assertSee('Sale Invoice');
         $response->assertSee('আলহাজ্ব বস্ত্রালয়');
         $response->assertSee('SL-1003');
         $response->assertSee('মো: জাহিদ');

@@ -80,6 +80,14 @@
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
         }
+        table.invoice-items-table td.col-product-name,
+        table.invoice-items-table td.col-product-name div,
+        table.invoice-items-table .product-title {
+            white-space: normal !important;
+            word-break: break-word !important;
+            overflow-wrap: anywhere !important;
+            line-height: 1.4 !important;
+        }
         @media print {
             body {
                 background: #ffffff !important;

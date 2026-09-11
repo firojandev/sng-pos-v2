@@ -29,8 +29,8 @@ class CustomerDataTableTest extends TestCase
             'name' => 'Customer Test Shop',
             'slug' => 'customer-test-shop',
             'status' => 'active',
-            'enabled_features' => ['customers'],
         ]);
+        $this->subscribeShopToFeatures($shop, ['customers']);
 
         Permission::firstOrCreate(['name' => 'customers.view', 'guard_name' => 'web']);
         Permission::firstOrCreate(['name' => 'customers.create', 'guard_name' => 'web']);
@@ -224,5 +224,182 @@ class CustomerDataTableTest extends TestCase
         $response = $this->actingAs($user)->delete(route('customers.destroy', $customer));
         $response->assertRedirect(route('customers.index'));
         $this->assertDatabaseMissing('customers', ['id' => $customer->id]);
+    }
+
+    public function test_customers_metrics_endpoint_returns_json_metrics(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+
+        Customer::create([
+            'shop_id' => $shop->id,
+            'name' => 'Opening Due Customer',
+            'opening_due' => 1500,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($user)->getJson(route('customers.metrics'));
+
+        $response->assertOk();
+        $response->assertJsonStructure([
+            'success',
+            'metrics' => [
+                'totalCustomers',
+                'activeCustomers',
+                'totalDue',
+                'dueCustomersCount',
+                'totalSalesAmount',
+                'totalSalesCount',
+                'paidTotal',
+            ],
+        ]);
+        $this->assertEquals(1, $response->json('metrics.totalCustomers'));
+        $this->assertEquals(1500.00, (float) $response->json('metrics.totalDue'));
+        $this->assertEquals(1, $response->json('metrics.dueCustomersCount'));
+    }
+
+    public function test_creating_customer_with_opening_due_returns_updated_metrics_in_ajax(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+
+        $response = $this->actingAs($user)->postJson(route('customers.store'), [
+            'name' => 'New Customer With Due',
+            'phone' => '01899999999',
+            'opening_due' => 2750.50,
+            'status' => 'active',
+        ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+        ]);
+        $this->assertNotNull($response->json('metrics'));
+        $this->assertEquals(1, $response->json('metrics.totalCustomers'));
+        $this->assertEquals(2750.50, (float) $response->json('metrics.totalDue'));
+        $this->assertEquals(1, $response->json('metrics.dueCustomersCount'));
+    }
+
+    public function test_customers_datatable_ajax_payload_includes_metrics(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+
+        Customer::create([
+            'shop_id' => $shop->id,
+            'name' => 'Existing Customer',
+            'opening_due' => 800,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($user)->getJson(route('customers.index'), [
+            'X-Requested-With' => 'XMLHttpRequest',
+        ]);
+
+        $response->assertOk();
+        $this->assertNotNull($response->json('metrics'));
+        $this->assertEquals(800.00, (float) $response->json('metrics.totalDue'));
+        $this->assertEquals(1, $response->json('metrics.dueCustomersCount'));
+    }
+
+    public function test_customer_can_be_updated_via_post_with_method_override(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+
+        $customer = Customer::create([
+            'shop_id' => $shop->id,
+            'name' => 'Customer Method Override',
+            'phone' => '01800000001',
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($user)->postJson(route('customers.update', $customer), [
+            '_method' => 'PUT',
+            'name' => 'Customer Method Override Updated',
+            'status' => 'active',
+        ], ['X-HTTP-Method-Override' => 'PUT']);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+        ]);
+        $this->assertDatabaseHas('customers', [
+            'id' => $customer->id,
+            'name' => 'Customer Method Override Updated',
+        ]);
+    }
+
+    public function test_customer_can_be_updated_via_direct_post(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+
+        $customer = Customer::create([
+            'shop_id' => $shop->id,
+            'name' => 'Customer Direct POST',
+            'phone' => '01800000002',
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($user)->postJson(url("/customers/{$customer->id}"), [
+            'name' => 'Customer Direct POST Updated',
+            'status' => 'inactive',
+        ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+        ]);
+        $this->assertDatabaseHas('customers', [
+            'id' => $customer->id,
+            'name' => 'Customer Direct POST Updated',
+            'status' => 'inactive',
+        ]);
+    }
+
+    public function test_customer_create_rejects_negative_opening_due_and_allows_positive(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+
+        // Negative opening due (-3000) should be rejected with 422
+        $responseNegative = $this->actingAs($user)->postJson(route('customers.store'), [
+            'name' => 'Negative Customer',
+            'opening_due' => -3000,
+            'status' => 'active',
+        ]);
+
+        $responseNegative->assertStatus(422);
+        $responseNegative->assertJsonValidationErrors(['opening_due']);
+
+        // Positive opening due (3000) should be allowed
+        $responsePositive = $this->actingAs($user)->postJson(route('customers.store'), [
+            'name' => 'Positive Customer',
+            'opening_due' => 3000,
+            'status' => 'active',
+        ]);
+
+        $responsePositive->assertOk();
+        $this->assertDatabaseHas('customers', [
+            'shop_id' => $shop->id,
+            'name' => 'Positive Customer',
+            'opening_due' => 3000,
+        ]);
+    }
+
+    public function test_customer_update_rejects_negative_opening_due(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+
+        $customer = Customer::create([
+            'shop_id' => $shop->id,
+            'name' => 'Original Customer',
+            'opening_due' => 500,
+            'status' => 'active',
+        ]);
+
+        $responseNegative = $this->actingAs($user)->putJson(route('customers.update', $customer), [
+            'name' => 'Updated Customer',
+            'opening_due' => -3000,
+            'status' => 'active',
+        ]);
+
+        $responseNegative->assertStatus(422);
+        $responseNegative->assertJsonValidationErrors(['opening_due']);
     }
 }

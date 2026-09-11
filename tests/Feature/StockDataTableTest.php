@@ -13,7 +13,6 @@ use Modules\Product\Models\Category;
 use Modules\Product\Models\Product;
 use Modules\Product\Models\Unit;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
-use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -43,13 +42,8 @@ class StockDataTableTest extends TestCase
             'name' => 'Test Shop',
             'slug' => 'test-shop',
             'status' => 'active',
-            'enabled_features' => Features::keys(),
         ]);
-
-        $standardPlan = Plan::where('slug', 'standard')->first();
-        if ($standardPlan) {
-            $this->shop->subscribe($standardPlan);
-        }
+        $this->subscribeShopToFeatures($this->shop, Features::keys());
 
         $this->user = User::create([
             'name' => 'Test Admin',
@@ -142,6 +136,55 @@ class StockDataTableTest extends TestCase
         $response->assertSee('মোট মজুদ একক');
         $response->assertSee('মোট মজুদ মূল্য');
         $response->assertSee('Potato Crackers');
+    }
+
+    public function test_stock_index_metrics_are_scoped_to_current_shop(): void
+    {
+        $otherShop = Shop::create([
+            'name' => 'Other Shop',
+            'slug' => 'other-shop',
+            'status' => 'active',
+        ]);
+        $this->subscribeShopToFeatures($otherShop, Features::keys());
+
+        $otherCategory = Category::create(['shop_id' => $otherShop->id, 'name' => 'Other Category']);
+        $otherProduct = Product::create([
+            'shop_id' => $otherShop->id,
+            'category_id' => $otherCategory->id,
+            'name' => 'Expensive Item',
+            'sku' => 'EXP-01',
+            'purchase_price' => 1000,
+            'sale_price' => 1500,
+            'status' => 'active',
+        ]);
+
+        Batch::create([
+            'shop_id' => $otherShop->id,
+            'product_id' => $otherProduct->id,
+            'batch_no' => 'OTHER-BATCH-01',
+            'quantity' => 100,
+        ]);
+
+        $myCategory = Category::create(['shop_id' => $this->shop->id, 'name' => 'My Category']);
+        Product::create([
+            'shop_id' => $this->shop->id,
+            'category_id' => $myCategory->id,
+            'name' => 'Zero Stock Item',
+            'sku' => 'ZERO-01',
+            'purchase_price' => 50,
+            'sale_price' => 80,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($this->user)->get(route('stock.index'));
+
+        $response->assertOk();
+        $response->assertViewHas('metrics', function ($metrics) {
+            return $metrics['totalProducts'] === 1
+                && (float) $metrics['totalQty'] === 0.0
+                && (float) $metrics['totalValue'] === 0.0
+                && $metrics['outCount'] === 1;
+        });
     }
 
     public function test_stock_adjustment_via_ajax(): void

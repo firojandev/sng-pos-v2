@@ -5,29 +5,6 @@
     subtitle-en="Manage shop details, active subscription plan, and shop administrators"
     active="shops"
 >
-    @php
-        $selectedFeatures = (array) old('features', $shop->enabled_features ?? []);
-        $featureIcons = [
-            'sales' => 'shopping-cart',
-            'purchase' => 'truck',
-            'cashbox' => 'wallet',
-            'quick-sale' => 'sparkles',
-            'stock' => 'box',
-            'products' => 'tag',
-            'branches' => 'building',
-            'customers' => 'users',
-            'suppliers' => 'truck',
-            'income' => 'trending-up',
-            'expense' => 'trending-down',
-            'tax' => 'percent',
-            'reports' => 'file-text',
-            'audit' => 'shield',
-            'employees' => 'user',
-            'users' => 'lock',
-            'subscription' => 'sparkles',
-        ];
-    @endphp
-
     <style>
     .shop-edit-grid {
         display: grid;
@@ -112,8 +89,8 @@
                         <div class="panel-head" style="padding:14px 18px;">
                             <div class="panel-title" style="display:flex; align-items:center; gap:8px; font-size:15px;">
                                 <x-core::icon name="edit" size="18" style="color:var(--teal-800);" />
-                                <span class="bn">দোকানের বিবরণ ও সক্রিয় ফিচার</span>
-                                <span class="en" style="display:none;">Shop Details & Feature Modules</span>
+                                <span class="bn">দোকানের বিবরণ</span>
+                                <span class="en" style="display:none;">Shop Details</span>
                             </div>
                         </div>
                         <div class="panel-body" style="padding:18px;">
@@ -198,87 +175,6 @@
                                     />
                                 </div>
 
-                                {{-- Features Section inside Form 1 --}}
-                                <div style="border-top:1px solid var(--border); padding-top:16px; margin-bottom:18px;">
-                                    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
-                                        <div style="display:flex; align-items:center; gap:8px;">
-                                            <span style="font-weight:700; font-size:13.5px; color:var(--ink-800);">
-                                                <span class="bn">সক্রিয় মডিউল ও ফিচার</span>
-                                                <span class="en" style="display:none;">Active Modules & Features</span>
-                                            </span>
-                                            <x-core::badge id="edit-selected-features-count" color="teal" size="xs">
-                                                {{ count($selectedFeatures) }} টি নির্বাচিত
-                                            </x-core::badge>
-                                        </div>
-
-                                        <div style="display:flex; align-items:center; gap:6px;">
-                                            <x-core::button
-                                                type="button"
-                                                variant="soft"
-                                                color="teal"
-                                                size="xs"
-                                                id="btn-edit-select-all-features"
-                                                icon="check"
-                                            >
-                                                <span class="bn">সবগুলো নির্বাচন</span>
-                                                <span class="en" style="display:none;">Select All</span>
-                                            </x-core::button>
-
-                                            <x-core::button
-                                                type="button"
-                                                variant="soft"
-                                                color="secondary"
-                                                size="xs"
-                                                id="btn-edit-deselect-all-features"
-                                                icon="x"
-                                            >
-                                                <span class="bn">সব বাতিল</span>
-                                                <span class="en" style="display:none;">Deselect All</span>
-                                            </x-core::button>
-                                        </div>
-                                    </div>
-
-                                    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:10px;">
-                                        @foreach ($features as $key => $labels)
-                                            @php
-                                                $isChecked = in_array($key, $selectedFeatures);
-                                                $iconName = $featureIcons[$key] ?? 'check-circle';
-                                            @endphp
-                                            <label
-                                                class="form-radio-card feature-card {{ $isChecked ? 'active' : '' }}"
-                                                style="padding:10px 12px; gap:10px; border-radius:10px;"
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    name="features[]"
-                                                    value="{{ $key }}"
-                                                    class="edit-feature-checkbox"
-                                                    data-feature-key="{{ $key }}"
-                                                    data-feature-name-bn="{{ $labels['bn'] }}"
-                                                    data-feature-name-en="{{ $labels['en'] }}"
-                                                    {{ $isChecked ? 'checked' : '' }}
-                                                />
-                                                <span class="card-icon" style="width:30px; height:30px; border-radius:8px;">
-                                                    <x-core::icon :name="$iconName" size="15" />
-                                                </span>
-                                                <span class="card-content">
-                                                    <span class="card-title" style="font-size:12.5px;">
-                                                        <span class="bn">{{ $labels['bn'] }}</span>
-                                                        <span class="en" style="display:none;">{{ $labels['en'] }}</span>
-                                                    </span>
-                                                    <span class="card-desc" style="font-size:11px; font-family:monospace; color:var(--ink-400);">
-                                                        {{ $key }}
-                                                    </span>
-                                                </span>
-                                            </label>
-                                        @endforeach
-                                    </div>
-
-                                    @error('features')
-                                        <div class="form-error" style="margin-top:10px;">{{ $message }}</div>
-                                    @enderror
-                                </div>
-
                                 <div style="display:flex; justify-content:flex-end;">
                                     <x-core::button
                                         type="submit"
@@ -340,10 +236,14 @@
                                         </x-core::form-group>
                                     </div>
                                     <div>
-                                        <x-core::form-group name="status" label="সাবস্ক্রিপশন অবস্থা" label-en="Subscription Status" icon="check-circle" required>
-                                            <select name="status" id="edit-subscription-status-select" class="form-control form-select" required>
+                                        @php
+                                            $rawSubStatus = old('subscription_status', old('status', $subscription?->status instanceof \BackedEnum ? $subscription->status->value : ($subscription?->status ?? 'active')));
+                                            $currentSubStatus = $rawSubStatus === 'trial' ? 'trialing' : $rawSubStatus;
+                                        @endphp
+                                        <x-core::form-group name="subscription_status" label="সাবস্ক্রিপশন অবস্থা" label-en="Subscription Status" icon="check-circle" required>
+                                            <select name="subscription_status" id="edit-subscription-status-select" class="form-control form-select" required>
                                                 @foreach (\Modules\Shop\Models\Subscription::statusLabels() as $key => $label)
-                                                    <option value="{{ $key }}" {{ old('status', $subscription->status ?? 'active') === $key ? 'selected' : '' }}>
+                                                    <option value="{{ $key }}" {{ $currentSubStatus === $key ? 'selected' : '' }}>
                                                         {{ $label['bn'] }} ({{ $label['en'] }})
                                                     </option>
                                                 @endforeach
@@ -352,18 +252,19 @@
                                     </div>
                                 </div>
 
+                                @php
+                                    $formatDateVal = function ($val) {
+                                        if (! $val) return '';
+                                        if ($val instanceof \DateTimeInterface) return $val->format('Y-m-d');
+                                        if (is_string($val)) return substr($val, 0, 10);
+                                        return '';
+                                    };
+                                    $startDateVal = old('current_period_start', $formatDateVal($subscription?->current_period_start ?? $subscription?->starts_at));
+                                    $endDateVal = old('current_period_end', $formatDateVal($subscription?->current_period_end ?? $subscription?->ends_at));
+                                    $trialDateVal = old('trial_ends_at', $formatDateVal($subscription?->trial_ends_at));
+                                @endphp
+
                                 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:16px;">
-                                    <div>
-                                        <x-core::input
-                                            type="date"
-                                            name="trial_ends_at"
-                                            id="edit-subscription-trial-input"
-                                            label="ট্রায়াল সমাপ্তির তারিখ"
-                                            label-en="Trial Ends At"
-                                            icon="calendar"
-                                            :value="old('trial_ends_at', optional($subscription->trial_ends_at ?? null)->format('Y-m-d'))"
-                                        />
-                                    </div>
                                     <div>
                                         <x-core::input
                                             type="date"
@@ -372,7 +273,7 @@
                                             label="বর্তমান মেয়াদ শুরু"
                                             label-en="Period Start Date"
                                             icon="calendar"
-                                            :value="old('current_period_start', optional($subscription->current_period_start ?? null)->format('Y-m-d'))"
+                                            :value="$startDateVal"
                                         />
                                     </div>
                                     <div>
@@ -383,7 +284,18 @@
                                             label="বর্তমান মেয়াদ শেষ"
                                             label-en="Period End Date"
                                             icon="calendar"
-                                            :value="old('current_period_end', optional($subscription->current_period_end ?? null)->format('Y-m-d'))"
+                                            :value="$endDateVal"
+                                        />
+                                    </div>
+                                    <div>
+                                        <x-core::input
+                                            type="date"
+                                            name="trial_ends_at"
+                                            id="edit-subscription-trial-input"
+                                            label="ট্রায়াল সমাপ্তির তারিখ"
+                                            label-en="Trial Ends At"
+                                            icon="calendar"
+                                            :value="$trialDateVal"
                                         />
                                     </div>
                                 </div>
@@ -546,16 +458,6 @@
                                                     required
                                                 />
                                             </div>
-                                            <div>
-                                                <x-core::form-group name="role" label="রোল" label-en="Role" icon="shield" required>
-                                                    <select name="role" class="form-control form-select" required>
-                                                        <option value="" disabled selected>-- রোল নির্বাচন --</option>
-                                                        @foreach ($roles as $role)
-                                                            <option value="{{ $role->name }}">{{ $role->name }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                </x-core::form-group>
-                                            </div>
                                         </div>
 
                                         <div style="display:flex; justify-content:flex-end;">
@@ -663,15 +565,6 @@
                                     </div>
                                 @endif
                             </div>
-
-                            {{-- Feature tags preview --}}
-                            <div style="font-size:11.5px; font-weight:700; color:var(--ink-700); margin-bottom:6px;">
-                                <span class="bn">সক্রিয় মডিউলসমূহ:</span>
-                                <span class="en" style="display:none;">Active Modules:</span>
-                            </div>
-                            <div id="edit-preview-feature-tags" style="display:flex; flex-wrap:wrap; gap:5px; min-height:28px;">
-                                <!-- Populated via jQuery -->
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -777,50 +670,6 @@
                 checkTimer = setTimeout(performAvailabilityCheck, 280);
             }
 
-            // 2. Feature tags live update and counter
-            function updateFeaturesPreview() {
-                var $checked = $('input.edit-feature-checkbox:checked');
-                $('#edit-selected-features-count').text($checked.length + ' টি নির্বাচিত');
-
-                var $tagsContainer = $('#edit-preview-feature-tags');
-                $tagsContainer.empty();
-
-                if ($checked.length === 0) {
-                    $tagsContainer.html('<span style="font-size:11px; color:var(--ink-400);">কোনো ফিচার নির্বাচিত নেই</span>');
-                    return;
-                }
-
-                $checked.each(function () {
-                    var nameBn = $(this).data('feature-name-bn') || $(this).val();
-                    $tagsContainer.append(
-                        '<span class="badge b-teal badge-teal badge-xs" style="padding:2px 7px;">' + nameBn + '</span>'
-                    );
-                });
-            }
-
-            // Feature checkbox changes
-            $(document).on('change', 'input.edit-feature-checkbox', function () {
-                var isChecked = $(this).is(':checked');
-                $(this).closest('.feature-card').toggleClass('active', isChecked);
-                updateFeaturesPreview();
-            });
-
-            // Select All Features
-            $(document).on('click', '#btn-edit-select-all-features', function (e) {
-                e.preventDefault();
-                $('input.edit-feature-checkbox').prop('checked', true);
-                $('.feature-card').addClass('active');
-                updateFeaturesPreview();
-            });
-
-            // Deselect All Features
-            $(document).on('click', '#btn-edit-deselect-all-features', function (e) {
-                e.preventDefault();
-                $('input.edit-feature-checkbox').prop('checked', false);
-                $('.feature-card').removeClass('active');
-                updateFeaturesPreview();
-            });
-
             // 3. Live updates for shop details in right card
             $(document).on('input', '#edit-shop-name-input', function () {
                 $('#edit-preview-shop-name').text($(this).val() || 'দোকানের নাম');
@@ -915,8 +764,6 @@
                     }
                 }
             });
-
-            updateFeaturesPreview();
 
             if ($slugInput.val() || $storeCodeInput.val()) {
                 performAvailabilityCheck();

@@ -30,8 +30,8 @@ class BranchDataTableTest extends TestCase
             'name' => 'Branch Test Shop',
             'slug' => 'branch-test-shop',
             'status' => 'active',
-            'enabled_features' => ['branches'],
         ]);
+        $this->subscribeShopToFeatures($shop, ['branches', 'max-branches']);
 
         Permission::firstOrCreate(['name' => 'branches.view', 'guard_name' => 'web']);
         Permission::firstOrCreate(['name' => 'branches.create', 'guard_name' => 'web']);
@@ -83,11 +83,24 @@ class BranchDataTableTest extends TestCase
     {
         [$user, $shop] = $this->createShopUser();
 
-        Branch::create([
+        $branch = Branch::create([
             'shop_id' => $shop->id,
             'name' => 'Dhanmondi Branch',
             'phone' => '01700112233',
             'address' => 'Road 27, Dhanmondi',
+            'status' => 'active',
+        ]);
+
+        Warehouse::create([
+            'shop_id' => $shop->id,
+            'branch_id' => $branch->id,
+            'name' => 'Warehouse 1',
+            'status' => 'active',
+        ]);
+        Warehouse::create([
+            'shop_id' => $shop->id,
+            'branch_id' => $branch->id,
+            'name' => 'Warehouse 2',
             'status' => 'active',
         ]);
 
@@ -105,6 +118,7 @@ class BranchDataTableTest extends TestCase
         ]);
         $this->assertEquals(1, $response->json('recordsTotal'));
         $this->assertStringContainsString('Dhanmondi Branch', $response->json('data.0.name'));
+        $this->assertStringContainsString('2 টি', $response->json('data.0.warehouses_count'));
     }
 
     public function test_branch_can_be_created_via_post_and_ajax(): void

@@ -33,15 +33,35 @@ class PurchaseController extends Controller
         protected AccountTransactionService $accountTransactionService
     ) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
-        return $this->create();
+        return $this->create($request);
     }
 
     public function ledger(PurchasesDataTable $dataTable)
     {
-        $totals = Purchase::query()
-            ->selectRaw('
+        $query = Purchase::query();
+
+        if ($from = request('from')) {
+            $query->whereDate('purchase_date', '>=', $from);
+        }
+
+        if ($to = request('to')) {
+            $query->whereDate('purchase_date', '<=', $to);
+        }
+
+        if ($status = request('status')) {
+            if (in_array($status, ['paid', 'partial', 'due'], true)) {
+                $query->where('payment_status', $status);
+            }
+        }
+
+        $supplierId = request('supplier_id') ?: request('supplier');
+        if ($supplierId && $supplierId !== 'all') {
+            $query->where('supplier_id', $supplierId);
+        }
+
+        $totals = $query->selectRaw('
                 COALESCE(SUM(total), 0) as total_amount,
                 COALESCE(SUM(paid_amount), 0) as total_paid,
                 COALESCE(SUM(due_amount), 0) as total_due,
@@ -54,7 +74,9 @@ class PurchaseController extends Controller
         $totalDue = (float) ($totals->total_due ?? 0);
         $totalCount = (int) ($totals->total_count ?? 0);
 
-        return $dataTable->render('purchase::purchase.ledger', compact('totalAmount', 'totalPaid', 'totalDue', 'totalCount'));
+        $suppliers = Supplier::orderBy('name')->get(['id', 'name', 'phone']);
+
+        return $dataTable->render('purchase::purchase.ledger', compact('totalAmount', 'totalPaid', 'totalDue', 'totalCount', 'suppliers'));
     }
 
     public function printLedger(Request $request): View
@@ -62,6 +84,7 @@ class PurchaseController extends Controller
         $from = $request->query('from');
         $to = $request->query('to');
         $status = $request->query('status');
+        $supplierId = $request->query('supplier_id') ?: $request->query('supplier');
         $search = trim((string) $request->query('q', ''));
 
         $query = Purchase::with(['supplier', 'items.product', 'warehouse'])
@@ -75,6 +98,9 @@ class PurchaseController extends Controller
         }
         if ($status && in_array($status, ['paid', 'partial', 'due'], true)) {
             $query->where('payment_status', $status);
+        }
+        if ($supplierId && $supplierId !== 'all') {
+            $query->where('supplier_id', $supplierId);
         }
         if ($search !== '') {
             $searchClean = ltrim($search, '#');
@@ -105,6 +131,7 @@ class PurchaseController extends Controller
 
         $purchases = $query->get();
         $shop = Auth::user()?->shop;
+        $selectedSupplier = ($supplierId && $supplierId !== 'all') ? Supplier::find($supplierId) : null;
 
         return view('purchase::purchase.print-ledger', [
             'purchases' => $purchases,
@@ -114,8 +141,10 @@ class PurchaseController extends Controller
                 'from' => $from,
                 'to' => $to,
                 'status' => $status,
+                'supplier_id' => $supplierId,
                 'search' => $search,
             ],
+            'selectedSupplier' => $selectedSupplier,
         ]);
     }
 
@@ -346,14 +375,20 @@ class PurchaseController extends Controller
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
+        $warehouses = Warehouse::where('status', 'active')->with('branch')->orderBy('name')->get();
+        $defaultWarehouse = $warehouses->firstWhere('is_default', true);
+        $warehouseId = $request->query('warehouse_id', $defaultWarehouse?->id ?? optional($warehouses->first())->id);
+
         $suppliers = Supplier::where('status', 'active')
             ->withSum('purchases', 'due_amount')
             ->orderBy('name')
             ->get(['id', 'name', 'phone', 'address', 'opening_due']);
-        $products = Product::where('status', 'active')->withSum('batches', 'quantity')->with('units')->orderBy('name')->get();
-        $warehouses = Warehouse::where('status', 'active')->with('branch')->orderBy('name')->get();
+        $products = Product::where('status', 'active')
+            ->withSum(['batches as batches_sum_quantity' => fn ($q) => $q->where('warehouse_id', $warehouseId)], 'quantity')
+            ->with('units')
+            ->orderBy('name')->get();
         $employees = Employee::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);
         $accounts = Account::active()->orderByDesc('is_default')->orderBy('name')->get();
 
@@ -367,6 +402,8 @@ class PurchaseController extends Controller
             'suppliers' => $suppliers,
             'products' => $products,
             'warehouses' => $warehouses,
+            'warehouseId' => $warehouseId,
+            'defaultWarehouse' => $defaultWarehouse,
             'employees' => $employees,
             'accounts' => $accounts,
             'invoicePurchase' => $invoicePurchase,
@@ -412,6 +449,13 @@ class PurchaseController extends Controller
                 ]);
             }
 
+            if (! $supplier && $total > 0 && round($total - $totalSubmittedPaid, 2) > 0.01) {
+                throw ValidationException::withMessages([
+                    'supplier_id' => 'সরবরাহকারী নির্বাচন ছাড়া বাকি ক্রয় সম্ভব নয়। সম্পূর্ণ মূল্য পরিশোধ করতে হবে অথবা সরবরাহকারী নির্বাচন করুন। / Purchases with due cannot be created without a supplier. Full payment is required or select a supplier.',
+                    'payments' => 'সরবরাহকারী নির্বাচন ছাড়া বাকি ক্রয় সম্ভব নয়। সম্পূর্ণ মূল্য পরিশোধ করতে হবে অথবা সরবরাহকারী নির্বাচন করুন। / Purchases with due cannot be created without a supplier. Full payment is required or select a supplier.',
+                ]);
+            }
+
             $purchasePaid = min($totalSubmittedPaid, $total);
             $purchaseDue = round(max($total - $purchasePaid, 0), 2);
             $purchaseStatus = $purchaseDue <= 0 ? 'paid' : ($purchasePaid <= 0 ? 'due' : 'partial');
@@ -451,7 +495,7 @@ class PurchaseController extends Controller
             ->with('show_invoice_purchase_id', $purchase?->id);
     }
 
-    public function edit(Purchase $purchase): View|RedirectResponse
+    public function edit(Request $request, Purchase $purchase): View|RedirectResponse
     {
         if ($purchase->hasUsedQuantity()) {
             $reason = $purchase->cannotBeEditedReason();
@@ -460,17 +504,23 @@ class PurchaseController extends Controller
                 ->with('error', $reason.' তাই ক্রয়টি সম্পাদনা করা যাবে না। / Therefore, this purchase cannot be edited.');
         }
 
+        $warehouses = Warehouse::where('status', 'active')->with('branch')->orderBy('name')->get();
+        $defaultWarehouse = $warehouses->firstWhere('is_default', true);
+        $warehouseId = $request->query('warehouse_id', $purchase->warehouse_id ?? $defaultWarehouse?->id ?? optional($warehouses->first())->id);
+
         $suppliers = Supplier::where('status', 'active')
             ->withSum(['purchases' => fn ($q) => $q->where('id', '!=', $purchase->id)], 'due_amount')
             ->orderBy('name')
             ->get(['id', 'name', 'phone', 'address', 'opening_due']);
-        $products = Product::where('status', 'active')->withSum('batches', 'quantity')->with('units')->orderBy('name')->get();
-        $warehouses = Warehouse::where('status', 'active')->with('branch')->orderBy('name')->get();
+        $products = Product::where('status', 'active')
+            ->withSum(['batches as batches_sum_quantity' => fn ($q) => $q->where('warehouse_id', $warehouseId)], 'quantity')
+            ->with('units')
+            ->orderBy('name')->get();
         $employees = Employee::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);
         $accounts = Account::active()->orderByDesc('is_default')->orderBy('name')->get();
         $purchase->load('items', 'payments');
 
-        return view('purchase::purchase.edit', compact('purchase', 'suppliers', 'products', 'warehouses', 'employees', 'accounts'));
+        return view('purchase::purchase.edit', compact('purchase', 'suppliers', 'products', 'warehouses', 'employees', 'accounts', 'warehouseId', 'defaultWarehouse'));
     }
 
     public function update(UpdatePurchaseRequest $request, Purchase $purchase): RedirectResponse|JsonResponse
@@ -530,6 +580,13 @@ class PurchaseController extends Controller
             if (! $supplier && round($totalSubmittedPaid - $total, 2) > 0.01) {
                 throw ValidationException::withMessages([
                     'payments' => 'পরিশোধের পরিমাণ ক্রয়ের মোট মূল্যের চেয়ে বেশি হতে পারে না (সর্বোচ্চ: ৳'.number_format($total, 2).') / Payment amount cannot exceed purchase total.',
+                ]);
+            }
+
+            if (! $supplier && $total > 0 && round($total - $totalSubmittedPaid, 2) > 0.01) {
+                throw ValidationException::withMessages([
+                    'supplier_id' => 'সরবরাহকারী নির্বাচন ছাড়া বাকি ক্রয় সম্ভব নয়। সম্পূর্ণ মূল্য পরিশোধ করতে হবে অথবা সরবরাহকারী নির্বাচন করুন। / Purchases with due cannot be created without a supplier. Full payment is required or select a supplier.',
+                    'payments' => 'সরবরাহকারী নির্বাচন ছাড়া বাকি ক্রয় সম্ভব নয়। সম্পূর্ণ মূল্য পরিশোধ করতে হবে অথবা সরবরাহকারী নির্বাচন করুন। / Purchases with due cannot be created without a supplier. Full payment is required or select a supplier.',
                 ]);
             }
 

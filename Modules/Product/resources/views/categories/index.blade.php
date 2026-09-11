@@ -23,25 +23,32 @@
                     <div class="mini-card pm-card">
                         <div class="mini-card-actions">
                             @can('products.edit')
-                                <button
+                                <x-core::button
                                     type="button"
-                                    class="act btn-edit-category"
+                                    size="sm"
+                                    variant="ghost"
+                                    color="secondary"
+                                    icon="edit"
+                                    class="btn-edit-category"
                                     title="Edit"
                                     data-id="{{ $category->id }}"
                                     data-name="{{ $category->name }}"
                                     data-description="{{ $category->description }}"
                                     data-action="{{ route('categories.update', $category) }}"
-                                >
-                                    <x-core::icon name="edit" size="14" />
-                                </button>
+                                />
                             @endcan
                             @can('products.delete')
-                                <form method="POST" action="{{ route('categories.destroy', $category) }}" class="delete-form">
+                                <form method="POST" action="{{ route('categories.destroy', $category) }}" class="delete-form" style="display:inline;">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="act" title="Delete">
-                                        <x-core::icon name="trash-2" size="14" class="text-danger" />
-                                    </button>
+                                    <x-core::button
+                                        type="submit"
+                                        size="sm"
+                                        variant="ghost"
+                                        color="danger"
+                                        icon="trash-2"
+                                        title="Delete"
+                                    />
                                 </form>
                             @endcan
                         </div>
@@ -82,20 +89,31 @@
             </div>
             <form method="POST" action="{{ route('categories.store') }}" id="create_category_form">
                 @csrf
-                <div style="display:flex; flex-direction:column; gap:14px;">
-                    <div class="field" style="margin-top:0;">
-                        <label class="bn">নাম <span class="text-danger">*</span></label>
-                        <label class="en" style="display:none;">Name <span class="text-danger">*</span></label>
-                        <input type="text" name="name" id="create_cat_name" value="{{ old('name') }}" placeholder="যেমন: ইলেকট্রনিক্স" required autofocus>
-                        @error('name') <div class="field-error">{{ $message }}</div> @enderror
-                    </div>
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                    <x-core::input
+                        name="name"
+                        id="create_cat_name"
+                        label="নাম"
+                        label-en="Name"
+                        placeholder="যেমন: মুদি পণ্য"
+                        placeholder-en="e.g. Grocery Items"
+                        :value="old('name')"
+                        size="sm"
+                        :required="true"
+                        autofocus
+                    />
 
-                    <div class="field" style="margin-top:0;">
-                        <label class="bn">বিবরণ</label>
-                        <label class="en" style="display:none;">Description</label>
-                        <textarea name="description" id="create_cat_description" rows="3" placeholder="ঐচ্ছিক বিবরণ">{{ old('description') }}</textarea>
-                        @error('description') <div class="field-error">{{ $message }}</div> @enderror
-                    </div>
+                    <x-core::textarea
+                        name="description"
+                        id="create_cat_description"
+                        label="বিবরণ"
+                        label-en="Description"
+                        placeholder="ঐচ্ছিক বিবরণ"
+                        placeholder-en="Optional description"
+                        :value="old('description')"
+                        rows="3"
+                        size="sm"
+                    />
                 </div>
 
                 <div style="margin-top:20px; padding-top:14px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:flex-end; gap:8px;">
@@ -131,19 +149,29 @@
                 @csrf
                 @method('PUT')
                 <div style="display:flex; flex-direction:column; gap:14px;">
-                    <div class="field" style="margin-top:0;">
-                        <label class="bn">নাম <span class="text-danger">*</span></label>
-                        <label class="en" style="display:none;">Name <span class="text-danger">*</span></label>
-                        <input type="text" name="name" id="edit_cat_name" value="{{ old('name') }}" placeholder="যেমন: ইলেকট্রনিক্স" required>
-                        @error('name') <div class="field-error">{{ $message }}</div> @enderror
-                    </div>
+                    <x-core::input
+                        name="name"
+                        id="edit_cat_name"
+                        label="নাম"
+                        label-en="Name"
+                        placeholder="যেমন: মুদি পণ্য"
+                        placeholder-en="e.g. Grocery Items"
+                        :value="old('name')"
+                        size="sm"
+                        :required="true"
+                    />
 
-                    <div class="field" style="margin-top:0;">
-                        <label class="bn">বিবরণ</label>
-                        <label class="en" style="display:none;">Description</label>
-                        <textarea name="description" id="edit_cat_description" rows="3" placeholder="ঐচ্ছিক বিবরণ">{{ old('description') }}</textarea>
-                        @error('description') <div class="field-error">{{ $message }}</div> @enderror
-                    </div>
+                    <x-core::textarea
+                        name="description"
+                        id="edit_cat_description"
+                        label="বিবরণ"
+                        label-en="Description"
+                        placeholder="ঐচ্ছিক বিবরণ"
+                        placeholder-en="Optional description"
+                        :value="old('description')"
+                        rows="3"
+                        size="sm"
+                    />
                 </div>
 
                 <div style="margin-top:20px; padding-top:14px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:flex-end; gap:8px;">

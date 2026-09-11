@@ -22,6 +22,22 @@ class Permissions
     public static function featureActions(): array
     {
         return [
+            'dashboard' => [
+                'view',
+                'stat-balance',
+                'stat-sales',
+                'stat-purchase',
+                'stat-expense',
+                'stat-product-profit',
+                'stat-total-profit',
+                'stat-stock-value',
+                'stat-stock-qty',
+                'stat-receivable',
+                'stat-payable',
+                'stat-cash',
+                'stat-bank',
+                'stat-mfs',
+            ],
             'sales' => ['view', 'create', 'edit', 'delete', 'return', 'print'],
             'purchase' => ['view', 'create', 'edit', 'delete', 'receive', 'return', 'print'],
             'quick-sale' => ['view', 'create'],
@@ -35,7 +51,13 @@ class Permissions
             'accounts' => ['view', 'create', 'edit', 'delete', 'transfer'],
             'account-transfers' => ['view', 'create', 'delete'],
             'tax' => ['view', 'edit'],
-            'reports' => ['view', 'print'],
+            'report-sales' => ['view', 'print'],
+            'report-purchase' => ['view', 'print'],
+            'report-stock' => ['view', 'print'],
+            'report-products' => ['view', 'print'],
+            'report-profit-loss' => ['view', 'print'],
+            'report-income' => ['view', 'print'],
+            'report-expense' => ['view', 'print'],
             'audit' => ['view'],
             'employees' => ['view', 'create', 'edit', 'delete'],
             'users' => ['view', 'create', 'edit', 'delete'],
@@ -63,6 +85,19 @@ class Permissions
             'transfer' => ['bn' => 'স্থানান্তর', 'en' => 'Transfer'],
             'cash-in' => ['bn' => 'ক্যাশ ইন', 'en' => 'Cash In'],
             'cash-out' => ['bn' => 'ক্যাশ আউট', 'en' => 'Cash Out'],
+            'stat-balance' => ['bn' => 'মোট ব্যালেন্স', 'en' => 'Total Balance'],
+            'stat-sales' => ['bn' => 'বিক্রি', 'en' => 'Sale'],
+            'stat-purchase' => ['bn' => 'ক্রয়', 'en' => 'Purchase'],
+            'stat-expense' => ['bn' => 'খরচ', 'en' => 'Expense'],
+            'stat-product-profit' => ['bn' => 'পণ্য লাভ', 'en' => 'Product Profit'],
+            'stat-total-profit' => ['bn' => 'মোট লাভ', 'en' => 'Total Profit'],
+            'stat-stock-value' => ['bn' => 'মোট মজুদ মূল্য', 'en' => 'Stock Valuation'],
+            'stat-stock-qty' => ['bn' => 'মোট মজুদ একক', 'en' => 'Total Stock Qty'],
+            'stat-receivable' => ['bn' => 'মোট পাবো', 'en' => 'Total Receivable'],
+            'stat-payable' => ['bn' => 'মোট দিবো', 'en' => 'Total Due'],
+            'stat-cash' => ['bn' => 'ক্যাশ ব্যালেন্স', 'en' => 'Cash Balance'],
+            'stat-bank' => ['bn' => 'ব্যাংক ব্যালেন্স', 'en' => 'Bank Balance'],
+            'stat-mfs' => ['bn' => 'মোবাইল ব্যাংকিং (MFS)', 'en' => 'MFS Balance'],
         ];
     }
 
@@ -103,9 +138,11 @@ class Permissions
      */
     public static function all(): array
     {
+        $keys = array_unique(array_merge(['dashboard'], Features::keys()));
+
         return array_merge(...array_map(
             fn (string $feature) => static::for($feature),
-            Features::keys()
+            $keys
         ));
     }
 }

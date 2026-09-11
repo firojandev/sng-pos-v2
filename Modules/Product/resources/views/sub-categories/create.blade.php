@@ -18,12 +18,14 @@
                 @include('product::sub-categories._form')
 
                 <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button type="submit" class="btn btn-gold" style="flex:1; justify-content:center;">
-                        <span class="bn">সংরক্ষণ করুন</span><span class="en">Save</span>
-                    </button>
-                    <a href="{{ route('sub-categories.index') }}" class="btn btn-outline" style="flex:1; justify-content:center;">
-                        <span class="bn">বাতিল</span><span class="en">Cancel</span>
-                    </a>
+                    <x-core::button type="submit" color="primary" size="sm" style="flex:1; justify-content:center;">
+                        <span class="bn">সংরক্ষণ করুন</span>
+                        <span class="en" style="display:none;">Save</span>
+                    </x-core::button>
+                    <x-core::button as="a" href="{{ route('sub-categories.index') }}" variant="secondary" size="sm" style="flex:1; justify-content:center;">
+                        <span class="bn">বাতিল</span>
+                        <span class="en" style="display:none;">Cancel</span>
+                    </x-core::button>
                 </div>
             </form>
         </div>

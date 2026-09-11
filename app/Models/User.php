@@ -14,10 +14,10 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Modules\Core\Observers\AuditObserver;
 use Modules\Employee\Models\Employee;
 use Modules\Shop\Models\Shop;
+use Spatie\Permission\Contracts\Role;
 use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'username', 'email', 'phone', 'avatar', 'password', 'pin', 'support_pin', 'shop_id', 'email_verified_at'])]
@@ -46,7 +46,10 @@ class User extends Authenticatable
                     return $this->avatar;
                 }
 
-                return Storage::disk('public')->url($this->avatar);
+                $clean = ltrim($this->avatar, '/');
+                $path = str_starts_with($clean, 'storage/') ? $clean : 'storage/'.$clean;
+
+                return asset($path);
             }
         );
     }
@@ -216,6 +219,77 @@ class User extends Authenticatable
     }
 
     /**
+     * Check whether this user is registered as a shop owner.
+     */
+    public function isShopOwner(?int $shopId = null): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return false;
+        }
+
+        if ($shopId) {
+            return $this->shops()->where('shops.id', $shopId)->wherePivot('is_owner', true)->exists();
+        }
+
+        if ($this->relationLoaded('shops')) {
+            $isOwner = $this->shops->contains(fn ($s) => (bool) ($s->pivot?->is_owner ?? false));
+            if ($isOwner) {
+                return true;
+            }
+        }
+
+        return $this->shops()->wherePivot('is_owner', true)->exists();
+    }
+
+    /**
+     * Check whether this user is an admin of the given or active shop.
+     */
+    public function isShopAdmin(?Shop $shop = null): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        $shop = $shop ?? $this->shop;
+        if (! $shop) {
+            return false;
+        }
+
+        $userRoles = DB::table('model_has_roles')
+            ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+            ->where('model_has_roles.model_id', $this->id)
+            ->where('model_has_roles.model_type', static::class)
+            ->where(function ($q) use ($shop) {
+                $q->where('roles.shop_id', $shop->id)
+                    ->orWhereNull('roles.shop_id')
+                    ->orWhere('roles.shop_id', 0);
+            })
+            ->pluck('roles.name');
+
+        if ($userRoles->isNotEmpty()) {
+            return $userRoles->intersect(['Admin', 'Shop Admin', 'Owner', 'Shop Owner'])->isNotEmpty();
+        }
+
+        $pivot = DB::table('shop_user')
+            ->where('shop_id', $shop->id)
+            ->where('user_id', $this->id)
+            ->first();
+
+        if ($pivot) {
+            if (in_array($pivot->role, ['Admin', 'Shop Admin', 'Owner', 'Shop Owner'], true)) {
+                return true;
+            }
+            if ($pivot->is_owner) {
+                return true;
+            }
+
+            return false;
+        }
+
+        return false;
+    }
+
+    /**
      * Switch current active shop to the given shop.
      */
     public function switchShop(Shop|int $shop): bool
@@ -248,10 +322,34 @@ class User extends Authenticatable
             ->exists();
     }
 
+    protected function resolvePermissionsTeamId(mixed ...$roles): int|string
+    {
+        foreach ($roles as $role) {
+            if ($role instanceof Role && ! empty($role->shop_id)) {
+                return $role->shop_id;
+            }
+            if (is_array($role)) {
+                foreach ($role as $r) {
+                    if ($r instanceof Role && ! empty($r->shop_id)) {
+                        return $r->shop_id;
+                    }
+                }
+            }
+        }
+
+        $currentTeamId = getPermissionsTeamId();
+        if ($currentTeamId !== null && $currentTeamId !== 0 && $currentTeamId !== '') {
+            return $currentTeamId;
+        }
+
+        return $this->shop_id ?? 0;
+    }
+
     public function assignRole(...$roles): static
     {
         $previousTeamId = getPermissionsTeamId();
-        setPermissionsTeamId($this->shop_id ?? 0);
+        $targetTeamId = $this->resolvePermissionsTeamId(...$roles);
+        setPermissionsTeamId($targetTeamId);
 
         try {
             return $this->spatieAssignRole(...$roles);
@@ -263,7 +361,8 @@ class User extends Authenticatable
     public function syncRoles(...$roles): static
     {
         $previousTeamId = getPermissionsTeamId();
-        setPermissionsTeamId($this->shop_id ?? 0);
+        $targetTeamId = $this->resolvePermissionsTeamId(...$roles);
+        setPermissionsTeamId($targetTeamId);
 
         try {
             return $this->spatieSyncRoles(...$roles);
@@ -275,7 +374,8 @@ class User extends Authenticatable
     public function removeRole($role): static
     {
         $previousTeamId = getPermissionsTeamId();
-        setPermissionsTeamId($this->shop_id ?? 0);
+        $targetTeamId = $this->resolvePermissionsTeamId($role);
+        setPermissionsTeamId($targetTeamId);
 
         try {
             return $this->spatieRemoveRole($role);

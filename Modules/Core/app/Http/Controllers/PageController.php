@@ -3,11 +3,14 @@
 namespace Modules\Core\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Modules\Cashbox\Models\CashTransaction;
+use Modules\Core\Models\AuditLog;
+use Modules\Core\Models\Setting;
 use Modules\Customer\Models\Customer;
 use Modules\Finance\Models\Account;
 use Modules\Finance\Models\Expense;
@@ -15,66 +18,145 @@ use Modules\Finance\Models\Income;
 use Modules\Product\Models\Batch;
 use Modules\Purchase\Models\Purchase;
 use Modules\Sales\Models\Sale;
+use Modules\Shop\Models\Plan;
+use Modules\Shop\Models\Shop;
+use Modules\Shop\Models\Subscription;
+use Modules\Shop\Models\SubscriptionPayment;
 use Modules\Supplier\Models\Supplier;
 
 class PageController extends Controller
 {
     public function dashboard(Request $request): View|RedirectResponse
     {
-        if (auth()->user()->isSuperAdmin()) {
-            return redirect()->route('shops.index');
+        $user = auth()->user();
+        if ($user->isSuperAdmin()) {
+            return $this->superAdminDashboard($request);
         }
+
+        $isOwnerOrAdmin = $user->isShopAdmin();
+
+        $can = fn (string $perm): bool => $isOwnerOrAdmin || $user->can($perm);
+
+        $canViewBalance = $can('dashboard.stat-balance');
+        $canViewSales = $can('dashboard.stat-sales');
+        $canViewPurchase = $can('dashboard.stat-purchase');
+        $canViewExpense = $can('dashboard.stat-expense');
+        $canViewProductProfit = $can('dashboard.stat-product-profit');
+        $canViewTotalProfit = $can('dashboard.stat-total-profit');
+        $canViewStockQty = $can('dashboard.stat-stock-qty');
+        $canViewStockValue = $can('dashboard.stat-stock-value');
+        $canViewReceivable = $can('dashboard.stat-receivable');
+        $canViewPayable = $can('dashboard.stat-payable');
+        $canViewCash = $can('dashboard.stat-cash');
+        $canViewBank = $can('dashboard.stat-bank');
+        $canViewMfs = $can('dashboard.stat-mfs');
 
         $range = $request->query('range', 'today');
         $range = in_array($range, ['today', 'week', 'month', 'year', 'all'], true) ? $range : 'today';
 
         [$from, $to] = $this->rangeBounds($range);
 
-        $saleTotal = (float) Sale::query()
-            ->when($from, fn ($q) => $q->whereDate('sale_date', '>=', $from))
-            ->when($to, fn ($q) => $q->whereDate('sale_date', '<=', $to))
-            ->sum('total');
+        $saleTotal = 0.0;
+        if ($canViewSales) {
+            $saleTotal = (float) Sale::query()
+                ->when($from, fn ($q) => $q->whereDate('sale_date', '>=', $from))
+                ->when($to, fn ($q) => $q->whereDate('sale_date', '<=', $to))
+                ->sum('total');
+        }
 
-        $purchaseTotal = (float) Purchase::query()
-            ->when($from, fn ($q) => $q->whereDate('purchase_date', '>=', $from))
-            ->when($to, fn ($q) => $q->whereDate('purchase_date', '<=', $to))
-            ->sum('total');
+        $purchaseTotal = 0.0;
+        if ($canViewPurchase) {
+            $purchaseTotal = (float) Purchase::query()
+                ->when($from, fn ($q) => $q->whereDate('purchase_date', '>=', $from))
+                ->when($to, fn ($q) => $q->whereDate('purchase_date', '<=', $to))
+                ->sum('total');
+        }
 
-        $expenseTotal = (float) Expense::query()
-            ->when($from, fn ($q) => $q->whereDate('expense_date', '>=', $from))
-            ->when($to, fn ($q) => $q->whereDate('expense_date', '<=', $to))
-            ->sum('amount');
+        $expenseTotal = 0.0;
+        if ($canViewExpense || $canViewTotalProfit) {
+            $expenseTotal = (float) Expense::query()
+                ->when($from, fn ($q) => $q->whereDate('expense_date', '>=', $from))
+                ->when($to, fn ($q) => $q->whereDate('expense_date', '<=', $to))
+                ->sum('amount');
+        }
 
-        $incomeTotal = (float) Income::query()
-            ->when($from, fn ($q) => $q->whereDate('income_date', '>=', $from))
-            ->when($to, fn ($q) => $q->whereDate('income_date', '<=', $to))
-            ->sum('amount');
+        $incomeTotal = 0.0;
+        if ($canViewTotalProfit) {
+            $incomeTotal = (float) Income::query()
+                ->when($from, fn ($q) => $q->whereDate('income_date', '>=', $from))
+                ->when($to, fn ($q) => $q->whereDate('income_date', '<=', $to))
+                ->sum('amount');
+        }
 
-        $productProfit = (float) Sale::query()
-            ->when($from, fn ($q) => $q->whereDate('sale_date', '>=', $from))
-            ->when($to, fn ($q) => $q->whereDate('sale_date', '<=', $to))
-            ->sum(DB::raw('COALESCE(profit, 0)'));
+        $productProfit = 0.0;
+        if ($canViewProductProfit || $canViewTotalProfit) {
+            $productProfit = (float) Sale::query()
+                ->when($from, fn ($q) => $q->whereDate('sale_date', '>=', $from))
+                ->when($to, fn ($q) => $q->whereDate('sale_date', '<=', $to))
+                ->sum(DB::raw('COALESCE(profit, 0)'));
+        }
 
-        $totalProfit = (float) ($productProfit + $incomeTotal - $expenseTotal);
+        $totalProfit = $canViewTotalProfit ? (float) ($productProfit + $incomeTotal - $expenseTotal) : 0.0;
 
-        $totalStockQty = (float) Batch::sum('quantity');
+        $totalStockQty = 0.0;
+        if ($canViewStockQty) {
+            $totalStockQty = (float) Batch::sum('quantity');
+        }
 
-        $totalStockValue = (float) Batch::query()
-            ->join('products', 'batches.product_id', '=', 'products.id')
-            ->sum(DB::raw('batches.quantity * products.purchase_price'));
+        $totalStockValue = 0.0;
+        if ($canViewStockValue) {
+            $totalStockValue = (float) Batch::query()
+                ->join('products', 'batches.product_id', '=', 'products.id')
+                ->sum(DB::raw('batches.quantity * products.purchase_price'));
+        }
 
-        $totalReceivable = (float) Customer::sum('opening_due') + (float) Sale::sum('due_amount');
-        $totalPayable = (float) Supplier::sum('opening_due') + (float) Purchase::sum('due_amount');
+        $totalReceivable = 0.0;
+        if ($canViewReceivable) {
+            $totalReceivable = (float) Customer::sum('opening_due') + (float) Sale::sum('due_amount');
+        }
 
-        $totalCash = (float) Account::where('status', 'active')->where('type', 'cash')->sum('current_balance');
-        $totalBank = (float) Account::where('status', 'active')->where('type', 'bank')->sum('current_balance');
-        $totalMfs = (float) Account::where('status', 'active')->where('type', 'mfs')->sum('current_balance');
-        $totalAccountBalance = (float) Account::where('status', 'active')->sum('current_balance');
+        $totalPayable = 0.0;
+        if ($canViewPayable) {
+            $totalPayable = (float) Supplier::sum('opening_due') + (float) Purchase::sum('due_amount');
+        }
 
-        $hasAccounts = Account::where('status', 'active')->exists();
-        $balance = $hasAccounts
-            ? $totalAccountBalance
-            : (float) (CashTransaction::selectRaw("SUM(CASE WHEN type = 'in' THEN amount ELSE -amount END) as balance")->value('balance') ?? 0);
+        $totalCash = 0.0;
+        if ($canViewCash) {
+            $totalCash = (float) Account::where('status', 'active')->where('type', 'cash')->sum('current_balance');
+        }
+
+        $totalBank = 0.0;
+        if ($canViewBank) {
+            $totalBank = (float) Account::where('status', 'active')->where('type', 'bank')->sum('current_balance');
+        }
+
+        $totalMfs = 0.0;
+        if ($canViewMfs) {
+            $totalMfs = (float) Account::where('status', 'active')->where('type', 'mfs')->sum('current_balance');
+        }
+
+        $totalAccountBalance = 0.0;
+        $balance = 0.0;
+        if ($canViewBalance) {
+            $totalAccountBalance = (float) Account::where('status', 'active')->sum('current_balance');
+            $hasAccounts = Account::where('status', 'active')->exists();
+            $balance = $hasAccounts
+                ? $totalAccountBalance
+                : (float) (CashTransaction::selectRaw("SUM(CASE WHEN type = 'in' THEN amount ELSE -amount END) as balance")->value('balance') ?? 0);
+        }
+
+        $hasAnyVisibleCard = $canViewSales
+            || $canViewPurchase
+            || $canViewExpense
+            || $canViewProductProfit
+            || $canViewTotalProfit
+            || $canViewStockValue
+            || $canViewStockQty
+            || $canViewReceivable
+            || $canViewPayable
+            || $canViewCash
+            || $canViewBank
+            || $canViewMfs;
 
         return view('core::dashboard', [
             'range' => $range,
@@ -92,6 +174,20 @@ class PageController extends Controller
             'totalBank' => $totalBank,
             'totalMfs' => $totalMfs,
             'totalAccountBalance' => $totalAccountBalance,
+            'canViewBalance' => $canViewBalance,
+            'canViewSales' => $canViewSales,
+            'canViewPurchase' => $canViewPurchase,
+            'canViewExpense' => $canViewExpense,
+            'canViewProductProfit' => $canViewProductProfit,
+            'canViewTotalProfit' => $canViewTotalProfit,
+            'canViewStockValue' => $canViewStockValue,
+            'canViewStockQty' => $canViewStockQty,
+            'canViewReceivable' => $canViewReceivable,
+            'canViewPayable' => $canViewPayable,
+            'canViewCash' => $canViewCash,
+            'canViewBank' => $canViewBank,
+            'canViewMfs' => $canViewMfs,
+            'hasAnyVisibleCard' => $hasAnyVisibleCard,
         ]);
     }
 
@@ -149,11 +245,6 @@ class PageController extends Controller
         return $this->placeholder('tax', 'ট্যাক্স ও ভ্যাট', 'Tax & VAT', 'ট্যাক্স ও ভ্যাট হার পরিচালনা করুন', 'Manage tax and VAT rates');
     }
 
-    public function reports(): View
-    {
-        return $this->placeholder('reports', 'রিপোর্ট', 'Reports', 'বিস্তারিত ব্যবসায়িক রিপোর্ট দেখুন', 'View detailed business reports');
-    }
-
     public function settings(): View
     {
         return $this->placeholder('settings', 'সেটিংস', 'Settings', 'দোকান ও অ্যাকাউন্ট সেটিংস পরিচালনা করুন', 'Manage shop and account settings');
@@ -164,8 +255,154 @@ class PageController extends Controller
         return view('core::pages.styleguide');
     }
 
+    public function privacyPolicy(): View
+    {
+        $siteTitle = Setting::getSiteTitle();
+        $siteTitleBn = $siteTitle === 'SNGPOS' ? 'এসএনজিপস' : $siteTitle;
+
+        return view('core::pages.privacy-policy', compact('siteTitle', 'siteTitleBn'));
+    }
+
+    public function terms(): View
+    {
+        $siteTitle = Setting::getSiteTitle();
+        $siteTitleBn = $siteTitle === 'SNGPOS' ? 'এসএনজিপস' : $siteTitle;
+
+        return view('core::pages.terms', compact('siteTitle', 'siteTitleBn'));
+    }
+
     private function placeholder(string $active, string $title, string $titleEn, string $subtitle, string $subtitleEn): View
     {
         return view('core::pages.placeholder', compact('active', 'title', 'titleEn', 'subtitle', 'subtitleEn'));
+    }
+
+    private function superAdminDashboard(Request $request): View
+    {
+        $range = $request->query('range', 'month');
+        $range = in_array($range, ['today', 'week', 'month', 'year', 'all'], true) ? $range : 'month';
+        [$from, $to] = $this->rangeBounds($range);
+
+        $totalShops = Shop::count();
+        $activeShops = Shop::where('status', 'active')->count();
+        $inactiveShops = Shop::where('status', '!=', 'active')->count();
+
+        $newShopsPeriod = Shop::query()
+            ->when($from, fn ($q) => $q->whereDate('created_at', '>=', $from))
+            ->when($to, fn ($q) => $q->whereDate('created_at', '<=', $to))
+            ->count();
+
+        $revenuePeriod = (float) SubscriptionPayment::query()
+            ->when($from, fn ($q) => $q->whereDate('paid_at', '>=', $from))
+            ->when($to, fn ($q) => $q->whereDate('paid_at', '<=', $to))
+            ->sum('amount');
+
+        $revenueAllTime = (float) SubscriptionPayment::sum('amount');
+
+        $activeSubscriptions = Subscription::where('status', 'active')->count();
+        $trialSubscriptions = Subscription::whereIn('status', ['trial', 'trialing'])->count();
+        $expiredSubscriptions = Subscription::whereIn('status', ['expired', 'past_due', 'cancelled'])->count();
+
+        $totalUsers = User::count();
+        $totalPlans = Plan::where('is_active', true)->orWhere('status', 'active')->count();
+
+        $registrationEnabled = Setting::isRegistrationEnabled();
+        $landingPageEnabled = Setting::isLandingPageEnabled();
+
+        // 6-Month Chart Trends
+        $sixMonthsAgo = now()->subMonths(5)->startOfMonth();
+        $driver = DB::connection()->getDriverName();
+        $dateGroupShop = $driver === 'sqlite' ? "strftime('%Y-%m', created_at)" : 'DATE_FORMAT(created_at, "%Y-%m")';
+        $dateGroupPayment = $driver === 'sqlite' ? "strftime('%Y-%m', paid_at)" : 'DATE_FORMAT(paid_at, "%Y-%m")';
+
+        $monthlyShopsRaw = Shop::where('created_at', '>=', $sixMonthsAgo)
+            ->selectRaw("{$dateGroupShop} as m, count(*) as count")
+            ->groupBy('m')
+            ->pluck('count', 'm');
+
+        $monthlyRevenueRaw = SubscriptionPayment::where('paid_at', '>=', $sixMonthsAgo)
+            ->selectRaw("{$dateGroupPayment} as m, sum(amount) as total")
+            ->groupBy('m')
+            ->pluck('total', 'm');
+
+        $chartLabels = [];
+        $chartShopsData = [];
+        $chartRevenueData = [];
+
+        for ($i = 5; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $monthKey = $date->format('Y-m');
+            $chartLabels[] = $date->format('M Y');
+            $chartShopsData[] = (int) ($monthlyShopsRaw[$monthKey] ?? 0);
+            $chartRevenueData[] = (float) ($monthlyRevenueRaw[$monthKey] ?? 0.0);
+        }
+
+        // Subscription Status Breakdown
+        $statusCounts = [
+            'active' => $activeSubscriptions,
+            'trialing' => $trialSubscriptions,
+            'past_due' => Subscription::where('status', 'past_due')->count(),
+            'expired' => Subscription::whereIn('status', ['expired', 'cancelled'])->count(),
+        ];
+
+        // Plans breakdown with subscriber counts
+        $plans = Plan::withCount(['subscriptions' => function ($q) {
+            $q->whereIn('status', ['active', 'trial', 'trialing']);
+        }])->orderBy('sort_order')->get();
+
+        // Expiring Soon Subscriptions (within 14 days)
+        $expiringSubscriptions = Subscription::with(['shop', 'plan'])
+            ->whereIn('status', ['active', 'trial', 'trialing'])
+            ->where(function ($q) {
+                $q->whereBetween('ends_at', [now(), now()->addDays(14)])
+                    ->orWhereBetween('trial_ends_at', [now(), now()->addDays(14)]);
+            })
+            ->orderByRaw('COALESCE(ends_at, trial_ends_at) ASC')
+            ->limit(5)
+            ->get();
+
+        // Recent Shops
+        $recentShops = Shop::with(['activeSubscription.plan', 'users'])
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        // Recent Payments
+        $recentPayments = SubscriptionPayment::with(['subscription.shop', 'subscription.plan'])
+            ->latest('paid_at')
+            ->latest('id')
+            ->limit(5)
+            ->get();
+
+        // Recent Audit Logs
+        $recentAuditLogs = AuditLog::with(['shop', 'user'])
+            ->latest()
+            ->limit(6)
+            ->get();
+
+        return view('core::superadmin-dashboard', compact(
+            'range',
+            'totalShops',
+            'activeShops',
+            'inactiveShops',
+            'newShopsPeriod',
+            'revenuePeriod',
+            'revenueAllTime',
+            'activeSubscriptions',
+            'trialSubscriptions',
+            'expiredSubscriptions',
+            'totalUsers',
+            'totalPlans',
+            'registrationEnabled',
+            'landingPageEnabled',
+            'chartLabels',
+            'chartShopsData',
+            'chartRevenueData',
+            'statusCounts',
+            'plans',
+            'expiringSubscriptions',
+            'recentShops',
+            'recentPayments',
+            'recentAuditLogs'
+        ));
     }
 }

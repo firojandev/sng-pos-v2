@@ -32,9 +32,9 @@ class EmployeesDataTable extends BaseDataTable
 
                 return '<div class="row-avatar" style="display:flex; align-items:center; gap:10px;">'
                     .'<div class="av" style="width:36px; height:36px; border-radius:8px; background:var(--teal-700); color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; flex-shrink:0;">'.e($initial).'</div>'
-                    .'<div style="min-width:0;">'
+                    .'<div style="min-width:0; max-width:180px;">'
                     .'<div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">'
-                    .'<span style="font-weight:700; color:var(--ink-900); font-size:13.5px;">'.e($employee->name).'</span>'
+                    .'<span style="font-weight:700; color:var(--ink-900); font-size:13.5px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word;" title="'.e($employee->name).'">'.e($employee->name).'</span>'
                     .$userBadge
                     .'</div>'
                     .'<div style="margin-top:2px;">'.$code.'</div>'
@@ -43,16 +43,16 @@ class EmployeesDataTable extends BaseDataTable
             })
             ->addColumn('contact', function (Employee $employee) {
                 $phone = $employee->phone
-                    ? '<a href="tel:'.e($employee->phone).'" style="font-size:12px; font-family:var(--font-mono, monospace); font-weight:600; color:var(--ink-800); text-decoration:none; display:flex; align-items:center; gap:5px;">'
+                    ? '<a href="tel:'.e($employee->phone).'" style="font-size:12px; font-family:var(--font-mono, monospace); font-weight:600; color:var(--ink-800); text-decoration:none; display:flex; align-items:center; gap:5px; white-space:nowrap;">'
                         .'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6; flex-shrink:0;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>'
                         .'<span>'.e($employee->phone).'</span>'
                         .'</a>'
                     : '';
 
                 $email = $employee->email
-                    ? '<a href="mailto:'.e($employee->email).'" style="font-size:11.5px; color:var(--ink-500); text-decoration:none; display:flex; align-items:center; gap:5px; margin-top:2px;">'
+                    ? '<a href="mailto:'.e($employee->email).'" style="font-size:11.5px; color:var(--ink-500); text-decoration:none; display:flex; align-items:center; gap:5px; margin-top:2px; max-width:160px;">'
                         .'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6; flex-shrink:0;"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>'
-                        .'<span>'.e($employee->email).'</span>'
+                        .'<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="'.e($employee->email).'">'.e($employee->email).'</span>'
                         .'</a>'
                     : '';
 
@@ -60,13 +60,13 @@ class EmployeesDataTable extends BaseDataTable
                     return '<span style="color:var(--ink-400);">—</span>';
                 }
 
-                return '<div>'.$phone.$email.'</div>';
+                return '<div style="min-width:0;">'.$phone.$email.'</div>';
             })
             ->addColumn('designation_department', function (Employee $employee) {
-                $designation = '<div style="font-weight:600; color:var(--ink-900); font-size:13px;">'.e($employee->designation ?: '—').'</div>';
+                $designation = '<div style="font-weight:600; color:var(--ink-900); font-size:13px; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="'.e($employee->designation ?: '—').'">'.e($employee->designation ?: '—').'</div>';
 
                 $dept = $employee->department
-                    ? '<div style="font-size:11.5px; color:var(--ink-500); display:flex; align-items:center; gap:4px; margin-top:2px;">'
+                    ? '<div style="font-size:11.5px; color:var(--ink-500); display:flex; align-items:center; gap:4px; margin-top:2px; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="'.e($employee->department).'">'
                         .'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6; flex-shrink:0;"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/></svg>'
                         .'<span>'.e($employee->department).'</span>'
                         .'</div>'
@@ -77,7 +77,7 @@ class EmployeesDataTable extends BaseDataTable
             ->editColumn('salary', function (Employee $employee) {
                 $formatted = number_format((float) $employee->salary, 2);
 
-                return '<div>'
+                return '<div style="white-space:nowrap;">'
                     .'<span style="font-family:var(--font-mono, monospace); font-weight:700; font-size:13px; color:var(--ink-900);">৳'.$formatted.'</span>'
                     .'<div style="font-size:11px; color:var(--ink-400); margin-top:2px;"><span class="bn">মাসিক বেতন</span><span class="en" style="display:none;">Monthly</span></div>'
                     .'</div>';

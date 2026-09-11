@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Modules\Core\Support\Features;
 use Modules\Core\Support\Permissions;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
 use Modules\Shop\Models\Plan;
@@ -50,7 +49,6 @@ class ShopRolePermissionTest extends TestCase
             'name' => 'Shop A',
             'slug' => 'shop-a',
             'status' => 'active',
-            'enabled_features' => Features::keys(),
         ]);
         $plan = Plan::where('slug', 'standard')->first();
         if ($plan) {
@@ -72,7 +70,6 @@ class ShopRolePermissionTest extends TestCase
             'name' => 'Shop B',
             'slug' => 'shop-b',
             'status' => 'active',
-            'enabled_features' => Features::keys(),
         ]);
         if ($plan) {
             $this->shopB->subscribe($plan);
@@ -212,6 +209,32 @@ class ShopRolePermissionTest extends TestCase
         $response->assertSessionHas('status', 'ডিফল্ট এডমিন রোলটি মুছে ফেলা যাবে না');
 
         $this->assertDatabaseHas('roles', ['id' => $adminRole->id]);
+    }
+
+    public function test_shop_owner_cannot_edit_or_update_default_admin_role(): void
+    {
+        $this->actingAs($this->ownerA);
+
+        $adminRole = Role::where('shop_id', $this->shopA->id)->where('name', 'Admin')->first();
+        $initialPermissionsCount = $adminRole->permissions()->count();
+        $this->assertGreaterThan(0, $initialPermissionsCount);
+
+        // Edit page should redirect with notice
+        $editResponse = $this->get(route('roles.edit', $adminRole));
+        $editResponse->assertRedirect(route('roles.index'));
+        $editResponse->assertSessionHas('status', 'ডিফল্ট এডমিন রোলের পারমিশন পরিবর্তন করা যাবে না');
+
+        // Update action should reject changes and preserve permissions
+        $updateResponse = $this->put(route('roles.update', $adminRole), [
+            'name' => 'Hacked Admin',
+            'permissions' => [],
+        ]);
+        $updateResponse->assertRedirect(route('roles.index'));
+        $updateResponse->assertSessionHas('status', 'ডিফল্ট এডমিন রোলের পারমিশন পরিবর্তন করা যাবে না');
+
+        $freshAdminRole = $adminRole->fresh();
+        $this->assertEquals('Admin', $freshAdminRole->name);
+        $this->assertEquals($initialPermissionsCount, $freshAdminRole->permissions()->count());
     }
 
     public function test_shop_owner_cannot_access_or_modify_roles_of_another_shop(): void

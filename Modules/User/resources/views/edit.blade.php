@@ -5,8 +5,6 @@
     subtitle-en="Update user details and access role"
     active="users"
 >
-    <x-user::tabbar active="users" />
-
     <div style="max-width:560px; margin:0 auto; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; box-shadow:var(--shadow-card);">
         <div style="margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px;">
             <div style="width:36px; height:36px; border-radius:8px; background:var(--teal-100); color:var(--teal-800); display:flex; align-items:center; justify-content:center;">

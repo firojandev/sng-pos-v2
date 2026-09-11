@@ -133,7 +133,7 @@
                         <tr style="border-bottom:1px solid var(--border);">
                             <td style="padding:10px 14px;">
                                 <div style="font-weight:700; color:var(--ink-900); font-size:13px;">{{ $item->product->name ?? '—' }}</div>
-                                @if (isset($item->product->sku))
+                                @if (!empty($item->product->sku))
                                     <div style="font-size:11px; font-family:var(--font-mono, monospace); color:var(--ink-400); margin-top:2px;">
                                         SKU: {{ $item->product->sku }}
                                     </div>
