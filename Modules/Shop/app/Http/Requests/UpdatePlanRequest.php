@@ -25,6 +25,9 @@ class UpdatePlanRequest extends FormRequest
             'max_products' => ['nullable', 'integer', 'min:1'],
             'features' => ['nullable', 'array'],
             'features.*' => ['in:'.implode(',', Features::keys())],
+            'sort_order' => ['nullable', 'integer', 'min:0'],
+            'is_popular' => ['nullable', 'boolean'],
+            'popular_label' => ['nullable', 'string', 'max:255'],
             'status' => ['required', 'in:active,inactive'],
         ];
     }

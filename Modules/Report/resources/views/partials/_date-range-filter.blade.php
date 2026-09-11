@@ -7,7 +7,7 @@
         'custom' => ['bn' => 'কাস্টম রেঞ্জ', 'en' => 'Custom Range'],
     ];
     $routeName = request()->route()?->getName();
-    $currentShop = auth()->user()?->shop;
+    $currentShop = auth()->user()?->shop ?? \Modules\Shop\Models\Shop::first();
 
     $reportPermissions = [
         'reports.sales' => 'report-sales.print',
@@ -58,10 +58,10 @@
                 size="sm"
                 icon="file-text"
                 id="btn-report-export-pdf"
-                title="পিডিএফ এক্সপোর্ট / প্রিন্ট"
+                title="প্রিন্ট"
             >
-                <span class="bn">পিডিএফ এক্সপোর্ট</span>
-                <span class="en" style="display:none;">Export PDF</span>
+                <span class="bn">প্রিন্ট</span>
+                <span class="en" style="display:none;">Print</span>
             </x-core::button>
         </div>
     @endif
@@ -70,38 +70,68 @@
 @if ($canPrint)
 {{-- Print-only Executive Header (Shown only when printing / saving as PDF) --}}
 <div class="report-print-header" style="display:none;">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #0d9488; padding-bottom:12px; margin-bottom:16px;">
-        <div class="print-shop-info">
-            <h1 style="font-size:20px; font-weight:800; color:#0f172a; margin:0 0 4px 0;">{{ $currentShop->name ?? config('app.name', 'MasterPOS') }}</h1>
-            @if(!empty($currentShop?->address))
-                <p style="margin:0 0 2px 0; font-size:11px; color:#475569;">{{ $currentShop->address }}</p>
-            @endif
-            @if(!empty($currentShop?->phone))
-                <p style="margin:0; font-size:11px; color:#475569;">
-                    <span class="bn">ফোন: </span><span class="en" style="display:none;">Phone: </span>{{ $currentShop->phone }}
-                </p>
+    {{-- Top Header with Shop Info --}}
+    <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:10px;">
+        <div style="flex-shrink:0; width:48px; height:48px; border-radius:6px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+            @if(!empty($currentShop?->logo))
+                <img src="{{ $currentShop->logo_url ?? asset($currentShop->logo) }}" alt="Shop Logo" style="max-width:48px; max-height:48px; object-fit:contain;">
+            @else
+                <svg width="46" height="46" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="7" y="19" width="34" height="23" rx="2" fill="#38bdf8" stroke="#0f172a" stroke-width="2"/>
+                    <rect x="19" y="27" width="10" height="15" fill="#0f172a"/>
+                    <rect x="11" y="25" width="5" height="8" rx="1" fill="#f8fafc" stroke="#0f172a" stroke-width="1.5"/>
+                    <rect x="32" y="25" width="5" height="8" rx="1" fill="#f8fafc" stroke="#0f172a" stroke-width="1.5"/>
+                    <path d="M4 18L9 8H39L44 18H4Z" fill="#ea580c" stroke="#0f172a" stroke-width="2" stroke-linejoin="round"/>
+                    <path d="M4 18C4 20.5 6 22 8.5 22C11 22 13 20.5 13 18C13 20.5 15 22 17.5 22C20 22 22 20.5 22 18C22 20.5 24 22 26.5 22C29 22 31 20.5 31 18C31 20.5 33 22 35.5 22C38 22 40 20.5 40 18C40 20.5 41.8 22 44 22" stroke="#0f172a" stroke-width="2" fill="#f97316"/>
+                </svg>
             @endif
         </div>
-        <div class="print-report-info" style="text-align:right;">
-            <h2 style="font-size:17px; font-weight:800; color:#0d9488; margin:0 0 4px 0;">
-                <span class="bn">{{ $reportTitle ?? 'প্রতিবেদন' }}</span>
-                <span class="en" style="display:none;">{{ $reportTitleEn ?? 'Report' }}</span>
-            </h2>
-            <div style="font-size:11.5px; color:#1e293b; margin-bottom:3px;">
-                <span class="bn">সময়সীমা: </span><span class="en" style="display:none;">Period: </span>
-                <b>
-                    @if($range === 'today')
-                        <span class="bn">আজ ({{ \Carbon\Carbon::parse($from)->format('d M Y') }})</span>
-                        <span class="en" style="display:none;">Today ({{ \Carbon\Carbon::parse($from)->format('d M Y') }})</span>
-                    @elseif($from === $to)
-                        {{ \Carbon\Carbon::parse($from)->format('d M Y') }}
-                    @else
-                        {{ \Carbon\Carbon::parse($from)->format('d M Y') }} &mdash; {{ \Carbon\Carbon::parse($to)->format('d M Y') }}
-                    @endif
-                </b>
+
+        <div>
+            <div style="font-size:18px; font-weight:800; color:#0f172a; line-height:1.2;">
+                {{ $currentShop->name ?? 'ব্যবসা প্রতিষ্ঠান' }}
             </div>
-            <div style="font-size:10px; color:#64748b;">
-                <span class="bn">প্রস্তুতকাল: </span><span class="en" style="display:none;">Generated: </span>
+            @if(!empty($currentShop?->address))
+                <div style="font-size:12px; color:#475569; margin-top:2px;">
+                    {{ $currentShop->address }}
+                </div>
+            @endif
+            @if(!empty($currentShop?->phone))
+                <div style="font-size:12px; color:#475569; margin-top:1px;">
+                    <span class="bn">মোবাইল : </span><span class="en" style="display:none;">Mobile : </span>{{ $currentShop->phone }}
+                </div>
+            @endif
+        </div>
+    </div>
+
+    {{-- Centered Title with Horizontal Accent Lines --}}
+    <div style="display:flex; align-items:center; justify-content:center; gap:16px; margin:12px 0 14px 0;">
+        <div style="flex:1; height:1px; background:#94a3b8;"></div>
+        <div style="font-size:22px; font-weight:800; color:#0f172a; letter-spacing:1px; padding:0 8px;">
+            <span class="bn">{{ $reportTitle ?? 'প্রতিবেদন' }}</span>
+            <span class="en" style="display:none;">{{ $reportTitleEn ?? 'Report' }}</span>
+        </div>
+        <div style="flex:1; height:1px; background:#94a3b8;"></div>
+    </div>
+
+    {{-- Metadata: Report Information --}}
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; font-size:12px; line-height:1.6; margin-bottom:14px; color:#0f172a;">
+        <div>
+            <div>
+                <b><span class="bn">সময়সীমা : </span><span class="en" style="display:none;">Period : </span></b>
+                @if($range === 'today')
+                    <span class="bn">আজ ({{ \Carbon\Carbon::parse($from)->format('d M Y') }})</span>
+                    <span class="en" style="display:none;">Today ({{ \Carbon\Carbon::parse($from)->format('d M Y') }})</span>
+                @elseif($from === $to)
+                    {{ \Carbon\Carbon::parse($from)->format('d M Y') }}
+                @else
+                    {{ \Carbon\Carbon::parse($from)->format('d M Y') }} &mdash; {{ \Carbon\Carbon::parse($to)->format('d M Y') }}
+                @endif
+            </div>
+        </div>
+        <div style="text-align:right;">
+            <div>
+                <b><span class="bn">প্রস্তুতকাল : </span><span class="en" style="display:none;">Generated : </span></b>
                 {{ now()->format('d M Y, h:i A') }}
             </div>
         </div>

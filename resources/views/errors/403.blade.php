@@ -11,24 +11,31 @@
     $shopName = $user?->shop?->name;
 
     $exceptionMsg = isset($exception) && $exception->getMessage() ? trim($exception->getMessage()) : null;
-    $isGenericMsg = empty($exceptionMsg) || in_array($exceptionMsg, [
-        'This action is unauthorized.',
-        '403 Forbidden',
-        'Unauthorized',
-        'Forbidden',
-    ]);
+    $isGenericMsg =
+        empty($exceptionMsg) ||
+        in_array($exceptionMsg, ['This action is unauthorized.', '403 Forbidden', 'Unauthorized', 'Forbidden']);
+
+    $siteTitle = $siteTitle ?? \Modules\Core\Models\Setting::getSiteTitle();
+    $siteTitleBn = $siteTitleBn ?? ($siteTitle === 'SNGPOS' ? 'এসএনজিপস' : $siteTitle);
+    $currentSiteTitle = $isEn ? $siteTitle : $siteTitleBn;
+    $siteMark = mb_strtoupper(mb_substr($siteTitle, 0, 1));
+    $siteMarkBn = $siteTitle === 'SNGPOS' ? 'ম' : $siteMark;
+    $supportEmail =
+        \Modules\Core\Models\Setting::get('support_email') ?: 'support@' . (request()->getHost() ?: 'SNGPOS.app');
 @endphp
 <!DOCTYPE html>
-<html lang="{{ $isEn ? 'en' : 'bn' }}" @if($cookieTheme) data-theme="{{ $cookieTheme }}" @endif class="{{ $isEn ? 'lang-en' : '' }}">
+<html lang="{{ $isEn ? 'en' : 'bn' }}" @if ($cookieTheme) data-theme="{{ $cookieTheme }}" @endif
+    class="{{ $isEn ? 'lang-en' : '' }}">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#0F172A">
-    <title>{{ $isEn ? '403 · Access Denied · MasterPOS' : '৪০৩ · অ্যাক্সেস নিষিদ্ধ · মাস্টারপস' }}</title>
+    <title>{{ $isEn ? '403 · Access Denied · ' . $siteTitle : '৪০৩ · অ্যাক্সেস নিষিদ্ধ · ' . $siteTitleBn }}</title>
 
     <script>
-        (function () {
+        (function() {
             try {
                 var t = localStorage.getItem('theme');
                 if (t === 'light' || t === 'dark') {
@@ -54,14 +61,16 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&family=Baloo+Da+2:wght@500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&family=Baloo+Da+2:wght@500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.maateen.me/solaiman-lipi/font.css">
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script>
-        (function () {
+        (function() {
             if (window.$ && window.$.ajaxPrefilter) {
-                window.$.ajaxPrefilter(function (options, originalOptions, xhr) {
+                window.$.ajaxPrefilter(function(options, originalOptions, xhr) {
                     var token = $('meta[name="csrf-token"]').attr('content');
                     if (token) {
                         xhr.setRequestHeader('X-CSRF-TOKEN', token);
@@ -200,10 +209,13 @@
         }
 
         @keyframes emblem-pulse {
-            0%, 100% {
+
+            0%,
+            100% {
                 transform: scale(1);
                 opacity: 0.85;
             }
+
             50% {
                 transform: scale(1.12);
                 opacity: 0.45;
@@ -406,218 +418,228 @@
                 padding: 32px 20px 24px;
                 border-radius: 18px;
             }
+
             .error-topbar {
                 top: 12px;
                 left: 12px;
                 right: 12px;
             }
+
             .error-brand-name {
                 display: none;
             }
+
             .error-actions {
                 flex-direction: column;
                 width: 100%;
             }
-            .error-actions > * {
+
+            .error-actions>* {
                 width: 100%;
             }
         }
     </style>
 </head>
+
 <body>
 
-<header class="error-topbar">
-    <a href="{{ route('dashboard') }}" class="error-brand" title="হোমপেজ / Dashboard">
-        <span class="error-brand-mark">ম</span>
-        <span class="error-brand-name">
-            <span class="bn">মাস্টারপস</span>
-            <span class="en">MasterPOS</span>
-        </span>
-    </a>
-
-    <div class="error-controls">
-        <x-core::theme-switcher size="xs" :show-text="false" />
-        <span class="error-ctrl-divider"></span>
-        <x-core::lang-switcher size="xs" />
-    </div>
-</header>
-
-<main class="error-shell">
-    <div class="error-card">
-        <!-- Visual Shield & Lock Icon -->
-        <div class="error-emblem-wrap" aria-hidden="true">
-            <div class="error-emblem-ring"></div>
-            <div class="error-emblem-inner">
-                <x-core::icon name="lock" size="xl" stroke-width="2.3" />
-            </div>
-        </div>
-
-        <!-- Status Pill -->
-        <div class="error-status-badge">
-            <x-core::badge color="danger" variant="subtle" size="sm" :dot="true">
-                <span class="bn">ত্রুটি ৪০৩ · অ্যাক্সেস নিষিদ্ধ</span>
-                <span class="en">ERROR 403 · FORBIDDEN</span>
-            </x-core::badge>
-        </div>
-
-        <!-- Bilingual Heading -->
-        <h1 class="error-title">
-            <span class="bn">অ্যাক্সেস অনুমোদিত নয়</span>
-            <span class="en">Access Denied</span>
-        </h1>
-
-        <!-- Bilingual Subtitle / Explanation -->
-        <p class="error-desc">
-            <span class="bn">আপনার এই পেজ বা তথ্যে প্রবেশের প্রয়োজনীয় অনুমতি (Permission) নেই। এটি যদি একটি অনিচ্ছাকৃত ত্রুটি মনে হয়, তবে আপনার শপ অ্যাডমিন বা ম্যানেজারের সাথে যোগাযোগ করুন।</span>
-            <span class="en">You don't have the necessary permissions to access this page or resource. If you believe this is a mistake, please reach out to your shop administrator or manager.</span>
-        </p>
-
-        <!-- Custom Exception Message if present -->
-        @if (!$isGenericMsg && $exceptionMsg)
-            <div class="error-callout" role="alert">
-                <span class="callout-icon">
-                    <x-core::icon name="alert-triangle" size="sm" />
-                </span>
-                <div>
-                    <strong>
-                        <span class="bn">নিরাপত্তা বার্তা:</span>
-                        <span class="en">Security Note:</span>
-                    </strong>
-                    <span>{{ $exceptionMsg }}</span>
-                </div>
-            </div>
-        @endif
-
-        <!-- Active User Strip (if logged in) -->
-        @auth
-            <div class="error-user-strip">
-                <div class="user-strip-info">
-                    <div class="user-strip-avatar" title="{{ $userName }}">
-                        {{ mb_substr($userName ?? 'U', 0, 1) }}
-                    </div>
-                    <div class="user-strip-text">
-                        <div class="user-strip-name">
-                            <span>{{ $userName }}</span>
-                            @if ($userRole)
-                                <x-core::badge color="blue" size="xs">{{ $userRole }}</x-core::badge>
-                            @endif
-                        </div>
-                        <div class="user-strip-sub">
-                            <span>{{ $userEmail }}</span>
-                            @if ($shopName)
-                                <span> · {{ $shopName }}</span>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-
-                <form method="POST" action="{{ route('logout') }}" class="m-0">
-                    @csrf
-                    <x-core::button size="sm" variant="secondary" color="danger" type="submit" icon="logout" title="লগআউট করে অন্য অ্যাকাউন্টে প্রবেশ করুন">
-                        <span class="bn">লগআউট</span>
-                        <span class="en">Switch</span>
-                    </x-core::button>
-                </form>
-            </div>
-        @else
-            <div class="error-user-strip" style="justify-content: center; text-align: center;">
-                <div class="user-strip-sub">
-                    <span class="bn">আপনি বর্তমানে কোনো অ্যাকাউন্টে লগইন অবস্থায় নেই।</span>
-                    <span class="en">You are not currently logged in to an account.</span>
-                </div>
-            </div>
-        @endauth
-
-        <!-- Action Buttons -->
-        <div class="error-actions">
-            <x-core::button size="sm" color="primary" href="{{ route('dashboard') }}" icon="home">
-                <span class="bn">ড্যাশবোর্ডে ফিরে যান</span>
-                <span class="en">Back to Dashboard</span>
-            </x-core::button>
-
-            <x-core::button size="sm" variant="secondary" id="btn-back" icon="arrow-left">
-                <span class="bn">পূর্ববর্তী পেজ</span>
-                <span class="en">Go Back</span>
-            </x-core::button>
-
-            <x-core::button size="sm" variant="secondary" id="btn-reload" icon="refresh">
-                <span class="bn">পুনরায় চেষ্টা করুন</span>
-                <span class="en">Try Again</span>
-            </x-core::button>
-        </div>
-    </div>
-
-    <!-- Muted Footer Support Note -->
-    <div class="error-footer-text">
-        <span class="bn">সাহায্য প্রয়োজন? আপনার সিস্টেম অ্যাডমিনের সাথে যোগাযোগ করুন অথবা</span>
-        <span class="en">Need assistance? Contact your system administrator or</span>
-        <a href="mailto:support@masterpos.app" target="_blank" rel="noopener">
-            <span class="bn">সাপোর্টে লিখুন</span>
-            <span class="en">contact support</span>
+    <header class="error-topbar">
+        <a href="{{ route('dashboard') }}" class="error-brand" title="হোমপেজ / Dashboard">
+            <span class="error-brand-mark">{{ $isEn ? $siteMark : $siteMarkBn }}</span>
+            <span class="error-brand-name">
+                <span class="bn">{{ $siteTitleBn }}</span>
+                <span class="en">{{ $siteTitle }}</span>
+            </span>
         </a>
-    </div>
-</main>
 
-<script>
-    $(function () {
-        // Go back action
-        $('#btn-back').on('click', function (e) {
-            e.preventDefault();
-            if (window.history.length > 1) {
-                window.history.back();
-            } else {
-                window.location.href = "{{ route('dashboard') }}";
-            }
+        <div class="error-controls">
+            <x-core::theme-switcher size="xs" :show-text="false" />
+            <span class="error-ctrl-divider"></span>
+            <x-core::lang-switcher size="xs" />
+        </div>
+    </header>
+
+    <main class="error-shell">
+        <div class="error-card">
+            <!-- Visual Shield & Lock Icon -->
+            <div class="error-emblem-wrap" aria-hidden="true">
+                <div class="error-emblem-ring"></div>
+                <div class="error-emblem-inner">
+                    <x-core::icon name="lock" size="xl" stroke-width="2.3" />
+                </div>
+            </div>
+
+            <!-- Status Pill -->
+            <div class="error-status-badge">
+                <x-core::badge color="danger" variant="subtle" size="sm" :dot="true">
+                    <span class="bn">ত্রুটি ৪০৩ · অ্যাক্সেস নিষিদ্ধ</span>
+                    <span class="en">ERROR 403 · FORBIDDEN</span>
+                </x-core::badge>
+            </div>
+
+            <!-- Bilingual Heading -->
+            <h1 class="error-title">
+                <span class="bn">অ্যাক্সেস অনুমোদিত নয়</span>
+                <span class="en">Access Denied</span>
+            </h1>
+
+            <!-- Bilingual Subtitle / Explanation -->
+            <p class="error-desc">
+                <span class="bn">আপনার এই পেজ বা তথ্যে প্রবেশের প্রয়োজনীয় অনুমতি (Permission) নেই। এটি যদি একটি
+                    অনিচ্ছাকৃত ত্রুটি মনে হয়, তবে আপনার শপ অ্যাডমিন বা ম্যানেজারের সাথে যোগাযোগ করুন।</span>
+                <span class="en">You don't have the necessary permissions to access this page or resource. If you
+                    believe this is a mistake, please reach out to your shop administrator or manager.</span>
+            </p>
+
+            <!-- Custom Exception Message if present -->
+            @if (!$isGenericMsg && $exceptionMsg)
+                <div class="error-callout" role="alert">
+                    <span class="callout-icon">
+                        <x-core::icon name="alert-triangle" size="sm" />
+                    </span>
+                    <div>
+                        <strong>
+                            <span class="bn">নিরাপত্তা বার্তা:</span>
+                            <span class="en">Security Note:</span>
+                        </strong>
+                        <span>{{ $exceptionMsg }}</span>
+                    </div>
+                </div>
+            @endif
+
+            <!-- Active User Strip (if logged in) -->
+            @auth
+                <div class="error-user-strip">
+                    <div class="user-strip-info">
+                        <div class="user-strip-avatar" title="{{ $userName }}">
+                            {{ mb_substr($userName ?? 'U', 0, 1) }}
+                        </div>
+                        <div class="user-strip-text">
+                            <div class="user-strip-name">
+                                <span>{{ $userName }}</span>
+                                @if ($userRole)
+                                    <x-core::badge color="blue" size="xs">{{ $userRole }}</x-core::badge>
+                                @endif
+                            </div>
+                            <div class="user-strip-sub">
+                                <span>{{ $userEmail }}</span>
+                                @if ($shopName)
+                                    <span> · {{ $shopName }}</span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="POST" action="{{ route('logout') }}" class="m-0">
+                        @csrf
+                        <x-core::button size="sm" variant="secondary" color="danger" type="submit" icon="logout"
+                            title="লগআউট করে অন্য অ্যাকাউন্টে প্রবেশ করুন">
+                            <span class="bn">লগআউট</span>
+                            <span class="en">Switch</span>
+                        </x-core::button>
+                    </form>
+                </div>
+            @else
+                <div class="error-user-strip" style="justify-content: center; text-align: center;">
+                    <div class="user-strip-sub">
+                        <span class="bn">আপনি বর্তমানে কোনো অ্যাকাউন্টে লগইন অবস্থায় নেই।</span>
+                        <span class="en">You are not currently logged in to an account.</span>
+                    </div>
+                </div>
+            @endauth
+
+            <!-- Action Buttons -->
+            <div class="error-actions">
+                <x-core::button size="sm" color="primary" href="{{ route('dashboard') }}" icon="home">
+                    <span class="bn">ড্যাশবোর্ডে ফিরে যান</span>
+                    <span class="en">Back to Dashboard</span>
+                </x-core::button>
+
+                <x-core::button size="sm" variant="secondary" id="btn-back" icon="arrow-left">
+                    <span class="bn">পূর্ববর্তী পেজ</span>
+                    <span class="en">Go Back</span>
+                </x-core::button>
+
+                <x-core::button size="sm" variant="secondary" id="btn-reload" icon="refresh">
+                    <span class="bn">পুনরায় চেষ্টা করুন</span>
+                    <span class="en">Try Again</span>
+                </x-core::button>
+            </div>
+        </div>
+
+        <!-- Muted Footer Support Note -->
+        <div class="error-footer-text">
+            <span class="bn">সাহায্য প্রয়োজন? আপনার সিস্টেম অ্যাডমিনের সাথে যোগাযোগ করুন অথবা</span>
+            <span class="en">Need assistance? Contact your system administrator or</span>
+            <a href="mailto:{{ $supportEmail }}" target="_blank" rel="noopener">
+                <span class="bn">সাপোর্টে লিখুন</span>
+                <span class="en">contact support</span>
+            </a>
+        </div>
+    </main>
+
+    <script>
+        $(function() {
+            // Go back action
+            $('#btn-back').on('click', function(e) {
+                e.preventDefault();
+                if (window.history.length > 1) {
+                    window.history.back();
+                } else {
+                    window.location.href = "{{ route('dashboard') }}";
+                }
+            });
+
+            // Reload action
+            $('#btn-reload').on('click', function(e) {
+                e.preventDefault();
+                window.location.reload();
+            });
+
+            // Technical details accordion toggle
+            $('#toggle-details').on('click', function() {
+                var $content = $('#details-content');
+                var $chevron = $('#details-chevron');
+                var isExpanded = $(this).attr('aria-expanded') === 'true';
+
+                $content.slideToggle(150);
+                $(this).attr('aria-expanded', !isExpanded);
+                $chevron.css('transform', !isExpanded ? 'rotate(180deg)' : 'none');
+            });
+
+            // Copy Diagnostic Info
+            $('#btn-copy-ref').on('click', function() {
+                    var diagInfo = [
+                        'Error: HTTP 403 Forbidden',
+                        'URL: ' + window.location.href,
+                        'Method: {{ request()->method() }}',
+                        'Path: /{{ ltrim(request()->path(), '/') }}',
+                        'Time: {{ now()->toIso8601String() }}',
+                        'IP: {{ request()->ip() }}',
+                        @auth 'User: {{ $userName }} (ID: {{ auth()->id() }})',
+                        'Role: {{ $userRole ?? 'None' }}',
+                        @if ($shopName)
+                            'Shop: {{ $shopName }}',
+                        @endif
+                    @endauth
+                ].join('\n');
+
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(diagInfo).then(function() {
+                        var $btn = $('#btn-copy-ref');
+                        var originalHtml = $btn.html();
+                        $btn.html(
+                            `<x-core::icon name="check" size="xs" /> <span class="bn">কপি হয়েছে!</span><span class="en">Copied!</span>`
+                        );
+                        setTimeout(function() {
+                            $btn.html(originalHtml);
+                        }, 2000);
+                    });
+                }
+            });
         });
-
-        // Reload action
-        $('#btn-reload').on('click', function (e) {
-            e.preventDefault();
-            window.location.reload();
-        });
-
-        // Technical details accordion toggle
-        $('#toggle-details').on('click', function () {
-            var $content = $('#details-content');
-            var $chevron = $('#details-chevron');
-            var isExpanded = $(this).attr('aria-expanded') === 'true';
-
-            $content.slideToggle(150);
-            $(this).attr('aria-expanded', !isExpanded);
-            $chevron.css('transform', !isExpanded ? 'rotate(180deg)' : 'none');
-        });
-
-        // Copy Diagnostic Info
-        $('#btn-copy-ref').on('click', function () {
-            var diagInfo = [
-                'Error: HTTP 403 Forbidden',
-                'URL: ' + window.location.href,
-                'Method: {{ request()->method() }}',
-                'Path: /{{ ltrim(request()->path(), '/') }}',
-                'Time: {{ now()->toIso8601String() }}',
-                'IP: {{ request()->ip() }}',
-                @auth
-                'User: {{ $userName }} (ID: {{ auth()->id() }})',
-                'Role: {{ $userRole ?? "None" }}',
-                @if ($shopName)
-                'Shop: {{ $shopName }}',
-                @endif
-                @endauth
-            ].join('\n');
-
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(diagInfo).then(function () {
-                    var $btn = $('#btn-copy-ref');
-                    var originalHtml = $btn.html();
-                    $btn.html(`<x-core::icon name="check" size="xs" /> <span class="bn">কপি হয়েছে!</span><span class="en">Copied!</span>`);
-                    setTimeout(function () {
-                        $btn.html(originalHtml);
-                    }, 2000);
-                });
-            }
-        });
-    });
-</script>
+    </script>
 
 </body>
+
 </html>

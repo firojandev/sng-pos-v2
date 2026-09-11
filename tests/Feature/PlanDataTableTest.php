@@ -36,7 +36,7 @@ class PlanDataTableTest extends TestCase
         $html = $dataTable->html();
 
         $this->assertEquals('plans-data-table', $html->getTableAttribute('id'));
-        $this->assertCount(9, $dataTable->getColumns());
+        $this->assertCount(10, $dataTable->getColumns());
     }
 
     public function test_plans_datatable_query_returns_query_builder(): void
@@ -148,5 +148,51 @@ class PlanDataTableTest extends TestCase
             ['report-purchase', 'report-income'],
             $plan->features->pluck('slug')->all(),
         );
+    }
+
+    public function test_plan_sort_order_and_popular_label_can_be_stored_and_updated(): void
+    {
+        $user = $this->createSuperAdmin();
+
+        $response = $this->actingAs($user)->post(route('plans.store'), [
+            'name' => 'Popular Plan Test',
+            'slug' => 'popular-plan-test',
+            'price' => 1200,
+            'billing_cycle' => 'monthly',
+            'status' => 'active',
+            'sort_order' => 5,
+            'is_popular' => 1,
+            'popular_label' => 'সেরা প্যাকেজ (Best Package)',
+        ]);
+
+        $response->assertRedirect(route('plans.index'));
+        $this->assertDatabaseHas('plans', [
+            'slug' => 'popular-plan-test',
+            'sort_order' => 5,
+            'is_popular' => 1,
+            'popular_label' => 'সেরা প্যাকেজ (Best Package)',
+        ]);
+
+        $plan = Plan::where('slug', 'popular-plan-test')->firstOrFail();
+
+        // Test updating to remove popular and change sort_order
+        $updateResponse = $this->actingAs($user)->put(route('plans.update', $plan), [
+            'name' => 'Popular Plan Test',
+            'slug' => 'popular-plan-test',
+            'price' => 1200,
+            'billing_cycle' => 'monthly',
+            'status' => 'active',
+            'sort_order' => 1,
+            'is_popular' => 0,
+            'popular_label' => null,
+        ]);
+
+        $updateResponse->assertRedirect(route('plans.index'));
+        $this->assertDatabaseHas('plans', [
+            'slug' => 'popular-plan-test',
+            'sort_order' => 1,
+            'is_popular' => 0,
+            'popular_label' => null,
+        ]);
     }
 }
