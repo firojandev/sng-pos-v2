@@ -794,6 +794,125 @@ html:not(.lang-en) .lang-segmented-switcher .segmented-switch-slider::before {
     }
 }
 
+/* ==========================================================================
+   Modern SaaS Polish: Scroll Progress, Reveal Animations, Glows, & 3D Tilt
+   ========================================================================== */
+
+/* Top Scroll Reading Progress Indicator */
+.lp-scroll-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0%;
+    height: 3px;
+    background: linear-gradient(90deg, #0D9488 0%, #14B8A6 45%, #2DD4BF 85%, #5EEAD4 100%);
+    box-shadow: 0 0 10px rgba(45, 212, 191, 0.75), 0 0 4px rgba(13, 148, 136, 0.5);
+    z-index: 1200;
+    pointer-events: none;
+    transition: width 0.08s linear;
+}
+
+/* Reveal on Scroll System */
+.lp-reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform;
+}
+
+.lp-reveal-left {
+    opacity: 0;
+    transform: translateX(-32px);
+    transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform;
+}
+
+.lp-reveal-right {
+    opacity: 0;
+    transform: translateX(32px);
+    transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform;
+}
+
+.lp-reveal-scale {
+    opacity: 0;
+    transform: scale(0.94);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform;
+}
+
+.lp-reveal.is-visible,
+.lp-reveal-left.is-visible,
+.lp-reveal-right.is-visible,
+.lp-reveal-scale.is-visible {
+    opacity: 1;
+    transform: translateY(0) translateX(0) scale(1);
+}
+
+/* Stagger Delays for Grid Elements */
+.lp-delay-1 { transition-delay: 0.08s; }
+.lp-delay-2 { transition-delay: 0.16s; }
+.lp-delay-3 { transition-delay: 0.24s; }
+.lp-delay-4 { transition-delay: 0.32s; }
+.lp-delay-5 { transition-delay: 0.40s; }
+.lp-delay-6 { transition-delay: 0.48s; }
+
+/* Interactive Spotlight Shimmer Effect for Cards */
+.lp-spotlight-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.lp-spotlight-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle 240px at var(--mouse-x, -999px) var(--mouse-y, -999px), rgba(45, 212, 191, 0.12), transparent 70%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+    z-index: 1;
+}
+
+.lp-spotlight-card:hover::before {
+    opacity: 1;
+}
+
+/* Subtle 3D Perspective Hero Mockup */
+.lp-hero-visual {
+    perspective: 1200px;
+}
+
+.lp-mockup-wrapper {
+    transform-style: preserve-3d;
+    transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+}
+
+/* Modern Gradient Border Sweep on Popular Card */
+.lp-plan-card.popular {
+    position: relative;
+}
+
+.lp-plan-card.popular::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 21px;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(45, 212, 191, 0.6), rgba(13, 148, 136, 0.2), rgba(45, 212, 191, 0.5));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+}
+
 /* Responsive Layout */
 @media (max-width: 1200px) {
     .lp-hero-grid { gap: 32px; }
@@ -819,6 +938,7 @@ html:not(.lang-en) .lang-segmented-switcher .segmented-switch-slider::before {
     .lp-footer-top { grid-template-columns: 1fr 1fr; }
     .lp-nav-links { display: none; }
     .lp-burger { display: flex; }
+    .lp-mockup-wrapper { transform: none !important; }
 }
 
 @media (max-width: 768px) {
@@ -833,4 +953,9 @@ html:not(.lang-en) .lang-segmented-switcher .segmented-switch-slider::before {
     .lp-dash-stat-grid { grid-template-columns: 1fr; }
     .lp-dash-body { padding: 12px; }
     .lp-sim-prod-grid { grid-template-columns: 1fr; }
+    /* Smoother on mobile devices: reduce travel distance */
+    .lp-reveal, .lp-reveal-left, .lp-reveal-right {
+        transform: translateY(16px);
+        transition-duration: 0.55s;
+    }
 }

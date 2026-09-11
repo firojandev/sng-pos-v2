@@ -7,12 +7,15 @@
     'cardSubtitleEn' => 'Sign in to manage your business account',
     'mark' => null,
     'maxWidth' => '400px',
+    'showThemeSwitcher' => true,
+    'defaultTheme' => null,
 ])
 
 @php
     $cookieTheme = request()->cookie('theme');
     $cookieLang = request()->cookie('lang');
-    $isDark = $cookieTheme === 'dark';
+    $effectiveTheme = $cookieTheme ?: $defaultTheme;
+    $isDark = $effectiveTheme === 'dark';
     $isEn = $cookieLang === 'en';
 
     $siteTitle = $siteTitle ?? \Modules\Core\Models\Setting::getSiteTitle();
@@ -32,7 +35,7 @@
 @endphp
 
 <!DOCTYPE html>
-<html lang="{{ $isEn ? 'en' : 'bn' }}" @if ($cookieTheme) data-theme="{{ $cookieTheme }}" @endif
+<html lang="{{ $isEn ? 'en' : 'bn' }}" @if ($effectiveTheme) data-theme="{{ $effectiveTheme }}" @endif
     class="{{ $isEn ? 'lang-en' : '' }}">
 
 <head>
@@ -45,7 +48,8 @@
     <script>
         (function() {
             try {
-                var t = localStorage.getItem('theme');
+                var defaultTheme = @json($defaultTheme);
+                var t = defaultTheme || localStorage.getItem('theme');
                 if (t === 'light' || t === 'dark') {
                     document.documentElement.setAttribute('data-theme', t);
                     if (!document.cookie.includes('theme=' + t)) {
@@ -218,9 +222,10 @@
 <body>
 
     <div class="auth-actions">
-        <x-core::theme-switcher />
-
-        <div class="auth-action-divider"></div>
+        @if ($showThemeSwitcher)
+            <x-core::theme-switcher />
+            <div class="auth-action-divider"></div>
+        @endif
 
         <x-core::lang-switcher />
     </div>

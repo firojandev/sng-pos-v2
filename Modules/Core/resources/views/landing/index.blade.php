@@ -36,6 +36,9 @@
 </head>
 <body>
 
+{{-- Top Reading/Scroll Progress Indicator --}}
+<div class="lp-scroll-progress" id="lpScrollProgress"></div>
+
 @if ($isPreview || (auth()->check() && auth()->user()->isSuperAdmin()))
     <div class="lp-admin-bar">
         <span>
@@ -173,7 +176,7 @@
 
     <div class="lp-container">
         <div class="lp-hero-grid">
-            <div class="lp-hero-copy">
+            <div class="lp-hero-copy lp-reveal-left is-visible">
                 <div class="lp-badge-glow">
                     <span class="lp-badge-dot"></span>
                     <span class="bn">{{ $content['hero_badge_bn'] ?? '⚡ বাংলাদেশের #১ ক্লাউড POS সফটওয়্যার' }}</span>
@@ -247,8 +250,8 @@
             </div>
 
             {{-- Mockup Visual with Floating Pills (Exact Application Dashboard Mockup) --}}
-            <div class="lp-hero-visual">
-                <div class="lp-mockup-wrapper">
+            <div class="lp-hero-visual lp-reveal-right is-visible">
+                <div class="lp-mockup-wrapper" id="heroMockup">
                     <div class="lp-mockup-header">
                         <div class="lp-mockup-dot red"></div>
                         <div class="lp-mockup-dot yellow"></div>
@@ -438,29 +441,29 @@
 <section class="lp-proof-strip">
     <div class="lp-container">
         <div class="lp-proof-grid">
-            <div class="lp-proof-item">
-                <h3>{{ $content['stat_1_number'] ?? '৯৯.৯%' }}</h3>
+            <div class="lp-proof-item lp-reveal lp-delay-1">
+                <h3 class="lp-counter" data-target="99.9" data-suffix="%" data-decimals="1">{{ $content['stat_1_number'] ?? '৯৯.৯%' }}</h3>
                 <p>
                     <span class="bn">{{ $content['stat_1_label_bn'] ?? 'সিস্টেম আপটাইম গ্যারান্টি' }}</span>
                     <span class="en">{{ $content['stat_1_label_en'] ?? 'System Uptime Guarantee' }}</span>
                 </p>
             </div>
-            <div class="lp-proof-item">
-                <h3>{{ $content['stat_2_number'] ?? '৫০,০০০+' }}</h3>
+            <div class="lp-proof-item lp-reveal lp-delay-2">
+                <h3 class="lp-counter" data-target="50000" data-suffix="+" data-decimals="0">{{ $content['stat_2_number'] ?? '৫০,০০০+' }}</h3>
                 <p>
                     <span class="bn">{{ $content['stat_2_label_bn'] ?? 'প্রতিদিনের সফল লেনদেন' }}</span>
                     <span class="en">{{ $content['stat_2_label_en'] ?? 'Daily Successful Invoices' }}</span>
                 </p>
             </div>
-            <div class="lp-proof-item">
-                <h3>{{ $content['stat_3_number'] ?? '৩ সেকেন্ড' }}</h3>
+            <div class="lp-proof-item lp-reveal lp-delay-3">
+                <h3 class="lp-counter" data-target="3" data-suffix=" সেকেন্ড" data-suffix-en="s" data-decimals="0">{{ $content['stat_3_number'] ?? '৩ সেকেন্ড' }}</h3>
                 <p>
                     <span class="bn">{{ $content['stat_3_label_bn'] ?? 'দ্রুততম ক্যাশ মেমো প্রিন্ট' }}</span>
                     <span class="en">{{ $content['stat_3_label_en'] ?? 'Fastest Invoice Print' }}</span>
                 </p>
             </div>
-            <div class="lp-proof-item">
-                <h3>{{ $content['stat_4_number'] ?? '২৪/৭' }}</h3>
+            <div class="lp-proof-item lp-reveal lp-delay-4">
+                <h3 class="lp-counter" data-text-fixed="২৪/৭" data-text-fixed-en="24/7">{{ $content['stat_4_number'] ?? '২৪/৭' }}</h3>
                 <p>
                     <span class="bn">{{ $content['stat_4_label_bn'] ?? 'গ্রাহক সহায়তা ও ব্যাকআপ' }}</span>
                     <span class="en">{{ $content['stat_4_label_en'] ?? 'Customer Support & Backup' }}</span>
@@ -473,7 +476,7 @@
 {{-- Problem vs Solution --}}
 <section class="lp-vs-section" id="solutions">
     <div class="lp-container">
-        <div class="lp-sec-header">
+        <div class="lp-sec-header lp-reveal">
             <span class="lp-sec-badge">
                 <span class="bn">{{ $content['vs_badge_bn'] ?? 'তুলনামূলক বিশ্লেষণ' }}</span>
                 <span class="en">{{ $content['vs_badge_en'] ?? 'Direct Comparison' }}</span>
@@ -489,7 +492,7 @@
         </div>
 
         <div class="lp-vs-grid">
-            <div class="lp-vs-card vs-pain">
+            <div class="lp-vs-card vs-pain lp-reveal-left">
                 <div class="lp-vs-head">
                     <div class="lp-vs-icon">✕</div>
                     <h4>
@@ -510,11 +513,11 @@
                 </ul>
             </div>
 
-            <div class="lp-vs-divider">
+            <div class="lp-vs-divider lp-reveal-scale">
                 <span>VS</span>
             </div>
 
-            <div class="lp-vs-card vs-gain">
+            <div class="lp-vs-card vs-gain lp-reveal-right">
                 <div class="lp-vs-head">
                     <div class="lp-vs-icon">✓</div>
                     <h4>
@@ -541,7 +544,7 @@
 {{-- Feature Showcase --}}
 <section class="lp-feats-section" id="features">
     <div class="lp-container">
-        <div class="lp-sec-header">
+        <div class="lp-sec-header lp-reveal">
             <span class="lp-sec-badge">
                 <span class="bn">{{ $content['features_badge_bn'] ?? 'শক্তিশালী ফিচারসমূহ' }}</span>
                 <span class="en">{{ $content['features_badge_en'] ?? 'Powerful Core Modules' }}</span>
@@ -557,8 +560,8 @@
         </div>
 
         <div class="lp-feats-grid">
-            @foreach (($content['features_list'] ?? []) as $feat)
-                <div class="lp-feat-card">
+            @foreach (($content['features_list'] ?? []) as $index => $feat)
+                <div class="lp-feat-card lp-spotlight-card lp-reveal lp-delay-{{ ($index % 3) + 1 }}">
                     <div class="lp-feat-top">
                         <div class="lp-feat-icon">
                             <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
@@ -588,7 +591,7 @@
 {{-- Interactive POS Simulator --}}
 <section class="lp-sim-section" id="simulator">
     <div class="lp-container">
-        <div class="lp-sec-header">
+        <div class="lp-sec-header lp-reveal">
             <span class="lp-sec-badge">
                 <span class="bn">{{ $content['sim_badge_bn'] ?? 'লাইভ ডেমো এক্সপেরিয়েন্স' }}</span>
                 <span class="en">{{ $content['sim_badge_en'] ?? 'Interactive Demo' }}</span>
@@ -603,7 +606,7 @@
             </p>
         </div>
 
-        <div class="lp-sim-container">
+        <div class="lp-sim-container lp-reveal-scale">
             <div class="lp-sim-grid">
                 <div class="lp-sim-prods">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
@@ -679,7 +682,7 @@
 {{-- Business Verticals --}}
 <section class="lp-vert-section">
     <div class="lp-container">
-        <div class="lp-sec-header">
+        <div class="lp-sec-header lp-reveal">
             <span class="lp-sec-badge">
                 <span class="bn">{{ $content['vert_badge_bn'] ?? 'যেকোনো ধরনের ব্যবসা' }}</span>
                 <span class="en">{{ $content['vert_badge_en'] ?? 'Any Industry' }}</span>
@@ -695,8 +698,8 @@
         </div>
 
         <div class="lp-vert-grid">
-            @foreach (($content['verticals_list'] ?? []) as $vert)
-                <div class="lp-vert-card">
+            @foreach (($content['verticals_list'] ?? []) as $vIndex => $vert)
+                <div class="lp-vert-card lp-spotlight-card lp-reveal lp-delay-{{ ($vIndex % 3) + 1 }}">
                     <div class="lp-vert-icon">
                         <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
@@ -725,7 +728,7 @@
 @if ($plans && $plans->count())
 <section class="lp-pricing-section" id="pricing">
     <div class="lp-container">
-        <div class="lp-sec-header">
+        <div class="lp-sec-header lp-reveal">
             <span class="lp-sec-badge">
                 <span class="bn">{{ $content['pricing_badge_bn'] ?? 'সাশ্রয়ী প্যাকেজ' }}</span>
                 <span class="en">{{ $content['pricing_badge_en'] ?? 'Affordable Pricing' }}</span>
@@ -749,7 +752,7 @@
         </div>
 
         <div class="lp-pricing-grid">
-            @foreach ($plans as $plan)
+            @foreach ($plans as $pIndex => $plan)
                 @php
                     $isPopular = (bool) ($plan->is_popular ?? false);
                     $monthlyPrice = (float) $plan->price;
@@ -782,7 +785,7 @@
                         $popularLabelEn = 'Most Popular';
                     }
                 @endphp
-                <div class="lp-plan-card {{ $isPopular ? 'popular' : '' }}" data-plan-slug="{{ $plan->slug }}">
+                <div class="lp-plan-card lp-spotlight-card lp-reveal lp-delay-{{ ($pIndex % 3) + 1 }} {{ $isPopular ? 'popular' : '' }}" data-plan-slug="{{ $plan->slug }}">
                     @if ($isPopular)
                         <div class="lp-plan-tag"><span class="bn">{{ $popularLabelBn }}</span><span class="en">{{ $popularLabelEn }}</span></div>
                     @endif
@@ -1124,7 +1127,7 @@
 {{-- Customer Reviews --}}
 <section class="lp-reviews-section" id="reviews">
     <div class="lp-container">
-        <div class="lp-sec-header">
+        <div class="lp-sec-header lp-reveal">
             <span class="lp-sec-badge">
                 <span class="bn">{{ $content['reviews_badge_bn'] ?? 'গ্রাহক সন্তুষ্টি' }}</span>
                 <span class="en">{{ $content['reviews_badge_en'] ?? 'Client Testimonials' }}</span>
@@ -1140,8 +1143,8 @@
         </div>
 
         <div class="lp-reviews-grid">
-            @foreach (($content['reviews_list'] ?? []) as $rev)
-                <div class="lp-review-card">
+            @foreach (($content['reviews_list'] ?? []) as $rIndex => $rev)
+                <div class="lp-review-card lp-spotlight-card lp-reveal lp-delay-{{ ($rIndex % 3) + 1 }}">
                     <div class="lp-review-stars">
                         @for ($s = 0; $s < ($rev['rating'] ?? 5); $s++)
                             ★
@@ -1169,7 +1172,7 @@
 {{-- FAQ Section --}}
 <section class="lp-faq-section" id="faq">
     <div class="lp-container">
-        <div class="lp-sec-header">
+        <div class="lp-sec-header lp-reveal">
             <span class="lp-sec-badge">
                 <span class="bn">{{ $content['faq_badge_bn'] ?? 'সাধারণ জিজ্ঞাসা' }}</span>
                 <span class="en">{{ $content['faq_badge_en'] ?? 'Got Questions?' }}</span>
@@ -1185,8 +1188,8 @@
         </div>
 
         <div class="lp-faq-wrap">
-            @foreach (($content['faqs_list'] ?? []) as $i => $faq)
-                <div class="lp-faq-item {{ $i === 0 ? 'active' : '' }}">
+            @foreach (($content['faqs_list'] ?? []) as $fIndex => $faq)
+                <div class="lp-faq-item lp-reveal lp-delay-{{ ($fIndex % 4) + 1 }} {{ $fIndex === 0 ? 'active' : '' }}">
                     <div class="lp-faq-question">
                         <span>
                             <span class="bn">{{ $faq['question_bn'] ?? '' }}</span>
@@ -1194,7 +1197,7 @@
                         </span>
                         <svg class="lp-faq-chevron" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
                     </div>
-                    <div class="lp-faq-answer" style="{{ $i === 0 ? 'display:block;' : '' }}">
+                    <div class="lp-faq-answer" style="{{ $fIndex === 0 ? 'display:block;' : '' }}">
                         <span class="bn">{{ $faq['answer_bn'] ?? '' }}</span>
                         <span class="en">{{ $faq['answer_en'] ?? '' }}</span>
                     </div>
@@ -1207,7 +1210,7 @@
 {{-- Final Conversion CTA --}}
 <section class="lp-final-cta">
     <div class="lp-container">
-        <div class="lp-final-box">
+        <div class="lp-final-box lp-reveal-scale">
             <h2>
                 <span class="bn">{{ $content['cta_title_bn'] ?? 'আজই আপনার দোকানের হিসাব ডিজিটাল করুন' }}</span>
                 <span class="en">{{ $content['cta_title_en'] ?? 'Modernize Your Store Operations Today' }}</span>
@@ -1560,6 +1563,150 @@ $(function () {
             });
             $btn.addClass('active').attr('aria-expanded', 'true');
         }
+    });
+
+    // 11. Reading/Scroll Progress Indicator
+    const $scrollProgress = $('#lpScrollProgress');
+    function updateScrollProgress() {
+        const scrollTop = $(window).scrollTop();
+        const docHeight = $(document).height() - $(window).height();
+        const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+        $scrollProgress.css('width', Math.min(progress, 100) + '%');
+    }
+    $(window).on('scroll resize', updateScrollProgress);
+    updateScrollProgress();
+
+    // 12. Reveal on Scroll (Intersection Observer via jQuery)
+    if ('IntersectionObserver' in window) {
+        const revealObserver = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    const $target = $(entry.target);
+                    $target.addClass('is-visible');
+
+                    // If it contains stat counter or is counter itself
+                    if ($target.hasClass('lp-counter')) {
+                        animateCounter($target);
+                    } else {
+                        $target.find('.lp-counter').each(function () {
+                            animateCounter($(this));
+                        });
+                    }
+
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, {
+            threshold: 0.15,
+            rootMargin: '0px 0px -40px 0px'
+        });
+
+        $('.lp-reveal, .lp-reveal-left, .lp-reveal-right, .lp-reveal-scale').each(function () {
+            revealObserver.observe(this);
+        });
+    } else {
+        // Fallback for older browsers
+        $('.lp-reveal, .lp-reveal-left, .lp-reveal-right, .lp-reveal-scale').addClass('is-visible');
+    }
+
+    // 13. Animated Counter Ticker (Bengali & English digits)
+    const bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+    function toBnNum(numStr) {
+        return String(numStr).replace(/[0-9]/g, function (d) {
+            return bnDigits[parseInt(d, 10)];
+        });
+    }
+
+    function animateCounter($el) {
+        if ($el.data('counted')) return;
+        $el.data('counted', true);
+
+        const target = parseFloat($el.data('target'));
+        const suffix = $el.data('suffix') || '';
+        const decimals = parseInt($el.data('decimals') || 0, 10);
+        const fixedText = $el.data('text-fixed');
+
+        if (isNaN(target)) return;
+
+        const isEnglish = $('html').hasClass('lang-en');
+        const duration = 1600;
+        const startTime = performance.now();
+
+        function updateTicker(now) {
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            // Ease out cubic
+            const ease = 1 - Math.pow(1 - progress, 3);
+            const currentVal = (target * ease).toFixed(decimals);
+
+            let formattedVal = Number(currentVal).toLocaleString('en-US', {
+                minimumFractionDigits: decimals,
+                maximumFractionDigits: decimals
+            });
+
+            if (!isEnglish) {
+                formattedVal = toBnNum(formattedVal) + suffix;
+            } else {
+                const suffixEn = $el.data('suffix-en') || suffix;
+                formattedVal = formattedVal + suffixEn;
+            }
+
+            $el.text(formattedVal);
+
+            if (progress < 1) {
+                requestAnimationFrame(updateTicker);
+            }
+        }
+
+        requestAnimationFrame(updateTicker);
+    }
+
+    // 14. Subtle 3D Mouse Tilt Effect on Desktop Hero Mockup
+    const $heroMockup = $('#heroMockup');
+    if ($heroMockup.length && window.innerWidth > 1024) {
+        let tiltTicking = false;
+
+        $('.lp-hero-visual').on('mousemove', function (e) {
+            if (tiltTicking) return;
+            tiltTicking = true;
+
+            requestAnimationFrame(function () {
+                const offset = $heroMockup.offset();
+                const width = $heroMockup.outerWidth();
+                const height = $heroMockup.outerHeight();
+
+                const mouseX = e.pageX - offset.left;
+                const mouseY = e.pageY - offset.top;
+
+                const xPct = (mouseX / width) - 0.5;
+                const yPct = (mouseY / height) - 0.5;
+
+                // Max tilt 6 degrees
+                const rotateY = (xPct * 8).toFixed(2);
+                const rotateX = (-yPct * 8).toFixed(2);
+
+                $heroMockup.css({
+                    'transform': 'perspective(1200px) rotateX(' + rotateX + 'deg) rotateY(' + rotateY + 'deg) scale3d(1.01, 1.01, 1.01)'
+                });
+
+                tiltTicking = false;
+            });
+        });
+
+        $('.lp-hero-visual').on('mouseleave', function () {
+            $heroMockup.css({
+                'transform': 'perspective(1200px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)'
+            });
+        });
+    }
+
+    // 15. Dynamic Card Spotlight Cursor Hover Effect
+    $(document).on('mousemove', '.lp-spotlight-card', function (e) {
+        const rect = this.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        this.style.setProperty('--mouse-x', x + 'px');
+        this.style.setProperty('--mouse-y', y + 'px');
     });
 });
 </script>

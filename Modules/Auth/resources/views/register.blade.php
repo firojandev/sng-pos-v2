@@ -6,6 +6,8 @@
     card-subtitle="সহজে ৩টি ধাপে আপনার অ্যাকাউন্ট, দোকান এবং ফ্রি প্যাকেজ চালু করুন"
     card-subtitle-en="Quickly set up your account, shop, and free package in 3 simple steps"
     max-width="660px"
+    :show-theme-switcher="false"
+    default-theme="dark"
 >
     <style>
         .stepper-header {
@@ -143,6 +145,9 @@
             margin-top: 2px;
             display: none;
         }
+        .div-wrapper .form-group{
+            margin-top: 0 !important;
+        }
     </style>
 
     {{-- Stepper Progress Bar --}}
@@ -195,7 +200,7 @@
                 <span class="en" style="display:none;">Step 1: Shop Owner Credentials & Personal Info</span>
             </div>
 
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; column-gap: 12px;">
                 <div style="grid-column:1 / -1;">
                     <x-core::input
                         name="name"
@@ -246,7 +251,7 @@
                     <div id="email-feedback" class="availability-status"></div>
                 </div>
 
-                <div style="grid-column:1 / -1;">
+                <div style="grid-column:1 / -1;" class="div-wrapper">
                     <x-core::input
                         name="username"
                         id="reg-username"
@@ -257,11 +262,12 @@
                         icon="at-sign"
                         size="sm"
                         :value="old('username')"
+                        style="margin-top: 0 !important"
                     />
                     <div id="username-feedback" class="availability-status"></div>
                 </div>
 
-                <div>
+                <div class="div-wrapper">
                     <x-core::input
                         type="password"
                         name="password"
@@ -278,7 +284,7 @@
                     <div class="client-error-message" id="err-reg-password">পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।</div>
                 </div>
 
-                <div>
+                <div class="div-wrapper">
                     <x-core::input
                         type="password"
                         name="password_confirmation"
@@ -308,7 +314,7 @@
                     id="btn-step-1-next"
                     color="primary"
                     size="sm"
-                    icon="arrow-right"
+                    iconRight="arrow-right"
                 >
                     <span class="bn">পরবর্তী ধাপ (দোকানের বিবরণ)</span>
                     <span class="en" style="display:none;">Next Step (Shop Details)</span>
@@ -344,7 +350,7 @@
                 </div>
 
                 <div style="display:grid; grid-template-columns:1.2fr 0.8fr; gap:12px;">
-                    <div>
+                    <div class="div-wrapper">
                         <x-core::input
                             name="shop_slug"
                             id="reg-shop-slug"
@@ -361,7 +367,7 @@
                         <div class="client-error-message" id="err-reg-shop-slug">দোকানের স্লাগ আবশ্যক ও শুধুমাত্র ইংরেজি অক্ষর, সংখ্যা এবং হাইফেন প্রযোজ্য।</div>
                     </div>
 
-                    <div>
+                    <div class="div-wrapper">
                         <x-core::input
                             name="currency_symbol"
                             id="reg-currency"
@@ -376,7 +382,7 @@
                 </div>
 
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-                    <div>
+                    <div class="div-wrapper">
                         <x-core::input
                             type="tel"
                             name="shop_phone"
@@ -392,7 +398,7 @@
                         <div style="font-size:11px; color:var(--ink-500); margin-top:2px;">খালি রাখলে আপনার ব্যক্তিগত ফোন নম্বরটি ব্যবহৃত হবে</div>
                     </div>
 
-                    <div>
+                    <div class="div-wrapper">
                         <x-core::input
                             name="shop_address"
                             id="reg-shop-address"
@@ -573,7 +579,7 @@
         </div>
     </form>
 
-    <div style="margin-top:20px; text-align:center; font-size:12.5px; color:var(--ink-600);">
+    <div style="margin-top:30px; text-align:center; font-size:12.5px; color:var(--ink-600);">
         <span class="bn">ইতিমধ্যে একটি দোকান অ্যাকাউন্ট রয়েছে?</span>
         <span class="en" style="display:none;">Already have an account?</span>
         <a href="{{ route('login') }}" style="color:var(--teal-800); font-weight:700; text-decoration:none; margin-left:4px;">
