@@ -81,7 +81,7 @@
                     </div>
                 </div>
 
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:12px;">
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:12px; margin-bottom:12px;">
                     <div>
                         <x-core::input
                             type="number"
@@ -120,6 +120,63 @@
                                 </option>
                             </select>
                         </x-core::form-group>
+                    </div>
+                </div>
+
+                {{-- Plan Order & Popular Badge Settings --}}
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; align-items:flex-start; padding-top:12px; border-top:1px dashed var(--border);">
+                    <div>
+                        <x-core::input
+                            type="number"
+                            name="sort_order"
+                            id="plan-sort-order-input"
+                            label="ডিসপ্লে ক্রম (Display Order)"
+                            label-en="Display Order"
+                            icon="hash"
+                            placeholder="যেমন: 1, 2, 3..."
+                            min="0"
+                            :value="old('sort_order', $plan->sort_order ?? 0)"
+                            helper="কম ক্রমের প্ল্যান আগে প্রদর্শিত হবে (১, ২, ৩...)"
+                            helper-en="Lower numbers appear first"
+                        />
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <div>
+                            <label class="form-label" style="margin-bottom:6px; display:block;">
+                                <span class="bn">জনপ্রিয় প্ল্যান ট্যাগ (Popular Badge)</span>
+                                <span class="en" style="display:none;">Popular Plan Badge</span>
+                            </label>
+                            <input type="hidden" name="is_popular" value="0">
+                            <label class="form-toggle-wrap form-toggle-sm form-primary" style="margin-top:2px; cursor:pointer;">
+                                <input
+                                    type="checkbox"
+                                    name="is_popular"
+                                    id="plan-popular-input"
+                                    value="1"
+                                    {{ old('is_popular', $plan->is_popular ?? false) ? 'checked' : '' }}
+                                />
+                                <span class="form-toggle-track">
+                                    <span class="form-toggle-thumb"></span>
+                                </span>
+                                <span class="form-toggle-label">
+                                    <span class="bn">জনপ্রিয় প্ল্যান হিসেবে মার্ক করুন</span>
+                                    <span class="en" style="display:none;">Mark as Popular Plan</span>
+                                </span>
+                            </label>
+                        </div>
+                        <div id="popular-label-container" style="{{ old('is_popular', $plan->is_popular ?? false) ? '' : 'display:none;' }}">
+                            <x-core::input
+                                name="popular_label"
+                                id="plan-popular-label-input"
+                                label="জনপ্রিয় লেবেল টেক্সট (ঐচ্ছিক)"
+                                label-en="Popular Label (Optional)"
+                                icon="star"
+                                placeholder="যেমন: সেরা অফার (Best Value) অথবা সর্বাধিক জনপ্রিয়"
+                                :value="old('popular_label', $plan->popular_label)"
+                                helper="খালি রাখলে ডিফল্ট 'সর্বাধিক জনপ্রিয় (Most Popular)' প্রদর্শিত হবে"
+                                helper-en="Leave empty to use default 'Most Popular'"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -327,14 +384,26 @@
                     <span class="bn">লাইভ প্ল্যান প্রিভিউ (Live Preview)</span>
                     <span class="en" style="display:none;">Live Plan Preview</span>
                 </div>
-                <x-core::badge
-                    id="preview-status-badge"
-                    :color="old('status', $plan->status ?? 'active') === 'active' ? 'green' : 'grey'"
-                    size="xs"
-                    :dot="true"
-                    :label="old('status', $plan->status ?? 'active') === 'active' ? 'সক্রিয়' : 'নিষ্ক্রিয়'"
-                    :label-en="old('status', $plan->status ?? 'active') === 'active' ? 'Active' : 'Inactive'"
-                />
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <x-core::badge
+                        id="preview-popular-badge"
+                        color="gold"
+                        size="xs"
+                        variant="soft"
+                        icon="star"
+                        :label="old('popular_label', $plan->popular_label) ?: 'সর্বাধিক জনপ্রিয়'"
+                        :label-en="old('popular_label', $plan->popular_label) ?: 'Popular'"
+                        style="{{ old('is_popular', $plan->is_popular ?? false) ? '' : 'display:none;' }}"
+                    />
+                    <x-core::badge
+                        id="preview-status-badge"
+                        :color="old('status', $plan->status ?? 'active') === 'active' ? 'green' : 'grey'"
+                        size="xs"
+                        :dot="true"
+                        :label="old('status', $plan->status ?? 'active') === 'active' ? 'সক্রিয়' : 'নিষ্ক্রিয়'"
+                        :label-en="old('status', $plan->status ?? 'active') === 'active' ? 'Active' : 'Inactive'"
+                    />
+                </div>
             </div>
             <div class="panel-body" style="padding:18px;">
                 <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px; gap:8px;">
@@ -519,7 +588,30 @@
             }
         });
 
-        // 5. Live Quota Limit Updates
+        // 5. Live Popular Toggle and Label Updates
+        $(document).on('change', '#plan-popular-input', function () {
+            var isPopular = $(this).is(':checked');
+            if (isPopular) {
+                $('#popular-label-container').slideDown(150);
+                $('#preview-popular-badge').show();
+            } else {
+                $('#popular-label-container').slideUp(150);
+                $('#preview-popular-badge').hide();
+            }
+        });
+
+        $(document).on('input', '#plan-popular-label-input', function () {
+            var label = $(this).val().trim() || 'সর্বাধিক জনপ্রিয়';
+            var $badge = $('#preview-popular-badge');
+            if ($badge.find('.bn').length) {
+                $badge.find('.bn').text(label);
+                $badge.find('.en').text(label);
+            } else {
+                $badge.text(label);
+            }
+        });
+
+        // 6. Live Quota Limit Updates
         $(document).on('input', 'input[name="max_users"]', function () {
             $('#preview-users-val').text($(this).val() || '∞');
         });
@@ -554,6 +646,21 @@
                 $('#preview-status-badge').text(isActive ? 'সক্রিয়' : 'নিষ্ক্রিয়')
                     .removeClass('b-green b-grey')
                     .addClass(isActive ? 'b-green' : 'b-grey');
+            }
+
+            var isPopular = $('#plan-popular-input').is(':checked');
+            if (isPopular) {
+                var popularText = $('#plan-popular-label-input').val().trim() || 'সর্বাধিক জনপ্রিয়';
+                var $popBadge = $('#preview-popular-badge');
+                if ($popBadge.find('.bn').length) {
+                    $popBadge.find('.bn').text(popularText);
+                    $popBadge.find('.en').text(popularText);
+                } else {
+                    $popBadge.text(popularText);
+                }
+                $popBadge.show();
+            } else {
+                $('#preview-popular-badge').hide();
             }
 
             var usersVal = $('input[name="max_users"]').val();

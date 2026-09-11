@@ -75,7 +75,9 @@
                     <li><a href="#features" class="lp-nav-link"><span class="bn">ফিচারসমূহ</span><span class="en">Features</span></a></li>
                     <li><a href="#solutions" class="lp-nav-link"><span class="bn">কেন MasterPOS</span><span class="en">Why Us</span></a></li>
                     <li><a href="#simulator" class="lp-nav-link"><span class="bn">লাইভ ডেমো</span><span class="en">Demo Simulator</span></a></li>
-                    <li><a href="#pricing" class="lp-nav-link"><span class="bn">প্রাইসিং</span><span class="en">Pricing</span></a></li>
+                    @if ($plans && $plans->count())
+                        <li><a href="#pricing" class="lp-nav-link"><span class="bn">প্রাইসিং</span><span class="en">Pricing</span></a></li>
+                    @endif
                     <li><a href="#reviews" class="lp-nav-link"><span class="bn">রিভিউ</span><span class="en">Reviews</span></a></li>
                     <li><a href="#faq" class="lp-nav-link"><span class="bn">সাধারণ জিজ্ঞাসা</span><span class="en">FAQ</span></a></li>
                 </ul>
@@ -139,7 +141,9 @@
         <li><a href="#features" class="close-drawer"><span class="bn">ফিচারসমূহ</span><span class="en">Features</span></a></li>
         <li><a href="#solutions" class="close-drawer"><span class="bn">কেন MasterPOS</span><span class="en">Why Us</span></a></li>
         <li><a href="#simulator" class="close-drawer"><span class="bn">লাইভ ডেমো</span><span class="en">Demo</span></a></li>
-        <li><a href="#pricing" class="close-drawer"><span class="bn">প্রাইসিং</span><span class="en">Pricing</span></a></li>
+        @if ($plans && $plans->count())
+            <li><a href="#pricing" class="close-drawer"><span class="bn">প্রাইসিং</span><span class="en">Pricing</span></a></li>
+        @endif
         <li><a href="#reviews" class="close-drawer"><span class="bn">রিভিউ</span><span class="en">Reviews</span></a></li>
         <li><a href="#faq" class="close-drawer"><span class="bn">সাধারণ জিজ্ঞাসা</span><span class="en">FAQ</span></a></li>
     </ul>
@@ -617,6 +621,7 @@
 </section>
 
 {{-- Dynamic Pricing Plans --}}
+@if ($plans && $plans->count())
 <section class="lp-pricing-section" id="pricing">
     <div class="lp-container">
         <div class="lp-sec-header">
@@ -643,18 +648,48 @@
         </div>
 
         <div class="lp-pricing-grid">
-            @forelse ($plans as $plan)
+            @foreach ($plans as $plan)
                 @php
                     $isPopular = (bool) ($plan->is_popular ?? false);
                     $monthlyPrice = (float) $plan->price;
                     $yearlyPrice = round($monthlyPrice * 12 * 0.80);
+                    $featuresCount = $plan->features ? $plan->features->count() : 0;
+                    $initialLimit = 6;
+                    $hasMore = $featuresCount > $initialLimit;
+                    $moreCount = $hasMore ? $featuresCount - $initialLimit : 0;
+
+                    $planRawName = $plan->name ?? '';
+                    if (preg_match('/^(.*?)\s*\((.*?)\)$/u', $planRawName, $pm)) {
+                        $planNameBn = trim($pm[1]);
+                        $planNameEn = trim($pm[2]);
+                    } else {
+                        $planNameBn = $planRawName;
+                        $planNameEn = $planRawName;
+                    }
+
+                    $popularLabelRaw = $plan->popular_label ?? '';
+                    if (!empty($popularLabelRaw)) {
+                        if (preg_match('/^(.*?)\s*\((.*?)\)$/u', $popularLabelRaw, $plm)) {
+                            $popularLabelBn = trim($plm[1]);
+                            $popularLabelEn = trim($plm[2]);
+                        } else {
+                            $popularLabelBn = $popularLabelRaw;
+                            $popularLabelEn = $popularLabelRaw;
+                        }
+                    } else {
+                        $popularLabelBn = 'সর্বাধিক জনপ্রিয়';
+                        $popularLabelEn = 'Most Popular';
+                    }
                 @endphp
-                <div class="lp-plan-card {{ $isPopular ? 'popular' : '' }}">
+                <div class="lp-plan-card {{ $isPopular ? 'popular' : '' }}" data-plan-slug="{{ $plan->slug }}">
                     @if ($isPopular)
-                        <div class="lp-plan-tag"><span class="bn">সর্বাধিক জনপ্রিয়</span><span class="en">Most Popular</span></div>
+                        <div class="lp-plan-tag"><span class="bn">{{ $popularLabelBn }}</span><span class="en">{{ $popularLabelEn }}</span></div>
                     @endif
 
-                    <h3 class="lp-plan-name">{{ $plan->name }}</h3>
+                    <h3 class="lp-plan-name">
+                        <span class="bn">{{ $planNameBn }}</span>
+                        <span class="en">{{ $planNameEn }}</span>
+                    </h3>
                     <p class="lp-plan-desc">{{ $plan->description ?? 'খুচরা ও ছোট দোকানের দ্রুত বেচাকেনার আদর্শ প্যাকেজ।' }}</p>
 
                     <div class="lp-plan-price">
@@ -663,68 +698,327 @@
                         <span class="period plan-period-display">/ মাস</span>
                     </div>
 
-                    @if ($isRegistrationEnabled)
-                        <a href="{{ route('register') }}" class="lp-btn {{ $isPopular ? 'lp-btn-primary' : 'lp-btn-secondary' }}" style="width:100%; margin-bottom:24px;">
-                            <span class="bn">রেজিস্ট্রেশন করুন</span>
-                            <span class="en">Registration</span>
-                        </a>
-                    @else
-                        <a href="{{ route('login') }}" class="lp-btn {{ $isPopular ? 'lp-btn-primary' : 'lp-btn-secondary' }}" style="width:100%; margin-bottom:24px;">
-                            <span class="bn">লগইন করুন</span>
-                            <span class="en">Login</span>
-                        </a>
-                    @endif
+                    {{-- Plan Quota Limitations --}}
+                    <div class="lp-plan-quotas">
+                        <div class="lp-quota-item" title="ইউজার লিমিট / User Limit">
+                            <span class="lp-quota-icon"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>
+                            <div class="lp-quota-text">
+                                <span class="lp-quota-val">{{ $plan->max_users ? \Modules\Core\Support\BanglaNumber::toBn($plan->max_users) : 'আনলিমিটেড' }}</span>
+                                <span class="lp-quota-label"><span class="bn">ইউজার</span><span class="en">Users</span></span>
+                            </div>
+                        </div>
+                        <div class="lp-quota-item" title="শাখা লিমিট / Branch Limit">
+                            <span class="lp-quota-icon"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"></path><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"></path><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"></path><path d="M10 6h4"></path><path d="M10 10h4"></path><path d="M10 14h4"></path><path d="M10 18h4"></path></svg></span>
+                            <div class="lp-quota-text">
+                                <span class="lp-quota-val">{{ $plan->max_branches ? \Modules\Core\Support\BanglaNumber::toBn($plan->max_branches) : 'আনলিমিটেড' }}</span>
+                                <span class="lp-quota-label"><span class="bn">শাখা</span><span class="en">Branches</span></span>
+                            </div>
+                        </div>
+                        <div class="lp-quota-item" title="গুদাম লিমিট / Warehouse Limit">
+                            <span class="lp-quota-icon"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"></path><path d="M6 18h12"></path><path d="M6 14h12"></path></svg></span>
+                            <div class="lp-quota-text">
+                                <span class="lp-quota-val">{{ $plan->max_warehouses ? \Modules\Core\Support\BanglaNumber::toBn($plan->max_warehouses) : 'আনলিমিটেড' }}</span>
+                                <span class="lp-quota-label"><span class="bn">গুদাম</span><span class="en">Warehouses</span></span>
+                            </div>
+                        </div>
+                        <div class="lp-quota-item" title="পণ্য লিমিট / Product Limit">
+                            <span class="lp-quota-icon"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m7.5 4.27 9 5.15"></path><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path><path d="m3.3 7 8.7 5 8.7-5"></path><path d="M12 22V12"></path></svg></span>
+                            <div class="lp-quota-text">
+                                <span class="lp-quota-val">{{ $plan->max_products ? \Modules\Core\Support\BanglaNumber::toBn(number_format($plan->max_products)) : 'আনলিমিটেড' }}</span>
+                                <span class="lp-quota-label"><span class="bn">পণ্য</span><span class="en">Products</span></span>
+                            </div>
+                        </div>
+                    </div>
 
                     <ul class="lp-plan-features">
                         @if ($plan->features && $plan->features->count())
                             @foreach ($plan->features as $feat)
-                                <li>
+                                @php
+                                    $rawName = $feat->name ?? '';
+                                    if (preg_match('/^(.*?)\s*\((.*?)\)$/u', $rawName, $m)) {
+                                        $featBn = trim($m[1]);
+                                        $featEn = trim($m[2]);
+                                    } else {
+                                        $featBn = $rawName;
+                                        $featEn = $rawName;
+                                    }
+                                @endphp
+                                <li class="{{ $loop->index >= $initialLimit ? 'lp-plan-feature-extra is-hidden' : '' }}">
                                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                    <span>{{ $feat->name }}</span>
+                                    <span>
+                                        <span class="bn">{{ $featBn }}</span>
+                                        <span class="en">{{ $featEn }}</span>
+                                    </span>
                                 </li>
                             @endforeach
                         @else
                             <li>
                                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                <span>আনলিমিটেড প্রোডাক্ট ও ইনভয়েস</span>
+                                <span>
+                                    <span class="bn">আনলিমিটেড প্রোডাক্ট ও ইনভয়েস</span>
+                                    <span class="en">Unlimited Products & Invoices</span>
+                                </span>
                             </li>
                             <li>
                                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                <span>বাকির খাতা ও অটো SMS অ্যালার্ট</span>
+                                <span>
+                                    <span class="bn">বাকির খাতা ও অটো SMS অ্যালার্ট</span>
+                                    <span class="en">Due Ledger & Automated SMS</span>
+                                </span>
                             </li>
                             <li>
                                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                <span>২৪/৭ ডেডিকেটেড ফোন ও চ্যাট সাপোর্ট</span>
+                                <span>
+                                    <span class="bn">২৪/৭ ডেডিকেটেড ফোন ও চ্যাট সাপোর্ট</span>
+                                    <span class="en">24/7 Dedicated Support</span>
+                                </span>
                             </li>
                         @endif
                     </ul>
-                </div>
-            @empty
-                <div class="lp-plan-card popular" style="grid-column: 1 / -1; max-width:400px; margin:0 auto;">
-                    <div class="lp-plan-tag">স্ট্যান্ডার্ড প্ল্যান</div>
-                    <h3 class="lp-plan-name">প্রো রিটেইল প্ল্যান</h3>
-                    <p class="lp-plan-desc">সকল প্রিমিয়াম ফিচারসহ কমপ্লিট ক্লাউড পিওএস</p>
-                    <div class="lp-plan-price">
-                        <span class="currency">৳</span>
-                        <span class="amount">৯৯৯</span>
-                        <span class="period">/ মাস</span>
-                    </div>
-                    @if ($isRegistrationEnabled)
-                        <a href="{{ route('register') }}" class="lp-btn lp-btn-primary" style="width:100%; margin-bottom:24px;">
-                            <span class="bn">রেজিস্ট্রেশন করুন</span>
-                            <span class="en">Registration</span>
-                        </a>
-                    @else
-                        <a href="{{ route('login') }}" class="lp-btn lp-btn-primary" style="width:100%; margin-bottom:24px;">
-                            <span class="bn">লগইন করুন</span>
-                            <span class="en">Login</span>
-                        </a>
+
+                    @if ($hasMore)
+                        <div class="lp-plan-features-footer">
+                            <button type="button" class="lp-plan-features-toggle" aria-expanded="false">
+                                <span class="toggle-text-more">
+                                    <span class="bn">+ আরও {{ \Modules\Core\Support\BanglaNumber::toBn($moreCount) }}টি ফিচার দেখুন</span>
+                                    <span class="en">+ Show {{ $moreCount }} more features</span>
+                                </span>
+                                <span class="toggle-text-less">
+                                    <span class="bn">কম ফিচার দেখুন</span>
+                                    <span class="en">Show fewer features</span>
+                                </span>
+                                <svg class="toggle-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </button>
+                        </div>
                     @endif
                 </div>
-            @endforelse
+            @endforeach
         </div>
+
+        @if ($plans->count() > 1)
+            @php
+                // Extract all unique features across all active plans
+                $allPlanFeatures = collect();
+                foreach ($plans as $p) {
+                    if ($p->features) {
+                        foreach ($p->features as $f) {
+                            if (!$allPlanFeatures->has($f->slug)) {
+                                $allPlanFeatures->put($f->slug, $f->name);
+                            }
+                        }
+                    }
+                }
+            @endphp
+
+            {{-- Toggle Button for Full Plan Comparison Table --}}
+            <div class="lp-compare-toggle-wrap">
+                <button type="button" class="lp-compare-toggle-btn" id="btnToggleCompareTable" aria-expanded="false">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 3h5v5"></path><path d="M4 20L21 3"></path><path d="M21 16v5h-5"></path><path d="M15 15l6 6"></path><path d="M4 4l5 5"></path></svg>
+                    <span class="btn-compare-text-open">
+                        <span class="bn">সকল প্যাকেজের ফিচার ও লিমিট বিস্তারিত তুলনা করুন</span>
+                        <span class="en">Compare All Plan Features & Limitations</span>
+                    </span>
+                    <span class="btn-compare-text-close" style="display:none;">
+                        <span class="bn">তুলনা টেবিল বন্ধ করুন</span>
+                        <span class="en">Close Comparison Table</span>
+                    </span>
+                    <svg class="compare-toggle-arrow" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+            </div>
+
+            {{-- Full Comparison Table Container --}}
+            <div class="lp-compare-wrapper" id="lpCompareWrapper" style="display:none;">
+                <div class="lp-compare-card">
+                    <div class="lp-compare-card-head">
+                        <div>
+                            <h3 class="lp-compare-title">
+                                <span class="bn">প্যাকেজ ভিত্তিক বিস্তারিত তুলনা (Side-by-Side Comparison)</span>
+                                <span class="en">Side-by-Side Plan Comparison</span>
+                            </h3>
+                            <p class="lp-compare-sub">
+                                <span class="bn">আপনার ব্যবসার প্রয়োজন অনুযায়ী প্রতিটি প্যাকেজের রিসোর্স লিমিট ও অন্তর্ভুক্ত মডিউলগুলো মিলিয়ে দেখুন।</span>
+                                <span class="en">Review resource limits and included modules to choose the best fit for your business.</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="lp-compare-table-responsive">
+                        <table class="lp-compare-table">
+                            <thead>
+                                <tr>
+                                    <th class="lp-th-feature">
+                                        <span class="bn">ফিচার / লিমিট বিবরণ</span>
+                                        <span class="en">Features & Limits</span>
+                                    </th>
+                                    @foreach ($plans as $p)
+                                        @php
+                                            $pName = $p->name ?? '';
+                                            if (preg_match('/^(.*?)\s*\((.*?)\)$/u', $pName, $matchP)) {
+                                                $pBn = trim($matchP[1]);
+                                                $pEn = trim($matchP[2]);
+                                            } else {
+                                                $pBn = $pName;
+                                                $pEn = $pName;
+                                            }
+                                            $mPrice = (float) $p->price;
+                                            $yPrice = round($mPrice * 12 * 0.80);
+                                        @endphp
+                                        <th class="lp-th-plan {{ $p->is_popular ? 'highlight-col' : '' }}">
+                                            @if ($p->is_popular)
+                                                <span class="lp-compare-tag">
+                                                    {{ $p->popular_label ?: 'জনপ্রিয় (Popular)' }}
+                                                </span>
+                                            @endif
+                                            <div class="lp-compare-plan-name">
+                                                <span class="bn">{{ $pBn }}</span>
+                                                <span class="en">{{ $pEn }}</span>
+                                            </div>
+                                            <div class="lp-compare-plan-price">
+                                                ৳<span class="plan-price-display" data-monthly="{{ $mPrice }}" data-yearly="{{ $yPrice }}">{{ number_format($mPrice) }}</span>
+                                                <small class="plan-period-display">/ মাস</small>
+                                            </div>
+                                        </th>
+                                    @endforeach
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{-- Group: Resource Quotas & Limits --}}
+                                <tr class="lp-tr-category">
+                                    <td colspan="{{ $plans->count() + 1 }}">
+                                        <span class="bn">রিসোর্স কোটা ও সীমাবদ্ধতা</span>
+                                        <span class="en">Resource Quotas and Limits</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="lp-td-label">
+                                        <div class="lp-feat-label-wrap">
+                                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                                            <span class="bn">সর্বোচ্চ ব্যবহারকারী (Users)</span>
+                                            <span class="en">Max Users</span>
+                                        </div>
+                                    </td>
+                                    @foreach ($plans as $p)
+                                        <td class="lp-td-val {{ $p->is_popular ? 'highlight-col' : '' }}">
+                                            @if ($p->max_users)
+                                                <span class="lp-badge-limit">{{ \Modules\Core\Support\BanglaNumber::toBn($p->max_users) }} জন</span>
+                                            @else
+                                                <span class="lp-badge-unlimited"><span class="bn">আনলিমিটেড</span><span class="en">Unlimited</span></span>
+                                            @endif
+                                        </td>
+                                    @endforeach
+                                </tr>
+                                <tr>
+                                    <td class="lp-td-label">
+                                        <div class="lp-feat-label-wrap">
+                                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"></path><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"></path><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"></path><path d="M10 6h4"></path><path d="M10 10h4"></path><path d="M10 14h4"></path><path d="M10 18h4"></path></svg>
+                                            <span class="bn">সর্বোচ্চ আউটলেট / শাখা (Branches)</span>
+                                            <span class="en">Max Branches</span>
+                                        </div>
+                                    </td>
+                                    @foreach ($plans as $p)
+                                        <td class="lp-td-val {{ $p->is_popular ? 'highlight-col' : '' }}">
+                                            @if ($p->max_branches)
+                                                <span class="lp-badge-limit">{{ \Modules\Core\Support\BanglaNumber::toBn($p->max_branches) }} টি</span>
+                                            @else
+                                                <span class="lp-badge-unlimited"><span class="bn">আনলিমিটেড</span><span class="en">Unlimited</span></span>
+                                            @endif
+                                        </td>
+                                    @endforeach
+                                </tr>
+                                <tr>
+                                    <td class="lp-td-label">
+                                        <div class="lp-feat-label-wrap">
+                                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"></path><path d="M6 18h12"></path><path d="M6 14h12"></path></svg>
+                                            <span class="bn">সর্বোচ্চ গুদাম (Warehouses)</span>
+                                            <span class="en">Max Warehouses</span>
+                                        </div>
+                                    </td>
+                                    @foreach ($plans as $p)
+                                        <td class="lp-td-val {{ $p->is_popular ? 'highlight-col' : '' }}">
+                                            @if ($p->max_warehouses)
+                                                <span class="lp-badge-limit">{{ \Modules\Core\Support\BanglaNumber::toBn($p->max_warehouses) }} টি</span>
+                                            @else
+                                                <span class="lp-badge-unlimited"><span class="bn">আনলিমিটেড</span><span class="en">Unlimited</span></span>
+                                            @endif
+                                        </td>
+                                    @endforeach
+                                </tr>
+                                <tr>
+                                    <td class="lp-td-label">
+                                        <div class="lp-feat-label-wrap">
+                                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="m7.5 4.27 9 5.15"></path><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path><path d="m3.3 7 8.7 5 8.7-5"></path><path d="M12 22V12"></path></svg>
+                                            <span class="bn">সর্বোচ্চ পণ্য সংখ্যা (Products)</span>
+                                            <span class="en">Max Products</span>
+                                        </div>
+                                    </td>
+                                    @foreach ($plans as $p)
+                                        <td class="lp-td-val {{ $p->is_popular ? 'highlight-col' : '' }}">
+                                            @if ($p->max_products)
+                                                <span class="lp-badge-limit">{{ \Modules\Core\Support\BanglaNumber::toBn(number_format($p->max_products)) }} টি</span>
+                                            @else
+                                                <span class="lp-badge-unlimited"><span class="bn">আনলিমিটেড</span><span class="en">Unlimited</span></span>
+                                            @endif
+                                        </td>
+                                    @endforeach
+                                </tr>
+
+                                {{-- Group: System Features & Modules --}}
+                                @if ($allPlanFeatures->isNotEmpty())
+                                    <tr class="lp-tr-category">
+                                        <td colspan="{{ $plans->count() + 1 }}">
+                                            <span class="bn">সিস্টেম ফিচার ও মডিউলসমূহ</span>
+                                            <span class="en">System Features and Modules</span>
+                                        </td>
+                                    </tr>
+                                    @foreach ($allPlanFeatures as $fSlug => $fName)
+                                        @php
+                                            if (preg_match('/^(.*?)\s*\((.*?)\)$/u', $fName, $mFeat)) {
+                                                $fBn = trim($mFeat[1]);
+                                                $fEn = trim($mFeat[2]);
+                                            } else {
+                                                $fBn = $fName;
+                                                $fEn = $fName;
+                                            }
+                                        @endphp
+                                        <tr>
+                                            <td class="lp-td-label">
+                                                <div class="lp-feat-label-wrap">
+                                                    <span class="bn">{{ $fBn }}</span>
+                                                    <span class="en">{{ $fEn }}</span>
+                                                </div>
+                                            </td>
+                                            @foreach ($plans as $p)
+                                                @php
+                                                    $hasFeature = $p->features && $p->features->contains('slug', $fSlug);
+                                                @endphp
+                                                <td class="lp-td-val {{ $p->is_popular ? 'highlight-col' : '' }}">
+                                                    @if ($hasFeature)
+                                                        <span class="lp-feat-yes" title="অন্তর্ভুক্ত / Included">
+                                                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                        </span>
+                                                    @else
+                                                        <span class="lp-feat-no" title="অন্তর্ভুক্ত নেই / Not Included">
+                                                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                                        </span>
+                                                    @endif
+                                                </td>
+                                            @endforeach
+                                        </tr>
+                                    @endforeach
+                                @endif
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        @endif
     </div>
 </section>
+@endif
 
 {{-- Customer Reviews --}}
 <section class="lp-reviews-section" id="reviews">
@@ -898,7 +1192,9 @@
                 <h4><span class="bn">কোম্পানি</span><span class="en">Company</span></h4>
                 <ul class="lp-footer-links">
                     <li><a href="#solutions"><span class="bn">আমাদের সুবিধা</span><span class="en">Why Choose Us</span></a></li>
-                    <li><a href="#pricing"><span class="bn">প্রাইসিং প্ল্যান</span><span class="en">Pricing Plans</span></a></li>
+                    @if ($plans && $plans->count())
+                        <li><a href="#pricing"><span class="bn">প্রাইসিং প্ল্যান</span><span class="en">Pricing Plans</span></a></li>
+                    @endif
                     <li><a href="#reviews"><span class="bn">রিভিউ ও মতামত</span><span class="en">Reviews</span></a></li>
                     <li><a href="#faq"><span class="bn">সাধারণ জিজ্ঞাসা</span><span class="en">FAQ</span></a></li>
                     <li><a href="{{ route('login') }}"><span class="bn">লগ ইন পোর্টাল</span><span class="en">Login Portal</span></a></li>
@@ -1076,6 +1372,51 @@ $(function () {
         alert('🎉 বিক্রয় সফল হয়েছে! মোট সংগৃহীত: ' + total + '\n\nMasterPOS-এ এভাবে মাত্র ৩ সেকেন্ডে প্রতিটি বিক্রয় সম্পন্ন করা যায়।');
         cart = [];
         renderSimCart();
+    });
+
+    // 9. Pricing Plan Features Show More / Show Less Toggle
+    $(document).on('click', '.lp-plan-features-toggle', function () {
+        const $btn = $(this);
+        const $card = $btn.closest('.lp-plan-card');
+        const $extraItems = $card.find('.lp-plan-features li.lp-plan-feature-extra');
+        const isExpanded = $btn.hasClass('expanded');
+
+        if (isExpanded) {
+            $extraItems.slideUp(200, function () {
+                $(this).addClass('is-hidden').removeAttr('style');
+            });
+            $btn.removeClass('expanded').attr('aria-expanded', 'false');
+        } else {
+            $extraItems.removeClass('is-hidden').hide().slideDown({
+                duration: 200,
+                start: function () {
+                    $(this).css('display', 'flex');
+                },
+                complete: function () {
+                    $(this).css('display', 'flex');
+                }
+            });
+            $btn.addClass('expanded').attr('aria-expanded', 'true');
+        }
+    });
+
+    // 10. Plan Full Comparison Table Toggle
+    $(document).on('click', '#btnToggleCompareTable', function () {
+        const $btn = $(this);
+        const $wrapper = $('#lpCompareWrapper');
+        const isVisible = $wrapper.is(':visible');
+
+        if (isVisible) {
+            $wrapper.slideUp(250);
+            $btn.removeClass('active').attr('aria-expanded', 'false');
+        } else {
+            $wrapper.slideDown(300, function () {
+                $('html, body').animate({
+                    scrollTop: $wrapper.offset().top - 80
+                }, 300);
+            });
+            $btn.addClass('active').attr('aria-expanded', 'true');
+        }
     });
 });
 </script>
