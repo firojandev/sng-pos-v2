@@ -3945,6 +3945,14 @@ select.form-control option {
   flex-shrink: 0;
 }
 
+.app-accordion-icon svg,
+.app-accordion-icon .app-icon {
+  width: 16px;
+  height: 16px;
+  max-width: 16px;
+  max-height: 16px;
+}
+
 .app-accordion-label {
   display: flex;
   align-items: center;

@@ -5,7 +5,7 @@
     subtitle-en="Manage public landing page toggle, hero, features, FAQs, reviews, and dynamic content"
     active="system-settings.index"
 >
-    <div style="max-width:1200px; margin:0 auto; padding-bottom:60px;">
+    <div style="width:100%; padding-bottom:60px;">
 
         {{-- Top Notification on Update --}}
         @if (session('status'))
@@ -130,57 +130,100 @@
             </div>
         </div>
 
-        {{-- Dynamic Content Tabs Navigation --}}
-        <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; margin-bottom:20px; border-bottom:1px solid var(--border);" class="tabs-nav-bar">
-            <button type="button" class="tab-btn {{ ($activeTab ?? 'general') === 'general' ? 'active' : '' }}" data-tab="general">
-                <x-core::icon name="settings" size="15" />
-                <span class="bn">সাধারণ ও যোগাযোগ</span>
-                <span class="en">General & SEO</span>
-            </button>
-            <button type="button" class="tab-btn {{ ($activeTab ?? '') === 'hero' ? 'active' : '' }}" data-tab="hero">
-                <x-core::icon name="zap" size="15" />
-                <span class="bn">হিরো ব্যানার</span>
-                <span class="en">Hero Section</span>
-            </button>
-            <button type="button" class="tab-btn {{ ($activeTab ?? '') === 'stats' ? 'active' : '' }}" data-tab="stats">
-                <x-core::icon name="bar-chart-2" size="15" />
-                <span class="bn">পরিসংখ্যান</span>
-                <span class="en">Proof & Stats</span>
-            </button>
-            <button type="button" class="tab-btn {{ ($activeTab ?? '') === 'comparison' ? 'active' : '' }}" data-tab="comparison">
-                <x-core::icon name="columns" size="15" />
-                <span class="bn">খাতা বনাম পিওএস</span>
-                <span class="en">Problem vs Solution</span>
-            </button>
-            <button type="button" class="tab-btn {{ ($activeTab ?? '') === 'features' ? 'active' : '' }}" data-tab="features">
-                <x-core::icon name="layers" size="15" />
-                <span class="bn">কোর ফিচারসমূহ</span>
-                <span class="en">Features</span>
-            </button>
-            <button type="button" class="tab-btn {{ ($activeTab ?? '') === 'verticals' ? 'active' : '' }}" data-tab="verticals">
-                <x-core::icon name="briefcase" size="15" />
-                <span class="bn">ব্যবসায়ের ধরন</span>
-                <span class="en">Verticals</span>
-            </button>
-            <button type="button" class="tab-btn {{ ($activeTab ?? '') === 'reviews' ? 'active' : '' }}" data-tab="reviews">
-                <x-core::icon name="message-square" size="15" />
-                <span class="bn">গ্রাহক রিভিউ</span>
-                <span class="en">Reviews</span>
-            </button>
-            <button type="button" class="tab-btn {{ ($activeTab ?? '') === 'faqs' ? 'active' : '' }}" data-tab="faqs">
-                <x-core::icon name="help-circle" size="15" />
-                <span class="bn">সাধারণ জিজ্ঞাসা</span>
-                <span class="en">FAQ</span>
-            </button>
-            <button type="button" class="tab-btn {{ ($activeTab ?? '') === 'cta' ? 'active' : '' }}" data-tab="cta">
-                <x-core::icon name="send" size="15" />
-                <span class="bn">ব্যানার ও ফুটার</span>
-                <span class="en">CTA & Footer</span>
-            </button>
-        </div>
+        <div class="settings-layout-grid">
+            {{-- Left Navigation Sidebar: Sections Tabs --}}
+            <aside class="settings-nav-sidebar">
+                <div class="settings-nav-card">
+                    <div class="settings-nav-header">
+                        <div class="settings-nav-header-title">
+                            <span class="bn">ল্যান্ডিং পেজ সেকশন</span>
+                            <span class="en">Landing Sections</span>
+                        </div>
+                        <div class="settings-nav-header-sub">
+                            <span class="bn">কনফিগারেশন নির্বাচন করুন</span>
+                            <span class="en">Select configuration tab</span>
+                        </div>
+                    </div>
+                    <nav class="settings-nav-list tabs-nav-bar" role="tablist">
+                        <button type="button" class="tab-btn {{ ($activeTab ?? 'general') === 'general' ? 'active' : '' }}" data-tab="general" role="tab" aria-selected="{{ ($activeTab ?? 'general') === 'general' ? 'true' : 'false' }}">
+                            <x-core::icon name="settings" size="16" />
+                            <span class="tab-label">
+                                <span class="bn">সাধারণ ও যোগাযোগ</span>
+                                <span class="en">General & SEO</span>
+                            </span>
+                            <x-core::icon name="chevron-right" size="14" class="tab-arrow" />
+                        </button>
+                        <button type="button" class="tab-btn {{ ($activeTab ?? '') === 'hero' ? 'active' : '' }}" data-tab="hero" role="tab" aria-selected="{{ ($activeTab ?? '') === 'hero' ? 'true' : 'false' }}">
+                            <x-core::icon name="zap" size="16" />
+                            <span class="tab-label">
+                                <span class="bn">হিরো ব্যানার</span>
+                                <span class="en">Hero Section</span>
+                            </span>
+                            <x-core::icon name="chevron-right" size="14" class="tab-arrow" />
+                        </button>
+                        <button type="button" class="tab-btn {{ ($activeTab ?? '') === 'stats' ? 'active' : '' }}" data-tab="stats" role="tab" aria-selected="{{ ($activeTab ?? '') === 'stats' ? 'true' : 'false' }}">
+                            <x-core::icon name="bar-chart-2" size="16" />
+                            <span class="tab-label">
+                                <span class="bn">পরিসংখ্যান</span>
+                                <span class="en">Proof & Stats</span>
+                            </span>
+                            <x-core::icon name="chevron-right" size="14" class="tab-arrow" />
+                        </button>
+                        <button type="button" class="tab-btn {{ ($activeTab ?? '') === 'comparison' ? 'active' : '' }}" data-tab="comparison" role="tab" aria-selected="{{ ($activeTab ?? '') === 'comparison' ? 'true' : 'false' }}">
+                            <x-core::icon name="columns" size="16" />
+                            <span class="tab-label">
+                                <span class="bn">খাতা বনাম পিওএস</span>
+                                <span class="en">Problem vs Solution</span>
+                            </span>
+                            <x-core::icon name="chevron-right" size="14" class="tab-arrow" />
+                        </button>
+                        <button type="button" class="tab-btn {{ ($activeTab ?? '') === 'features' ? 'active' : '' }}" data-tab="features" role="tab" aria-selected="{{ ($activeTab ?? '') === 'features' ? 'true' : 'false' }}">
+                            <x-core::icon name="layers" size="16" />
+                            <span class="tab-label">
+                                <span class="bn">কোর ফিচারসমূহ</span>
+                                <span class="en">Features</span>
+                            </span>
+                            <x-core::icon name="chevron-right" size="14" class="tab-arrow" />
+                        </button>
+                        <button type="button" class="tab-btn {{ ($activeTab ?? '') === 'verticals' ? 'active' : '' }}" data-tab="verticals" role="tab" aria-selected="{{ ($activeTab ?? '') === 'verticals' ? 'true' : 'false' }}">
+                            <x-core::icon name="briefcase" size="16" />
+                            <span class="tab-label">
+                                <span class="bn">ব্যবসায়ের ধরন</span>
+                                <span class="en">Verticals</span>
+                            </span>
+                            <x-core::icon name="chevron-right" size="14" class="tab-arrow" />
+                        </button>
+                        <button type="button" class="tab-btn {{ ($activeTab ?? '') === 'reviews' ? 'active' : '' }}" data-tab="reviews" role="tab" aria-selected="{{ ($activeTab ?? '') === 'reviews' ? 'true' : 'false' }}">
+                            <x-core::icon name="message-square" size="16" />
+                            <span class="tab-label">
+                                <span class="bn">গ্রাহক রিভিউ</span>
+                                <span class="en">Reviews</span>
+                            </span>
+                            <x-core::icon name="chevron-right" size="14" class="tab-arrow" />
+                        </button>
+                        <button type="button" class="tab-btn {{ ($activeTab ?? '') === 'faqs' ? 'active' : '' }}" data-tab="faqs" role="tab" aria-selected="{{ ($activeTab ?? '') === 'faqs' ? 'true' : 'false' }}">
+                            <x-core::icon name="help-circle" size="16" />
+                            <span class="tab-label">
+                                <span class="bn">সাধারণ জিজ্ঞাসা</span>
+                                <span class="en">FAQ</span>
+                            </span>
+                            <x-core::icon name="chevron-right" size="14" class="tab-arrow" />
+                        </button>
+                        <button type="button" class="tab-btn {{ ($activeTab ?? '') === 'cta' ? 'active' : '' }}" data-tab="cta" role="tab" aria-selected="{{ ($activeTab ?? '') === 'cta' ? 'true' : 'false' }}">
+                            <x-core::icon name="send" size="16" />
+                            <span class="tab-label">
+                                <span class="bn">ব্যানার ও ফুটার</span>
+                                <span class="en">CTA & Footer</span>
+                            </span>
+                            <x-core::icon name="chevron-right" size="14" class="tab-arrow" />
+                        </button>
+                    </nav>
+                </div>
+            </aside>
 
-        {{-- Settings Form --}}
-        <form method="POST" action="{{ route('system-settings.update') }}" id="settingsForm" novalidate>
+            {{-- Right Content Area: Settings Form --}}
+            <div class="settings-content-pane">
+                <form method="POST" action="{{ route('system-settings.update') }}" id="settingsForm" novalidate>
             @csrf
             <input type="hidden" name="active_tab" id="activeTabInput" value="{{ $activeTab ?? 'general' }}">
             <input type="hidden" name="landing_page_enabled" id="hiddenLandingEnabled" value="{{ $settings['landing_page_enabled'] ? '1' : '0' }}">
@@ -694,26 +737,37 @@
                         <x-core::input name="reviews_title_bn" label="সেকশন শিরোনাম (বাংলা)" size="sm" :value="old('reviews_title_bn', $settings['reviews_title_bn'])" />
                     </div>
 
-                    <div id="reviewsListWrap" style="margin-top:24px; display:flex; flex-direction:column; gap:16px;">
+                    <div id="reviewsListWrap" style="margin-top:24px; display:flex; flex-direction:column; gap:12px;">
                         @foreach ($settings['reviews_list'] as $i => $rev)
-                            <div class="review-item item-box">
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                                    <h5 style="margin:0; font-weight:700; color:var(--ink-900);">রিভিউ #<span class="item-num">{{ $i + 1 }}</span>: {{ $rev['author'] ?? '' }} ({{ $rev['shop'] ?? '' }})</h5>
+                            @php
+                                $author = $rev['author'] ?? '';
+                                $shop = $rev['shop'] ?? '';
+                                $revTitle = 'রিভিউ #' . ($i + 1) . ($author ? ': ' . $author : '') . ($shop ? ' (' . $shop . ')' : '');
+                            @endphp
+                            <x-core::accordion
+                                :open="$loop->first"
+                                :title="$revTitle"
+                                icon="message-square"
+                                class="review-item"
+                                card
+                            >
+                                <x-slot:actions>
                                     <x-core::button size="sm" color="danger" variant="soft" type="button" icon="trash-2" class="delete-row-btn" title="মুছে ফেলুন" />
-                                </div>
+                                </x-slot:actions>
+
                                 <div class="grid-2">
                                     <x-core::input name="reviews_list[{{ $i }}][author]" label="ব্যবসায়ীর নাম (Author)" size="sm" :value="$rev['author'] ?? ''" />
                                     <x-core::input name="reviews_list[{{ $i }}][shop]" label="প্রতিষ্ঠানের নাম (Shop Name)" size="sm" :value="$rev['shop'] ?? ''" />
                                     <x-core::input name="reviews_list[{{ $i }}][city]" label="শহর / এলাকা (City)" size="sm" :value="$rev['city'] ?? ''" />
                                     <x-core::input name="reviews_list[{{ $i }}][rating]" label="রেটিং (1 - 5)" size="sm" type="number" min="1" max="5" :value="$rev['rating'] ?? 5" />
                                 </div>
-                                <div style="margin-top:10px;">
+                                <div style="margin-top:12px;">
                                     <x-core::textarea name="reviews_list[{{ $i }}][quote_bn]" label="মন্তব্য / কোটেশন (বাংলা)" size="sm" rows="2" :value="$rev['quote_bn'] ?? ''" />
                                 </div>
-                                <div style="margin-top:10px;">
+                                <div style="margin-top:12px;">
                                     <x-core::textarea name="reviews_list[{{ $i }}][quote_en]" label="Quote (English)" size="sm" rows="2" :value="$rev['quote_en'] ?? ''" />
                                 </div>
-                            </div>
+                            </x-core::accordion>
                         @endforeach
                     </div>
 
@@ -753,26 +807,36 @@
                         <x-core::input name="faq_title_bn" label="সেকশন শিরোনাম (বাংলা)" size="sm" :value="old('faq_title_bn', $settings['faq_title_bn'])" />
                     </div>
 
-                    <div id="faqsListWrap" style="margin-top:24px; display:flex; flex-direction:column; gap:16px;">
+                    <div id="faqsListWrap" style="margin-top:24px; display:flex; flex-direction:column; gap:12px;">
                         @foreach ($settings['faqs_list'] as $i => $faq)
-                            <div class="faq-item item-box">
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                                    <h5 style="margin:0; font-weight:700; color:var(--ink-900);">প্রশ্ন #<span class="item-num">{{ $i + 1 }}</span></h5>
+                            @php
+                                $qBn = $faq['question_bn'] ?? '';
+                                $faqTitle = 'প্রশ্ন #' . ($i + 1) . ($qBn ? ': ' . \Illuminate\Support\Str::limit($qBn, 65) : '');
+                            @endphp
+                            <x-core::accordion
+                                :open="$loop->first"
+                                :title="$faqTitle"
+                                icon="help-circle"
+                                class="faq-item"
+                                card
+                            >
+                                <x-slot:actions>
                                     <x-core::button size="sm" color="danger" variant="soft" type="button" icon="trash-2" class="delete-row-btn" title="মুছে ফেলুন" />
-                                </div>
-                                <div style="margin-bottom:10px;">
+                                </x-slot:actions>
+
+                                <div style="margin-bottom:12px;">
                                     <x-core::input name="faqs_list[{{ $i }}][question_bn]" label="প্রশ্ন (বাংলা)" size="sm" :value="$faq['question_bn'] ?? ''" />
                                 </div>
-                                <div style="margin-bottom:10px;">
+                                <div style="margin-bottom:12px;">
                                     <x-core::input name="faqs_list[{{ $i }}][question_en]" label="Question (English)" size="sm" :value="$faq['question_en'] ?? ''" />
                                 </div>
-                                <div style="margin-bottom:10px;">
+                                <div style="margin-bottom:12px;">
                                     <x-core::textarea name="faqs_list[{{ $i }}][answer_bn]" label="উত্তর (বাংলা)" size="sm" rows="3" :value="$faq['answer_bn'] ?? ''" />
                                 </div>
                                 <div>
                                     <x-core::textarea name="faqs_list[{{ $i }}][answer_en]" label="Answer (English)" size="sm" rows="3" :value="$faq['answer_en'] ?? ''" />
                                 </div>
-                            </div>
+                            </x-core::accordion>
                         @endforeach
                     </div>
 
@@ -845,55 +909,112 @@
                 </div>
             </div>
 
-        </form>
-    </div>
-
+                </form>
+            </div>
         </div>
+    </div>
 
     @push('styles')
     <style>
-        .tabs-nav-bar {
-            scrollbar-width: thin;
+        .settings-layout-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 22px;
+            align-items: start;
         }
-        .tabs-nav-bar::-webkit-scrollbar {
-            height: 4px;
+        .settings-nav-sidebar {
+            position: sticky;
+            top: 20px;
+            z-index: 10;
         }
-        .tabs-nav-bar::-webkit-scrollbar-thumb {
-            background: var(--border);
-            border-radius: 4px;
+        .settings-nav-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 10px;
+            box-shadow: var(--shadow-card);
+        }
+        .settings-nav-header {
+            padding: 8px 12px 12px;
+            margin-bottom: 6px;
+            border-bottom: 1px solid var(--border);
+        }
+        .settings-nav-header-title {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--ink-900);
+            font-family: 'Noto Sans Bengali', 'SolaimanLipi', 'Plus Jakarta Sans', sans-serif;
+        }
+        .settings-nav-header-sub {
+            font-size: 11.5px;
+            color: var(--ink-500);
+            margin-top: 2px;
+            font-family: 'Noto Sans Bengali', 'SolaimanLipi', 'Plus Jakarta Sans', sans-serif;
+        }
+        .settings-nav-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
         .tab-btn {
-            display: inline-flex;
+            display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 9px 18px;
+            gap: 10px;
+            width: 100%;
+            padding: 10px 12px;
             font-size: 13px;
             font-weight: 600;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            background: var(--card);
+            border-radius: 9px;
+            border: 1px solid transparent;
+            background: transparent;
             color: var(--ink-700);
             cursor: pointer;
             transition: all 0.15s ease;
-            white-space: nowrap;
-            text-decoration: none;
+            text-align: left;
             font-family: 'Noto Sans Bengali', 'SolaimanLipi', 'Plus Jakarta Sans', sans-serif;
+            text-decoration: none;
+            box-sizing: border-box;
+        }
+        .tab-btn .tab-label {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .tab-btn .tab-arrow {
+            color: var(--ink-400);
+            opacity: 0.4;
+            transition: transform 0.15s ease, opacity 0.15s ease;
+            flex-shrink: 0;
         }
         .tab-btn:hover {
             color: var(--ink-900);
-            background: var(--paper-line);
-            border-color: var(--ink-400);
+            background: var(--paper);
+            border-color: var(--border);
+        }
+        .tab-btn:hover .tab-arrow {
+            opacity: 1;
+            transform: translateX(2px);
+            color: var(--ink-700);
         }
         .tab-btn.active {
-            background: var(--teal-600);
-            color: #ffffff !important;
+            background: var(--teal-100);
+            color: var(--teal-800) !important;
             border-color: var(--teal-600);
             box-shadow: var(--shadow-sm);
+            font-weight: 700;
         }
         .tab-btn.active svg,
-        .tab-btn.active span {
-            color: #ffffff !important;
-            stroke: #ffffff;
+        .tab-btn.active .tab-label,
+        .tab-btn.active .tab-arrow {
+            color: var(--teal-800) !important;
+            stroke: var(--teal-800);
+            opacity: 1;
+        }
+        .settings-content-pane {
+            min-width: 0;
+            flex: 1;
         }
         .tab-pane {
             display: none;
@@ -909,7 +1030,7 @@
         .settings-card {
             background: var(--card);
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: 14px;
             padding: 24px 28px;
             box-shadow: var(--shadow-card);
         }
@@ -941,12 +1062,76 @@
             border-radius: 10px;
             padding: 16px;
         }
+        #reviewsListWrap .app-accordion,
+        #faqsListWrap .app-accordion {
+            margin-top: 0;
+            border-radius: 12px;
+            padding: 14px 18px;
+        }
+        #reviewsListWrap .app-accordion-header,
+        #faqsListWrap .app-accordion-header {
+            padding: 2px 0;
+        }
+        #reviewsListWrap .app-accordion-title,
+        #faqsListWrap .app-accordion-title {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--ink-900);
+            font-family: 'Noto Sans Bengali', 'SolaimanLipi', 'Plus Jakarta Sans', sans-serif;
+        }
+        #reviewsListWrap .app-accordion-icon svg,
+        #faqsListWrap .app-accordion-icon svg,
+        #reviewsListWrap .app-accordion-icon .app-icon,
+        #faqsListWrap .app-accordion-icon .app-icon {
+            width: 16px !important;
+            height: 16px !important;
+            max-width: 16px !important;
+            max-height: 16px !important;
+        }
+        #reviewsListWrap .app-accordion-toggle-icon svg,
+        #faqsListWrap .app-accordion-toggle-icon svg,
+        #reviewsListWrap .app-accordion-toggle-icon .app-icon,
+        #faqsListWrap .app-accordion-toggle-icon .app-icon {
+            width: 16px !important;
+            height: 16px !important;
+            max-width: 16px !important;
+            max-height: 16px !important;
+        }
         .card-footer-action {
             margin-top: 24px;
             padding-top: 18px;
             border-top: 1px solid var(--border);
             display: flex;
             justify-content: flex-end;
+        }
+        @media (max-width: 992px) {
+            .settings-layout-grid {
+                grid-template-columns: 1fr;
+            }
+            .settings-nav-sidebar {
+                position: static;
+            }
+            .settings-nav-list {
+                flex-direction: row;
+                overflow-x: auto;
+                padding-bottom: 6px;
+                scrollbar-width: thin;
+            }
+            .settings-nav-list::-webkit-scrollbar {
+                height: 4px;
+            }
+            .settings-nav-list::-webkit-scrollbar-thumb {
+                background: var(--border);
+                border-radius: 4px;
+            }
+            .tab-btn {
+                width: auto;
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
+            .tab-btn .tab-arrow {
+                display: none;
+            }
         }
         @media (max-width: 768px) {
             .grid-2 {
@@ -967,8 +1152,8 @@
                 const target = $(this).data('tab');
                 if (!target) return;
 
-                $('.tab-btn').removeClass('active');
-                $(this).addClass('active');
+                $('.tab-btn').removeClass('active').attr('aria-selected', 'false');
+                $(this).addClass('active').attr('aria-selected', 'true');
 
                 $('.tab-pane').removeClass('active');
                 $('#tab-' + target).addClass('active');
@@ -1073,46 +1258,75 @@
                 });
             });
 
-            // 4. Dynamic FAQ Add
+            // 4. Dynamic FAQ Add (Accordion)
             $('#addFaqBtn').on('click', function () {
                 const count = $('#faqsListWrap .faq-item').length;
+                const num = count + 1;
                 const html = `
-                    <div class="faq-item item-box" style="animation:fadeInTab 0.2s ease;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                            <h5 style="margin:0; font-weight:700; color:var(--ink-900);">নতুন প্রশ্ন #${count + 1}</h5>
-                            <button type="button" class="btn btn-sm btn-soft btn-soft-red delete-row-btn" title="মুছে ফেলুন">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="app-icon"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13"/></svg>
-                            </button>
-                        </div>
-                        <div style="margin-bottom:10px;">
-                            <div class="form-group">
-                                <label class="form-label form-label-sm" style="color:var(--ink-700);">প্রশ্ন (বাংলা)</label>
-                                <div class="form-input-group form-input-group-sm">
-                                    <input type="text" name="faqs_list[${count}][question_bn]" class="form-control form-control-outline form-control-sm" placeholder="প্রশ্ন লিখুন" />
+                    <div class="app-accordion feature-box is-open active app-accordion-card accordion-teal faq-item" data-accordion style="animation:fadeInTab 0.2s ease;">
+                        <div class="app-accordion-header feature-box-toggle" data-accordion-trigger>
+                            <div class="app-accordion-title-wrap">
+                                <div class="app-accordion-icon">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="app-icon">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                                        <line x1="12" x2="12.01" y1="17" y2="17"/>
+                                    </svg>
+                                </div>
+                                <div class="app-accordion-text">
+                                    <span class="app-accordion-title">নতুন প্রশ্ন #${num}</span>
                                 </div>
                             </div>
-                        </div>
-                        <div style="margin-bottom:10px;">
-                            <div class="form-group">
-                                <label class="form-label form-label-sm" style="color:var(--ink-700);">Question (English)</label>
-                                <div class="form-input-group form-input-group-sm">
-                                    <input type="text" name="faqs_list[${count}][question_en]" class="form-control form-control-outline form-control-sm" placeholder="Enter question in English" />
-                                </div>
+                            <div class="app-accordion-actions">
+                                <button class="btn btn-soft btn-soft-red btn-sm delete-row-btn" type="button" title="মুছে ফেলুন">
+                                    <span class="btn-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="app-icon">
+                                            <path d="M3 6h18"/>
+                                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                                            <line x1="10" x2="10" y1="11" y2="17"/>
+                                            <line x1="14" x2="14" y1="11" y2="17"/>
+                                        </svg>
+                                    </span>
+                                </button>
+                                <span class="app-accordion-toggle-icon toggle-icon" data-accordion-icon>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="app-icon">
+                                        <path d="m6 9 6 6 6-6"/>
+                                    </svg>
+                                </span>
                             </div>
                         </div>
-                        <div style="margin-bottom:10px;">
-                            <div class="form-group">
-                                <label class="form-label form-label-sm" style="color:var(--ink-700);">উত্তর (বাংলা)</label>
-                                <div class="form-input-group form-input-group-sm">
-                                    <textarea name="faqs_list[${count}][answer_bn]" rows="3" class="form-control form-textarea form-control-outline form-control-sm" placeholder="বিস্তারিত উত্তর লিখুন"></textarea>
+                        <div class="app-accordion-body" data-accordion-content>
+                            <div style="margin-bottom:12px;">
+                                <div class="form-group">
+                                    <label class="form-label form-label-sm" style="color:var(--ink-700);">প্রশ্ন (বাংলা)</label>
+                                    <div class="form-input-group form-input-group-sm">
+                                        <input type="text" name="faqs_list[${count}][question_bn]" class="form-control form-control-outline form-control-sm" placeholder="প্রশ্ন লিখুন" />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div>
-                            <div class="form-group">
-                                <label class="form-label form-label-sm" style="color:var(--ink-700);">Answer (English)</label>
-                                <div class="form-input-group form-input-group-sm">
-                                    <textarea name="faqs_list[${count}][answer_en]" rows="3" class="form-control form-textarea form-control-outline form-control-sm" placeholder="Enter detailed answer"></textarea>
+                            <div style="margin-bottom:12px;">
+                                <div class="form-group">
+                                    <label class="form-label form-label-sm" style="color:var(--ink-700);">Question (English)</label>
+                                    <div class="form-input-group form-input-group-sm">
+                                        <input type="text" name="faqs_list[${count}][question_en]" class="form-control form-control-outline form-control-sm" placeholder="Enter question in English" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="margin-bottom:12px;">
+                                <div class="form-group">
+                                    <label class="form-label form-label-sm" style="color:var(--ink-700);">উত্তর (বাংলা)</label>
+                                    <div class="form-input-group form-input-group-sm">
+                                        <textarea name="faqs_list[${count}][answer_bn]" rows="3" class="form-control form-textarea form-control-outline form-control-sm" placeholder="বিস্তারিত উত্তর লিখুন"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="form-group">
+                                    <label class="form-label form-label-sm" style="color:var(--ink-700);">Answer (English)</label>
+                                    <div class="form-input-group form-input-group-sm">
+                                        <textarea name="faqs_list[${count}][answer_en]" rows="3" class="form-control form-textarea form-control-outline form-control-sm" placeholder="Enter detailed answer"></textarea>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1121,56 +1335,83 @@
                 $('#faqsListWrap').append(html);
             });
 
-            // 5. Dynamic Review Add
+            // 5. Dynamic Review Add (Accordion)
             $('#addReviewBtn').on('click', function () {
                 const count = $('#reviewsListWrap .review-item').length;
+                const num = count + 1;
                 const html = `
-                    <div class="review-item item-box" style="animation:fadeInTab 0.2s ease;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                            <h5 style="margin:0; font-weight:700; color:var(--ink-900);">নতুন রিভিউ #${count + 1}</h5>
-                            <button type="button" class="btn btn-sm btn-soft btn-soft-red delete-row-btn" title="মুছে ফেলুন">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="app-icon"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13"/></svg>
-                            </button>
-                        </div>
-                        <div class="grid-2">
-                            <div class="form-group">
-                                <label class="form-label form-label-sm" style="color:var(--ink-700);">ব্যবসায়ীর নাম</label>
-                                <div class="form-input-group form-input-group-sm">
-                                    <input type="text" name="reviews_list[${count}][author]" class="form-control form-control-outline form-control-sm" placeholder="যেমনঃ মোঃ রফিকুল ইসলাম" />
+                    <div class="app-accordion feature-box is-open active app-accordion-card accordion-teal review-item" data-accordion style="animation:fadeInTab 0.2s ease;">
+                        <div class="app-accordion-header feature-box-toggle" data-accordion-trigger>
+                            <div class="app-accordion-title-wrap">
+                                <div class="app-accordion-icon">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="app-icon">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                    </svg>
+                                </div>
+                                <div class="app-accordion-text">
+                                    <span class="app-accordion-title">নতুন রিভিউ #${num}</span>
                                 </div>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label form-label-sm" style="color:var(--ink-700);">প্রতিষ্ঠানের নাম</label>
-                                <div class="form-input-group form-input-group-sm">
-                                    <input type="text" name="reviews_list[${count}][shop]" class="form-control form-control-outline form-control-sm" placeholder="যেমনঃ আল-মদিনা স্টোর" />
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label form-label-sm" style="color:var(--ink-700);">শহর / এলাকা</label>
-                                <div class="form-input-group form-input-group-sm">
-                                    <input type="text" name="reviews_list[${count}][city]" class="form-control form-control-outline form-control-sm" placeholder="যেমনঃ রাজশাহী" />
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label form-label-sm" style="color:var(--ink-700);">রেটিং (1 - 5)</label>
-                                <div class="form-input-group form-input-group-sm">
-                                    <input type="number" min="1" max="5" name="reviews_list[${count}][rating]" value="5" class="form-control form-control-outline form-control-sm" />
-                                </div>
+                            <div class="app-accordion-actions">
+                                <button class="btn btn-soft btn-soft-red btn-sm delete-row-btn" type="button" title="মুছে ফেলুন">
+                                    <span class="btn-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="app-icon">
+                                            <path d="M3 6h18"/>
+                                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                                            <line x1="10" x2="10" y1="11" y2="17"/>
+                                            <line x1="14" x2="14" y1="11" y2="17"/>
+                                        </svg>
+                                    </span>
+                                </button>
+                                <span class="app-accordion-toggle-icon toggle-icon" data-accordion-icon>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="app-icon">
+                                        <path d="m6 9 6 6 6-6"/>
+                                    </svg>
+                                </span>
                             </div>
                         </div>
-                        <div style="margin-top:10px;">
-                            <div class="form-group">
-                                <label class="form-label form-label-sm" style="color:var(--ink-700);">মন্তব্য (বাংলা)</label>
-                                <div class="form-input-group form-input-group-sm">
-                                    <textarea name="reviews_list[${count}][quote_bn]" rows="2" class="form-control form-textarea form-control-outline form-control-sm" placeholder="গ্রাহকের মন্তব্য লিখুন"></textarea>
+                        <div class="app-accordion-body" data-accordion-content>
+                            <div class="grid-2">
+                                <div class="form-group">
+                                    <label class="form-label form-label-sm" style="color:var(--ink-700);">ব্যবসায়ীর নাম (Author)</label>
+                                    <div class="form-input-group form-input-group-sm">
+                                        <input type="text" name="reviews_list[${count}][author]" class="form-control form-control-outline form-control-sm" placeholder="যেমনঃ মোঃ রফিকুল ইসলাম" />
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label form-label-sm" style="color:var(--ink-700);">প্রতিষ্ঠানের নাম (Shop Name)</label>
+                                    <div class="form-input-group form-input-group-sm">
+                                        <input type="text" name="reviews_list[${count}][shop]" class="form-control form-control-outline form-control-sm" placeholder="যেমনঃ আল-মদিনা স্টোর" />
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label form-label-sm" style="color:var(--ink-700);">শহর / এলাকা (City)</label>
+                                    <div class="form-input-group form-input-group-sm">
+                                        <input type="text" name="reviews_list[${count}][city]" class="form-control form-control-outline form-control-sm" placeholder="যেমনঃ রাজশাহী" />
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label form-label-sm" style="color:var(--ink-700);">রেটিং (1 - 5)</label>
+                                    <div class="form-input-group form-input-group-sm">
+                                        <input type="number" min="1" max="5" name="reviews_list[${count}][rating]" value="5" class="form-control form-control-outline form-control-sm" />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div style="margin-top:10px;">
-                            <div class="form-group">
-                                <label class="form-label form-label-sm" style="color:var(--ink-700);">Quote (English)</label>
-                                <div class="form-input-group form-input-group-sm">
-                                    <textarea name="reviews_list[${count}][quote_en]" rows="2" class="form-control form-textarea form-control-outline form-control-sm" placeholder="Customer quote in English"></textarea>
+                            <div style="margin-top:12px;">
+                                <div class="form-group">
+                                    <label class="form-label form-label-sm" style="color:var(--ink-700);">মন্তব্য / কোটেশন (বাংলা)</label>
+                                    <div class="form-input-group form-input-group-sm">
+                                        <textarea name="reviews_list[${count}][quote_bn]" rows="2" class="form-control form-textarea form-control-outline form-control-sm" placeholder="গ্রাহকের মন্তব্য লিখুন"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="margin-top:12px;">
+                                <div class="form-group">
+                                    <label class="form-label form-label-sm" style="color:var(--ink-700);">Quote (English)</label>
+                                    <div class="form-input-group form-input-group-sm">
+                                        <textarea name="reviews_list[${count}][quote_en]" rows="2" class="form-control form-textarea form-control-outline form-control-sm" placeholder="Customer quote in English"></textarea>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1179,10 +1420,50 @@
                 $('#reviewsListWrap').append(html);
             });
 
-            // 6. Delete Row Handler
-            $(document).on('click', '.delete-row-btn', function () {
-                $(this).closest('.item-box').slideUp(150, function () {
-                    $(this).remove();
+            // 6. Live Accordion Header Title Updates
+            $(document).on('input', '.review-item input[name*="[author]"], .review-item input[name*="[shop]"]', function () {
+                const $item = $(this).closest('.review-item');
+                const idx = $item.index() + 1;
+                const author = $item.find('input[name*="[author]"]').val().trim();
+                const shop = $item.find('input[name*="[shop]"]').val().trim();
+                let title = 'রিভিউ #' + idx;
+                if (author) title += ': ' + author;
+                if (shop) title += ' (' + shop + ')';
+                $item.find('.app-accordion-title').text(title);
+            });
+
+            $(document).on('input', '.faq-item input[name*="[question_bn]"]', function () {
+                const $item = $(this).closest('.faq-item');
+                const idx = $item.index() + 1;
+                const q = $(this).val().trim();
+                let title = 'প্রশ্ন #' + idx;
+                if (q) title += ': ' + (q.length > 65 ? q.substring(0, 65) + '...' : q);
+                $item.find('.app-accordion-title').text(title);
+            });
+
+            // 7. Delete Row Handler
+            $(document).on('click', '.delete-row-btn', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const $item = $(this).closest('.review-item, .faq-item, .item-box, [data-accordion]');
+                $item.slideUp(150, function () {
+                    $item.remove();
+                    // Re-index Review Titles
+                    $('#reviewsListWrap .review-item').each(function (idx) {
+                        const author = $(this).find('input[name*="[author]"]').val()?.trim() || '';
+                        const shop = $(this).find('input[name*="[shop]"]').val()?.trim() || '';
+                        let text = 'রিভিউ #' + (idx + 1);
+                        if (author) text += ': ' + author;
+                        if (shop) text += ' (' + shop + ')';
+                        $(this).find('.app-accordion-title').text(text);
+                    });
+                    // Re-index FAQ Titles
+                    $('#faqsListWrap .faq-item').each(function (idx) {
+                        const q = $(this).find('input[name*="[question_bn]"]').val()?.trim() || '';
+                        let text = 'প্রশ্ন #' + (idx + 1);
+                        if (q) text += ': ' + (q.length > 65 ? q.substring(0, 65) + '...' : q);
+                        $(this).find('.app-accordion-title').text(text);
+                    });
                 });
             });
         });
