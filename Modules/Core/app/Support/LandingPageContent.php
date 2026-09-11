@@ -39,6 +39,8 @@ class LandingPageContent
             'hero_btn_secondary_text_en' => 'Registration',
             'hero_btn_secondary_url' => '/register',
             'hero_active_users' => '৫,০০০+ ব্যবসায়ী যুক্ত',
+            'hero_active_users_bn' => '৫,০০০+ ব্যবসায়ী যুক্ত',
+            'hero_active_users_en' => '5,000+ Active Retailers',
             'hero_trust_text_bn' => 'ক্রেডিট কার্ডের প্রয়োজন নেই • ২ মিনিটে সেটআপ • ২৪/৭ ব্যাকআপ',
             'hero_trust_text_en' => 'No Credit Card Needed • 2-Min Setup • 24/7 Cloud Backup',
 
@@ -238,36 +240,60 @@ class LandingPageContent
             'reviews_list' => [
                 [
                     'author' => 'মোঃ রফিকুল ইসলাম',
+                    'author_bn' => 'মোঃ রফিকুল ইসলাম',
+                    'author_en' => 'Md. Rafiqul Islam',
                     'role_bn' => 'মালিক ও স্বত্বাধিকারী',
                     'role_en' => 'Owner',
                     'shop' => 'আল-মদিনা ডিপার্টমেন্টাল স্টোর',
+                    'shop_bn' => 'আল-মদিনা ডিপার্টমেন্টাল স্টোর',
+                    'shop_en' => 'Al-Madina Departmental Store',
                     'city' => 'মিরপুর, ঢাকা',
+                    'city_bn' => 'মিরপুর, ঢাকা',
+                    'city_en' => 'Mirpur, Dhaka',
                     'quote_bn' => 'আগে প্রতিদিন রাতে বাকির খাতা মেলাতে ঘণ্টাখানেক সময় লাগত। '.$siteTitle.' নেওয়ার পর এক ক্লিকে এসএমএস চলে যায়, আর ক্যাশবক্স হিসাব এখন একদম পানির মতো পরিষ্কার!',
                     'quote_en' => 'Before '.$siteTitle.', reconciling daily sales and due registers took hours every night. Now customer reminders go out via automated SMS, and cashbox tracking is crystal clear.',
                     'rating' => 5,
                     'initials' => 'র',
+                    'initials_bn' => 'র',
+                    'initials_en' => 'R',
                 ],
                 [
                     'author' => 'তানভীর আহমেদ',
+                    'author_bn' => 'তানভীর আহমেদ',
+                    'author_en' => 'Tanvir Ahmed',
                     'role_bn' => 'ব্যবস্থাপনা পরিচালক',
                     'role_en' => 'Managing Director',
                     'shop' => 'ব্লু-মুন ফ্যাশন আউটলেট',
+                    'shop_bn' => 'ব্লু-মুন ফ্যাশন আউটলেট',
+                    'shop_en' => 'Blue-Moon Fashion Outlet',
                     'city' => 'জিইসি মোড়, চট্টগ্রাম',
+                    'city_bn' => 'জিইসি মোড়, চট্টগ্রাম',
+                    'city_en' => 'GEC Circle, Chattogram',
                     'quote_bn' => 'আমাদের চট্টগ্রাম ও ঢাকার দুটি শোরুমের স্টক এখন এক জায়গা থেকেই নিয়ন্ত্রণ করি। কোন সাইজের জামা কোন ব্রাঞ্চে বেশি বিক্রি হচ্ছে তা দেখেই অর্ডার দিতে পারি।',
                     'quote_en' => 'We monitor inventory across both our Dhaka and Chittagong branches simultaneously. Knowing exactly which apparel variants sell best has skyrocketed our turnover.',
                     'rating' => 5,
                     'initials' => 'ত',
+                    'initials_bn' => 'ত',
+                    'initials_en' => 'T',
                 ],
                 [
                     'author' => 'ডাঃ সাজ্জাদ হোসেন',
+                    'author_bn' => 'ডাঃ সাজ্জাদ হোসেন',
+                    'author_en' => 'Dr. Sajjad Hossain',
                     'role_bn' => 'ফার্মেসি স্বত্বাধিকারী',
                     'role_en' => 'Founder & Pharmacist',
                     'shop' => 'নিরাময় মেডিসিন সেন্টার',
+                    'shop_bn' => 'নিরাময় মেডিসিন সেন্টার',
+                    'shop_en' => 'Niramoy Medicine Center',
                     'city' => 'উপশহর, রাজশাহী',
+                    'city_bn' => 'উপশহর, রাজশাহী',
+                    'city_en' => 'Uposhohor, Rajshahi',
                     'quote_bn' => 'ওষুধের মেয়াদোত্তীর্ণ তারিখ ও জেনেরিক সার্চ খুব চমৎকার কাজ করে। সফটওয়্যারটির ইন্টারফেস এত সহজ যে আমাদের নতুন সেলসম্যানও ১ম দিন থেকেই মেমো কাটতে পারছে।',
                     'quote_en' => 'The generic medicine lookup and batch expiration warnings are life-savers. The UI is so friendly that even brand-new counter staff started billing without any training.',
                     'rating' => 5,
                     'initials' => 'স',
+                    'initials_bn' => 'স',
+                    'initials_en' => 'S',
                 ],
             ],
 
@@ -359,6 +385,38 @@ class LandingPageContent
             unset($row);
         }
 
+        if ($key === 'reviews_list' && is_array($val) && isset($defaults['reviews_list'])) {
+            foreach ($val as $idx => &$row) {
+                if (is_array($row)) {
+                    $author = $row['author'] ?? $row['author_bn'] ?? '';
+                    $defRow = null;
+                    foreach ($defaults['reviews_list'] as $dr) {
+                        if (($dr['author'] ?? '') === $author || ($dr['author_bn'] ?? '') === $author) {
+                            $defRow = $dr;
+                            break;
+                        }
+                    }
+                    if ($defRow) {
+                        foreach (['author_bn', 'author_en', 'role_bn', 'role_en', 'shop_bn', 'shop_en', 'city_bn', 'city_en', 'initials_bn', 'initials_en'] as $field) {
+                            if (empty($row[$field]) && ! empty($defRow[$field])) {
+                                $row[$field] = $defRow[$field];
+                            }
+                        }
+                    } else {
+                        $row['author_bn'] = $row['author_bn'] ?? $author;
+                        $row['author_en'] = $row['author_en'] ?? $author;
+                        $row['shop_bn'] = $row['shop_bn'] ?? ($row['shop'] ?? '');
+                        $row['shop_en'] = $row['shop_en'] ?? ($row['shop'] ?? '');
+                        $row['city_bn'] = $row['city_bn'] ?? ($row['city'] ?? '');
+                        $row['city_en'] = $row['city_en'] ?? ($row['city'] ?? '');
+                        $row['initials_bn'] = $row['initials_bn'] ?? ($row['initials'] ?? mb_substr($author, 0, 1));
+                        $row['initials_en'] = $row['initials_en'] ?? ($row['initials_en'] ?? mb_substr($author, 0, 1));
+                    }
+                }
+            }
+            unset($row);
+        }
+
         return $val;
     }
 
@@ -384,6 +442,38 @@ class LandingPageContent
                         }
                         if (empty($row['desc_en']) && ! empty($defRow['desc_en'])) {
                             $row['desc_en'] = $defRow['desc_en'];
+                        }
+                    }
+                }
+                unset($row);
+            }
+
+            if ($key === 'reviews_list' && is_array($val) && isset($defaults['reviews_list'])) {
+                foreach ($val as $idx => &$row) {
+                    if (is_array($row)) {
+                        $author = $row['author'] ?? $row['author_bn'] ?? '';
+                        $defRow = null;
+                        foreach ($defaults['reviews_list'] as $dr) {
+                            if (($dr['author'] ?? '') === $author || ($dr['author_bn'] ?? '') === $author) {
+                                $defRow = $dr;
+                                break;
+                            }
+                        }
+                        if ($defRow) {
+                            foreach (['author_bn', 'author_en', 'role_bn', 'role_en', 'shop_bn', 'shop_en', 'city_bn', 'city_en', 'initials_bn', 'initials_en'] as $field) {
+                                if (empty($row[$field]) && ! empty($defRow[$field])) {
+                                    $row[$field] = $defRow[$field];
+                                }
+                            }
+                        } else {
+                            $row['author_bn'] = $row['author_bn'] ?? $author;
+                            $row['author_en'] = $row['author_en'] ?? $author;
+                            $row['shop_bn'] = $row['shop_bn'] ?? ($row['shop'] ?? '');
+                            $row['shop_en'] = $row['shop_en'] ?? ($row['shop'] ?? '');
+                            $row['city_bn'] = $row['city_bn'] ?? ($row['city'] ?? '');
+                            $row['city_en'] = $row['city_en'] ?? ($row['city'] ?? '');
+                            $row['initials_bn'] = $row['initials_bn'] ?? ($row['initials'] ?? mb_substr($author, 0, 1));
+                            $row['initials_en'] = $row['initials_en'] ?? ($row['initials_en'] ?? mb_substr($author, 0, 1));
                         }
                     }
                 }

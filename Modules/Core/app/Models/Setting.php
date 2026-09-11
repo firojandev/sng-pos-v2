@@ -37,7 +37,7 @@ class Setting extends Model
      */
     public static function get(string $key, mixed $default = null): mixed
     {
-        $cacheKey = self::CACHE_PREFIX . $key;
+        $cacheKey = self::CACHE_PREFIX.$key;
 
         try {
             return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($key, $default) {
@@ -68,6 +68,10 @@ class Setting extends Model
      */
     public static function set(string $key, mixed $value, string $type = 'string', string $group = 'general'): static
     {
+        if (is_array($value) && $type === 'string') {
+            $type = 'json';
+        }
+
         $rawValue = match ($type) {
             'boolean', 'bool' => $value ? '1' : '0',
             'json', 'array' => is_string($value) ? $value : json_encode($value, JSON_UNESCAPED_UNICODE),
@@ -83,7 +87,7 @@ class Setting extends Model
             ]
         );
 
-        Cache::forget(self::CACHE_PREFIX . $key);
+        Cache::forget(self::CACHE_PREFIX.$key);
 
         if ($key === 'site_title' && ! empty($value)) {
             config(['app.name' => (string) $value]);
@@ -107,7 +111,7 @@ class Setting extends Model
      */
     public static function remove(string $key): bool
     {
-        Cache::forget(self::CACHE_PREFIX . $key);
+        Cache::forget(self::CACHE_PREFIX.$key);
 
         return (bool) static::where('key', $key)->delete();
     }

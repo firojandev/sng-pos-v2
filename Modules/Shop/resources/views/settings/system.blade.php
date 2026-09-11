@@ -1,7 +1,7 @@
 <x-core::layout title="সিস্টেম সেটিংস ও ল্যান্ডিং পেজ কনটেন্ট" title-en="System Settings & Landing Page Content"
     subtitle="পাবলিক ল্যান্ডিং পেজের প্রতিটি সেকশন, টেক্সট, ফিচার, এফএকিউ ও কনটেন্ট পরিচালনা করুন"
     subtitle-en="Manage public landing page toggle, hero, features, FAQs, reviews, and dynamic content"
-    active="system-settings.index">
+    active="system-settings">
     <div style="width:100%; padding-bottom:60px;">
 
         {{-- Top Notification on Update --}}
@@ -814,8 +814,8 @@
                                 style="margin-top:24px; display:flex; flex-direction:column; gap:12px;">
                                 @foreach ($settings['reviews_list'] as $i => $rev)
                                     @php
-                                        $author = $rev['author'] ?? '';
-                                        $shop = $rev['shop'] ?? '';
+                                        $author = $rev['author'] ?? ($rev['author_bn'] ?? '');
+                                        $shop = $rev['shop'] ?? ($rev['shop_bn'] ?? '');
                                         $revTitle =
                                             'রিভিউ #' .
                                             ($i + 1) .
@@ -832,12 +832,25 @@
 
                                         <div class="grid-2">
                                             <x-core::input name="reviews_list[{{ $i }}][author]"
-                                                label="ব্যবসায়ীর নাম (Author)" size="sm" :value="$rev['author'] ?? ''" />
+                                                label="ব্যবসায়ীর নাম (বাংলা)" size="sm" :value="$rev['author'] ?? ($rev['author_bn'] ?? '')" />
+                                            <x-core::input name="reviews_list[{{ $i }}][author_en]"
+                                                label="Author Name (English)" size="sm" :value="$rev['author_en'] ?? ''" />
                                             <x-core::input name="reviews_list[{{ $i }}][shop]"
-                                                label="প্রতিষ্ঠানের নাম (Shop Name)" size="sm"
-                                                :value="$rev['shop'] ?? ''" />
+                                                label="প্রতিষ্ঠানের নাম (বাংলা)" size="sm"
+                                                :value="$rev['shop'] ?? ($rev['shop_bn'] ?? '')" />
+                                            <x-core::input name="reviews_list[{{ $i }}][shop_en]"
+                                                label="Shop Name (English)" size="sm"
+                                                :value="$rev['shop_en'] ?? ''" />
                                             <x-core::input name="reviews_list[{{ $i }}][city]"
-                                                label="শহর / এলাকা (City)" size="sm" :value="$rev['city'] ?? ''" />
+                                                label="শহর / এলাকা (বাংলা)" size="sm" :value="$rev['city'] ?? ($rev['city_bn'] ?? '')" />
+                                            <x-core::input name="reviews_list[{{ $i }}][city_en]"
+                                                label="City / Area (English)" size="sm" :value="$rev['city_en'] ?? ''" />
+                                            <x-core::input name="reviews_list[{{ $i }}][initials]"
+                                                label="অবতার আদ্যক্ষর (বাংলা)" size="sm" placeholder="যেমন: র"
+                                                :value="$rev['initials'] ?? ($rev['initials_bn'] ?? '')" />
+                                            <x-core::input name="reviews_list[{{ $i }}][initials_en]"
+                                                label="Avatar Initial (English)" size="sm" placeholder="e.g. R"
+                                                :value="$rev['initials_en'] ?? ''" />
                                             <x-core::input name="reviews_list[{{ $i }}][rating]"
                                                 label="রেটিং (1 - 5)" size="sm" type="number" min="1"
                                                 max="5" :value="$rev['rating'] ?? 5" />
@@ -1528,21 +1541,51 @@
                         <div class="app-accordion-body" data-accordion-content>
                             <div class="grid-2">
                                 <div class="form-group">
-                                    <label class="form-label form-label-sm" style="color:var(--ink-700);">ব্যবসায়ীর নাম (Author)</label>
+                                    <label class="form-label form-label-sm" style="color:var(--ink-700);">ব্যবসায়ীর নাম (বাংলা)</label>
                                     <div class="form-input-group form-input-group-sm">
                                         <input type="text" name="reviews_list[${count}][author]" class="form-control form-control-outline form-control-sm" placeholder="যেমনঃ মোঃ রফিকুল ইসলাম" />
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label form-label-sm" style="color:var(--ink-700);">প্রতিষ্ঠানের নাম (Shop Name)</label>
+                                    <label class="form-label form-label-sm" style="color:var(--ink-700);">Author Name (English)</label>
+                                    <div class="form-input-group form-input-group-sm">
+                                        <input type="text" name="reviews_list[${count}][author_en]" class="form-control form-control-outline form-control-sm" placeholder="e.g. Md. Rafiqul Islam" />
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label form-label-sm" style="color:var(--ink-700);">প্রতিষ্ঠানের নাম (বাংলা)</label>
                                     <div class="form-input-group form-input-group-sm">
                                         <input type="text" name="reviews_list[${count}][shop]" class="form-control form-control-outline form-control-sm" placeholder="যেমনঃ আল-মদিনা স্টোর" />
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label form-label-sm" style="color:var(--ink-700);">শহর / এলাকা (City)</label>
+                                    <label class="form-label form-label-sm" style="color:var(--ink-700);">Shop Name (English)</label>
+                                    <div class="form-input-group form-input-group-sm">
+                                        <input type="text" name="reviews_list[${count}][shop_en]" class="form-control form-control-outline form-control-sm" placeholder="e.g. Al-Madina Departmental Store" />
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label form-label-sm" style="color:var(--ink-700);">শহর / এলাকা (বাংলা)</label>
                                     <div class="form-input-group form-input-group-sm">
                                         <input type="text" name="reviews_list[${count}][city]" class="form-control form-control-outline form-control-sm" placeholder="যেমনঃ রাজশাহী" />
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label form-label-sm" style="color:var(--ink-700);">City / Area (English)</label>
+                                    <div class="form-input-group form-input-group-sm">
+                                        <input type="text" name="reviews_list[${count}][city_en]" class="form-control form-control-outline form-control-sm" placeholder="e.g. Rajshahi" />
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label form-label-sm" style="color:var(--ink-700);">অবতার আদ্যক্ষর (বাংলা)</label>
+                                    <div class="form-input-group form-input-group-sm">
+                                        <input type="text" name="reviews_list[${count}][initials]" class="form-control form-control-outline form-control-sm" placeholder="যেমনঃ র" />
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label form-label-sm" style="color:var(--ink-700);">Avatar Initial (English)</label>
+                                    <div class="form-input-group form-input-group-sm">
+                                        <input type="text" name="reviews_list[${count}][initials_en]" class="form-control form-control-outline form-control-sm" placeholder="e.g. R" />
                                     </div>
                                 </div>
                                 <div class="form-group">
@@ -1575,12 +1618,12 @@
                 });
 
                 // 6. Live Accordion Header Title Updates
-                $(document).on('input', '.review-item input[name*="[author]"], .review-item input[name*="[shop]"]',
+                $(document).on('input', '.review-item input[name$="[author]"], .review-item input[name$="[shop]"]',
                     function() {
                         const $item = $(this).closest('.review-item');
                         const idx = $item.index() + 1;
-                        const author = $item.find('input[name*="[author]"]').val().trim();
-                        const shop = $item.find('input[name*="[shop]"]').val().trim();
+                        const author = $item.find('input[name$="[author]"]').val().trim();
+                        const shop = $item.find('input[name$="[shop]"]').val().trim();
                         let title = 'রিভিউ #' + idx;
                         if (author) title += ': ' + author;
                         if (shop) title += ' (' + shop + ')';
@@ -1605,9 +1648,9 @@
                         $item.remove();
                         // Re-index Review Titles
                         $('#reviewsListWrap .review-item').each(function(idx) {
-                            const author = $(this).find('input[name*="[author]"]').val()
+                            const author = $(this).find('input[name$="[author]"]').val()
                             ?.trim() || '';
-                            const shop = $(this).find('input[name*="[shop]"]').val()?.trim() ||
+                            const shop = $(this).find('input[name$="[shop]"]').val()?.trim() ||
                                 '';
                             let text = 'রিভিউ #' + (idx + 1);
                             if (author) text += ': ' + author;

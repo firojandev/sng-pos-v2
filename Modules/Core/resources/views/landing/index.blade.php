@@ -1,5 +1,5 @@
 @php
-    $cookieLang = request()->cookie('lang', 'bn');
+    $cookieLang = request()->get('lang') ?? request()->cookie('lang', 'bn');
     $isEn = $cookieLang === 'en';
     $content = $content ?? \Modules\Core\Support\LandingPageContent::all();
     $siteName = $content['site_title'] ?? \Modules\Core\Models\Setting::getSiteTitle();
@@ -18,8 +18,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $siteName }} — {{ $content['hero_title_bn'] ?? 'বাংলাদেশের #১ ক্লাউড POS ও ইনভেন্টরি সফটওয়্যার' }}</title>
-    <meta name="description" content="{{ $content['meta_description'] ?? ('খাতা-কলমে হিসাবের দিন শেষ। দোকানের বেচাকেনা, কাস্টমারের বাকি খাতা, লাইভ স্টক, ক্যাশবক্স ও লাভ-ক্ষতির পূর্ণাঙ্গ হিসাব — সবই ' . $siteName . '-এ।') }}">
+    <title>{{ $siteName }} — {{ $isEn ? ($content['hero_title_en'] ?? 'Smart Solution to Run Your Business') : ($content['hero_title_bn'] ?? 'বাংলাদেশের #১ ক্লাউড POS ও ইনভেন্টরি সফটওয়্যার') }}</title>
+    <meta name="description" content="{{ $isEn ? ($content['meta_description_en'] ?? $content['hero_subtitle_en'] ?? 'Say goodbye to paper ledger chaos. Instant sales counter, due ledger, live stock inventory, and profit & loss reports — all in one click.') : ($content['meta_description'] ?? ('খাতা-কলমে হিসাবের দিন শেষ। দোকানের বেচাকেনা, কাস্টমারের বাকি খাতা, লাইভ স্টক, ক্যাশবক্স ও লাভ-ক্ষতির পূর্ণাঙ্গ হিসাব — সবই ' . $siteName . '-এ।')) }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -48,7 +48,10 @@
             @endif
             <span class="bn">ল্যান্ডিং পেজ বর্তমান স্ট্যাটাস:</span>
             <span class="en">Current Status:</span>
-            <strong>{{ $isLandingEnabled ? 'সক্রিয় (Enabled)' : 'নিষ্ক্রিয় (Disabled)' }}</strong>
+            <strong>
+                <span class="bn">{{ $isLandingEnabled ? 'সক্রিয় (Enabled)' : 'নিষ্ক্রিয় (Disabled)' }}</span>
+                <span class="en">{{ $isLandingEnabled ? 'Enabled' : 'Disabled' }}</span>
+            </strong>
         </span>
         @if (auth()->check() && auth()->user()->isSuperAdmin())
             <a href="{{ route('system-settings.index') }}">
@@ -65,11 +68,7 @@
         <div class="lp-header-inner">
             <a href="{{ route('home') }}" class="lp-brand">
                 <div class="lp-brand-icon">
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="2" y="3" width="20" height="14" rx="2"></rect>
-                        <line x1="8" y1="21" x2="16" y2="21"></line>
-                        <line x1="12" y1="17" x2="12" y2="21"></line>
-                    </svg>
+                    <img src="{{ asset('images/logo.png') }}" alt="{{ $siteName }}" width="38" height="38">
                 </div>
                 <div class="lp-brand-text">
                     <span class="lp-brand-name">{{ $siteName }}</span>
@@ -133,7 +132,10 @@
 <div class="drawer-overlay" id="drawerOverlay"></div>
 <div class="mobile-drawer" id="mobileDrawer">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:28px;">
-        <span class="lp-brand-name">{{ $siteName }}</span>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <img src="{{ asset('images/logo.png') }}" alt="{{ $siteName }}" width="32" height="32" style="border-radius:8px; object-fit:contain;">
+            <span class="lp-brand-name">{{ $siteName }}</span>
+        </div>
         <button type="button" id="drawerCloseBtn" style="color:#fff; font-size:20px;">✕</button>
     </div>
     <ul style="list-style:none; display:flex; flex-direction:column; gap:16px;">
@@ -232,13 +234,16 @@
                 <div class="lp-trust-badges">
                     <div class="lp-trust-users">
                         <div class="lp-user-avatars">
-                            <span class="lp-user-avatar" style="background:#3b82f6;">র</span>
-                            <span class="lp-user-avatar" style="background:#10b981;">স</span>
-                            <span class="lp-user-avatar" style="background:#f59e0b;">আ</span>
-                            <span class="lp-user-avatar" style="background:#8b5cf6;">ত</span>
+                            <span class="lp-user-avatar" style="background:#3b82f6;"><span class="bn">র</span><span class="en">R</span></span>
+                            <span class="lp-user-avatar" style="background:#10b981;"><span class="bn">স</span><span class="en">S</span></span>
+                            <span class="lp-user-avatar" style="background:#f59e0b;"><span class="bn">আ</span><span class="en">A</span></span>
+                            <span class="lp-user-avatar" style="background:#8b5cf6;"><span class="bn">ত</span><span class="en">T</span></span>
                         </div>
                         <span class="lp-trust-text">
-                            <strong>{{ $content['hero_active_users'] ?? '৫,০০০+ ব্যবসায়ী যুক্ত' }}</strong>
+                            <strong>
+                                <span class="bn">{{ $content['hero_active_users_bn'] ?? $content['hero_active_users'] ?? '৫,০০০+ ব্যবসায়ী যুক্ত' }}</span>
+                                <span class="en">{{ $content['hero_active_users_en'] ?? '5,000+ Active Retailers' }}</span>
+                            </strong>
                         </span>
                     </div>
                     <div style="height:20px; width:1px; background:var(--border-dark);"></div>
@@ -336,7 +341,7 @@
                                     <div class="lp-dash-total-pill">
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><rect x="2.5" y="6" width="19" height="13" rx="2" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12.5" r="3" stroke="currentColor" stroke-width="1.8"/></svg>
                                         <span><span class="bn">মোট ব্যালেন্স:</span><span class="en">Balance:</span></span>
-                                        <b>৳১,৪২,৮৫০.০০</b>
+                                        <b><span class="bn">৳১,৪২,৮৫০.০০</span><span class="en">৳142,850.00</span></b>
                                     </div>
 
                                     <div class="lp-dash-range-tabs">
@@ -355,7 +360,7 @@
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
                                         </div>
                                         <div class="lp-dash-stat-info">
-                                            <div class="lp-dash-stat-val">৳৮৫,৪২০</div>
+                                            <div class="lp-dash-stat-val"><span class="bn">৳৮৫,৪২০</span><span class="en">৳85,420</span></div>
                                             <div class="lp-dash-stat-lbl"><span class="bn">আজকের বিক্রি</span><span class="en">Today's Sale</span></div>
                                             <div class="lp-dash-stat-sub"><span class="bn">মোট বিক্রির পরিমাণ</span><span class="en">Total sales</span></div>
                                         </div>
@@ -367,7 +372,7 @@
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="m7 6 10 10"/></svg>
                                         </div>
                                         <div class="lp-dash-stat-info">
-                                            <div class="lp-dash-stat-val" style="color:#86EFAC;">৳১৮,৬৫০</div>
+                                            <div class="lp-dash-stat-val" style="color:#86EFAC;"><span class="bn">৳১৮,৬৫০</span><span class="en">৳18,650</span></div>
                                             <div class="lp-dash-stat-lbl"><span class="bn">আজকের মোট লাভ</span><span class="en">Total Profit</span></div>
                                             <div class="lp-dash-stat-sub"><span class="bn">খরচ বাদে প্রকৃত লাভ</span><span class="en">Net profit</span></div>
                                         </div>
@@ -379,7 +384,7 @@
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
                                         </div>
                                         <div class="lp-dash-stat-info">
-                                            <div class="lp-dash-stat-val" style="color:#93C5FD;">৳১২,৩০০</div>
+                                            <div class="lp-dash-stat-val" style="color:#93C5FD;"><span class="bn">৳১২,৩০০</span><span class="en">৳12,300</span></div>
                                             <div class="lp-dash-stat-lbl"><span class="bn">মোট পাবো (বাকি)</span><span class="en">Receivable</span></div>
                                             <div class="lp-dash-stat-sub"><span class="bn">গ্রাহকের কাছে পাওনা</span><span class="en">Customer due</span></div>
                                         </div>
@@ -390,20 +395,20 @@
                                 <div class="lp-dash-panel">
                                     <div class="lp-dash-panel-head">
                                         <strong><span class="bn">সর্বশেষ পিওএস লেনদেন (Live Counter Invoices)</span><span class="en">Live Counter Invoices</span></strong>
-                                        <span style="color:var(--brand-cyan); font-size:10px; font-weight:700;">● লাইভ সিঙ্ক</span>
+                                        <span style="color:var(--brand-cyan); font-size:10px; font-weight:700;"><span class="bn">● লাইভ সিঙ্ক</span><span class="en">● Live Sync</span></span>
                                     </div>
                                     <div style="display:flex; flex-direction:column; gap:5px;">
                                         <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
-                                            <span>#INV-2026-9041 • নগদ ক্যাশ বিক্রয়</span>
-                                            <strong style="color:#86EFAC;">+ ৳১,৮৫০</strong>
+                                            <span>#INV-2026-9041 • <span class="bn">নগদ ক্যাশ বিক্রয়</span><span class="en">Cash Sale</span></span>
+                                            <strong style="color:#86EFAC;">+ <span class="bn">৳১,৮৫০</span><span class="en">৳1,850</span></strong>
                                         </div>
                                         <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
-                                            <span>#INV-2026-9040 • বিকাশ / ডিজিটাল পেমেন্ট</span>
-                                            <strong style="color:#93C5FD;">+ ৳৩,৪০০</strong>
+                                            <span>#INV-2026-9040 • <span class="bn">বিকাশ / ডিজিটাল পেমেন্ট</span><span class="en">bKash / Digital Payment</span></span>
+                                            <strong style="color:#93C5FD;">+ <span class="bn">৳৩,৪০০</span><span class="en">৳3,400</span></strong>
                                         </div>
                                         <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; padding:4px 0;">
-                                            <span>#INV-2026-9039 • বাকি আদায় SMS নোটিফিকেশন</span>
-                                            <strong style="color:#FCD34D;">+ ৳৫,০০০</strong>
+                                            <span>#INV-2026-9039 • <span class="bn">বাকি আদায় SMS নোটিফিকেশন</span><span class="en">Due Collection SMS</span></span>
+                                            <strong style="color:#FCD34D;">+ <span class="bn">৳৫,০০০</span><span class="en">৳5,000</span></strong>
                                         </div>
                                     </div>
                                 </div>
@@ -629,33 +634,33 @@
                 <div class="lp-sim-prods">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
                         <span style="font-size:13px; font-weight:600; color:var(--text-muted);"><span class="bn">পণ্য নির্বাচন করুন (ক্লিক করুন)</span><span class="en">Select Products</span></span>
-                        <span style="font-size:11.5px; color:var(--brand-cyan);">● বারকোড রেডি</span>
+                        <span style="font-size:11.5px; color:var(--brand-cyan);"><span class="bn">● বারকোড রেডি</span><span class="en">● Barcode Ready</span></span>
                     </div>
 
                     <div class="lp-sim-prod-grid">
-                        <div class="lp-sim-prod-card" data-name="প্রাণ গুঁড়া দুধ ৫০০ গ্রাম" data-price="420">
-                            <h5>প্রাণ গুঁড়া দুধ ৫০০ গ্রাম</h5>
-                            <span>৳৪২০</span>
+                        <div class="lp-sim-prod-card" data-name="প্রাণ গুঁড়া দুধ ৫০০ গ্রাম" data-name-en="Pran Milk Powder 500g" data-price="420">
+                            <h5><span class="bn">প্রাণ গুঁড়া দুধ ৫০০ গ্রাম</span><span class="en">Pran Milk Powder 500g</span></h5>
+                            <span><span class="bn">৳৪২০</span><span class="en">৳420</span></span>
                         </div>
-                        <div class="lp-sim-prod-card" data-name="রূপচাঁদা সয়াবিন তেল ৫ লিটার" data-price="890">
-                            <h5>রূপচাঁদা সয়াবিন তেল ৫ লিটার</h5>
-                            <span>৳৮৯০</span>
+                        <div class="lp-sim-prod-card" data-name="রূপচাঁদা সয়াবিন তেল ৫ লিটার" data-name-en="Rupchanda Soybean Oil 5L" data-price="890">
+                            <h5><span class="bn">রূপচাঁদা সয়াবিন তেল ৫ লিটার</span><span class="en">Rupchanda Soybean Oil 5L</span></h5>
+                            <span><span class="bn">৳৮৯০</span><span class="en">৳890</span></span>
                         </div>
-                        <div class="lp-sim-prod-card" data-name="মিনিকেট প্রিমিয়াম চাল ২৫ কেজি" data-price="1850">
-                            <h5>মিনিকেট প্রিমিয়াম চাল ২৫ কেজি</h5>
-                            <span>৳১,৮৫০</span>
+                        <div class="lp-sim-prod-card" data-name="মিনিকেট প্রিমিয়াম চাল ২৫ কেজি" data-name-en="Miniket Premium Rice 25kg" data-price="1850">
+                            <h5><span class="bn">মিনিকেট প্রিমিয়াম চাল ২৫ কেজি</span><span class="en">Miniket Premium Rice 25kg</span></h5>
+                            <span><span class="bn">৳১,৮৫০</span><span class="en">৳1,850</span></span>
                         </div>
-                        <div class="lp-sim-prod-card" data-name="নেসক্যাফে ক্লাসিক কফি ৫০ গ্রাম" data-price="320">
-                            <h5>নেসক্যাফে ক্লাসিক কফি ৫০ গ্রাম</h5>
-                            <span>৳৩২০</span>
+                        <div class="lp-sim-prod-card" data-name="নেসক্যাফে ক্লাসিক কফি ৫০ গ্রাম" data-name-en="Nescafe Classic Coffee 50g" data-price="320">
+                            <h5><span class="bn">নেসক্যাফে ক্লাসিক কফি ৫০ গ্রাম</span><span class="en">Nescafe Classic Coffee 50g</span></h5>
+                            <span><span class="bn">৳৩২০</span><span class="en">৳320</span></span>
                         </div>
-                        <div class="lp-sim-prod-card" data-name="সার্ফ এক্সেল ডিটারজেন্ট ১ কেজি" data-price="260">
-                            <h5>সার্ফ এক্সেল ডিটারজেন্ট ১ কেজি</h5>
-                            <span>৳২৬০</span>
+                        <div class="lp-sim-prod-card" data-name="সার্ফ এক্সেল ডিটারজেন্ট ১ কেজি" data-name-en="Surf Excel Detergent 1kg" data-price="260">
+                            <h5><span class="bn">সার্ফ এক্সেল ডিটারজেন্ট ১ কেজি</span><span class="en">Surf Excel Detergent 1kg</span></h5>
+                            <span><span class="bn">৳২৬০</span><span class="en">৳260</span></span>
                         </div>
-                        <div class="lp-sim-prod-card" data-name="ডোভ শ্যাম্পু ৩৪০ মিলি" data-price="450">
-                            <h5>ডোভ শ্যাম্পু ৩৪০ মিলি</h5>
-                            <span>৳৪৫০</span>
+                        <div class="lp-sim-prod-card" data-name="ডোভ শ্যাম্পু ৩৪০ মিলি" data-name-en="Dove Shampoo 340ml" data-price="450">
+                            <h5><span class="bn">ডোভ শ্যাম্পু ৩৪০ মিলি</span><span class="en">Dove Shampoo 340ml</span></h5>
+                            <span><span class="bn">৳৪৫০</span><span class="en">৳450</span></span>
                         </div>
                     </div>
                 </div>
@@ -678,16 +683,16 @@
 
                     <div class="lp-sim-cart-foot">
                         <div class="lp-sim-cart-row" style="font-size:13px; color:var(--text-muted);">
-                            <span>সাবটোটাল</span>
-                            <span id="simSubtotal">৳০</span>
+                            <span><span class="bn">সাবটোটাল</span><span class="en">Subtotal</span></span>
+                            <span id="simSubtotal"><span class="bn">৳০</span><span class="en">৳0</span></span>
                         </div>
                         <div class="lp-sim-cart-row total">
-                            <span>মোট প্রদেয়</span>
-                            <span id="simGrandTotal">৳০</span>
+                            <span><span class="bn">মোট প্রদেয়</span><span class="en">Grand Total</span></span>
+                            <span id="simGrandTotal"><span class="bn">৳০</span><span class="en">৳0</span></span>
                         </div>
                         <button type="button" class="lp-btn lp-btn-primary lp-btn-md" id="simCompleteBtn" style="width:100%; margin-top:14px;">
                             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            <span class="bn">বিল তৈরি করুন (Complete Sale)</span>
+                            <span class="bn">বিল তৈরি করুন</span>
                             <span class="en">Complete Sale</span>
                         </button>
                     </div>
@@ -764,7 +769,10 @@
                 <button type="button" class="lp-price-btn active" id="btnMonthly"><span class="bn">মাসিক প্ল্যান</span><span class="en">Monthly</span></button>
                 <button type="button" class="lp-price-btn" id="btnYearly">
                     <span class="bn">বাৎসরিক প্ল্যান</span><span class="en">Yearly</span>
-                    <span class="lp-price-save">{{ $content['pricing_annual_discount_bn'] ?? '২০% ছাড়' }}</span>
+                    <span class="lp-price-save">
+                        <span class="bn">{{ $content['pricing_annual_discount_bn'] ?? '২০% ছাড়' }}</span>
+                        <span class="en">{{ $content['pricing_annual_discount_en'] ?? '20% OFF' }}</span>
+                    </span>
                 </button>
             </div>
         </div>
@@ -812,12 +820,29 @@
                         <span class="bn">{{ $planNameBn }}</span>
                         <span class="en">{{ $planNameEn }}</span>
                     </h3>
-                    <p class="lp-plan-desc">{{ $plan->description ?? 'খুচরা ও ছোট দোকানের দ্রুত বেচাকেনার আদর্শ প্যাকেজ।' }}</p>
+                    <p class="lp-plan-desc">
+                        @php
+                            $pDescRaw = $plan->description ?? 'খুচরা ও ছোট দোকানের দ্রুত বেচাকেনার আদর্শ প্যাকেজ।';
+                            if (preg_match('/^(.*?)\s*\((.*?)\)$/u', $pDescRaw, $pdm)) {
+                                $pDescBn = trim($pdm[1]);
+                                $pDescEn = trim($pdm[2]);
+                            } else {
+                                $pDescBn = $pDescRaw;
+                                $pDescEn = $pDescRaw;
+                            }
+                        @endphp
+                        @if ($pDescBn !== $pDescEn)
+                            <span class="bn">{{ $pDescBn }}</span>
+                            <span class="en">{{ $pDescEn }}</span>
+                        @else
+                            {{ $pDescRaw }}
+                        @endif
+                    </p>
 
                     <div class="lp-plan-price">
                         <span class="currency">৳</span>
                         <span class="amount plan-price-display" data-monthly="{{ $monthlyPrice }}" data-yearly="{{ $yearlyPrice }}">{{ number_format($monthlyPrice) }}</span>
-                        <span class="period plan-period-display">/ মাস</span>
+                        <span class="period plan-period-display"><span class="bn">/ মাস</span><span class="en">/ mo</span></span>
                     </div>
 
                     {{-- Plan Quota Limitations --}}
@@ -825,28 +850,40 @@
                         <div class="lp-quota-item" title="ইউজার লিমিট / User Limit">
                             <span class="lp-quota-icon"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>
                             <div class="lp-quota-text">
-                                <span class="lp-quota-val">{{ $plan->max_users ? \Modules\Core\Support\BanglaNumber::toBn($plan->max_users) : 'আনলিমিটেড' }}</span>
+                                <span class="lp-quota-val">
+                                    <span class="bn">{{ $plan->max_users ? \Modules\Core\Support\BanglaNumber::toBn($plan->max_users) : 'আনলিমিটেড' }}</span>
+                                    <span class="en">{{ $plan->max_users ? number_format($plan->max_users) : 'Unlimited' }}</span>
+                                </span>
                                 <span class="lp-quota-label"><span class="bn">ইউজার</span><span class="en">Users</span></span>
                             </div>
                         </div>
                         <div class="lp-quota-item" title="শাখা লিমিট / Branch Limit">
                             <span class="lp-quota-icon"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"></path><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"></path><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"></path><path d="M10 6h4"></path><path d="M10 10h4"></path><path d="M10 14h4"></path><path d="M10 18h4"></path></svg></span>
                             <div class="lp-quota-text">
-                                <span class="lp-quota-val">{{ $plan->max_branches ? \Modules\Core\Support\BanglaNumber::toBn($plan->max_branches) : 'আনলিমিটেড' }}</span>
+                                <span class="lp-quota-val">
+                                    <span class="bn">{{ $plan->max_branches ? \Modules\Core\Support\BanglaNumber::toBn($plan->max_branches) : 'আনলিমিটেড' }}</span>
+                                    <span class="en">{{ $plan->max_branches ? number_format($plan->max_branches) : 'Unlimited' }}</span>
+                                </span>
                                 <span class="lp-quota-label"><span class="bn">শাখা</span><span class="en">Branches</span></span>
                             </div>
                         </div>
                         <div class="lp-quota-item" title="গুদাম লিমিট / Warehouse Limit">
                             <span class="lp-quota-icon"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"></path><path d="M6 18h12"></path><path d="M6 14h12"></path></svg></span>
                             <div class="lp-quota-text">
-                                <span class="lp-quota-val">{{ $plan->max_warehouses ? \Modules\Core\Support\BanglaNumber::toBn($plan->max_warehouses) : 'আনলিমিটেড' }}</span>
+                                <span class="lp-quota-val">
+                                    <span class="bn">{{ $plan->max_warehouses ? \Modules\Core\Support\BanglaNumber::toBn($plan->max_warehouses) : 'আনলিমিটেড' }}</span>
+                                    <span class="en">{{ $plan->max_warehouses ? number_format($plan->max_warehouses) : 'Unlimited' }}</span>
+                                </span>
                                 <span class="lp-quota-label"><span class="bn">গুদাম</span><span class="en">Warehouses</span></span>
                             </div>
                         </div>
                         <div class="lp-quota-item" title="পণ্য লিমিট / Product Limit">
                             <span class="lp-quota-icon"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m7.5 4.27 9 5.15"></path><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path><path d="m3.3 7 8.7 5 8.7-5"></path><path d="M12 22V12"></path></svg></span>
                             <div class="lp-quota-text">
-                                <span class="lp-quota-val">{{ $plan->max_products ? \Modules\Core\Support\BanglaNumber::toBn(number_format($plan->max_products)) : 'আনলিমিটেড' }}</span>
+                                <span class="lp-quota-val">
+                                    <span class="bn">{{ $plan->max_products ? \Modules\Core\Support\BanglaNumber::toBn(number_format($plan->max_products)) : 'আনলিমিটেড' }}</span>
+                                    <span class="en">{{ $plan->max_products ? number_format($plan->max_products) : 'Unlimited' }}</span>
+                                </span>
                                 <span class="lp-quota-label"><span class="bn">পণ্য</span><span class="en">Products</span></span>
                             </div>
                         </div>
@@ -988,11 +1025,26 @@
                                             }
                                             $mPrice = (float) $p->price;
                                             $yPrice = round($mPrice * 12 * 0.80);
+
+                                            $pPopRaw = $p->popular_label ?? '';
+                                            if (!empty($pPopRaw)) {
+                                                if (preg_match('/^(.*?)\s*\((.*?)\)$/u', $pPopRaw, $plm)) {
+                                                    $pPopBn = trim($plm[1]);
+                                                    $pPopEn = trim($plm[2]);
+                                                } else {
+                                                    $pPopBn = $pPopRaw;
+                                                    $pPopEn = $pPopRaw;
+                                                }
+                                            } else {
+                                                $pPopBn = 'জনপ্রিয়';
+                                                $pPopEn = 'Popular';
+                                            }
                                         @endphp
                                         <th class="lp-th-plan {{ $p->is_popular ? 'highlight-col' : '' }}">
                                             @if ($p->is_popular)
                                                 <span class="lp-compare-tag">
-                                                    {{ $p->popular_label ?: 'জনপ্রিয় (Popular)' }}
+                                                    <span class="bn">{{ $pPopBn }}</span>
+                                                    <span class="en">{{ $pPopEn }}</span>
                                                 </span>
                                             @endif
                                             <div class="lp-compare-plan-name">
@@ -1001,7 +1053,7 @@
                                             </div>
                                             <div class="lp-compare-plan-price">
                                                 ৳<span class="plan-price-display" data-monthly="{{ $mPrice }}" data-yearly="{{ $yPrice }}">{{ number_format($mPrice) }}</span>
-                                                <small class="plan-period-display">/ মাস</small>
+                                                <small class="plan-period-display"><span class="bn">/ মাস</span><span class="en">/ mo</span></small>
                                             </div>
                                         </th>
                                     @endforeach
@@ -1026,7 +1078,10 @@
                                     @foreach ($plans as $p)
                                         <td class="lp-td-val {{ $p->is_popular ? 'highlight-col' : '' }}">
                                             @if ($p->max_users)
-                                                <span class="lp-badge-limit">{{ \Modules\Core\Support\BanglaNumber::toBn($p->max_users) }} জন</span>
+                                                <span class="lp-badge-limit">
+                                                    <span class="bn">{{ \Modules\Core\Support\BanglaNumber::toBn($p->max_users) }} জন</span>
+                                                    <span class="en">{{ number_format($p->max_users) }} Users</span>
+                                                </span>
                                             @else
                                                 <span class="lp-badge-unlimited"><span class="bn">আনলিমিটেড</span><span class="en">Unlimited</span></span>
                                             @endif
@@ -1044,7 +1099,10 @@
                                     @foreach ($plans as $p)
                                         <td class="lp-td-val {{ $p->is_popular ? 'highlight-col' : '' }}">
                                             @if ($p->max_branches)
-                                                <span class="lp-badge-limit">{{ \Modules\Core\Support\BanglaNumber::toBn($p->max_branches) }} টি</span>
+                                                <span class="lp-badge-limit">
+                                                    <span class="bn">{{ \Modules\Core\Support\BanglaNumber::toBn($p->max_branches) }} টি</span>
+                                                    <span class="en">{{ number_format($p->max_branches) }} Branches</span>
+                                                </span>
                                             @else
                                                 <span class="lp-badge-unlimited"><span class="bn">আনলিমিটেড</span><span class="en">Unlimited</span></span>
                                             @endif
@@ -1062,7 +1120,10 @@
                                     @foreach ($plans as $p)
                                         <td class="lp-td-val {{ $p->is_popular ? 'highlight-col' : '' }}">
                                             @if ($p->max_warehouses)
-                                                <span class="lp-badge-limit">{{ \Modules\Core\Support\BanglaNumber::toBn($p->max_warehouses) }} টি</span>
+                                                <span class="lp-badge-limit">
+                                                    <span class="bn">{{ \Modules\Core\Support\BanglaNumber::toBn($p->max_warehouses) }} টি</span>
+                                                    <span class="en">{{ number_format($p->max_warehouses) }} Warehouses</span>
+                                                </span>
                                             @else
                                                 <span class="lp-badge-unlimited"><span class="bn">আনলিমিটেড</span><span class="en">Unlimited</span></span>
                                             @endif
@@ -1080,7 +1141,10 @@
                                     @foreach ($plans as $p)
                                         <td class="lp-td-val {{ $p->is_popular ? 'highlight-col' : '' }}">
                                             @if ($p->max_products)
-                                                <span class="lp-badge-limit">{{ \Modules\Core\Support\BanglaNumber::toBn(number_format($p->max_products)) }} টি</span>
+                                                <span class="lp-badge-limit">
+                                                    <span class="bn">{{ \Modules\Core\Support\BanglaNumber::toBn(number_format($p->max_products)) }} টি</span>
+                                                    <span class="en">{{ number_format($p->max_products) }} Products</span>
+                                                </span>
                                             @else
                                                 <span class="lp-badge-unlimited"><span class="bn">আনলিমিটেড</span><span class="en">Unlimited</span></span>
                                             @endif
@@ -1162,6 +1226,19 @@
 
         <div class="lp-reviews-grid">
             @foreach (($content['reviews_list'] ?? []) as $rIndex => $rev)
+                @php
+                    $authorBn = !empty($rev['author']) ? $rev['author'] : ($rev['author_bn'] ?? '');
+                    $authorEn = !empty($rev['author_en']) ? $rev['author_en'] : $authorBn;
+
+                    $shopBn = !empty($rev['shop']) ? $rev['shop'] : ($rev['shop_bn'] ?? '');
+                    $shopEn = !empty($rev['shop_en']) ? $rev['shop_en'] : $shopBn;
+
+                    $cityBn = !empty($rev['city']) ? $rev['city'] : ($rev['city_bn'] ?? '');
+                    $cityEn = !empty($rev['city_en']) ? $rev['city_en'] : $cityBn;
+
+                    $initBn = !empty($rev['initials']) ? $rev['initials'] : (!empty($rev['initials_bn']) ? $rev['initials_bn'] : mb_substr($authorBn, 0, 1));
+                    $initEn = !empty($rev['initials_en']) ? $rev['initials_en'] : mb_substr($authorEn, 0, 1);
+                @endphp
                 <div class="lp-review-card lp-spotlight-card lp-reveal lp-delay-{{ ($rIndex % 3) + 1 }}">
                     <div class="lp-review-stars">
                         @for ($s = 0; $s < ($rev['rating'] ?? 5); $s++)
@@ -1174,11 +1251,18 @@
                     </p>
                     <div class="lp-review-author">
                         <div class="lp-review-avatar">
-                            {{ mb_substr($rev['author'] ?? 'ম', 0, 1) }}
+                            <span class="bn">{{ $initBn }}</span>
+                            <span class="en">{{ $initEn }}</span>
                         </div>
                         <div class="lp-review-meta">
-                            <h5>{{ $rev['author'] ?? '' }}</h5>
-                            <span>{{ $rev['shop'] ?? '' }} • {{ $rev['city'] ?? '' }}</span>
+                            <h5>
+                                <span class="bn">{{ $authorBn }}</span>
+                                <span class="en">{{ $authorEn }}</span>
+                            </h5>
+                            <span>
+                                <span class="bn">{{ $shopBn }} • {{ $cityBn }}</span>
+                                <span class="en">{{ $shopEn }} • {{ $cityEn }}</span>
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -1267,7 +1351,7 @@
             <div class="lp-footer-brand-col">
                 <a href="{{ route('home') }}" class="lp-brand">
                     <div class="lp-brand-icon">
-                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="3" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                        <img src="{{ asset('images/logo.png') }}" alt="{{ $siteName }}" width="38" height="38">
                     </div>
                     <div class="lp-brand-text">
                         <span class="lp-brand-name">{{ $siteName }}</span>
@@ -1344,7 +1428,7 @@
 
         <div class="lp-footer-bottom">
             <span>
-                © {{ date('Y') }} {{ $siteName }}. সর্বস্বত্ব সংরক্ষিত (All rights reserved).
+                © {{ date('Y') }} {{ $siteName }}. <span class="bn">সর্বস্বত্ব সংরক্ষিত।</span><span class="en">All rights reserved.</span>
                 &middot; <a href="{{ route('privacy-policy') }}" style="color:var(--text-dim, #94a3b8); text-decoration:none;"><span class="bn">গোপনীয়তা নীতি</span><span class="en">Privacy Policy</span></a>
                 &middot; <a href="{{ route('terms') }}" style="color:var(--text-dim, #94a3b8); text-decoration:none;"><span class="bn">শর্তাবলী</span><span class="en">Terms</span></a>
             </span>
@@ -1385,10 +1469,19 @@ $(function () {
         $('#drawerOverlay').removeClass('open');
     });
 
+    // Digits helper for Bengali numerals
+    const bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+    function toBnNum(numStr) {
+        return String(numStr).replace(/[0-9]/g, function (d) {
+            return bnDigits[parseInt(d, 10)];
+        });
+    }
+
     // 3. Language Switcher (Reusable Segmented Switcher)
     function setLandingLanguage(lang) {
         const isEn = lang === 'en';
         $('html, body').toggleClass('lang-en', isEn);
+        $('html').attr('lang', isEn ? 'en' : 'bn');
         $('#landingLangToggle, #landingLangToggleMobile, .lang-segmented-switcher .segmented-switch-input').prop('checked', isEn);
         $('.lang-segmented-switcher .switch-opt-bn').toggleClass('active', !isEn);
         $('.lang-segmented-switcher .switch-opt-en').toggleClass('active', isEn);
@@ -1398,6 +1491,22 @@ $(function () {
             document.cookie = "lang=" + lang + ";path=/;max-age=31536000;SameSite=Lax";
         } catch (e) {}
     }
+
+    // Initialize from URL or localStorage
+    (function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlLang = urlParams.get('lang');
+        if (urlLang === 'en' || urlLang === 'bn') {
+            setLandingLanguage(urlLang);
+        } else {
+            try {
+                const savedLang = localStorage.getItem('lang');
+                if (savedLang === 'en' || savedLang === 'bn') {
+                    setLandingLanguage(savedLang);
+                }
+            } catch (e) {}
+        }
+    })();
 
     $(document).on('change', '.lang-segmented-switcher .segmented-switch-input', function () {
         setLandingLanguage($(this).is(':checked') ? 'en' : 'bn');
@@ -1447,6 +1556,14 @@ $(function () {
     });
 
     // 6. Pricing Toggle (Monthly vs Yearly)
+    function updatePlanPeriodText(isYearly) {
+        if (isYearly) {
+            $('.plan-period-display').html('<span class="bn">/ বছর ({{ $content["pricing_annual_discount_bn"] ?? "২০% ছাড়" }})</span><span class="en">/ yr ({{ $content["pricing_annual_discount_en"] ?? "20% OFF" }})</span>');
+        } else {
+            $('.plan-period-display').html('<span class="bn">/ মাস</span><span class="en">/ mo</span>');
+        }
+    }
+
     $('#btnMonthly').on('click', function () {
         $('#btnMonthly').addClass('active');
         $('#btnYearly').removeClass('active');
@@ -1454,7 +1571,7 @@ $(function () {
             const monthlyVal = $(this).data('monthly');
             $(this).text(Number(monthlyVal).toLocaleString('en-US'));
         });
-        $('.plan-period-display').text('/ মাস');
+        updatePlanPeriodText(false);
     });
 
     $('#btnYearly').on('click', function () {
@@ -1464,7 +1581,7 @@ $(function () {
             const yearlyVal = $(this).data('yearly');
             $(this).text(Number(yearlyVal).toLocaleString('en-US'));
         });
-        $('.plan-period-display').text('/ বছর ({{ $content["pricing_annual_discount_bn"] ?? "২০% ছাড়" }})');
+        updatePlanPeriodText(true);
     });
 
     // 7. FAQ Accordion
@@ -1485,14 +1602,15 @@ $(function () {
     let cart = [];
 
     $('.lp-sim-prod-card').on('click', function () {
-        const name = $(this).data('name');
+        const nameBn = $(this).data('name');
+        const nameEn = $(this).data('name-en') || nameBn;
         const price = parseFloat($(this).data('price'));
 
-        const existing = cart.find(item => item.name === name);
+        const existing = cart.find(item => item.nameBn === nameBn);
         if (existing) {
             existing.qty += 1;
         } else {
-            cart.push({ name: name, price: price, qty: 1 });
+            cart.push({ nameBn: nameBn, nameEn: nameEn, price: price, qty: 1 });
         }
 
         renderSimCart();
@@ -1501,39 +1619,48 @@ $(function () {
     function renderSimCart() {
         const list = $('#simCartList');
         if (cart.length === 0) {
-            list.html('<div style="text-align:center; color:var(--text-dim); font-size:13px; padding-top:40px;">বামপাশের পণ্যতে ক্লিক করে কার্টে নিন</div>');
-            $('#simSubtotal').text('৳০');
-            $('#simGrandTotal').text('৳০');
+            list.html('<div style="text-align:center; color:var(--text-dim); font-size:13px; padding-top:40px;"><span class="bn">বামপাশের পণ্যতে ক্লিক করে কার্টে নিন</span><span class="en">Click demo products to add to cart</span></div>');
+            $('#simSubtotal').html('<span class="bn">৳০</span><span class="en">৳0</span>');
+            $('#simGrandTotal').html('<span class="bn">৳০</span><span class="en">৳0</span>');
             return;
         }
 
         let html = '';
         let subtotal = 0;
 
-        cart.forEach((item, index) => {
+        cart.forEach((item) => {
             const rowTotal = item.price * item.qty;
             subtotal += rowTotal;
+            const bnTotal = toBnNum(rowTotal.toLocaleString());
+            const enTotal = rowTotal.toLocaleString();
             html += `
                 <div class="lp-sim-cart-row">
-                    <span>${item.name} × ${item.qty}</span>
-                    <span style="color:#fff; font-weight:600;">৳${rowTotal.toLocaleString()}</span>
+                    <span><span class="bn">${item.nameBn}</span><span class="en">${item.nameEn}</span> × ${item.qty}</span>
+                    <span style="color:#fff; font-weight:600;"><span class="bn">৳${bnTotal}</span><span class="en">৳${enTotal}</span></span>
                 </div>
             `;
         });
 
         list.html(html);
-        $('#simSubtotal').text('৳' + subtotal.toLocaleString());
-        $('#simGrandTotal').text('৳' + subtotal.toLocaleString());
+        const bnSub = toBnNum(subtotal.toLocaleString());
+        const enSub = subtotal.toLocaleString();
+        $('#simSubtotal').html(`<span class="bn">৳${bnSub}</span><span class="en">৳${enSub}</span>`);
+        $('#simGrandTotal').html(`<span class="bn">৳${bnSub}</span><span class="en">৳${enSub}</span>`);
     }
 
     $('#simCompleteBtn').on('click', function () {
+        const isEn = $('html').hasClass('lang-en');
         if (cart.length === 0) {
-            alert('অনুগ্রহ করে প্রথমে বামপাশের পণ্যতে ক্লিক করে কার্টে যোগ করুন!');
+            alert(isEn ? 'Please click demo products on the left to add to cart first!' : 'অনুগ্রহ করে প্রথমে বামপাশের পণ্যতে ক্লিক করে কার্টে যোগ করুন!');
             return;
         }
 
-        const total = $('#simGrandTotal').text();
-        alert('🎉 বিক্রয় সফল হয়েছে! মোট সংগৃহীত: ' + total + '\n\n{{ $siteName }}-এ এভাবে মাত্র ৩ সেকেন্ডে প্রতিটি বিক্রয় সম্পন্ন করা যায়।');
+        const total = isEn ? ($('#simGrandTotal .en').text() || $('#simGrandTotal').text()) : ($('#simGrandTotal .bn').text() || $('#simGrandTotal').text());
+        if (isEn) {
+            alert('🎉 Sale completed successfully! Total collected: ' + total + '\n\nWith {{ $siteName }}, every transaction completes in under 3 seconds.');
+        } else {
+            alert('🎉 বিক্রয় সফল হয়েছে! মোট সংগৃহীত: ' + total + '\n\n{{ $siteName }}-এ এভাবে মাত্র ৩ সেকেন্ডে প্রতিটি বিক্রয় সম্পন্ন করা যায়।');
+        }
         cart = [];
         renderSimCart();
     });
@@ -1628,13 +1755,6 @@ $(function () {
     }
 
     // 13. Animated Counter Ticker (Bengali & English digits)
-    const bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-    function toBnNum(numStr) {
-        return String(numStr).replace(/[0-9]/g, function (d) {
-            return bnDigits[parseInt(d, 10)];
-        });
-    }
-
     function animateCounter($el) {
         if ($el.data('counted')) return;
         $el.data('counted', true);

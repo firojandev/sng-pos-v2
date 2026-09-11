@@ -31,7 +31,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/suppliers/{supplier}/payment', [DueLedgerController::class, 'storeSupplierPayment'])->name('supplier.payment.store')->middleware('permission:suppliers.payment');
     });
 
-    Route::middleware(['permission:audit.view', 'feature:audit'])->group(function () {
+    Route::middleware(['role_or_permission:Super Admin|audit.view', 'feature:audit'])->group(function () {
         Route::get('/audit-log', [AuditLogController::class, 'index'])->name('audit-log.index');
         Route::get('/audit-log/{auditLog}', [AuditLogController::class, 'show'])->name('audit-log.show');
     });

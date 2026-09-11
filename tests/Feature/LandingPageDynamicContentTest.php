@@ -86,8 +86,13 @@ class LandingPageDynamicContentTest extends TestCase
         $customReviews = [
             [
                 'author' => 'কাজী আশরাফুল আলম',
+                'author_en' => 'Kazi Ashraful Alam',
                 'shop' => 'আশরাফ জেনারেল স্টোর',
+                'shop_en' => 'Ashraf General Store',
                 'city' => 'বগুড়া',
+                'city_en' => 'Bogura',
+                'initials' => 'ক',
+                'initials_en' => 'K',
                 'quote_bn' => 'এসএনজিপস ব্যবহারে আমাদের প্রতিদিন ২ ঘণ্টা সময় বাঁচছে।',
                 'quote_en' => 'SNGPOS saves us 2 hours daily.',
                 'rating' => 5,
@@ -104,13 +109,30 @@ class LandingPageDynamicContentTest extends TestCase
 
         $response->assertRedirect(route('system-settings.index', ['tab' => 'reviews']));
 
-        $pageResponse = $this->get('/');
+        // Check settings view contains English inputs
+        $settingsView = $this->actingAs($this->superAdmin)
+            ->get(route('system-settings.index', ['tab' => 'reviews']));
+        $settingsView->assertOk();
+        $settingsView->assertSee('Kazi Ashraful Alam');
+        $settingsView->assertSee('Ashraf General Store');
+        $settingsView->assertSee('Bogura');
+
+        // Bengali Landing Page
+        $pageResponse = $this->withCookie('lang', 'bn')->get('/');
         $pageResponse->assertOk();
         $pageResponse->assertSee('কাজী আশরাফুল আলম');
         $pageResponse->assertSee('আশরাফ জেনারেল স্টোর');
         $pageResponse->assertSee('এসএনজিপস ব্যবহারে আমাদের প্রতিদিন ২ ঘণ্টা সময় বাঁচছে।');
         $pageResponse->assertSee('আজই বদলে ফেলুন আপনার ব্যবসার ভবিষ্যৎ');
         $pageResponse->assertSee('এক্ষুনি জয়েন করুন');
+
+        // English Landing Page
+        $enPageResponse = $this->withCookie('lang', 'en')->get('/');
+        $enPageResponse->assertOk();
+        $enPageResponse->assertSee('Kazi Ashraful Alam');
+        $enPageResponse->assertSee('Ashraf General Store');
+        $enPageResponse->assertSee('Bogura');
+        $enPageResponse->assertSee('SNGPOS saves us 2 hours daily.');
     }
 
     public function test_super_admin_can_update_stats_value_en_and_verticals_tag_and_desc_en(): void
@@ -178,5 +200,45 @@ class LandingPageDynamicContentTest extends TestCase
         $pageResponse->assertSee('Fast Checkout');
         $pageResponse->assertSee('মুদি দোকানের জন্য সম্পূর্ণ পিওএস সিস্টেম।');
         $pageResponse->assertSee('Complete POS system tailored for grocery shops.');
+    }
+
+    public function test_landing_page_renders_bilingual_elements_for_en_and_bn(): void
+    {
+        $responseEn = $this->withCookie('lang', 'en')->get('/');
+        $responseEn->assertOk();
+        $responseEn->assertSee('class="lang-en"', false);
+
+        // Reviews English content
+        $responseEn->assertSee('Md. Rafiqul Islam');
+        $responseEn->assertSee('Al-Madina Departmental Store');
+        $responseEn->assertSee('Tanvir Ahmed');
+        $responseEn->assertSee('Blue-Moon Fashion Outlet');
+        $responseEn->assertSee('Dr. Sajjad Hossain');
+        $responseEn->assertSee('Niramoy Medicine Center');
+
+        // Comparison table and pricing quotas & period
+        $responseEn->assertSee('/ mo');
+        $responseEn->assertSee('Popular');
+        $responseEn->assertSee('Users');
+        $responseEn->assertSee('Branches');
+        $responseEn->assertSee('Warehouses');
+        $responseEn->assertSee('Products');
+
+        // Footer copyright English
+        $responseEn->assertSee('All rights reserved.');
+
+        // Annual discount & hero active users
+        $responseEn->assertSee('20% OFF');
+        $responseEn->assertSee('5,000+ Active Retailers');
+
+        // Bengali version
+        $responseBn = $this->withCookie('lang', 'bn')->get('/');
+        $responseBn->assertOk();
+        $responseBn->assertSee('মোঃ রফিকুল ইসলাম');
+        $responseBn->assertSee('আল-মদিনা ডিপার্টমেন্টাল স্টোর');
+        $responseBn->assertSee('সর্বস্বত্ব সংরক্ষিত।');
+        $responseBn->assertSee('/ মাস');
+        $responseBn->assertSee(LandingPageContent::defaults()['pricing_annual_discount_bn']);
+        $responseBn->assertSee('৫,০০০+ ব্যবসায়ী যুক্ত');
     }
 }

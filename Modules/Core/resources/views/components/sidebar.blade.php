@@ -9,6 +9,14 @@
             'label' => null,
             'items' => [
                 [
+                    'key' => 'dashboard',
+                    'route' => 'dashboard',
+                    'bn' => 'ড্যাশবোর্ড',
+                    'en' => 'Dashboard',
+                    'icon' =>
+                        '<path d="M4 11.5 12 4l8 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-9" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+                ],
+                [
                     'key' => 'shops',
                     'route' => 'shops.index',
                     'bn' => 'দোকানসমূহ',
@@ -31,6 +39,14 @@
                     'en' => 'System Settings',
                     'icon' =>
                         '<circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/><path d="M19 12a7 7 0 0 0-.14-1.4l2-1.5-2-3.5-2.3.9a7 7 0 0 0-2.4-1.4L14 2h-4l-.16 2.1a7 7 0 0 0-2.4 1.4l-2.3-.9-2 3.5 2 1.5A7 7 0 0 0 5 12a7 7 0 0 0 .14 1.4l-2 1.5 2 3.5 2.3-.9a7 7 0 0 0 2.4 1.4L10 22h4l.16-2.1a7 7 0 0 0 2.4-1.4l2.3.9 2-3.5-2-1.5c.09-.46.14-.93.14-1.4Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>',
+                ],
+                [
+                    'key' => 'audit-log',
+                    'route' => 'audit-log.index',
+                    'bn' => 'অডিট লগ',
+                    'en' => 'Audit Log',
+                    'icon' =>
+                        '<path d="M12 8v4l3 3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/>',
                 ],
             ],
         ],
@@ -443,7 +459,7 @@
 
                     @foreach ($group['items'] as $item)
                         <a href="{{ route($item['route']) }}"
-                            class="nav-item {{ $active === $item['key'] ? 'active' : '' }}">
+                            class="nav-item {{ ($active === $item['key'] || $active === $item['route'] || request()->routeIs($item['route']) || request()->routeIs($item['key'].'*')) ? 'active' : '' }}">
                             <svg viewBox="0 0 24 24" fill="none">{!! $item['icon'] !!}</svg>
                             <span class="bn">{{ $item['bn'] }}</span>
                             <span class="en">{{ $item['en'] }}</span>
@@ -467,9 +483,7 @@
                         @endif
 
                         @foreach ($visibleItems as $item)
-                            <a href="{{ route($item['route']) }}"
-                                class="nav-item {{ $active === $item['key'] || ($item['key'] === 'due-ledger' && $active === 'sales-due-ledger') ? 'active' : '' }}"
-                                @if ($item['key'] === 'quick-sale') data-quick-sale-trigger="true" @endif>
+                            <a href="{{ route($item['route']) }}" class="nav-item {{ $active === $item['key'] || ($item['key'] === 'due-ledger' && $active === 'sales-due-ledger') ? 'active' : '' }}" @if ($item['key'] === 'quick-sale') data-quick-sale-trigger="true" @endif>
                                 <svg viewBox="0 0 24 24" fill="none">{!! $item['icon'] !!}</svg>
                                 <span class="bn">{{ $item['bn'] }}</span>
                                 <span class="en">{{ $item['en'] }}</span>
