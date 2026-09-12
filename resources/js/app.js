@@ -6,6 +6,11 @@ import { createIcons, icons } from 'lucide';
 const safeCreateIcons = (options = {}) => createIcons({ icons, ...options });
 
 window.$ = window.jQuery = $;
+if (!$.trim) {
+    $.trim = function (str) {
+        return str == null ? '' : (str + '').trim();
+    };
+}
 window.DataTable = DataTable;
 window.Swal = Swal;
 window.lucide = { createIcons: safeCreateIcons, icons };
