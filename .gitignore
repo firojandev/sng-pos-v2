@@ -5,6 +5,9 @@
 .env.production
 .phpactor.json
 .phpunit.result.cache
+.lerd.yaml
+.node-version
+.php-version
 /.codex
 /.cursor/
 /.idea
