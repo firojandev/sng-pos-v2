@@ -304,21 +304,28 @@
 
         <footer class="auth-footer" style="margin-top: 24px; text-align: center; font-size: 11.5px; color: var(--ink-400); display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
             <span>&copy; {{ now()->year }} {{ $siteTitleBn }}</span>
-            <span>&middot;</span>
-            <a href="{{ route('privacy-policy') }}" style="color: var(--ink-600); text-decoration: none; transition: color 0.15s;">
-                <span class="bn">গোপনীয়তা নীতি</span>
-                <span class="en" style="display:none;">Privacy Policy</span>
-            </a>
-            <span>&middot;</span>
-            <a href="{{ route('terms') }}" style="color: var(--ink-600); text-decoration: none; transition: color 0.15s;">
-                <span class="bn">ব্যবহারের শর্তাবলী</span>
-                <span class="en" style="display:none;">Terms & Conditions</span>
-            </a>
+            @if (\Modules\Core\Models\Setting::isTermsAndPolicyEnabled())
+                <span>&middot;</span>
+                <a href="{{ route('privacy-policy') }}" style="color: var(--ink-600); text-decoration: none; transition: color 0.15s;">
+                    <span class="bn">গোপনীয়তা নীতি</span>
+                    <span class="en" style="display:none;">Privacy Policy</span>
+                </a>
+                <span>&middot;</span>
+                <a href="{{ route('terms') }}" style="color: var(--ink-600); text-decoration: none; transition: color 0.15s;">
+                    <span class="bn">ব্যবহারের শর্তাবলী</span>
+                    <span class="en" style="display:none;">Terms & Conditions</span>
+                </a>
+            @endif
             <span>&middot;</span>
             <a href="{{ route('home') }}" style="color: var(--ink-600); text-decoration: none; transition: color 0.15s;">
                 <span class="bn">মূল পাতা</span>
                 <span class="en" style="display:none;">Home</span>
             </a>
+            @if (\Modules\Core\Models\Setting::isCreditTextEnabled() && !empty(\Modules\Core\Models\Setting::getCreditText()))
+                <div style="width: 100%; text-align: center; font-size: 11px; color: var(--ink-400); margin-top: 4px; opacity: 0.8;">
+                    {{ \Modules\Core\Models\Setting::getCreditText() }}
+                </div>
+            @endif
         </footer>
     </div>
 

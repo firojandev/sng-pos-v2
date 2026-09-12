@@ -219,6 +219,18 @@
             .no-print { display: none !important; }
             .report-card { border: none; box-shadow: none; padding: 0; max-width: 100%; }
             tr { page-break-inside: avoid; }
+            .report-credit-watermark {
+                display: block !important;
+                position: fixed !important;
+                bottom: 2mm !important;
+                right: 0 !important;
+                font-size: 7.5px !important;
+                color: #94a3b8 !important;
+                opacity: 0.6 !important;
+                font-weight: 400 !important;
+                text-align: right !important;
+                font-family: 'Noto Sans Bengali', 'Plus Jakarta Sans', sans-serif !important;
+            }
         }
     </style>
 </head>
@@ -445,5 +457,11 @@
             <span>পৃষ্ঠা ১ / ১ &middot; {{ $shop->name ?? 'POS' }}</span>
         </div>
     </div>
+
+    @if (\Modules\Core\Models\Setting::isCreditTextEnabled())
+        <div class="report-credit-watermark" style="display:none;">
+            {{ \Modules\Core\Models\Setting::getCreditText() }}
+        </div>
+    @endif
 </body>
 </html>

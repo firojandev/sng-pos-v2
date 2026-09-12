@@ -107,6 +107,94 @@
                     </div>
                 </div>
             </div>
+
+            {{-- Card 3: Terms & Policy Footer Links --}}
+            <div
+                style="background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px 22px; box-shadow:var(--shadow-card); display:flex; flex-direction:column; justify-content:space-between; gap:16px;">
+                <div style="display:flex; gap:14px; align-items:flex-start;">
+                    <div
+                        style="width:46px; height:46px; border-radius:12px; background:linear-gradient(135deg, rgba(168,85,247,0.15), rgba(139,92,246,0.2)); color:#8b5cf6; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <x-core::icon name="file-text" size="24" />
+                    </div>
+                    <div>
+                        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                            <h3 style="margin:0; font-size:17px; font-weight:700; color:var(--ink-900);">
+                                <span class="bn">শর্তাবলী ও গোপনীয়তা নীতি</span>
+                                <span class="en">Terms & Privacy Policy</span>
+                            </h3>
+                            <x-core::badge id="termsStatusBadge" :color="$termsAndPolicyEnabled ? 'green' : 'grey'" size="sm" :dot="true"
+                                :label="$termsAndPolicyEnabled ? 'চালু আছে (Active)' : 'বন্ধ আছে (Disabled)'" :label-en="$termsAndPolicyEnabled ? 'Active' : 'Disabled'" />
+                        </div>
+                        <p style="margin:4px 0 0; font-size:12.5px; color:var(--ink-500); line-height:1.4;">
+                            <span class="bn">চালু থাকলে সাইটের ফুটার, ল্যান্ডিং ও লগইন পেজে শর্তাবলী ও গোপনীয়তা নীতি প্রদর্শিত হবে এবং পেজগুলো সচল থাকবে। বন্ধ থাকলে পেজগুলোতে অ্যাক্সেস বন্ধ থাকবে এবং সাইটের কোথাও প্রদর্শিত হবে না।</span>
+                            <span class="en">When enabled, Terms and Privacy Policy pages and links are accessible and visible across all footers. When disabled, pages and links are hidden everywhere.</span>
+                        </p>
+                    </div>
+                </div>
+
+                <div
+                    style="display:flex; align-items:center; justify-content:flex-end; padding-top:12px; border-top:1px dashed var(--border);">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:12px; font-weight:600; color:var(--ink-600);">
+                            <span class="bn">শর্তাবলী ও পলিসি:</span>
+                            <span class="en" style="display:none;">Terms & Policy:</span>
+                        </span>
+                        <x-core::toggle id="terms_policy_toggle" name="terms_policy_toggle" :checked="(bool) $termsAndPolicyEnabled"
+                            size="md" color="primary" />
+                    </div>
+                </div>
+            </div>
+
+            {{-- Card 4: Credit Text --}}
+            <div
+                style="background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px 22px; box-shadow:var(--shadow-card); display:flex; flex-direction:column; justify-content:space-between; gap:16px;">
+                <div style="display:flex; gap:14px; align-items:flex-start;">
+                    <div
+                        style="width:46px; height:46px; border-radius:12px; background:linear-gradient(135deg, rgba(245,158,11,0.15), rgba(234,138,12,0.2)); color:#d97706; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <x-core::icon name="type" size="24" />
+                    </div>
+                    <div>
+                        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                            <h3 style="margin:0; font-size:17px; font-weight:700; color:var(--ink-900);">
+                                <span class="bn">ক্রেডিট টেক্সট</span>
+                                <span class="en">Credit Text</span>
+                            </h3>
+                            <x-core::badge id="creditStatusBadge" :color="$creditTextEnabled ? 'green' : 'grey'" size="sm" :dot="true"
+                                :label="$creditTextEnabled ? 'চালু আছে (Active)' : 'বন্ধ আছে (Disabled)'" :label-en="$creditTextEnabled ? 'Active' : 'Disabled'" />
+                        </div>
+                        <p style="margin:4px 0 0; font-size:12.5px; color:var(--ink-500); line-height:1.4;">
+                            <span class="bn">চালু থাকলে সকল পেজের ফুটারে ও PDF এক্সপোর্টের নিচে
+                                ক্রেডিট টেক্সট প্রদর্শিত হবে।</span>
+                            <span class="en">When enabled, credit text is shown in the footer and
+                                bottom-right of PDF exports.</span>
+                        </p>
+                    </div>
+                </div>
+
+                <div id="creditTextInputWrap"
+                    style="padding-top:12px; border-top:1px dashed var(--border); {{ $creditTextEnabled ? '' : 'opacity:0.5; pointer-events:none;' }}">
+                    <x-core::input name="credit_text" label="ক্রেডিট টেক্সট (Credit Text)"
+                        size="sm" :value="old('credit_text', $creditText)"
+                        placeholder="Design and developed by SoftNGear" />
+                </div>
+
+                <div
+                    style="display:flex; align-items:center; justify-content:space-between;">
+                    <x-core::button color="primary" size="sm" type="button" icon="check" id="saveCreditTextBtn"
+                        style="{{ $creditTextEnabled ? '' : 'opacity:0.5; pointer-events:none;' }}">
+                        <span class="bn">সংরক্ষণ</span>
+                        <span class="en">Save</span>
+                    </x-core::button>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:12px; font-weight:600; color:var(--ink-600);">
+                            <span class="bn">ক্রেডিট টেক্সট:</span>
+                            <span class="en" style="display:none;">Credit Text:</span>
+                        </span>
+                        <x-core::toggle id="credit_text_toggle" name="credit_text_toggle" :checked="(bool) $creditTextEnabled"
+                            size="md" color="primary" />
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="settings-layout-grid">
@@ -231,6 +319,10 @@
                         value="{{ $settings['landing_page_enabled'] ? '1' : '0' }}">
                     <input type="hidden" name="registration_enabled" id="hiddenRegistrationEnabled"
                         value="{{ $registrationEnabled ? '1' : '0' }}">
+                    <input type="hidden" name="show_terms_and_policy" id="hiddenTermsPolicyEnabled"
+                        value="{{ $termsAndPolicyEnabled ? '1' : '0' }}">
+                    <input type="hidden" name="show_credit_text" id="hiddenCreditTextEnabled"
+                        value="{{ $creditTextEnabled ? '1' : '0' }}">
 
                     {{-- 1. General & SEO Tab --}}
                     <div class="tab-pane {{ ($activeTab ?? 'general') === 'general' ? 'active' : '' }}"
@@ -1419,6 +1511,128 @@
                                     icon: 'error',
                                     title: 'ত্রুটি',
                                     text: 'রেজিস্ট্রেশন সেটিংস পরিবর্তন করতে ব্যর্থ হয়েছে।'
+                                });
+                            }
+                        }
+                    });
+                });
+
+                // 3c. AJAX Terms & Policy Toggle
+                $('#terms_policy_toggle').on('change', function() {
+                    const isChecked = $(this).is(':checked');
+                    $('#hiddenTermsPolicyEnabled').val(isChecked ? '1' : '0');
+
+                    $.ajax({
+                        url: "{{ route('system-settings.toggle-terms-policy') }}",
+                        method: 'POST',
+                        data: {
+                            _token: "{{ csrf_token() }}",
+                            state: isChecked ? 1 : 0
+                        },
+                        success: function(res) {
+                            if (res.success) {
+                                if (window.toast) {
+                                    window.toast(res.message, res.message);
+                                }
+                                const badge = $('#termsStatusBadge');
+                                if (res.enabled) {
+                                    badge.removeClass('badge-grey').addClass('badge-green');
+                                    badge.find('.bn').text('চালু আছে (Active)');
+                                    badge.find('.en').text('Active');
+                                } else {
+                                    badge.removeClass('badge-green').addClass('badge-grey');
+                                    badge.find('.bn').text('বন্ধ আছে (Disabled)');
+                                    badge.find('.en').text('Disabled');
+                                }
+                            }
+                        },
+                        error: function() {
+                            if (window.Swal) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'ত্রুটি',
+                                    text: 'সেটিংস পরিবর্তন করতে ব্যর্থ হয়েছে।'
+                                });
+                            }
+                        }
+                    });
+                });
+
+                // 3d. AJAX Credit Text Toggle
+                $('#credit_text_toggle').on('change', function() {
+                    const isChecked = $(this).is(':checked');
+                    $('#hiddenCreditTextEnabled').val(isChecked ? '1' : '0');
+
+                    // Toggle input & save button enabled state
+                    if (isChecked) {
+                        $('#creditTextInputWrap').css({ opacity: 1, 'pointer-events': 'auto' });
+                        $('#saveCreditTextBtn').css({ opacity: 1, 'pointer-events': 'auto' });
+                    } else {
+                        $('#creditTextInputWrap').css({ opacity: 0.5, 'pointer-events': 'none' });
+                        $('#saveCreditTextBtn').css({ opacity: 0.5, 'pointer-events': 'none' });
+                    }
+
+                    $.ajax({
+                        url: "{{ route('system-settings.toggle-credit-text') }}",
+                        method: 'POST',
+                        data: {
+                            _token: "{{ csrf_token() }}",
+                            state: isChecked ? 1 : 0
+                        },
+                        success: function(res) {
+                            if (res.success) {
+                                if (window.toast) {
+                                    window.toast(res.message, res.message);
+                                }
+                                const badge = $('#creditStatusBadge');
+                                if (res.enabled) {
+                                    badge.removeClass('badge-grey').addClass('badge-green');
+                                    badge.find('.bn').text('চালু আছে (Active)');
+                                    badge.find('.en').text('Active');
+                                } else {
+                                    badge.removeClass('badge-green').addClass('badge-grey');
+                                    badge.find('.bn').text('বন্ধ আছে (Disabled)');
+                                    badge.find('.en').text('Disabled');
+                                }
+                            }
+                        },
+                        error: function() {
+                            if (window.Swal) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'ত্রুটি',
+                                    text: 'ক্রেডিট টেক্সট সেটিংস পরিবর্তন করতে ব্যর্থ হয়েছে।'
+                                });
+                            }
+                        }
+                    });
+                });
+
+                // 3e. Save Credit Text via AJAX
+                $('#saveCreditTextBtn').on('click', function() {
+                    const creditText = $('input[name="credit_text"]').val();
+
+                    $.ajax({
+                        url: "{{ route('system-settings.update') }}",
+                        method: 'POST',
+                        data: {
+                            _token: "{{ csrf_token() }}",
+                            credit_text: creditText
+                        },
+                        success: function() {
+                            if (window.toast) {
+                                window.toast(
+                                    'ক্রেডিট টেক্সট সংরক্ষণ করা হয়েছে (Credit text saved)',
+                                    'ক্রেডিট টেক্সট সংরক্ষণ করা হয়েছে (Credit text saved)'
+                                );
+                            }
+                        },
+                        error: function() {
+                            if (window.Swal) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'ত্রুটি',
+                                    text: 'ক্রেডিট টেক্সট সংরক্ষণ করতে ব্যর্থ হয়েছে।'
                                 });
                             }
                         }
