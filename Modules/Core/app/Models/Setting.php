@@ -157,4 +157,66 @@ class Setting extends Model
     {
         static::set('registration_enabled', $enabled, 'boolean', 'system');
     }
+
+    /**
+     * Check if Terms & Policy links are visible in footer.
+     */
+    public static function isTermsAndPolicyEnabled(): bool
+    {
+        $value = static::get('show_terms_and_policy', null);
+        if ($value === null) {
+            return true;
+        }
+
+        return (bool) $value;
+    }
+
+    /**
+     * Enable or disable Terms & Policy footer links.
+     */
+    public static function setTermsAndPolicyEnabled(bool $enabled): void
+    {
+        static::set('show_terms_and_policy', $enabled, 'boolean', 'system');
+    }
+
+    /**
+     * Check if credit text is enabled for footer and PDF exports.
+     */
+    public static function isCreditTextEnabled(): bool
+    {
+        $value = static::get('show_credit_text', null);
+        if ($value === null) {
+            return false;
+        }
+
+        return (bool) $value;
+    }
+
+    /**
+     * Enable or disable credit text display.
+     */
+    public static function setCreditTextEnabled(bool $enabled): void
+    {
+        static::set('show_credit_text', $enabled, 'boolean', 'system');
+    }
+
+    /**
+     * Retrieve the credit text string.
+     */
+    public static function getCreditText(): string
+    {
+        $text = static::get('credit_text');
+
+        return ! empty($text)
+            ? (string) $text
+            : 'Design and developed by SoftNGear | সফটএনগিয়ার দ্বারা ডিজাইন ও ডেভেলপ করা হয়েছে';
+    }
+
+    /**
+     * Store the credit text string.
+     */
+    public static function setCreditText(string $text): void
+    {
+        static::set('credit_text', $text, 'string', 'system');
+    }
 }

@@ -257,6 +257,10 @@ class PageController extends Controller
 
     public function privacyPolicy(): View
     {
+        if (! Setting::isTermsAndPolicyEnabled()) {
+            abort(404);
+        }
+
         $siteTitle = Setting::getSiteTitle();
         $siteTitleBn = $siteTitle === 'SNGPOS' ? 'এসএনজিপস' : $siteTitle;
 
@@ -265,6 +269,10 @@ class PageController extends Controller
 
     public function terms(): View
     {
+        if (! Setting::isTermsAndPolicyEnabled()) {
+            abort(404);
+        }
+
         $siteTitle = Setting::getSiteTitle();
         $siteTitleBn = $siteTitle === 'SNGPOS' ? 'এসএনজিপস' : $siteTitle;
 

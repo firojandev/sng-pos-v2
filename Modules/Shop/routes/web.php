@@ -23,6 +23,8 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::post('system-settings', [SystemSettingsController::class, 'update'])->name('system-settings.update');
     Route::post('system-settings/toggle-landing', [SystemSettingsController::class, 'toggleLanding'])->name('system-settings.toggle-landing');
     Route::post('system-settings/toggle-registration', [SystemSettingsController::class, 'toggleRegistration'])->name('system-settings.toggle-registration');
+    Route::post('system-settings/toggle-terms-policy', [SystemSettingsController::class, 'toggleTermsAndPolicy'])->name('system-settings.toggle-terms-policy');
+    Route::post('system-settings/toggle-credit-text', [SystemSettingsController::class, 'toggleCreditText'])->name('system-settings.toggle-credit-text');
 });
 
 Route::middleware(['auth', 'feature:branches'])->group(function () {

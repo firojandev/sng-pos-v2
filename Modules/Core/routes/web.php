@@ -5,13 +5,26 @@ use Modules\Core\Http\Controllers\AuditLogController;
 use Modules\Core\Http\Controllers\DueLedgerController;
 use Modules\Core\Http\Controllers\LandingController;
 use Modules\Core\Http\Controllers\PageController;
+use Modules\Core\Models\Setting;
 
 Route::get('/', [LandingController::class, 'index'])->name('home');
 Route::get('/landing', [LandingController::class, 'preview'])->name('landing');
 Route::get('/privacy-policy', [PageController::class, 'privacyPolicy'])->name('privacy-policy');
-Route::get('/privacy', fn () => redirect()->route('privacy-policy', [], 301));
+Route::get('/privacy', function () {
+    if (! Setting::isTermsAndPolicyEnabled()) {
+        abort(404);
+    }
+
+    return redirect()->route('privacy-policy', [], 301);
+});
 Route::get('/terms-and-conditions', [PageController::class, 'terms'])->name('terms');
-Route::get('/terms', fn () => redirect()->route('terms', [], 301));
+Route::get('/terms', function () {
+    if (! Setting::isTermsAndPolicyEnabled()) {
+        abort(404);
+    }
+
+    return redirect()->route('terms', [], 301);
+});
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [PageController::class, 'dashboard'])->name('dashboard');
