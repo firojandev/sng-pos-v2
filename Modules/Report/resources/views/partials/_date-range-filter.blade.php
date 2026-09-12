@@ -189,6 +189,20 @@
         color: #64748b !important;
         page-break-inside: avoid !important;
     }
+    .report-credit-watermark {
+        display: block !important;
+        visibility: visible !important;
+        position: fixed !important;
+        bottom: 2mm !important;
+        right: 0 !important;
+        font-size: 7.5px !important;
+        color: #94a3b8 !important;
+        opacity: 0.6 !important;
+        font-weight: 400 !important;
+        text-align: right !important;
+        font-family: 'Noto Sans Bengali', 'Plus Jakarta Sans', sans-serif !important;
+        z-index: 9999 !important;
+    }
     .no-print,
     .sidebar,
     .topbar,
@@ -348,6 +362,12 @@ $(function () {
 });
 </script>
 @endpush
+
+@if (\Modules\Core\Models\Setting::isCreditTextEnabled())
+    <div class="report-credit-watermark" style="display:none;">
+        {{ \Modules\Core\Models\Setting::getCreditText() }}
+    </div>
+@endif
 @else
 <style>
 @media print {
