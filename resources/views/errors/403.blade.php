@@ -16,10 +16,10 @@
         in_array($exceptionMsg, ['This action is unauthorized.', '403 Forbidden', 'Unauthorized', 'Forbidden']);
 
     $siteTitle = $siteTitle ?? \Modules\Core\Models\Setting::getSiteTitle();
-    $siteTitleBn = $siteTitleBn ?? ($siteTitle === 'SNGPOS' ? 'এসএনজিপস' : $siteTitle);
+    $siteTitleBn = $siteTitleBn ?? ($siteTitle === 'SNGPOS' ? 'SNGPOS' : $siteTitle);
     $currentSiteTitle = $isEn ? $siteTitle : $siteTitleBn;
     $siteMark = mb_strtoupper(mb_substr($siteTitle, 0, 1));
-    $siteMarkBn = $siteTitle === 'SNGPOS' ? 'ম' : $siteMark;
+    $siteMarkBn = $siteTitle === 'SNGPOS' ? 'S' : $siteMark;
     $supportEmail =
         \Modules\Core\Models\Setting::get('support_email') ?: 'support@' . (request()->getHost() ?: 'SNGPOS.app');
 @endphp

@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Modules\Core\Models\Setting;
+use Modules\Core\Services\DatabaseBackupService;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -27,3 +28,11 @@ Artisan::command('landing:status', function () {
     $status = $current ? 'ENABLED (সক্রিয়)' : 'DISABLED (নিষ্ক্রিয়)';
     $this->info("Landing page is currently {$status}.");
 })->purpose('Check the current status of the public landing page');
+
+Artisan::command('db:backup {--prefix=sngpos : Prefix for the backup file name}', function (DatabaseBackupService $service) {
+    $this->info('Starting database backup...');
+    $prefix = $this->option('prefix') ?: 'sngpos';
+    $result = $service->createBackup($prefix);
+    $this->info("Backup created successfully: {$result['filename']} ({$result['size_formatted']})");
+    $this->line("Saved to: {$result['path']}");
+})->purpose('Create a full MySQL database backup');

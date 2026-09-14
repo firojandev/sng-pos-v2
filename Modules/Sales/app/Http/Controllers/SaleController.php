@@ -280,7 +280,7 @@ class SaleController extends Controller
             ->with('units')
             ->orderBy('name')->get();
         $accounts = Account::active()->orderByDesc('is_default')->orderBy('name')->get();
-        $sale->load('items', 'warehouse', 'payments');
+        $sale->load(['items.product.units', 'items.unit', 'items.batch', 'warehouse', 'payments']);
 
         return view('sales::sales.edit', compact('sale', 'customers', 'products', 'employees', 'accounts'));
     }

@@ -6,6 +6,7 @@ use App\DataTables\BaseDataTable;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Illuminate\Support\Facades\Blade;
 use Modules\Product\Models\Batch;
+use Modules\Product\Models\Product;
 use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
 use Yajra\DataTables\Html\Column;
@@ -65,8 +66,40 @@ class BatchesDataTable extends BaseDataTable
 
                 return Blade::render('<x-core::badge color="teal" size="xs" variant="soft" style="white-space:nowrap;">{{ $qty }}</x-core::badge>', ['qty' => $qty]);
             })
+            ->addColumn('purchase_price', function (Batch $batch) {
+                if (! $batch->product) {
+                    return '<span style="color:var(--ink-400);">—</span>';
+                }
+                $price = (float) $batch->product->purchase_price;
+
+                return '<div style="font-family:var(--font-mono, monospace); font-weight:700; color:var(--ink-800); font-size:13px; white-space:nowrap;">৳'.number_format($price, 2).'</div>';
+            })
+            ->addColumn('sale_price', function (Batch $batch) {
+                if (! $batch->product) {
+                    return '<span style="color:var(--ink-400);">—</span>';
+                }
+                $price = (float) $batch->product->sale_price;
+
+                return '<div style="font-family:var(--font-mono, monospace); font-weight:600; color:var(--teal-700); font-size:13px; white-space:nowrap;">৳'.number_format($price, 2).'</div>';
+            })
+            ->addColumn('stock_valuation', function (Batch $batch) {
+                $qty = (float) ($batch->quantity ?? 0);
+                $price = (float) ($batch->product?->purchase_price ?? 0);
+                $valuation = max(0, $qty * $price);
+
+                return '<div style="font-family:var(--font-mono, monospace); font-weight:800; color:var(--teal-800); font-size:13px; white-space:nowrap;">৳'.number_format($valuation, 2).'</div>';
+            })
             ->addColumn('action', function (Batch $batch) {
                 return view('product::batches.datatables-actions', compact('batch'))->render();
+            })
+            ->orderColumn('purchase_price', function ($query, $order) {
+                $query->orderBy(Product::select('purchase_price')->whereColumn('products.id', 'batches.product_id'), $order);
+            })
+            ->orderColumn('sale_price', function ($query, $order) {
+                $query->orderBy(Product::select('sale_price')->whereColumn('products.id', 'batches.product_id'), $order);
+            })
+            ->orderColumn('stock_valuation', function ($query, $order) {
+                $query->orderByRaw('(batches.quantity * COALESCE((SELECT purchase_price FROM products WHERE products.id = batches.product_id), 0)) '.$order);
             })
             ->filterColumn('batch_no', function ($query, $keyword) {
                 $query->where('batches.batch_no', 'like', "%{$keyword}%");
@@ -76,7 +109,7 @@ class BatchesDataTable extends BaseDataTable
                     $q->where('name', 'like', "%{$keyword}%")->orWhere('sku', 'like', "%{$keyword}%");
                 });
             })
-            ->rawColumns(['batch_no', 'product', 'mfg_date', 'expiry_date', 'quantity', 'action'])
+            ->rawColumns(['batch_no', 'product', 'mfg_date', 'expiry_date', 'quantity', 'purchase_price', 'sale_price', 'stock_valuation', 'action'])
             ->setRowId('id');
     }
 
@@ -100,8 +133,8 @@ class BatchesDataTable extends BaseDataTable
                 'batches.created_at',
             ]);
 
-        if ($productId = request('product_id')) {
-            $query->where('batches.product_id', $productId);
+        if (request()->filled('product_id')) {
+            $query->where('batches.product_id', request('product_id'));
         }
 
         return $query;
@@ -113,7 +146,7 @@ class BatchesDataTable extends BaseDataTable
     public function html(): HtmlBuilder
     {
         return $this->defaultHtml()
-            ->minifiedAjax('', 'data.product_id = $("#filter-product").val();');
+            ->minifiedAjax(route('batches.index'), 'data.product_id = $("#filter-product").val();');
     }
 
     /**
@@ -124,18 +157,33 @@ class BatchesDataTable extends BaseDataTable
     public function getColumns(): array
     {
         return [
-            Column::make('batch_no')->title('<span class="bn">ব্যাচ নং</span><span class="en">Batch No</span>')->width(140),
-            Column::computed('product')->title('<span class="bn">পণ্য</span><span class="en">Product</span>')->width(220),
-            Column::make('mfg_date')->title('<span class="bn">উৎপাদন তারিখ</span><span class="en">Mfg Date</span>')->addClass('table-cell-center')->width(130),
-            Column::make('expiry_date')->title('<span class="bn">মেয়াদ শেষ</span><span class="en">Exp Date</span>')->addClass('table-cell-center')->width(150),
-            Column::make('quantity')->title('<span class="bn">পরিমাণ</span><span class="en">Qty</span>')->addClass('table-cell-center')->width(100),
+            Column::make('batch_no')->title('<span class="bn">ব্যাচ নং</span><span class="en">Batch No</span>')->width(130),
+            Column::computed('product')->title('<span class="bn">পণ্য</span><span class="en">Product</span>')->width(200),
+            Column::make('mfg_date')->title('<span class="bn">উৎপাদন তারিখ</span><span class="en">Mfg Date</span>')->addClass('table-cell-center')->width(115),
+            Column::make('expiry_date')->title('<span class="bn">মেয়াদ শেষ</span><span class="en">Exp Date</span>')->addClass('table-cell-center')->width(130),
+            Column::make('quantity')->title('<span class="bn">পরিমাণ</span><span class="en">Qty</span>')->addClass('table-cell-center')->width(85),
+            Column::computed('purchase_price')
+                ->title('<span class="bn">ক্রয় মূল্য</span><span class="en">Purchase Price</span>')
+                ->orderable(true)
+                ->addClass('table-cell-right')
+                ->width(115),
+            Column::computed('sale_price')
+                ->title('<span class="bn">বিক্রয় মূল্য</span><span class="en">Sale Price</span>')
+                ->orderable(true)
+                ->addClass('table-cell-right')
+                ->width(115),
+            Column::computed('stock_valuation')
+                ->title('<span class="bn">স্টক মূল্যায়ন</span><span class="en">Stock Valuation</span>')
+                ->orderable(true)
+                ->addClass('table-cell-right')
+                ->width(125),
             Column::computed('action')
                 ->title('<span class="bn">অ্যাকশন</span><span class="en">Action</span>')
                 ->orderable(false)
                 ->searchable(false)
                 ->exportable(false)
                 ->printable(false)
-                ->width(110)
+                ->width(90)
                 ->addClass('table-cell-right'),
         ];
     }
