@@ -4,17 +4,26 @@ namespace Modules\Report\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Modules\Core\Support\Features;
+use Modules\Customer\Models\Customer;
+use Modules\Finance\Models\Account;
+use Modules\Finance\Models\AccountTransaction;
 use Modules\Finance\Models\Expense;
 use Modules\Finance\Models\Income;
+use Modules\FinanceManagement\Models\Asset;
+use Modules\FinanceManagement\Models\Debt;
+use Modules\FinanceManagement\Models\Lend;
+use Modules\FinanceManagement\Models\SecurityMoney;
 use Modules\Product\Models\Batch;
 use Modules\Product\Models\Product;
 use Modules\Product\Models\StockMovement;
 use Modules\Purchase\Models\Purchase;
 use Modules\Sales\Models\Sale;
 use Modules\Sales\Models\SaleItem;
+use Modules\Supplier\Models\Supplier;
 
 class ReportController extends Controller
 {
@@ -29,6 +38,8 @@ class ReportController extends Controller
         'report-profit-loss' => 'reports.profit-loss',
         'report-income' => 'reports.income',
         'report-expense' => 'reports.expense',
+        'report-financial-position' => 'reports.financial-position',
+        'report-balance-sheet' => 'reports.balance-sheet',
     ];
 
     public function index(Request $request): View
@@ -248,6 +259,167 @@ class ReportController extends Controller
         ];
 
         return view('report::expense', compact('range', 'from', 'to', 'expenses', 'totals'));
+    }
+
+    public function financialPosition(Request $request): View
+    {
+        $asOf = $this->resolveAsOf($request);
+
+        $totalAssetsWithSecurity = (float) Asset::where('created_at', '<=', $asOf)->sum('amount')
+            + (float) SecurityMoney::where('status', 'paid')->where('date', '<=', $asOf)->sum('amount');
+
+        $stockValue = $this->stockValue($asOf);
+        $receivable = $this->customerReceivable($asOf);
+        $payable = $this->supplierPayable($asOf);
+        $lendOutstanding = (float) Lend::where('status', 'due')->where('date', '<=', $asOf)->sum('amount');
+        $cashAndBank = $this->cashAndBankBalance($asOf);
+
+        $netPosition = ($totalAssetsWithSecurity + $stockValue + $receivable + $lendOutstanding + $cashAndBank) - $payable;
+
+        return view('report::financial-position', compact(
+            'asOf', 'totalAssetsWithSecurity', 'stockValue', 'receivable', 'payable', 'lendOutstanding', 'cashAndBank', 'netPosition',
+        ));
+    }
+
+    public function balanceSheet(Request $request): View
+    {
+        $asOf = $this->resolveAsOf($request);
+
+        $cashAndBank = $this->cashAndBankBalance($asOf);
+        $receivable = $this->customerReceivable($asOf);
+        $lendReceivable = (float) Lend::where('status', 'due')->where('date', '<=', $asOf)->sum('amount');
+        $securityMoneyPaid = (float) SecurityMoney::where('status', 'paid')->where('date', '<=', $asOf)->sum('amount');
+        $stockValue = $this->stockValue($asOf);
+        $fixedAssets = (float) Asset::where('created_at', '<=', $asOf)->sum('amount');
+        $totalAssets = $cashAndBank + $receivable + $lendReceivable + $securityMoneyPaid + $stockValue + $fixedAssets;
+
+        $payable = $this->supplierPayable($asOf);
+        $debtsPayable = (float) Debt::where('status', 'unpaid')->where('date', '<=', $asOf)->sum('amount');
+        $securityMoneyReceived = (float) SecurityMoney::where('status', 'received')->where('date', '<=', $asOf)->sum('amount');
+        $totalLiabilities = $payable + $debtsPayable + $securityMoneyReceived;
+
+        $equity = $totalAssets - $totalLiabilities;
+
+        return view('report::balance-sheet', compact(
+            'asOf', 'cashAndBank', 'receivable', 'lendReceivable', 'securityMoneyPaid', 'stockValue', 'fixedAssets', 'totalAssets',
+            'payable', 'debtsPayable', 'securityMoneyReceived', 'totalLiabilities', 'equity',
+        ));
+    }
+
+    /**
+     * Resolve the "as of" moment for a snapshot report from the request,
+     * defaulting to now and clamping any future date back to now.
+     */
+    private function resolveAsOf(Request $request): Carbon
+    {
+        $raw = $request->query('as_of');
+
+        if (! $raw) {
+            return now();
+        }
+
+        $asOf = Carbon::parse($raw)->endOfDay();
+
+        return $asOf->isFuture() ? now() : $asOf;
+    }
+
+    /**
+     * Inventory valuation as of a given moment: on-hand quantity × current
+     * purchase price, summed across all batches. For today, this is the exact
+     * live figure used elsewhere (e.g. stock()); for a past date, on-hand qty
+     * is reconstructed by rolling back every StockMovement recorded after
+     * that moment (no historical cost is tracked, so today's purchase price
+     * is still used for valuation — the same simplification most small
+     * business software makes).
+     */
+    private function stockValue(Carbon $asOf): float
+    {
+        if ($asOf->isToday()) {
+            return (float) Batch::query()
+                ->join('products', 'batches.product_id', '=', 'products.id')
+                ->sum(DB::raw('batches.quantity * products.purchase_price'));
+        }
+
+        $currentByProduct = Batch::query()
+            ->join('products', 'batches.product_id', '=', 'products.id')
+            ->groupBy('products.id', 'products.purchase_price')
+            ->select(['products.id', 'products.purchase_price', DB::raw('SUM(batches.quantity) as qty')])
+            ->get()
+            ->keyBy('id');
+
+        $futureChangeByProduct = StockMovement::query()
+            ->where('created_at', '>', $asOf)
+            ->groupBy('product_id')
+            ->select('product_id', DB::raw('SUM(quantity_change) as change_qty'))
+            ->get()
+            ->keyBy('product_id');
+
+        $total = 0.0;
+        foreach ($currentByProduct as $productId => $row) {
+            $historicalQty = (float) $row->qty - (float) ($futureChangeByProduct[$productId]->change_qty ?? 0);
+            $total += max($historicalQty, 0) * (float) $row->purchase_price;
+        }
+
+        return $total;
+    }
+
+    /**
+     * Total amount owed to the shop by customers as of a given date (opening
+     * due + due on sales dated on/before it). The due amount itself is a
+     * best-effort figure — it reflects the sale's current due, not
+     * necessarily what was still due exactly on that date.
+     */
+    private function customerReceivable(Carbon $asOf): float
+    {
+        return (float) Customer::sum('opening_due')
+            + (float) Sale::where('sale_date', '<=', $asOf)->sum('due_amount');
+    }
+
+    /**
+     * Total amount the shop owes to suppliers as of a given date (opening due
+     * + due on purchases dated on/before it). Same best-effort caveat as
+     * customerReceivable().
+     */
+    private function supplierPayable(Carbon $asOf): float
+    {
+        return (float) Supplier::sum('opening_due')
+            + (float) Purchase::where('purchase_date', '<=', $asOf)->sum('due_amount');
+    }
+
+    /**
+     * Sum of all active cash, bank, and mobile-banking (MFS) account balances
+     * as of a given moment. For today, this is the exact live figure
+     * (Account::current_balance, kept in sync with the ledger by
+     * AccountTransactionService); for a past date, each account's balance is
+     * reconstructed from its latest AccountTransaction at or before that
+     * moment — an account with no such transaction didn't exist yet or had
+     * no activity yet, so it contributes 0.
+     */
+    private function cashAndBankBalance(Carbon $asOf): float
+    {
+        if ($asOf->isToday()) {
+            return (float) Account::where('status', 'active')
+                ->whereIn('type', ['cash', 'bank', 'mfs'])
+                ->sum('current_balance');
+        }
+
+        $accounts = Account::where('status', 'active')
+            ->whereIn('type', ['cash', 'bank', 'mfs'])
+            ->get();
+
+        $total = 0.0;
+        foreach ($accounts as $account) {
+            $lastTransaction = AccountTransaction::withoutGlobalScopes()
+                ->where('account_id', $account->id)
+                ->where('occurred_at', '<=', $asOf)
+                ->orderByDesc('occurred_at')
+                ->orderByDesc('id')
+                ->first();
+
+            $total += $lastTransaction ? (float) $lastTransaction->balance_after : 0.0;
+        }
+
+        return $total;
     }
 
     /**

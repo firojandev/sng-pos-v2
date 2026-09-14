@@ -265,6 +265,44 @@
             ],
         ],
         [
+            'label' => ['bn' => 'অর্থ ব্যবস্থাপনা', 'en' => 'Finance Management'],
+            'gated' => true,
+            'items' => [
+                [
+                    'key' => 'assets',
+                    'route' => 'assets.index',
+                    'bn' => 'সম্পদ',
+                    'en' => 'Assets',
+                    'icon' =>
+                        '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+                ],
+                [
+                    'key' => 'debts',
+                    'route' => 'debts.index',
+                    'bn' => 'দেনা',
+                    'en' => 'Debts',
+                    'icon' =>
+                        '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M9.5 15.5c0 1.1 1.1 2 2.5 2s2.5-.7 2.5-1.8c0-2.5-5-1.2-5-3.6 0-1.1 1.1-1.8 2.5-1.8s2.5.6 2.5 1.6M12 7v1.2M12 15.8V17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
+                ],
+                [
+                    'key' => 'lend',
+                    'route' => 'lend.index',
+                    'bn' => 'ধার',
+                    'en' => 'Lend',
+                    'icon' =>
+                        '<path d="M7 10h14l-4-4M17 14H3l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+                ],
+                [
+                    'key' => 'security-money',
+                    'route' => 'security-money.index',
+                    'bn' => 'জামানত',
+                    'en' => 'Security Money',
+                    'icon' =>
+                        '<path d="M12 3 4 6.5V11c0 4.9 3.4 9.4 8 10.5 4.6-1.1 8-5.6 8-10.5V6.5L12 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+                ],
+            ],
+        ],
+        [
             'label' => ['bn' => 'প্রশাসন', 'en' => 'Administration'],
             'gated' => true,
             'items' => [
@@ -380,6 +418,22 @@
                     'en' => 'Expense Report',
                     'icon' =>
                         '<path d="M4 19V9m6 10V5m6 14v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+                ],
+                [
+                    'key' => 'report-financial-position',
+                    'route' => 'reports.financial-position',
+                    'bn' => 'আর্থিক অবস্থান',
+                    'en' => 'Financial Position',
+                    'icon' =>
+                        '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 3v9l7.5 4.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+                ],
+                [
+                    'key' => 'report-balance-sheet',
+                    'route' => 'reports.balance-sheet',
+                    'bn' => 'ব্যালেন্স শীট',
+                    'en' => 'Balance Sheet',
+                    'icon' =>
+                        '<path d="M12 3v18M7 21h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M4 7h6M14 7h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M2.5 7 5 12.5a2.5 2.5 0 0 0 4 0L11.5 7M12.5 7 15 12.5a2.5 2.5 0 0 0 4 0L21.5 7" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>',
                 ],
             ],
         ],

@@ -26,4 +26,10 @@ Route::middleware(['auth'])->prefix('reports')->name('reports.')->group(function
 
     Route::middleware(['permission:report-expense.view', 'feature:report-expense'])
         ->get('/expense', [ReportController::class, 'expense'])->name('expense');
+
+    Route::middleware(['permission:report-financial-position.view', 'feature:report-financial-position'])
+        ->get('/financial-position', [ReportController::class, 'financialPosition'])->name('financial-position');
+
+    Route::middleware(['permission:report-balance-sheet.view', 'feature:report-balance-sheet'])
+        ->get('/balance-sheet', [ReportController::class, 'balanceSheet'])->name('balance-sheet');
 });

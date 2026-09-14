@@ -1,0 +1,11 @@
+{
+    "name": "FinanceManagement",
+    "alias": "finance-management",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\FinanceManagement\\Providers\\FinanceManagementServiceProvider"
+    ],
+    "files": []
+}
