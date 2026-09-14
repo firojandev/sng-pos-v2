@@ -298,6 +298,10 @@ class ProductDataTablesTest extends TestCase
         $response->assertSee('stockHistoryModal');
         $response->assertSee('স্টকের ইতিহাস: iPad Air');
         $response->assertSee('SKU: IPAD-AIR');
+        $response->assertSee('ক্রয় মূল্য');
+        $response->assertSee('বিক্রয় মূল্য');
+        $response->assertSee('৳600.00');
+        $response->assertSee('৳750.00');
         $response->assertSee('BT-IPAD-01');
         $response->assertSee('+15');
         $response->assertSee('Initial inventory');

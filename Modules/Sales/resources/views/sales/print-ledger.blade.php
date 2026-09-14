@@ -382,8 +382,7 @@
                         </td>
                         <td>{{ $sale->warehouse->name ?? '—' }}</td>
                         <td class="text-center mono">
-                            {{ rtrim(rtrim(number_format((float) $sale->items->sum('quantity'), 2), '0'), '.') }}
-                            <span style="font-size:10px; color:#64748b;">({{ $sale->items->count() }})</span>
+                            {{ rtrim(rtrim(number_format((float) $sale->items->sum('quantity'), 2), '0'), '.') }} টি পণ্য
                         </td>
                         <td class="text-right mono">৳{{ number_format((float) $sale->total, 2) }}</td>
                         <td class="text-right mono" style="color:#15803d;">৳{{ number_format((float) $sale->paid_amount, 2) }}</td>

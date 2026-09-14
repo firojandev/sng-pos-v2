@@ -158,11 +158,30 @@
                 <table style="width:100%; border-collapse:collapse; font-size:12px;">
                     <thead>
                         <tr style="background:var(--paper); border-bottom:1px solid var(--border); color:var(--ink-600); font-weight:600; text-align:left;">
-                            <th style="padding:10px 14px;">পণ্য</th>
-                            <th style="padding:10px 14px; text-align:center; width:110px;">অর্ডার পরিমাণ</th>
-                            <th style="padding:10px 14px; text-align:center; width:110px;">গৃহীত পরিমাণ</th>
-                            <th style="padding:10px 14px; text-align:center; width:110px;">বাকি পরিমাণ</th>
-                            <th style="padding:10px 14px; text-align:right; width:140px;">অবস্থা</th>
+                            <th style="padding:10px 14px;">
+                                <span class="bn">পণ্য</span>
+                                <span class="en" style="display:none;">Product</span>
+                            </th>
+                            <th style="padding:10px 14px; text-align:right; width:110px;">
+                                <span class="bn">ক্রয় মূল্য</span>
+                                <span class="en" style="display:none;">Purchase Price</span>
+                            </th>
+                            <th style="padding:10px 14px; text-align:center; width:100px;">
+                                <span class="bn">অর্ডার পরিমাণ</span>
+                                <span class="en" style="display:none;">Ordered</span>
+                            </th>
+                            <th style="padding:10px 14px; text-align:center; width:100px;">
+                                <span class="bn">গৃহীত পরিমাণ</span>
+                                <span class="en" style="display:none;">Received</span>
+                            </th>
+                            <th style="padding:10px 14px; text-align:center; width:100px;">
+                                <span class="bn">বাকি পরিমাণ</span>
+                                <span class="en" style="display:none;">Pending</span>
+                            </th>
+                            <th style="padding:10px 14px; text-align:right; width:130px;">
+                                <span class="bn">অবস্থা</span>
+                                <span class="en" style="display:none;">Status</span>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -184,6 +203,12 @@
                                             <span>ব্যাচ: <code style="font-size:11px;">{{ $item->batch_no }}</code></span>
                                         @endif
                                     </div>
+                                </td>
+                                <td style="padding:10px 14px; text-align:right; font-family:var(--font-mono, monospace); font-weight:600; color:var(--ink-900);">
+                                    ৳{{ number_format((float) $item->purchase_price, 2) }}
+                                    @if ($item->unit)
+                                        <span style="font-size:10.5px; color:var(--ink-500); font-family:var(--font-sans, sans-serif); font-weight:normal;">/ {{ $item->unit->name }}</span>
+                                    @endif
                                 </td>
                                 <td style="padding:10px 14px; text-align:center; font-family:var(--font-mono, monospace); font-weight:600; color:var(--ink-800);">
                                     {{ rtrim(rtrim(number_format($itemOrdered, 2), '0'), '.') }}
@@ -283,13 +308,30 @@
                                 <table style="width:100%; border-collapse:collapse; font-size:12px;">
                                     <thead>
                                         <tr style="color:var(--ink-500); font-weight:600; border-bottom:1px solid var(--border); text-align:left;">
-                                            <th style="padding:6px 8px;">পণ্য</th>
-                                            <th style="padding:6px 8px; width:200px;">ব্যাচ নম্বর</th>
-                                            <th style="padding:6px 8px; text-align:right; width:140px;">গৃহীত পরিমাণ</th>
+                                            <th style="padding:6px 8px;">
+                                                <span class="bn">পণ্য</span>
+                                                <span class="en" style="display:none;">Product</span>
+                                            </th>
+                                            <th style="padding:6px 8px; width:180px;">
+                                                <span class="bn">ব্যাচ নম্বর</span>
+                                                <span class="en" style="display:none;">Batch No</span>
+                                            </th>
+                                            <th style="padding:6px 8px; text-align:right; width:120px;">
+                                                <span class="bn">ক্রয় মূল্য</span>
+                                                <span class="en" style="display:none;">Purchase Price</span>
+                                            </th>
+                                            <th style="padding:6px 8px; text-align:right; width:130px;">
+                                                <span class="bn">গৃহীত পরিমাণ</span>
+                                                <span class="en" style="display:none;">Received Qty</span>
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach ($receiptGroup as $rItem)
+                                            @php
+                                                $rPrice = (float) ($rItem->purchaseItem?->purchase_price ?? $rItem->product?->purchase_price ?? 0);
+                                                $rUnit = $rItem->purchaseItem?->unit?->name ?? $rItem->product?->unit?->name;
+                                            @endphp
                                             <tr style="border-bottom:1px dashed var(--border);">
                                                 <td style="padding:8px 8px;">
                                                     <div style="font-weight:600; color:var(--ink-900);">{{ $rItem->product->name ?? '—' }}</div>
@@ -299,6 +341,12 @@
                                                 </td>
                                                 <td style="padding:8px 8px; font-family:var(--font-mono, monospace); font-size:11.5px; color:var(--ink-700);">
                                                     <code>{{ $rItem->batch->batch_no ?? ($rItem->purchaseItem->batch_no ?? '—') }}</code>
+                                                </td>
+                                                <td style="padding:8px 8px; text-align:right; font-family:var(--font-mono, monospace); font-weight:600; color:var(--ink-800);">
+                                                    ৳{{ number_format($rPrice, 2) }}
+                                                    @if ($rUnit)
+                                                        <span style="font-size:10.5px; color:var(--ink-500); font-family:var(--font-sans, sans-serif); font-weight:normal;">/ {{ $rUnit }}</span>
+                                                    @endif
                                                 </td>
                                                 <td style="padding:8px 8px; text-align:right;">
                                                     <span style="display:inline-flex; align-items:center; gap:3px; font-family:var(--font-mono, monospace); font-weight:700; font-size:13px; color:var(--teal-700); background:var(--teal-100); padding:2px 8px; border-radius:6px;">

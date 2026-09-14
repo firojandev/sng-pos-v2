@@ -310,4 +310,71 @@ class SaleInvoiceModalFeatureTest extends TestCase
         $this->assertStringContainsString('btn-show-sale-invoice', $json['data'][0]['action']);
         $this->assertStringContainsString(route('sales.invoice-modal', $sale), $json['data'][0]['action']);
     }
+
+    public function test_multi_batch_same_product_is_grouped_in_one_row_on_invoice_and_details(): void
+    {
+        $batch2 = Batch::create([
+            'shop_id' => $this->shop->id,
+            'product_id' => $this->product->id,
+            'warehouse_id' => $this->warehouse->id,
+            'batch_no' => 'BT-TEST-002',
+            'quantity' => 10,
+            'purchase_price' => 1200,
+        ]);
+
+        $sale = Sale::create([
+            'shop_id' => $this->shop->id,
+            'warehouse_id' => $this->warehouse->id,
+            'customer_id' => $this->customer->id,
+            'invoice_no' => 'SL-1006',
+            'sale_date' => now()->toDateString(),
+            'subtotal' => 6300,
+            'discount' => 0,
+            'delivery_charge' => 0,
+            'total' => 6300,
+            'paid_amount' => 6300,
+            'due_amount' => 0,
+            'payment_status' => 'paid',
+        ]);
+
+        $sale->items()->create([
+            'product_id' => $this->product->id,
+            'batch_id' => $this->batch->id,
+            'quantity' => 5,
+            'unit_price' => 1050,
+            'total' => 5250,
+        ]);
+
+        $sale->items()->create([
+            'product_id' => $this->product->id,
+            'batch_id' => $batch2->id,
+            'quantity' => 1,
+            'unit_price' => 1050,
+            'total' => 1050,
+        ]);
+
+        $this->assertCount(1, $sale->grouped_items);
+        $this->assertEquals(6, $sale->grouped_items->first()->quantity);
+        $this->assertEquals(6300, $sale->grouped_items->first()->total);
+
+        $invoiceResponse = $this->actingAs($this->user)->get(route('sales.invoice-modal', $sale));
+        $invoiceResponse->assertOk();
+        $invoiceContent = $invoiceResponse->getContent();
+        $this->assertEquals(1, substr_count($invoiceContent, 'class="product-title"'));
+        // Batch numbers should not appear as barcode on the invoice
+        $invoiceResponse->assertDontSee('BT-TEST-002');
+        $invoiceResponse->assertDontSee('বারকোড : BT-');
+
+        // When SKU is present, it should show SKU
+        $this->product->update(['sku' => 'SKU-COOKER-101']);
+        $invoiceWithSkuResponse = $this->actingAs($this->user)->get(route('sales.invoice-modal', $sale));
+        $invoiceWithSkuResponse->assertOk();
+        $invoiceWithSkuResponse->assertSee('SKU : SKU-COOKER-101');
+
+        $detailResponse = $this->actingAs($this->user)->get(route('sales.show', $sale));
+        $detailResponse->assertOk();
+        $detailResponse->assertSee('6 টি পণ্য');
+        $detailContent = $detailResponse->getContent();
+        $this->assertEquals(1, substr_count($detailContent, 'class="tx-item"'));
+    }
 }

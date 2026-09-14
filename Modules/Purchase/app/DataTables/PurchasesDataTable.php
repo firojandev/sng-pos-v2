@@ -69,12 +69,51 @@ class PurchasesDataTable extends BaseDataTable
                     $pendingFormatted = rtrim(rtrim(number_format($pending, 2), '0'), '.');
 
                     return '<div style="white-space:nowrap;">'
-                        .'<span style="font-family:var(--font-mono, monospace); color:var(--ink-700); font-weight:600;">'.$qtyFormatted.'</span>'
+                        .'<span style="font-family:var(--font-mono, monospace); color:var(--ink-700); font-weight:600;">'
+                        .'<span class="bn">'.$qtyFormatted.' টি পণ্য</span>'
+                        .'<span class="en" style="display:none;">'.$qtyFormatted.' Items</span>'
+                        .'</span>'
                         .'<div style="font-size:11px; color:var(--red-600); font-weight:700; margin-top:2px;">(বাকি: '.$pendingFormatted.')</div>'
                         .'</div>';
                 }
 
-                return '<span style="font-family:var(--font-mono, monospace); color:var(--ink-700); font-weight:600; white-space:nowrap;">'.$qtyFormatted.'</span>';
+                return '<div style="white-space:nowrap;">'
+                    .'<span style="font-family:var(--font-mono, monospace); color:var(--ink-700); font-weight:600;">'
+                    .'<span class="bn">'.$qtyFormatted.' টি পণ্য</span>'
+                    .'<span class="en" style="display:none;">'.$qtyFormatted.' Items</span>'
+                    .'</span>'
+                    .'</div>';
+            })
+            ->addColumn('purchase_price', function (Purchase $purchase) {
+                $prices = $purchase->items->map(function ($it) {
+                    return (float) $it->purchase_price;
+                })->filter()->unique()->values();
+
+                if ($prices->isEmpty()) {
+                    return '<span style="color:var(--ink-400);">—</span>';
+                }
+
+                $tooltip = $purchase->items->map(function ($it) {
+                    $name = $it->product->name ?? 'পণ্য';
+                    $rate = '৳'.number_format((float) $it->purchase_price, 2);
+                    $unit = $it->unit ? '/'.$it->unit->name : '';
+
+                    return $name.': '.$rate.$unit;
+                })->implode("\n");
+
+                if ($prices->count() === 1) {
+                    return '<span style="font-family:var(--font-mono, monospace); font-weight:600; color:var(--ink-800); white-space:nowrap;" title="'.e($tooltip).'">৳'.number_format($prices->first(), 2).'</span>';
+                }
+
+                if ($prices->count() <= 2) {
+                    $list = $prices->map(fn ($p) => '৳'.number_format($p, 2))->implode(', ');
+
+                    return '<span style="font-family:var(--font-mono, monospace); font-size:12px; font-weight:600; color:var(--ink-800); white-space:nowrap;" title="'.e($tooltip).'">'.$list.'</span>';
+                }
+
+                return '<span style="font-family:var(--font-mono, monospace); font-size:12px; font-weight:600; color:var(--ink-800); white-space:nowrap;" title="'.e($tooltip).'">'
+                    .'৳'.number_format($prices->min(), 2).' - ৳'.number_format($prices->max(), 2)
+                    .'</span>';
             })
             ->editColumn('total', function (Purchase $purchase) {
                 return '<span style="font-family:var(--font-mono, monospace); font-weight:700; color:var(--ink-900); white-space:nowrap;">৳'.number_format((float) $purchase->total, 2).'</span>';
@@ -118,6 +157,12 @@ class PurchasesDataTable extends BaseDataTable
                     $q->where('batch_no', 'like', "%{$keyword}%");
                 });
             })
+            ->filterColumn('purchase_price', function ($query, $keyword) {
+                $clean = str_replace(['৳', ',', ' '], '', $keyword);
+                $query->whereHas('items', function ($q) use ($clean) {
+                    $q->where('purchase_price', 'like', "%{$clean}%");
+                });
+            })
             ->filterColumn('purchase_date', function ($query, $keyword) {
                 $query->where('purchases.purchase_date', 'like', "%{$keyword}%");
             })
@@ -134,7 +179,7 @@ class PurchasesDataTable extends BaseDataTable
                 'class' => 'clickable-purchase-row',
                 'style' => 'cursor:pointer;',
             ])
-            ->rawColumns(['supplier', 'invoice_no', 'batch_no', 'items_count', 'total', 'purchase_date', 'payment_status', 'action'])
+            ->rawColumns(['supplier', 'invoice_no', 'batch_no', 'items_count', 'purchase_price', 'total', 'purchase_date', 'payment_status', 'action'])
             ->setRowId('id');
     }
 
@@ -200,7 +245,7 @@ class PurchasesDataTable extends BaseDataTable
     public function html(): HtmlBuilder
     {
         return $this->defaultHtml()
-            ->orderBy([5, 'desc'])
+            ->orderBy([6, 'desc'])
             ->minifiedAjax('', '
                 data.from = $("#filter-from").val();
                 data.to = $("#filter-to").val();
@@ -222,27 +267,32 @@ class PurchasesDataTable extends BaseDataTable
                 ->width(180),
             Column::make('invoice_no')
                 ->title('<span class="bn">ইনভয়েস নং</span><span class="en">Invoice No</span>')
-                ->width(130),
+                ->width(120),
             Column::computed('batch_no')
                 ->title('<span class="bn">ব্যাচ নং</span><span class="en">Batch No</span>')
                 ->orderable(false)
-                ->width(130),
+                ->width(110),
             Column::computed('items_count')
                 ->title('<span class="bn">আইটেম</span><span class="en">Item</span>')
                 ->orderable(false)
                 ->width(100),
+            Column::computed('purchase_price')
+                ->title('<span class="bn">ক্রয় মূল্য</span><span class="en">Purchase Price</span>')
+                ->orderable(false)
+                ->addClass('table-cell-right')
+                ->width(110),
             Column::make('total')
                 ->title('<span class="bn">টাকার পরিমাণ</span><span class="en">Amount</span>')
                 ->addClass('table-cell-right')
-                ->width(130),
+                ->width(120),
             Column::make('purchase_date')
                 ->title('<span class="bn">তারিখ</span><span class="en">Date</span>')
                 ->addClass('table-cell-center')
-                ->width(120),
+                ->width(110),
             Column::make('payment_status')
                 ->title('<span class="bn">পেমেন্ট অবস্থা</span><span class="en">Payment Status</span>')
                 ->addClass('table-cell-center')
-                ->width(130),
+                ->width(110),
             Column::computed('action')
                 ->title('<span class="bn">অ্যাকশন</span><span class="en">Action</span>')
                 ->orderable(false)

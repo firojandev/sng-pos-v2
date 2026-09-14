@@ -146,13 +146,14 @@
             </tr>
         </thead>
         <tbody>
-            @foreach ($sale->items as $idx => $item)
+            @foreach ($sale->grouped_items as $idx => $item)
                 @php
                     $unitName = $item->unit?->name
                         ?? $item->product?->units->firstWhere('pivot.is_base', true)?->name
                         ?? $item->product?->units->first()?->name
                         ?? 'পিছ';
-                    $barcode = $item->product?->barcode ?: ($item->batch?->batch_no ?: $item->product?->sku);
+                    $barcode = $item->product?->barcode;
+                    $sku = $item->product?->sku;
                 @endphp
                 <tr>
                     <td style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 4px; text-align:center; vertical-align:middle;">
@@ -160,9 +161,17 @@
                     </td>
                     <td class="col-product-name" style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 8px; text-align:left; vertical-align:middle; white-space:normal !important; word-break:break-word; overflow-wrap:anywhere;">
                         <div class="product-title" style="font-weight:600; color:#0f172a; white-space:normal !important; word-break:break-word; overflow-wrap:anywhere; line-height:1.4;">{{ $item->product->name ?? '—' }}</div>
-                        @if ($barcode)
+                        @if ($barcode && $sku)
+                            <div style="font-size:10px; color:#64748b; margin-top:2px; white-space:normal !important; word-break:break-word;">
+                                বারকোড : {{ $barcode }} &middot; SKU : {{ $sku }}
+                            </div>
+                        @elseif ($barcode)
                             <div style="font-size:10px; color:#64748b; margin-top:2px; white-space:normal !important; word-break:break-word;">
                                 বারকোড : {{ $barcode }}
+                            </div>
+                        @elseif ($sku)
+                            <div style="font-size:10px; color:#64748b; margin-top:2px; white-space:normal !important; word-break:break-word;">
+                                SKU : {{ $sku }}
                             </div>
                         @endif
                     </td>
