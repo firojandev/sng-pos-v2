@@ -44,6 +44,7 @@ class Features
             'employees' => ['bn' => 'কর্মচারী', 'en' => 'Employees'],
             'users' => ['bn' => 'ইউজার', 'en' => 'Users'],
             'subscription' => ['bn' => 'সাবস্ক্রিপশন ও প্ল্যান', 'en' => 'Subscription & Plan'],
+            'backup' => ['bn' => 'ডাটাবেজ ব্যাকআপ', 'en' => 'Database Backup'],
         ];
     }
 

@@ -68,6 +68,7 @@ class Permissions
             'employees' => ['view', 'create', 'edit', 'delete'],
             'users' => ['view', 'create', 'edit', 'delete'],
             'cashbox' => ['view', 'cash-in', 'cash-out'],
+            'backup' => ['view', 'create', 'download', 'delete'],
         ];
     }
 
@@ -83,6 +84,7 @@ class Permissions
             'create' => ['bn' => 'নতুন তৈরি', 'en' => 'Create'],
             'edit' => ['bn' => 'সম্পাদনা', 'en' => 'Edit'],
             'delete' => ['bn' => 'মুছে ফেলা', 'en' => 'Delete'],
+            'download' => ['bn' => 'ডাউনলোড', 'en' => 'Download'],
             'print' => ['bn' => 'প্রিন্ট / রিপোর্ট', 'en' => 'Print / Report'],
             'return' => ['bn' => 'পণ্য ফেরত', 'en' => 'Return'],
             'receive' => ['bn' => 'পণ্য গ্রহণ', 'en' => 'Receive'],

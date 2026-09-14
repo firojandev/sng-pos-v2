@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\Core\Http\Controllers\AuditLogController;
+use Modules\Core\Http\Controllers\BackupController;
 use Modules\Core\Http\Controllers\DueLedgerController;
 use Modules\Core\Http\Controllers\LandingController;
 use Modules\Core\Http\Controllers\PageController;
@@ -47,6 +48,23 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role_or_permission:Super Admin|audit.view', 'feature:audit'])->group(function () {
         Route::get('/audit-log', [AuditLogController::class, 'index'])->name('audit-log.index');
         Route::get('/audit-log/{auditLog}', [AuditLogController::class, 'show'])->name('audit-log.show');
+    });
+
+    Route::middleware(['role:Super Admin'])->group(function () {
+        Route::get('/backup', [BackupController::class, 'index'])->name('backup.index');
+        Route::post('/backup', [BackupController::class, 'store'])->name('backup.store');
+        Route::get('/backup/{filename}/inspect', [BackupController::class, 'inspect'])
+            ->where('filename', '[A-Za-z0-9_\-\.]+')
+            ->name('backup.inspect');
+        Route::post('/backup/{filename}/restore', [BackupController::class, 'restore'])
+            ->where('filename', '[A-Za-z0-9_\-\.]+')
+            ->name('backup.restore');
+        Route::get('/backup/{filename}/download', [BackupController::class, 'download'])
+            ->where('filename', '[A-Za-z0-9_\-\.]+')
+            ->name('backup.download');
+        Route::delete('/backup/{filename}', [BackupController::class, 'destroy'])
+            ->where('filename', '[A-Za-z0-9_\-\.]+')
+            ->name('backup.destroy');
     });
 
     Route::middleware(['permission:sales.view', 'feature:sales'])

@@ -48,6 +48,14 @@
                     'icon' =>
                         '<path d="M12 8v4l3 3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/>',
                 ],
+                [
+                    'key' => 'backup',
+                    'route' => 'backup.index',
+                    'bn' => 'ডাটাবেজ ব্যাকআপ',
+                    'en' => 'Database Backup',
+                    'icon' =>
+                        '<ellipse cx="12" cy="5" rx="9" ry="3" stroke="currentColor" stroke-width="1.6"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" stroke="currentColor" stroke-width="1.6"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3" stroke="currentColor" stroke-width="1.6"/>',
+                ],
             ],
         ],
     ];
@@ -463,6 +471,9 @@
         }
         if ($item['key'] === 'settings') {
             return (bool) ($user && $user->isShopAdmin());
+        }
+        if ($item['key'] === 'backup') {
+            return (bool) ($user && $user->isSuperAdmin());
         }
 
         $gated = $item['gated'] ?? $groupGated;
