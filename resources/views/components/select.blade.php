@@ -28,8 +28,8 @@
         $selectedValue = old($name);
     }
 
-    $hasError = (bool) ($error || ($name && isset($errors) && $errors->has($name)));
-    $errorMessage = $error ?? ($name && isset($errors) && $errors->has($name) ? $errors->first($name) : null);
+    $hasError = $error === false ? false : (bool) ($error || ($name && isset($errors) && $errors->has($name)));
+    $errorMessage = $error === false ? null : ($error ?? ($name && isset($errors) && $errors->has($name) ? $errors->first($name) : null));
 
     // Color Normalization
     $colorAliases = [

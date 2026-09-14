@@ -3330,6 +3330,30 @@ body.lang-en .ci-head-popovers .item-popover label.en{display:inline !important;
   border-bottom-right-radius: 0;
 }
 
+/* Joined / Attached Input Groups */
+.input-group-joined {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+}
+.input-group-joined > *:first-child,
+.input-group-joined > *:first-child .form-control,
+.input-group-joined > *:first-child .form-input-group {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+.input-group-joined > *:last-child,
+.input-group-joined > *:last-child .form-control,
+.input-group-joined > *:last-child .form-input-group {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  margin-left: -1px;
+}
+.input-group-joined .form-control:focus {
+  position: relative;
+  z-index: 2;
+}
+
 /* Interactive Group Buttons (Clear & Password Toggle) */
 .form-input-btn {
   position: absolute;

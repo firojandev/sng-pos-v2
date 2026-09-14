@@ -24,7 +24,7 @@ class RegisterShopOwnerRequest extends FormRequest
             // Step 1: Owner Details
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:30', 'unique:users,phone'],
-            'email' => ['nullable', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'username' => ['nullable', 'string', 'max:50', 'alpha_dash', 'unique:users,username'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
 
@@ -51,6 +51,7 @@ class RegisterShopOwnerRequest extends FormRequest
             'name.required' => 'আপনার নাম প্রদান করা আবশ্যক।',
             'phone.required' => 'মোবাইল নম্বর প্রদান করা আবশ্যক।',
             'phone.unique' => 'এই মোবাইল নম্বরটি ইতিমধ্যে ব্যবহৃত হয়েছে।',
+            'email.required' => 'ইমেইল ঠিকানা প্রদান করা আবশ্যক।',
             'email.email' => 'সঠিক ইমেইল ঠিকানা প্রদান করুন।',
             'email.unique' => 'এই ইমেইলটি ইতিমধ্যে ব্যবহৃত হয়েছে।',
             'username.unique' => 'এই ইউজারনেমটি ইতিমধ্যে ব্যবহৃত হয়েছে।',

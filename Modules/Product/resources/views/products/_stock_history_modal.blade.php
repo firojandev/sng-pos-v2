@@ -37,6 +37,16 @@
                                 <x-core::icon name="tag" size="12" style="color:var(--ink-400);" /> {{ $product->brand->name }}
                             </span>
                         @endif
+                        <span style="display:inline-flex; align-items:center; gap:4px; background:var(--paper-line); padding:2px 8px; border-radius:6px; font-weight:600; color:var(--ink-800); border:1px solid var(--border);">
+                            <x-core::icon name="shopping-cart" size="12" style="color:var(--teal-700);" />
+                            <span class="bn">ক্রয়:</span><span class="en" style="display:none;">Buy:</span>
+                            <strong style="font-family:var(--font-mono, monospace); color:var(--teal-800);">৳{{ number_format((float) $product->purchase_price, 2) }}</strong>
+                        </span>
+                        <span style="display:inline-flex; align-items:center; gap:4px; background:var(--paper-line); padding:2px 8px; border-radius:6px; font-weight:600; color:var(--ink-800); border:1px solid var(--border);">
+                            <x-core::icon name="tag" size="12" style="color:var(--green-600);" />
+                            <span class="bn">বিক্রয়:</span><span class="en" style="display:none;">Sell:</span>
+                            <strong style="font-family:var(--font-mono, monospace); color:var(--green-600);">৳{{ number_format((float) $product->sale_price, 2) }}</strong>
+                        </span>
                     </div>
                 </div>
             </div>
@@ -45,13 +55,16 @@
         </div>
 
         {{-- Summary Metric Badges --}}
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:10px; margin-bottom:18px;">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(135px, 1fr)); gap:10px; margin-bottom:18px;">
             <div style="background:var(--paper); border:1px solid var(--border); border-radius:10px; padding:10px 14px;">
                 <div style="font-size:11px; font-weight:600; color:var(--ink-500); text-transform:uppercase; letter-spacing:0.5px;">
                     <span class="bn">বর্তমান মজুদ</span><span class="en" style="display:none;">Current Stock</span>
                 </div>
                 <div style="font-size:18px; font-weight:800; color:var(--teal-800); font-family:var(--font-mono, monospace); margin-top:3px;">
                     {{ rtrim(rtrim(number_format($totalStock, 2), '0'), '.') }}
+                    @if ($product->baseUnit())
+                        <span style="font-size:11px; font-weight:500; color:var(--ink-500); font-family:var(--font-sans, sans-serif);">{{ $product->baseUnit()->name }}</span>
+                    @endif
                 </div>
             </div>
 
@@ -128,9 +141,39 @@
                             </td>
                             <td style="padding:10px 12px; color:var(--ink-700);">
                                 @if ($movement->reference_type === \Modules\Purchase\Models\Purchase::class && $movement->reference)
-                                    <span class="bn">ক্রয় ইনভয়েস:</span><span class="en" style="display:none;">Purchase:</span> #{{ $movement->reference->invoice_no }}
+                                    <div>
+                                        <span class="bn">ক্রয় ইনভয়েস:</span><span class="en" style="display:none;">Purchase:</span> #{{ $movement->reference->invoice_no }}
+                                    </div>
+                                    @php
+                                        $pItem = $movement->reference->relationLoaded('items')
+                                            ? $movement->reference->items->first(function ($it) use ($movement) {
+                                                return $movement->batch_id ? $it->batch_id == $movement->batch_id : $it->product_id == $movement->product_id;
+                                            })
+                                            : null;
+                                    @endphp
+                                    @if ($pItem)
+                                        <div style="font-size:11px; color:var(--ink-500); margin-top:2px;">
+                                            <span class="bn">ক্রয় দর:</span><span class="en" style="display:none;">Buy Rate:</span>
+                                            <strong style="font-family:var(--font-mono, monospace); color:var(--teal-800);">৳{{ number_format((float) $pItem->purchase_price, 2) }}</strong>
+                                        </div>
+                                    @endif
                                 @elseif ($movement->reference_type === \Modules\Sales\Models\Sale::class && $movement->reference)
-                                    <span class="bn">বিক্রয় ইনভয়েস:</span><span class="en" style="display:none;">Sale:</span> #{{ $movement->reference->invoice_no }}
+                                    <div>
+                                        <span class="bn">বিক্রয় ইনভয়েস:</span><span class="en" style="display:none;">Sale:</span> #{{ $movement->reference->invoice_no }}
+                                    </div>
+                                    @php
+                                        $sItem = $movement->reference->relationLoaded('items')
+                                            ? $movement->reference->items->first(function ($it) use ($movement) {
+                                                return $movement->batch_id ? $it->batch_id == $movement->batch_id : $it->product_id == $movement->product_id;
+                                            })
+                                            : null;
+                                    @endphp
+                                    @if ($sItem)
+                                        <div style="font-size:11px; color:var(--ink-500); margin-top:2px;">
+                                            <span class="bn">বিক্রয় দর:</span><span class="en" style="display:none;">Sale Rate:</span>
+                                            <strong style="font-family:var(--font-mono, monospace); color:var(--green-600);">৳{{ number_format((float) $sItem->unit_price, 2) }}</strong>
+                                        </div>
+                                    @endif
                                 @elseif ($movement->reference_type === \Modules\Product\Models\StockAdjustment::class)
                                     {{ $movement->note ?: 'স্টক সমন্বয়' }}
                                 @else

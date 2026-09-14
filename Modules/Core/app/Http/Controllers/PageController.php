@@ -262,7 +262,7 @@ class PageController extends Controller
         }
 
         $siteTitle = Setting::getSiteTitle();
-        $siteTitleBn = $siteTitle === 'SNGPOS' ? 'এসএনজিপস' : $siteTitle;
+        $siteTitleBn = $siteTitle === 'SNGPOS' ? 'SNGPOS' : $siteTitle;
 
         return view('core::pages.privacy-policy', compact('siteTitle', 'siteTitleBn'));
     }
@@ -274,7 +274,7 @@ class PageController extends Controller
         }
 
         $siteTitle = Setting::getSiteTitle();
-        $siteTitleBn = $siteTitle === 'SNGPOS' ? 'এসএনজিপস' : $siteTitle;
+        $siteTitleBn = $siteTitle === 'SNGPOS' ? 'SNGPOS' : $siteTitle;
 
         return view('core::pages.terms', compact('siteTitle', 'siteTitleBn'));
     }

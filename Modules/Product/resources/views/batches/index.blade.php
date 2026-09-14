@@ -26,6 +26,7 @@
                     size="sm"
                     :no-margin="true"
                     :options="$productFilterOptions"
+                    :value="request('product_id')"
                 />
             </div>
             <x-core::button
@@ -77,7 +78,7 @@
                         label="পণ্য"
                         label-en="Product"
                         :options="$productSelectOptions"
-                        :value="old('product_id')"
+                        :value="old('product_id', request('product_id'))"
                         size="sm"
                         :required="true"
                     />
@@ -249,20 +250,38 @@
                 }
             }
 
+            function updateProductUrlParam(val) {
+                if (window.history.replaceState) {
+                    var url = new URL(window.location.href);
+                    if (val) {
+                        url.searchParams.set('product_id', val);
+                    } else {
+                        url.searchParams.delete('product_id');
+                    }
+                    window.history.replaceState({}, '', url.toString());
+                }
+            }
+
             // Filter
             $(document).on('change', '#filter-product', function () {
+                updateProductUrlParam($(this).val());
                 reloadBatchTable();
             });
 
             $(document).on('click', '#btn-reset-filters', function (e) {
                 e.preventDefault();
                 $('#filter-product').val('');
+                updateProductUrlParam('');
                 reloadBatchTable();
             });
 
             // Open Create Modal
             $('#btn-open-create-batch-modal').on('click', function () {
                 $('#create_batch_form')[0].reset();
+                var currentFilterProduct = $('#filter-product').val();
+                if (currentFilterProduct) {
+                    $('#create_batch_product_id').val(currentFilterProduct);
+                }
                 $('#createBatchModal').addClass('open');
                 setTimeout(function () {
                     $('#create_batch_product_id').focus();

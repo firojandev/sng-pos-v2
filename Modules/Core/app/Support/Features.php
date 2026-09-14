@@ -26,6 +26,10 @@ class Features
             'expense' => ['bn' => 'ব্যয়', 'en' => 'Expense'],
             'accounts' => ['bn' => 'অ্যাকাউন্ট', 'en' => 'Accounts'],
             'account-transfers' => ['bn' => 'ফান্ড ট্রান্সফার', 'en' => 'Fund Transfers'],
+            'assets' => ['bn' => 'সম্পদ', 'en' => 'Assets'],
+            'debts' => ['bn' => 'দেনা', 'en' => 'Debts'],
+            'lend' => ['bn' => 'ধার (পাওনা)', 'en' => 'Lend'],
+            'security-money' => ['bn' => 'জামানত', 'en' => 'Security Money'],
             'tax' => ['bn' => 'ট্যাক্স ও ভ্যাট', 'en' => 'Tax & VAT'],
             'report-sales' => ['bn' => 'বিক্রয় রিপোর্ট', 'en' => 'Sales Report'],
             'report-purchase' => ['bn' => 'ক্রয় রিপোর্ট', 'en' => 'Purchase Report'],
@@ -34,10 +38,13 @@ class Features
             'report-profit-loss' => ['bn' => 'লাভ-ক্ষতি রিপোর্ট', 'en' => 'Profit & Loss Report'],
             'report-income' => ['bn' => 'আয় রিপোর্ট', 'en' => 'Income Report'],
             'report-expense' => ['bn' => 'ব্যয় রিপোর্ট', 'en' => 'Expense Report'],
+            'report-financial-position' => ['bn' => 'আর্থিক অবস্থান রিপোর্ট', 'en' => 'Financial Position Report'],
+            'report-balance-sheet' => ['bn' => 'ব্যালেন্স শীট', 'en' => 'Balance Sheet'],
             'audit' => ['bn' => 'অ্যাক্টিভিটি লগ', 'en' => 'Audit Log'],
             'employees' => ['bn' => 'কর্মচারী', 'en' => 'Employees'],
             'users' => ['bn' => 'ইউজার', 'en' => 'Users'],
             'subscription' => ['bn' => 'সাবস্ক্রিপশন ও প্ল্যান', 'en' => 'Subscription & Plan'],
+            'backup' => ['bn' => 'ডাটাবেজ ব্যাকআপ', 'en' => 'Database Backup'],
         ];
     }
 

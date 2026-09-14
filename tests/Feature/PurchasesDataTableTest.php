@@ -106,7 +106,7 @@ class PurchasesDataTableTest extends TestCase
         $html = $dataTable->html();
 
         $this->assertEquals('purchases-data-table', $html->getTableAttribute('id'));
-        $this->assertCount(8, $dataTable->getColumns());
+        $this->assertCount(9, $dataTable->getColumns());
     }
 
     public function test_purchases_datatable_query_returns_query_builder(): void
@@ -184,6 +184,7 @@ class PurchasesDataTableTest extends TestCase
         $this->assertEquals(1, $json['recordsTotal']);
         $this->assertStringContainsString('INV-9001', $json['data'][0]['invoice_no']);
         $this->assertStringContainsString('Acme Supplies', $json['data'][0]['supplier']);
+        $this->assertStringContainsString('100.00', $json['data'][0]['purchase_price']);
         $this->assertStringContainsString('470.00', $json['data'][0]['total']);
         $this->assertEquals('470.00', $json['totalAmount']);
         $this->assertEquals('470.00', $json['totalPaid']);

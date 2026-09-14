@@ -394,7 +394,9 @@
                                 $itemNames = $purchase->items->map(function ($it) {
                                     $name = $it->product->name ?? 'পণ্য';
                                     $qty = rtrim(rtrim(number_format((float) $it->quantity, 2), '0'), '.');
-                                    return $name . ' (' . $qty . ')';
+                                    $rate = ' * ৳'.number_format((float) $it->purchase_price, 2);
+
+                                    return $name.' ('.$qty.$rate.')';
                                 })->implode(', ');
                             @endphp
                             <div>{{ $itemNames ?: '—' }}</div>

@@ -62,6 +62,7 @@ class ProductDataTablesTest extends TestCase
             'email' => 'admin@test.com',
             'password' => bcrypt('password'),
             'shop_id' => $this->shop->id,
+            'email_verified_at' => now(),
         ]);
         $this->user->syncRoles([$adminRole]);
     }
@@ -171,6 +172,72 @@ class ProductDataTablesTest extends TestCase
         $this->assertEquals(1, $response->json('recordsTotal'));
         $this->assertStringContainsString('BT-2026-999', $response->json('data.0.batch_no'));
         $this->assertStringContainsString('Test Product', $response->json('data.0.product'));
+        $this->assertStringContainsString('৳100.00', $response->json('data.0.purchase_price'));
+        $this->assertStringContainsString('৳150.00', $response->json('data.0.sale_price'));
+        $this->assertStringContainsString('৳10,000.00', $response->json('data.0.stock_valuation'));
+    }
+
+    public function test_batches_index_view_auto_selects_product_when_product_id_in_url(): void
+    {
+        $category = Category::create(['shop_id' => $this->shop->id, 'name' => 'General']);
+        $product = Product::create([
+            'shop_id' => $this->shop->id,
+            'category_id' => $category->id,
+            'name' => 'Specific Product',
+            'purchase_price' => 100,
+            'sale_price' => 150,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->get(route('batches.index', ['product_id' => $product->id]));
+
+        $response->assertOk();
+        $response->assertSee('value="'.$product->id.'" selected', false);
+    }
+
+    public function test_batches_datatable_ajax_filters_by_product_id(): void
+    {
+        $category = Category::create(['shop_id' => $this->shop->id, 'name' => 'General']);
+        $product1 = Product::create([
+            'shop_id' => $this->shop->id,
+            'category_id' => $category->id,
+            'name' => 'Product One',
+            'purchase_price' => 100,
+            'sale_price' => 150,
+            'status' => 'active',
+        ]);
+        $product2 = Product::create([
+            'shop_id' => $this->shop->id,
+            'category_id' => $category->id,
+            'name' => 'Product Two',
+            'purchase_price' => 200,
+            'sale_price' => 300,
+            'status' => 'active',
+        ]);
+
+        Batch::create([
+            'shop_id' => $this->shop->id,
+            'product_id' => $product1->id,
+            'batch_no' => 'BT-PROD-1',
+            'quantity' => 50,
+        ]);
+        Batch::create([
+            'shop_id' => $this->shop->id,
+            'product_id' => $product2->id,
+            'batch_no' => 'BT-PROD-2',
+            'quantity' => 80,
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->getJson(route('batches.index', ['product_id' => $product1->id]), [
+                'X-Requested-With' => 'XMLHttpRequest',
+            ]);
+
+        $response->assertOk();
+        $this->assertEquals(1, $response->json('recordsTotal'));
+        $this->assertEquals(1, $response->json('recordsFiltered'));
+        $this->assertStringContainsString('BT-PROD-1', $response->json('data.0.batch_no'));
     }
 
     public function test_products_datatable_generates_html_and_query(): void
@@ -298,6 +365,10 @@ class ProductDataTablesTest extends TestCase
         $response->assertSee('stockHistoryModal');
         $response->assertSee('স্টকের ইতিহাস: iPad Air');
         $response->assertSee('SKU: IPAD-AIR');
+        $response->assertSee('ক্রয়');
+        $response->assertSee('বিক্রয়');
+        $response->assertSee('৳600.00');
+        $response->assertSee('৳750.00');
         $response->assertSee('BT-IPAD-01');
         $response->assertSee('+15');
         $response->assertSee('Initial inventory');

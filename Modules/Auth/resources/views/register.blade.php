@@ -336,15 +336,17 @@
                         type="email"
                         name="email"
                         id="reg-email"
-                        label="ইমেইল ঠিকানা (ঐচ্ছিক)"
-                        label-en="Email Address (Optional)"
+                        label="ইমেইল ঠিকানা"
+                        label-en="Email Address"
                         placeholder="user@example.com"
                         placeholder-en="user@example.com"
                         icon="mail"
                         size="sm"
                         :value="old('email')"
+                        required
                     />
                     <div id="email-feedback" class="availability-status"></div>
+                    <div class="client-error-message" id="err-reg-email">সঠিক ইমেইল ঠিকানা প্রদান করা আবশ্যক।</div>
                 </div>
 
                 <div class="reg-col-full reg-field-item">
@@ -360,6 +362,7 @@
                         :value="old('username')"
                     />
                     <div id="username-feedback" class="availability-status"></div>
+                    <div class="client-error-message" id="err-reg-username">ইউজারনেমে শুধুমাত্র ইংরেজি অক্ষর, সংখ্যা, ড্যাশ বা আন্ডারস্কোর ব্যবহার করুন।</div>
                 </div>
 
                 <div class="reg-field-item">
@@ -687,8 +690,12 @@
         let currentStep = 1;
         let isSlugAvailable = true;
         let isPhoneAvailable = true;
+        let isEmailAvailable = true;
+        let isUsernameAvailable = true;
         let slugCheckTimer = null;
         let phoneCheckTimer = null;
+        let emailCheckTimer = null;
+        let usernameCheckTimer = null;
 
         function updateStepperUI(step) {
             $('.step-pane').removeClass('active');
@@ -774,6 +781,69 @@
             }, 300);
         });
 
+        // Real-time email check
+        $(document).on('input change', '#reg-email', function () {
+            clearTimeout(emailCheckTimer);
+            const email = String($(this).val() || '').trim();
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!email) {
+                $('#email-feedback').empty();
+                isEmailAvailable = false;
+                return;
+            }
+            if (!emailRegex.test(email)) {
+                $('#email-feedback').html('<span class="text-invalid">✕ সঠিক ইমেইল ঠিকানা প্রদান করুন</span>');
+                isEmailAvailable = false;
+                return;
+            }
+
+            emailCheckTimer = setTimeout(function () {
+                $.get('{{ route("register.check-availability") }}', { email: email }, function (res) {
+                    if (res.email_available) {
+                        isEmailAvailable = true;
+                        $('#email-feedback').html('<span class="text-valid">✓ ইমেইল ঠিকানাটি ব্যবহারযোগ্য</span>');
+                    } else {
+                        isEmailAvailable = false;
+                        $('#email-feedback').html('<span class="text-invalid">✕ এই ইমেইলটি ইতিমধ্যে ব্যবহৃত হয়েছে</span>');
+                    }
+                });
+            }, 300);
+        });
+
+        // Real-time username check
+        $(document).on('input change', '#reg-username', function () {
+            clearTimeout(usernameCheckTimer);
+            const username = String($(this).val() || '').trim();
+            if (!username) {
+                $('#username-feedback').empty();
+                $('#err-reg-username').hide();
+                isUsernameAvailable = true;
+                return;
+            }
+
+            const usernameRegex = /^[a-zA-Z0-9_-]+$/;
+            if (!usernameRegex.test(username)) {
+                $('#err-reg-username').show();
+                $('#username-feedback').empty();
+                isUsernameAvailable = false;
+                return;
+            } else {
+                $('#err-reg-username').hide();
+            }
+
+            usernameCheckTimer = setTimeout(function () {
+                $.get('{{ route("register.check-availability") }}', { username: username }, function (res) {
+                    if (res.username_available) {
+                        isUsernameAvailable = true;
+                        $('#username-feedback').html('<span class="text-valid">✓ ইউজারনেমটি ব্যবহারযোগ্য</span>');
+                    } else {
+                        isUsernameAvailable = false;
+                        $('#username-feedback').html('<span class="text-invalid">✕ এই ইউজারনেমটি ইতিমধ্যে ব্যবহৃত হয়েছে</span>');
+                    }
+                });
+            }, 300);
+        });
+
         // Real-time slug check
         $(document).on('input change', '#reg-shop-slug', function () {
             clearTimeout(slugCheckTimer);
@@ -804,8 +874,12 @@
 
             const name = String($('#reg-name').val() || '').trim();
             const phone = String($('#reg-phone').val() || '').trim();
+            const email = String($('#reg-email').val() || '').trim();
+            const username = String($('#reg-username').val() || '').trim();
             const password = $('#reg-password').val();
             const passwordConfirm = $('#reg-password-confirmation').val();
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const usernameRegex = /^[a-zA-Z0-9_-]+$/;
 
             if (!name) {
                 $('#err-reg-name').show();
@@ -813,6 +887,14 @@
             }
             if (!phone || phone.length < 6 || !isPhoneAvailable) {
                 $('#err-reg-phone').show();
+                isValid = false;
+            }
+            if (!email || !emailRegex.test(email) || !isEmailAvailable) {
+                $('#err-reg-email').show();
+                isValid = false;
+            }
+            if (username && (!usernameRegex.test(username) || !isUsernameAvailable)) {
+                $('#err-reg-username').show();
                 isValid = false;
             }
             if (!password || password.length < 6) {

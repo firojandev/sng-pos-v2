@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -14,6 +14,10 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
+use Modules\Auth\Mail\ShopVerificationMail;
+use Modules\Core\Models\Setting;
 use Modules\Core\Observers\AuditObserver;
 use Modules\Employee\Models\Employee;
 use Modules\Shop\Models\Shop;
@@ -22,7 +26,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'username', 'email', 'phone', 'avatar', 'password', 'pin', 'support_pin', 'shop_id', 'email_verified_at'])]
 #[Hidden(['password', 'pin', 'remember_token'])]
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory, Notifiable;
     use HasRoles {
@@ -322,6 +326,39 @@ class User extends Authenticatable
             ->exists();
     }
 
+    /**
+     * Get email addresses for all Super Admins and configured system admins.
+     *
+     * @return list<string>
+     */
+    public static function getSuperAdminEmails(): array
+    {
+        $defaultAdmins = [
+            'admin@sngpos.com',
+            'softngear@gmail.com',
+        ];
+
+        $dbAdmins = DB::table('users')
+            ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
+            ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+            ->where('model_has_roles.model_type', static::class)
+            ->where('roles.name', 'Super Admin')
+            ->pluck('users.email')
+            ->all();
+
+        $settingAdmin = Setting::get('admin_email');
+        if ($settingAdmin) {
+            $defaultAdmins[] = $settingAdmin;
+        }
+
+        return collect(array_merge($defaultAdmins, $dbAdmins))
+            ->filter()
+            ->map(fn ($email) => strtolower(trim((string) $email)))
+            ->unique()
+            ->values()
+            ->all();
+    }
+
     protected function resolvePermissionsTeamId(mixed ...$roles): int|string
     {
         foreach ($roles as $role) {
@@ -382,5 +419,24 @@ class User extends Authenticatable
         } finally {
             setPermissionsTeamId($previousTeamId);
         }
+    }
+
+    /**
+     * Send the shop verification email notification.
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        $verificationUrl = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addMinutes(60),
+            [
+                'id' => $this->getKey(),
+                'hash' => sha1($this->getEmailForVerification()),
+            ]
+        );
+
+        Mail::to($this->getEmailForVerification())->send(
+            new ShopVerificationMail($this, $verificationUrl, $this->shop)
+        );
     }
 }

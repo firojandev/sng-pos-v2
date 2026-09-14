@@ -29,15 +29,28 @@ class DatabaseSeeder extends Seeder
 
         $superAdminRole = Role::firstOrCreate(['name' => 'Super Admin', 'guard_name' => 'web']);
 
-        $superAdmin = User::firstOrCreate(
-            ['email' => 'softngear@gmail.com'],
-            [
-                'name' => 'Super Admin',
-                'username' => 'SNGSuperAdmin',
-                'password' => bcrypt('SNGAdmin@2026!'),
-            ]
-        );
-        $superAdmin->syncRoles([$superAdminRole]);
+        $superAdmins = [
+            'softngear@gmail.com' => 'SNGSuperAdmin',
+            'admin@sngpos.com' => 'SNGPosAdmin',
+        ];
+
+        foreach ($superAdmins as $adminEmail => $adminUsername) {
+            $superAdmin = User::firstOrCreate(
+                ['email' => $adminEmail],
+                [
+                    'name' => 'Super Admin',
+                    'username' => $adminUsername,
+                    'password' => bcrypt('SNGAdmin@2026!'),
+                    'email_verified_at' => now(),
+                ]
+            );
+
+            if (! $superAdmin->email_verified_at) {
+                $superAdmin->update(['email_verified_at' => now()]);
+            }
+
+            $superAdmin->syncRoles([$superAdminRole]);
+        }
 
         $demoShop = Shop::firstOrCreate(
             ['slug' => 'rahim-general-store'],

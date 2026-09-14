@@ -71,6 +71,11 @@ class AuthController extends Controller
             return redirect()->intended(route('dashboard'));
         }
 
+        if (! empty($user->email) && $user->isShopOwner() && ! $user->hasVerifiedEmail()) {
+            return redirect()->route('verification.notice')
+                ->with('warning', 'দোকান অ্যাক্সেস করার পূর্বে আপনার ইমেইল ভেরিফাই করা আবশ্যক।');
+        }
+
         $shops = $user->activeShops()->get();
 
         if ($shops->isEmpty() && $user->shop_id && $user->shop && $user->shop->status === 'active') {

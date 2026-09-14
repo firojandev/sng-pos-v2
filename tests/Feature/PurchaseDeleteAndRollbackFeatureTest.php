@@ -499,6 +499,12 @@ class PurchaseDeleteAndRollbackFeatureTest extends TestCase
                     'unit_price' => 130,
                 ],
             ],
+            'payments' => [
+                [
+                    'method' => 'cash',
+                    'amount' => 130,
+                ],
+            ],
         ];
         $this->actingAs($this->user)->post(route('sales.store'), $salePayload);
 

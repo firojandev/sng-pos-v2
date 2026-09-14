@@ -12,6 +12,8 @@ $allTabs = [
     ['key' => 'profit-loss', 'route' => 'reports.profit-loss', 'feature' => 'report-profit-loss', 'permission' => 'report-profit-loss.view', 'bn' => 'লাভ-ক্ষতি রিপোর্ট', 'en' => 'Profit & Loss Report'],
     ['key' => 'income', 'route' => 'reports.income', 'feature' => 'report-income', 'permission' => 'report-income.view', 'bn' => 'আয় রিপোর্ট', 'en' => 'Income Report'],
     ['key' => 'expense', 'route' => 'reports.expense', 'feature' => 'report-expense', 'permission' => 'report-expense.view', 'bn' => 'ব্যয় রিপোর্ট', 'en' => 'Expense Report'],
+    ['key' => 'financial-position', 'route' => 'reports.financial-position', 'feature' => 'report-financial-position', 'permission' => 'report-financial-position.view', 'bn' => 'আর্থিক অবস্থান', 'en' => 'Financial Position'],
+    ['key' => 'balance-sheet', 'route' => 'reports.balance-sheet', 'feature' => 'report-balance-sheet', 'permission' => 'report-balance-sheet.view', 'bn' => 'ব্যালেন্স শীট', 'en' => 'Balance Sheet'],
 ];
 
 $tabs = collect($allTabs)->filter(function ($tab) use ($user, $shop) {

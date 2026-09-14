@@ -52,7 +52,7 @@
     $employeeData = $employees->map(fn ($e) => ['name' => $e->name, 'phone' => $e->phone])->values();
 
     $initialItems = old('items', $sale->exists
-        ? $sale->items->map(fn ($item) => [
+        ? $sale->grouped_items->map(fn ($item) => [
             'product_id' => (int) $item->product_id,
             'qty' => rtrim(rtrim(number_format($item->quantity, 2, '.', ''), '0'), '.'),
             'unitId' => $item->unit_id,
