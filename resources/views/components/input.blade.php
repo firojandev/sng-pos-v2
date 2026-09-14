@@ -49,8 +49,8 @@
         $placeholderEn = htmlspecialchars_decode($placeholderEn, ENT_QUOTES);
     }
 
-    $hasError = (bool) ($error || ($name && isset($errors) && $errors->has($name)));
-    $errorMessage = $error ?? ($name && isset($errors) && $errors->has($name) ? $errors->first($name) : null);
+    $hasError = $error === false ? false : (bool) ($error || ($name && isset($errors) && $errors->has($name)));
+    $errorMessage = $error === false ? null : ($error ?? ($name && isset($errors) && $errors->has($name) ? $errors->first($name) : null));
 
     $leftIcon = $icon ?? $iconLeft;
     $leftAddon = $addonLeft ?? $prefix;

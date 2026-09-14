@@ -11,5 +11,6 @@
     "Sales": true,
     "Purchase": true,
     "Cashbox": true,
-    "Report": true
+    "Report": true,
+    "FinanceManagement": true
 }

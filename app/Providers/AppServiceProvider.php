@@ -51,11 +51,11 @@ class AppServiceProvider extends ServiceProvider
             try {
                 $siteTitle = Setting::getSiteTitle();
                 $brandTag = Setting::get('brand_tag', 'Cloud POS & ERP');
-                $siteTitleBn = $siteTitle === 'SNGPOS' ? 'এসএনজিপস' : $siteTitle;
+                $siteTitleBn = $siteTitle === 'SNGPOS' ? 'SNGPOS' : $siteTitle;
             } catch (\Throwable) {
                 $siteTitle = config('app.name', 'SNGPOS');
                 $brandTag = 'Cloud POS & ERP';
-                $siteTitleBn = 'এসএনজিপস';
+                $siteTitleBn = 'SNGPOS';
             }
 
             $view->with([

@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Modules\Auth\Http\Middleware\EnsureShopEmailIsVerified;
 use Modules\Core\Http\Middleware\ConvertBengaliNumbers;
 use Modules\Core\Http\Middleware\EnsureFeatureEnabled;
 use Modules\Purchase\Http\Middleware\EnsurePurchaseDeliveryOrdersEnabled;
@@ -28,10 +29,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => RoleOrPermissionMiddleware::class,
             'feature' => EnsureFeatureEnabled::class,
             'delivery-orders.enabled' => EnsurePurchaseDeliveryOrdersEnabled::class,
+            'verified' => EnsureShopEmailIsVerified::class,
         ]);
 
         $middleware->appendToGroup('web', [
             EnsureSubscriptionActive::class,
+            EnsureShopEmailIsVerified::class,
             SetPermissionsShopScope::class,
         ]);
     })

@@ -33,7 +33,10 @@
     </div>
     <div class="tx-row">
         <span class="lbl bn">মোট আইটেম</span><span class="lbl en" style="display:none;">Total Items</span>
-        <span class="val" style="font-family:var(--font-mono, monospace);">{{ rtrim(rtrim(number_format((float) $sale->items->sum('quantity'), 2), '0'), '.') }} ({{ $sale->items->count() }} টি পণ্য)</span>
+        <span class="val" style="font-family:var(--font-mono, monospace);">
+            <span class="bn">{{ rtrim(rtrim(number_format((float) $sale->items->sum('quantity'), 2), '0'), '.') }} টি পণ্য</span>
+            <span class="en" style="display:none;">{{ rtrim(rtrim(number_format((float) $sale->items->sum('quantity'), 2), '0'), '.') }} Items</span>
+        </span>
     </div>
     <div class="tx-row">
         <span class="lbl bn">গ্রাহকের নাম</span><span class="lbl en" style="display:none;">Customer Name</span>
@@ -154,12 +157,21 @@
 
 <div class="drawer-title bn" style="font-size:14px; margin-bottom:10px; font-weight:700; color:var(--ink-900);">বিক্রীত পণ্য তালিকা (Products Sold)</div>
 <div class="tx-section">
-    @foreach ($sale->items as $item)
+    @foreach ($sale->grouped_items as $item)
         <div class="tx-item" style="padding:10px 0; border-bottom:1px dashed var(--border);">
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                 <div>
                     <div class="nm" style="font-weight:600; color:var(--ink-900);">{{ $item->product->name ?? '—' }}</div>
-                    @if ($item->batch)
+                    @if ($item->product?->sku)
+                        <div style="font-size:11px; color:var(--ink-500); font-family:var(--font-mono, monospace); margin-top:2px;">
+                            SKU: {{ $item->product->sku }}
+                        </div>
+                    @endif
+                    @if (!empty($item->batch_no_display))
+                        <div style="font-size:11px; color:var(--ink-500); font-family:var(--font-mono, monospace); margin-top:2px;">
+                            ব্যাচ: {{ $item->batch_no_display }}
+                        </div>
+                    @elseif ($item->batch)
                         <div style="font-size:11px; color:var(--ink-500); font-family:var(--font-mono, monospace); margin-top:2px;">
                             ব্যাচ: {{ $item->batch->batch_no }}
                         </div>

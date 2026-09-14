@@ -129,6 +129,10 @@
         'expense' => ['icon' => 'trending-down', 'desc_bn' => 'দোকানের খরচ ও বিল পরিশোধ', 'desc_en' => 'Shop Expenses & Bills'],
         'accounts' => ['icon' => 'credit-card', 'desc_bn' => 'ব্যাংক ও ক্যাশ অ্যাকাউন্ট', 'desc_en' => 'Bank & Cash Accounts'],
         'account-transfers' => ['icon' => 'refresh', 'desc_bn' => 'হিসাবের মধ্যকার স্থানান্তর', 'desc_en' => 'Inter-account Transfers'],
+        'assets' => ['icon' => 'box', 'desc_bn' => 'দোকানের স্থায়ী সম্পদ', 'desc_en' => 'Fixed Asset Register'],
+        'debts' => ['icon' => 'trending-down', 'desc_bn' => 'ঋণদাতার কাছ থেকে নেওয়া দেনা', 'desc_en' => 'Debts Owed to Lenders'],
+        'lend' => ['icon' => 'arrow-left-right', 'desc_bn' => 'অন্যকে প্রদত্ত ধার', 'desc_en' => 'Money Lent to Others'],
+        'security-money' => ['icon' => 'shield', 'desc_bn' => 'প্রদত্ত ও গৃহীত জামানত', 'desc_en' => 'Security Deposits Paid & Received'],
         'tax' => ['icon' => 'percent', 'desc_bn' => 'ট্যাক্স ও ভ্যাট কনফিগারেশন', 'desc_en' => 'VAT & Tax Settings'],
         'report-sales' => ['icon' => 'bar-chart', 'desc_bn' => 'বিক্রয় প্রতিবেদন', 'desc_en' => 'Sales Report'],
         'report-purchase' => ['icon' => 'bar-chart', 'desc_bn' => 'ক্রয় প্রতিবেদন', 'desc_en' => 'Purchase Report'],
@@ -137,6 +141,8 @@
         'report-profit-loss' => ['icon' => 'bar-chart', 'desc_bn' => 'লাভ-ক্ষতি প্রতিবেদন', 'desc_en' => 'Profit & Loss Report'],
         'report-income' => ['icon' => 'bar-chart', 'desc_bn' => 'আয় প্রতিবেদন', 'desc_en' => 'Income Report'],
         'report-expense' => ['icon' => 'bar-chart', 'desc_bn' => 'ব্যয় প্রতিবেদন', 'desc_en' => 'Expense Report'],
+        'report-financial-position' => ['icon' => 'pie-chart', 'desc_bn' => 'আর্থিক অবস্থান প্রতিবেদন', 'desc_en' => 'Financial Position Report'],
+        'report-balance-sheet' => ['icon' => 'bar-chart', 'desc_bn' => 'ব্যালেন্স শীট', 'desc_en' => 'Balance Sheet'],
         'audit' => ['icon' => 'activity', 'desc_bn' => 'সিস্টেম অ্যাক্টিভিটি লগ', 'desc_en' => 'System Audit Logs'],
         'employees' => ['icon' => 'user-check', 'desc_bn' => 'কর্মচারী ও বেতন হিসাব', 'desc_en' => 'Staff & Payroll'],
         'users' => ['icon' => 'shield', 'desc_bn' => 'ইউজার অ্যাকাউন্ট ও পারমিশন', 'desc_en' => 'Users & Access Rights'],
@@ -179,6 +185,15 @@
             'badge_color' => 'gold',
             'keys' => ['income', 'expense', 'accounts', 'account-transfers', 'tax'],
         ],
+        'finance_management' => [
+            'title_bn' => 'অর্থ ব্যবস্থাপনা',
+            'title_en' => 'Finance Management',
+            'subtitle_bn' => 'স্থায়ী সম্পদ, দেনা, ধার ও জামানতের হিসাব',
+            'subtitle_en' => 'Fixed assets, debts, lend, and security deposits',
+            'icon' => 'landmark',
+            'badge_color' => 'gold',
+            'keys' => ['assets', 'debts', 'lend', 'security-money'],
+        ],
         'admin_governance' => [
             'title_bn' => 'প্রশাসন ও অডিট',
             'title_en' => 'Administration & Security',
@@ -186,7 +201,7 @@
             'subtitle_en' => 'Staff, user accounts, business reports and activity audit',
             'icon' => 'shield',
             'badge_color' => 'red',
-            'keys' => ['employees', 'users', 'report-sales', 'report-purchase', 'report-stock', 'report-products', 'report-profit-loss', 'report-income', 'report-expense', 'audit'],
+            'keys' => ['employees', 'users', 'report-sales', 'report-purchase', 'report-stock', 'report-products', 'report-profit-loss', 'report-income', 'report-expense', 'report-financial-position', 'report-balance-sheet', 'audit'],
         ],
     ];
 
@@ -1123,7 +1138,9 @@ $(function () {
                 'report-products.view', 'report-products.print',
                 'report-profit-loss.view', 'report-profit-loss.print',
                 'report-income.view', 'report-income.print',
-                'report-expense.view', 'report-expense.print'
+                'report-expense.view', 'report-expense.print',
+                'report-financial-position.view', 'report-financial-position.print',
+                'report-balance-sheet.view', 'report-balance-sheet.print'
             ];
             $.each(perms, function (i, p) {
                 $('input[name="permissions[]"][value="' + p + '"]').prop('checked', true);

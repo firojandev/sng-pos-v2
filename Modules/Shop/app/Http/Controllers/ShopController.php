@@ -149,6 +149,7 @@ class ShopController extends Controller
                     'username' => $adminUsername ?: null,
                     'email' => $adminEmail ?: null,
                     'phone' => $adminPhone,
+                    'email_verified_at' => now(),
                     'password' => Hash::make($request->validated('admin_password')),
                 ]);
             }
@@ -336,6 +337,7 @@ class ShopController extends Controller
                 'shop_id' => $shop->id,
                 'name' => $request->validated('name'),
                 'email' => $email,
+                'email_verified_at' => now(),
                 'password' => Hash::make($request->validated('password')),
             ]);
         } else {
