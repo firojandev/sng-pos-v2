@@ -93,7 +93,7 @@ class LandingPageDynamicContentTest extends TestCase
                 'city_en' => 'Bogura',
                 'initials' => 'ক',
                 'initials_en' => 'K',
-                'quote_bn' => 'এসএনজিপস ব্যবহারে আমাদের প্রতিদিন ২ ঘণ্টা সময় বাঁচছে।',
+                'quote_bn' => 'SNGPOS ব্যবহারে আমাদের প্রতিদিন ২ ঘণ্টা সময় বাঁচছে।',
                 'quote_en' => 'SNGPOS saves us 2 hours daily.',
                 'rating' => 5,
             ],
@@ -122,7 +122,7 @@ class LandingPageDynamicContentTest extends TestCase
         $pageResponse->assertOk();
         $pageResponse->assertSee('কাজী আশরাফুল আলম');
         $pageResponse->assertSee('আশরাফ জেনারেল স্টোর');
-        $pageResponse->assertSee('এসএনজিপস ব্যবহারে আমাদের প্রতিদিন ২ ঘণ্টা সময় বাঁচছে।');
+        $pageResponse->assertSee('SNGPOS ব্যবহারে আমাদের প্রতিদিন ২ ঘণ্টা সময় বাঁচছে।');
         $pageResponse->assertSee('আজই বদলে ফেলুন আপনার ব্যবসার ভবিষ্যৎ');
         $pageResponse->assertSee('এক্ষুনি জয়েন করুন');
 
