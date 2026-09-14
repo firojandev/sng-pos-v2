@@ -110,7 +110,7 @@ class RegisterController extends Controller
             $owner = User::create([
                 'name' => $validated['name'],
                 'phone' => $validated['phone'],
-                'email' => $validated['email'] ?: null,
+                'email' => $validated['email'],
                 'username' => $validated['username'] ?: null,
                 'password' => Hash::make($validated['password']),
             ]);
@@ -226,11 +226,23 @@ class RegisterController extends Controller
             return $owner;
         });
 
-        // 8. Auto login owner and set current shop in session
+        // 8. Send shop verification email
+        try {
+            $user->sendEmailVerificationNotification();
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        // 9. Auto login owner and set current shop in session
         Auth::login($user);
         $request->session()->regenerate();
-        session(['current_shop_id' => $user->shop_id]);
+        session([
+            'current_shop_id' => $user->shop_id,
+            'registered_email' => $user->email,
+            'registered_user_id' => $user->id,
+        ]);
 
-        return redirect()->route('dashboard')->with('status', 'অভিনন্দন! আপনার দোকান ও ফ্রি প্যাকেজ সফলভাবে চালু করা হয়েছে।');
+        return redirect()->route('verification.notice')
+            ->with('status', 'দোকান সফলভাবে নিবন্ধিত হয়েছে! আপনার অ্যাকাউন্ট ও দোকান চালুর জন্য ইমেইল ভেরিফাই করা আবশ্যক। একটি ভেরিফিকেশন লিংক আপনার ইমেইলে পাঠানো হয়েছে।');
     }
 }

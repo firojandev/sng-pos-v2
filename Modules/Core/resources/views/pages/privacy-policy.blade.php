@@ -25,7 +25,7 @@
 >
     @php
         $siteTitle = \Modules\Core\Models\Setting::getSiteTitle();
-        $siteTitleBn = $siteTitle === 'SNGPOS' ? 'এসএনজিপস' : $siteTitle;
+        $siteTitleBn = $siteTitle === 'SNGPOS' ? 'SNGPOS' : $siteTitle;
         $content = \Modules\Core\Support\LandingPageContent::all();
         $supportPhone = $content['support_phone'] ?? '+880 1886 861430';
         $supportEmail = $content['support_email'] ?? 'support@softngear.com';

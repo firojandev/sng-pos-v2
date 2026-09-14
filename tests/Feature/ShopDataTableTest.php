@@ -131,6 +131,60 @@ class ShopDataTableTest extends TestCase
         ]);
     }
 
+    public function test_super_admin_can_create_shop_with_phone_and_without_email_and_owner_can_access_dashboard(): void
+    {
+        $superAdmin = $this->createSuperAdmin();
+
+        $response = $this->actingAs($superAdmin)->post(route('shops.store'), [
+            'name' => 'Phone Only Store',
+            'slug' => 'phone-only-store',
+            'phone' => '01711223344',
+            'address' => 'Dhaka, Bangladesh',
+            'status' => 'active',
+            'admin_name' => 'Phone Owner',
+            'admin_phone' => '01711223344',
+            'admin_email' => '', // Email is not required
+            'admin_password' => 'Secret12345!',
+            'admin_password_confirmation' => 'Secret12345!',
+        ]);
+
+        $response->assertRedirect(route('shops.index'));
+
+        $this->assertDatabaseHas('shops', [
+            'slug' => 'phone-only-store',
+            'name' => 'Phone Only Store',
+        ]);
+
+        $owner = User::where('phone', '01711223344')->first();
+        $this->assertNotNull($owner);
+        $this->assertNull($owner->email);
+        $this->assertEquals('Phone Owner', $owner->name);
+
+        // Owner created by Super Admin can access dashboard without email verification block
+        $dashResponse = $this->actingAs($owner)->get(route('dashboard'));
+        $dashResponse->assertStatus(200);
+    }
+
+    public function test_super_admin_cannot_create_shop_without_phone(): void
+    {
+        $superAdmin = $this->createSuperAdmin();
+
+        $response = $this->from(route('shops.create'))->actingAs($superAdmin)->post(route('shops.store'), [
+            'name' => 'No Phone Shop',
+            'slug' => 'no-phone-shop',
+            'phone' => '',
+            'status' => 'active',
+            'admin_name' => 'No Phone Admin',
+            'admin_phone' => '', // Phone is required
+            'admin_email' => 'nophone@test.com',
+            'admin_password' => 'Secret12345!',
+            'admin_password_confirmation' => 'Secret12345!',
+        ]);
+
+        $response->assertRedirect(route('shops.create'));
+        $response->assertSessionHasErrors(['admin_phone']);
+    }
+
     public function test_shops_edit_page_loads_successfully(): void
     {
         $user = $this->createSuperAdmin();

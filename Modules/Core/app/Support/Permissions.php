@@ -50,6 +50,10 @@ class Permissions
             'expense' => ['view', 'create', 'edit', 'delete'],
             'accounts' => ['view', 'create', 'edit', 'delete', 'transfer'],
             'account-transfers' => ['view', 'create', 'delete'],
+            'assets' => ['view', 'create', 'edit', 'delete'],
+            'debts' => ['view', 'create', 'edit', 'delete'],
+            'lend' => ['view', 'create', 'edit', 'delete'],
+            'security-money' => ['view', 'create', 'edit', 'delete'],
             'tax' => ['view', 'edit'],
             'report-sales' => ['view', 'print'],
             'report-purchase' => ['view', 'print'],
@@ -58,10 +62,13 @@ class Permissions
             'report-profit-loss' => ['view', 'print'],
             'report-income' => ['view', 'print'],
             'report-expense' => ['view', 'print'],
+            'report-financial-position' => ['view', 'print'],
+            'report-balance-sheet' => ['view', 'print'],
             'audit' => ['view'],
             'employees' => ['view', 'create', 'edit', 'delete'],
             'users' => ['view', 'create', 'edit', 'delete'],
             'cashbox' => ['view', 'cash-in', 'cash-out'],
+            'backup' => ['view', 'create', 'download', 'delete'],
         ];
     }
 
@@ -77,6 +84,7 @@ class Permissions
             'create' => ['bn' => 'নতুন তৈরি', 'en' => 'Create'],
             'edit' => ['bn' => 'সম্পাদনা', 'en' => 'Edit'],
             'delete' => ['bn' => 'মুছে ফেলা', 'en' => 'Delete'],
+            'download' => ['bn' => 'ডাউনলোড', 'en' => 'Download'],
             'print' => ['bn' => 'প্রিন্ট / রিপোর্ট', 'en' => 'Print / Report'],
             'return' => ['bn' => 'পণ্য ফেরত', 'en' => 'Return'],
             'receive' => ['bn' => 'পণ্য গ্রহণ', 'en' => 'Receive'],

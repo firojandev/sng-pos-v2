@@ -74,7 +74,6 @@ class SalesDataTable extends BaseDataTable
             ->addColumn('items_count', function (Sale $sale) {
                 $qty = (float) $sale->items->sum('quantity');
                 $qtyFormatted = rtrim(rtrim(number_format($qty, 2), '0'), '.');
-                $count = $sale->items->count();
 
                 $hasWarranty = $sale->items->filter(fn ($item) => ! empty($item->warranty_expires_at))->isNotEmpty();
                 $warranty = $hasWarranty
@@ -82,9 +81,11 @@ class SalesDataTable extends BaseDataTable
                     : '';
 
                 return '<div style="white-space:nowrap;">'
-                    .'<span style="font-family:var(--font-mono, monospace); color:var(--ink-700); font-weight:600;">'.$qtyFormatted.'</span>'
+                    .'<span style="font-family:var(--font-mono, monospace); color:var(--ink-700); font-weight:600;">'
+                    .'<span class="bn">'.$qtyFormatted.' টি পণ্য</span>'
+                    .'<span class="en" style="display:none;">'.$qtyFormatted.' Items</span>'
+                    .'</span>'
                     .$warranty
-                    .'<div style="font-size:11px; color:var(--ink-500); margin-top:2px;">('.$count.' টি পণ্য)</div>'
                     .'</div>';
             })
             ->editColumn('total', function (Sale $sale) {
