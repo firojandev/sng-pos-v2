@@ -221,6 +221,8 @@ class AuditLogController extends Controller
             'purchase_date' => 'ক্রয় তারিখ (Purchase Date)',
             'note' => 'নোট / মন্তব্য (Note)',
             'amount' => 'টাকার পরিমাণ (Amount)',
+            'depreciation' => 'অবচয় (Depreciation)',
+            'depreciation_type' => 'অবচয়ের ধরন (Depreciation Type)',
             'type' => 'ধরন (Type)',
             'balance_after' => 'পরবর্তী ব্যালেন্স (Balance After)',
             'account_id' => 'অ্যাকাউন্ট (Account ID)',

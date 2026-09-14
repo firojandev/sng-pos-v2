@@ -29,4 +29,42 @@
             </form>
         </div>
     </div>
+
+    @push('scripts')
+        <script>
+        $(function () {
+            function updateNetPreview() {
+                var amount = parseFloat($('input[name="amount"]').val()) || 0;
+                var type = $('select[name="depreciation_type"]').val() || 'flat';
+                var depreciation = parseFloat($('input[name="depreciation"]').val()) || 0;
+                var $depInput = $('input[name="depreciation"]');
+                var $preview = $('.asset-net-preview');
+
+                var depAmount = 0;
+                if (type === 'percentage') {
+                    depAmount = (amount * depreciation) / 100;
+                    $depInput.attr('max', '100');
+                } else {
+                    depAmount = depreciation;
+                    $depInput.removeAttr('max');
+                }
+
+                if (amount > 0 || depreciation > 0) {
+                    var net = Math.max(0, amount - depAmount);
+                    $preview.css('display', 'flex');
+                    var subtext = type === 'percentage'
+                        ? '৳' + net.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' (অবচয়: ৳' + depAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' / ' + depreciation + '%)'
+                        : '৳' + net.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' (অবচয়: ৳' + depAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ')';
+                    $preview.find('.asset-net-val').text(subtext);
+                } else {
+                    $preview.hide();
+                }
+            }
+
+            $(document).on('input', 'input[name="amount"], input[name="depreciation"]', updateNetPreview);
+            $(document).on('change', 'select[name="depreciation_type"]', updateNetPreview);
+            updateNetPreview();
+        });
+        </script>
+    @endpush
 </x-core::layout>

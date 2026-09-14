@@ -55,6 +55,7 @@ class FinanceManagementFeatureTest extends TestCase
         $this->user = User::create([
             'name' => 'Test Admin',
             'email' => 'admin@test.com',
+            'email_verified_at' => now(),
             'password' => Hash::make('password'),
             'shop_id' => $this->shop->id,
         ]);
@@ -121,6 +122,148 @@ class FinanceManagementFeatureTest extends TestCase
             ->assertRedirect(route('assets.index'));
 
         $this->assertSoftDeleted('assets', ['id' => $asset->id]);
+    }
+
+    public function test_can_create_and_update_asset_with_depreciation(): void
+    {
+        // Flat depreciation
+        $response = $this->actingAs($this->user)->post(route('assets.store'), [
+            'name' => 'Delivery Van',
+            'amount' => 500000,
+            'depreciation_type' => 'flat',
+            'depreciation' => 50000,
+            'note' => 'Year 1 depreciation',
+        ]);
+
+        $response->assertRedirect(route('assets.index'));
+        $this->assertDatabaseHas('assets', [
+            'shop_id' => $this->shop->id,
+            'name' => 'Delivery Van',
+            'amount' => 500000,
+            'depreciation_type' => 'flat',
+            'depreciation' => 50000,
+        ]);
+
+        $asset = Asset::where('name', 'Delivery Van')->first();
+        $this->assertEquals(50000, $asset->depreciation_amount);
+        $this->assertEquals(450000, $asset->net_value);
+
+        // Edit via AJAX returns depreciation_type, depreciation, and net_value
+        $editResponse = $this->actingAs($this->user)->getJson(route('assets.edit', $asset));
+        $editResponse->assertOk();
+        $editResponse->assertJsonFragment([
+            'id' => $asset->id,
+            'name' => 'Delivery Van',
+            'amount' => 500000.0,
+            'depreciation_type' => 'flat',
+            'depreciation' => 50000.0,
+            'depreciation_amount' => 50000.0,
+            'net_value' => 450000.0,
+        ]);
+
+        // Update to percentage depreciation (10%)
+        $updateResponse = $this->actingAs($this->user)->put(route('assets.update', $asset), [
+            'name' => 'Delivery Van',
+            'amount' => 500000,
+            'depreciation_type' => 'percentage',
+            'depreciation' => 10,
+        ]);
+
+        $updateResponse->assertRedirect(route('assets.index'));
+        $this->assertDatabaseHas('assets', [
+            'id' => $asset->id,
+            'depreciation_type' => 'percentage',
+            'depreciation' => 10,
+        ]);
+        $fresh = $asset->fresh();
+        $this->assertEquals(50000, $fresh->depreciation_amount);
+        $this->assertEquals(450000, $fresh->net_value);
+    }
+
+    public function test_can_create_asset_with_percentage_depreciation(): void
+    {
+        $response = $this->actingAs($this->user)->post(route('assets.store'), [
+            'name' => 'Air Conditioner',
+            'amount' => 80000,
+            'depreciation_type' => 'percentage',
+            'depreciation' => 20,
+        ]);
+
+        $response->assertRedirect(route('assets.index'));
+        $asset = Asset::where('name', 'Air Conditioner')->first();
+        $this->assertNotNull($asset);
+        $this->assertEquals('percentage', $asset->depreciation_type);
+        $this->assertEquals(16000, $asset->depreciation_amount);
+        $this->assertEquals(64000, $asset->net_value);
+    }
+
+    public function test_asset_depreciation_cannot_exceed_limits(): void
+    {
+        // Flat cannot exceed amount
+        $flatResponse = $this->actingAs($this->user)->post(route('assets.store'), [
+            'name' => 'Computer',
+            'amount' => 30000,
+            'depreciation_type' => 'flat',
+            'depreciation' => 35000,
+        ]);
+        $flatResponse->assertSessionHasErrors('depreciation');
+        $this->assertDatabaseMissing('assets', ['name' => 'Computer']);
+
+        // Percentage cannot exceed 100%
+        $percentResponse = $this->actingAs($this->user)->post(route('assets.store'), [
+            'name' => 'Generator',
+            'amount' => 30000,
+            'depreciation_type' => 'percentage',
+            'depreciation' => 120,
+        ]);
+        $percentResponse->assertSessionHasErrors('depreciation');
+        $this->assertDatabaseMissing('assets', ['name' => 'Generator']);
+    }
+
+    public function test_asset_can_be_stored_and_updated_with_validity(): void
+    {
+        $response = $this->actingAs($this->user)->post(route('assets.store'), [
+            'name' => 'Delivery Van',
+            'amount' => 500000,
+            'depreciation_type' => 'percentage',
+            'depreciation' => 10,
+            'validity' => 5,
+            'validity_unit' => 'year',
+        ]);
+
+        $response->assertRedirect(route('assets.index'));
+        $asset = Asset::where('name', 'Delivery Van')->first();
+        $this->assertNotNull($asset);
+        $this->assertEquals(5, (float) $asset->validity);
+        $this->assertEquals('year', $asset->validity_unit);
+        $this->assertStringContainsString('৫ বছর', $asset->validity_formatted);
+        // Backward compatibility getters
+        $this->assertEquals(5, (float) $asset->useful_life);
+        $this->assertEquals('year', $asset->useful_life_unit);
+        $this->assertStringContainsString('৫ বছর', $asset->useful_life_formatted);
+
+        // Edit JSON returns validity & validity_unit
+        $editResponse = $this->actingAs($this->user)->getJson(route('assets.edit', $asset));
+        $editResponse->assertOk();
+        $editResponse->assertJsonFragment([
+            'validity' => 5.0,
+            'validity_unit' => 'year',
+        ]);
+
+        $updateResponse = $this->actingAs($this->user)->put(route('assets.update', $asset), [
+            'name' => 'Delivery Van (Updated)',
+            'amount' => 500000,
+            'depreciation_type' => 'percentage',
+            'depreciation' => 10,
+            'validity' => 60,
+            'validity_unit' => 'month',
+        ]);
+
+        $updateResponse->assertRedirect(route('assets.index'));
+        $asset->refresh();
+        $this->assertEquals(60, (float) $asset->validity);
+        $this->assertEquals('month', $asset->validity_unit);
+        $this->assertStringContainsString('৬০ মাস', $asset->validity_formatted);
     }
 
     // --- Debts: create posts IN, marking paid additionally posts OUT ---
@@ -338,6 +481,7 @@ class FinanceManagementFeatureTest extends TestCase
         $limitedUser = User::create([
             'name' => 'Limited User',
             'email' => 'limited@test.com',
+            'email_verified_at' => now(),
             'password' => Hash::make('password'),
             'shop_id' => $this->shop->id,
         ]);
@@ -361,6 +505,7 @@ class FinanceManagementFeatureTest extends TestCase
         $user = User::create([
             'name' => 'Owner',
             'email' => 'owner@no-fm.test',
+            'email_verified_at' => now(),
             'password' => Hash::make('password'),
             'shop_id' => $shopWithoutFeature->id,
         ]);

@@ -14,10 +14,26 @@
                 color="teal"
                 value-color="teal"
                 :value="'৳' . number_format($metrics['totalAssets'], 2)"
-                label="মোট সম্পদের মূল্য"
-                label-en="Total Asset Value"
+                label="মোট সম্পদ"
+                label-en="Total Assets"
                 :subtext="number_format($metrics['totalCount']) . ' টি সম্পদ'"
                 :subtext-en="number_format($metrics['totalCount']) . ' Assets'"
+            />
+            <x-core::stat-card
+                icon="trending-down"
+                color="red"
+                value-color="red"
+                :value="'৳' . number_format($metrics['totalDepreciation'] ?? 0, 2)"
+                label="মোট অবচয়"
+                label-en="Total Depreciation"
+            />
+            <x-core::stat-card
+                icon="check-circle"
+                color="green"
+                value-color="green"
+                :value="'৳' . number_format($metrics['netAssets'] ?? $metrics['totalAssets'], 2)"
+                label="বর্তমান নিট মূল্য"
+                label-en="Net Asset Value"
             />
         </div>
     @endif
@@ -39,7 +55,7 @@
 
     {{-- Create Asset Modal --}}
     <div class="modal-backdrop @if ($errors->any() && old('_method') !== 'PUT') open @endif" id="createAssetModal" style="z-index:999;">
-        <div class="modal-box" style="width:480px; max-width:95vw; max-height:90vh; overflow-y:auto; padding:24px; border-radius:16px;">
+        <div class="modal-box" style="width:580px; max-width:95vw; max-height:90vh; overflow-y:auto; padding:24px; border-radius:16px;">
             <div class="modal-head" style="margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
                 <div style="display:flex; align-items:center; gap:8px;">
                     <div style="width:32px; height:32px; border-radius:8px; background:var(--teal-100); color:var(--teal-600); display:flex; align-items:center; justify-content:center;">
@@ -65,20 +81,109 @@
                         :required="true"
                     />
 
-                    <x-core::input
-                        name="amount"
-                        id="create_asset_amount"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        label="পরিমাণ (৳)"
-                        label-en="Amount (৳)"
-                        placeholder="0.00"
-                        prefix="৳"
-                        size="sm"
-                        :required="true"
-                        :stepper="false"
-                    />
+                    <div style="display:grid; grid-template-columns: 1fr 1.15fr 1.05fr; gap:10px; align-items:flex-start;">
+                        <x-core::input
+                            name="amount"
+                            id="create_asset_amount"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            label="পরিমাণ (৳)"
+                            label-en="Amount (৳)"
+                            placeholder="0.00"
+                            prefix="৳"
+                            size="sm"
+                            :required="true"
+                            :stepper="false"
+                        />
+
+                        <x-core::form-group
+                            id="create_asset_depreciation"
+                            label="অবচয়"
+                            label-en="Depreciation"
+                        >
+                            <div class="input-group-joined" style="display:flex; align-items:stretch; width:100%;">
+                                <div style="flex:1; min-width:0;">
+                                    <x-core::input
+                                        name="depreciation"
+                                        id="create_asset_depreciation"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="0.00"
+                                        size="sm"
+                                        :stepper="false"
+                                        :no-margin="true"
+                                        :error="false"
+                                        style="border-top-right-radius:0 !important; border-bottom-right-radius:0 !important;"
+                                    />
+                                </div>
+                                <div style="width:96px; flex-shrink:0; margin-left:-1px;">
+                                    <x-core::select
+                                        name="depreciation_type"
+                                        id="create_asset_depreciation_type"
+                                        size="sm"
+                                        value="flat"
+                                        :no-margin="true"
+                                        :error="false"
+                                        style="border-top-left-radius:0 !important; border-bottom-left-radius:0 !important; background-color:var(--paper); cursor:pointer; font-weight:500;"
+                                        :options="[
+                                            'flat' => ['bn' => 'ফ্ল্যাট (৳)', 'en' => 'Flat (৳)'],
+                                            'percentage' => ['bn' => 'শতাংশ (%)', 'en' => 'Percent (%)'],
+                                        ]"
+                                    />
+                                </div>
+                            </div>
+                        </x-core::form-group>
+
+                        <x-core::form-group
+                            id="create_asset_validity"
+                            label="মেয়াদ"
+                            label-en="Validity"
+                        >
+                            <div class="input-group-joined" style="display:flex; align-items:stretch; width:100%;">
+                                <div style="flex:1; min-width:0;">
+                                    <x-core::input
+                                        name="validity"
+                                        id="create_asset_validity"
+                                        type="number"
+                                        step="0.1"
+                                        min="0"
+                                        placeholder="যেমন: ৫"
+                                        size="sm"
+                                        :stepper="false"
+                                        :no-margin="true"
+                                        :error="false"
+                                        style="border-top-right-radius:0 !important; border-bottom-right-radius:0 !important;"
+                                    />
+                                </div>
+                                <div style="width:82px; flex-shrink:0; margin-left:-1px;">
+                                    <x-core::select
+                                        name="validity_unit"
+                                        id="create_asset_validity_unit"
+                                        size="sm"
+                                        value="year"
+                                        :no-margin="true"
+                                        :error="false"
+                                        style="border-top-left-radius:0 !important; border-bottom-left-radius:0 !important; background-color:var(--paper); cursor:pointer; font-weight:500;"
+                                        :options="[
+                                            'year' => ['bn' => 'বছর', 'en' => 'Years'],
+                                            'month' => ['bn' => 'মাস', 'en' => 'Months'],
+                                            'day' => ['bn' => 'দিন', 'en' => 'Days'],
+                                        ]"
+                                    />
+                                </div>
+                            </div>
+                        </x-core::form-group>
+                    </div>
+
+                    <div id="create_asset_net_preview" style="display:none; padding:8px 12px; border-radius:8px; background:var(--paper-line); border:1px solid var(--border); font-size:12.5px; align-items:center; justify-content:space-between;">
+                        <span style="color:var(--ink-600); font-weight:600;">
+                            <span class="bn">বর্তমান নিট মূল্য:</span>
+                            <span class="en" style="display:none;">Current Net Value:</span>
+                        </span>
+                        <span id="create_asset_net_val" style="font-family:var(--font-mono, monospace); font-weight:700; color:var(--green-ink); font-size:13.5px;">৳0.00</span>
+                    </div>
 
                     <x-core::textarea
                         name="note"
@@ -107,7 +212,7 @@
 
     {{-- Edit Asset Modal --}}
     <div class="modal-backdrop @if ($errors->any() && old('_method') === 'PUT') open @endif" id="editAssetModal" style="z-index:999;">
-        <div class="modal-box" style="width:480px; max-width:95vw; max-height:90vh; overflow-y:auto; padding:24px; border-radius:16px;">
+        <div class="modal-box" style="width:580px; max-width:95vw; max-height:90vh; overflow-y:auto; padding:24px; border-radius:16px;">
             <div class="modal-head" style="margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
                 <div style="display:flex; align-items:center; gap:8px;">
                     <div style="width:32px; height:32px; border-radius:8px; background:var(--teal-100); color:var(--teal-600); display:flex; align-items:center; justify-content:center;">
@@ -133,19 +238,109 @@
                         :required="true"
                     />
 
-                    <x-core::input
-                        name="amount"
-                        id="edit_asset_amount"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        label="পরিমাণ (৳)"
-                        label-en="Amount (৳)"
-                        prefix="৳"
-                        size="sm"
-                        :required="true"
-                        :stepper="false"
-                    />
+                    <div style="display:grid; grid-template-columns: 1fr 1.15fr 1.05fr; gap:10px; align-items:flex-start;">
+                        <x-core::input
+                            name="amount"
+                            id="edit_asset_amount"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            label="পরিমাণ (৳)"
+                            label-en="Amount (৳)"
+                            placeholder="0.00"
+                            prefix="৳"
+                            size="sm"
+                            :required="true"
+                            :stepper="false"
+                        />
+
+                        <x-core::form-group
+                            id="edit_asset_depreciation"
+                            label="অবচয়"
+                            label-en="Depreciation"
+                        >
+                            <div class="input-group-joined" style="display:flex; align-items:stretch; width:100%;">
+                                <div style="flex:1; min-width:0;">
+                                    <x-core::input
+                                        name="depreciation"
+                                        id="edit_asset_depreciation"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="0.00"
+                                        size="sm"
+                                        :stepper="false"
+                                        :no-margin="true"
+                                        :error="false"
+                                        style="border-top-right-radius:0 !important; border-bottom-right-radius:0 !important;"
+                                    />
+                                </div>
+                                <div style="width:96px; flex-shrink:0; margin-left:-1px;">
+                                    <x-core::select
+                                        name="depreciation_type"
+                                        id="edit_asset_depreciation_type"
+                                        size="sm"
+                                        value="flat"
+                                        :no-margin="true"
+                                        :error="false"
+                                        style="border-top-left-radius:0 !important; border-bottom-left-radius:0 !important; background-color:var(--paper); cursor:pointer; font-weight:500;"
+                                        :options="[
+                                            'flat' => ['bn' => 'ফ্ল্যাট (৳)', 'en' => 'Flat (৳)'],
+                                            'percentage' => ['bn' => 'শতাংশ (%)', 'en' => 'Percent (%)'],
+                                        ]"
+                                    />
+                                </div>
+                            </div>
+                        </x-core::form-group>
+
+                        <x-core::form-group
+                            id="edit_asset_validity"
+                            label="মেয়াদ"
+                            label-en="Validity"
+                        >
+                            <div class="input-group-joined" style="display:flex; align-items:stretch; width:100%;">
+                                <div style="flex:1; min-width:0;">
+                                    <x-core::input
+                                        name="validity"
+                                        id="edit_asset_validity"
+                                        type="number"
+                                        step="0.1"
+                                        min="0"
+                                        placeholder="যেমন: ৫"
+                                        size="sm"
+                                        :stepper="false"
+                                        :no-margin="true"
+                                        :error="false"
+                                        style="border-top-right-radius:0 !important; border-bottom-right-radius:0 !important;"
+                                    />
+                                </div>
+                                <div style="width:82px; flex-shrink:0; margin-left:-1px;">
+                                    <x-core::select
+                                        name="validity_unit"
+                                        id="edit_asset_validity_unit"
+                                        size="sm"
+                                        value="year"
+                                        :no-margin="true"
+                                        :error="false"
+                                        style="border-top-left-radius:0 !important; border-bottom-left-radius:0 !important; background-color:var(--paper); cursor:pointer; font-weight:500;"
+                                        :options="[
+                                            'year' => ['bn' => 'বছর', 'en' => 'Years'],
+                                            'month' => ['bn' => 'মাস', 'en' => 'Months'],
+                                            'day' => ['bn' => 'দিন', 'en' => 'Days'],
+                                        ]"
+                                    />
+                                </div>
+                            </div>
+                        </x-core::form-group>
+                    </div>
+
+                    <div id="edit_asset_net_preview" style="display:none; padding:8px 12px; border-radius:8px; background:var(--paper-line); border:1px solid var(--border); font-size:12.5px; align-items:center; justify-content:space-between;">
+                        <span style="color:var(--ink-600); font-weight:600;">
+                            <span class="bn">বর্তমান নিট মূল্য:</span>
+                            <span class="en" style="display:none;">Current Net Value:</span>
+                        </span>
+                        <span id="edit_asset_net_val" style="font-family:var(--font-mono, monospace); font-weight:700; color:var(--green-ink); font-size:13.5px;">৳0.00</span>
+                    </div>
 
                     <x-core::textarea
                         name="note"
@@ -204,10 +399,76 @@
                 }
             }
 
+            function updateCreateNetPreview() {
+                var amount = parseFloat($('#create_asset_amount').val()) || 0;
+                var type = $('#create_asset_depreciation_type').val() || 'flat';
+                var depreciation = parseFloat($('#create_asset_depreciation').val()) || 0;
+                var $depInput = $('#create_asset_depreciation');
+                var $preview = $('#create_asset_net_preview');
+
+                var depAmount = 0;
+                if (type === 'percentage') {
+                    depAmount = (amount * depreciation) / 100;
+                    $depInput.attr('max', '100');
+                } else {
+                    depAmount = depreciation;
+                    $depInput.removeAttr('max');
+                }
+
+                if (amount > 0 || depreciation > 0) {
+                    var net = Math.max(0, amount - depAmount);
+                    $preview.css('display', 'flex');
+                    var subtext = type === 'percentage'
+                        ? '৳' + net.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' (অবচয়: ৳' + depAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' / ' + depreciation + '%)'
+                        : '৳' + net.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' (অবচয়: ৳' + depAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ')';
+                    $('#create_asset_net_val').text(subtext);
+                } else {
+                    $preview.hide();
+                }
+            }
+
+            function updateEditNetPreview() {
+                var amount = parseFloat($('#edit_asset_amount').val()) || 0;
+                var type = $('#edit_asset_depreciation_type').val() || 'flat';
+                var depreciation = parseFloat($('#edit_asset_depreciation').val()) || 0;
+                var $depInput = $('#edit_asset_depreciation');
+                var $preview = $('#edit_asset_net_preview');
+
+                var depAmount = 0;
+                if (type === 'percentage') {
+                    depAmount = (amount * depreciation) / 100;
+                    $depInput.attr('max', '100');
+                } else {
+                    depAmount = depreciation;
+                    $depInput.removeAttr('max');
+                }
+
+                if (amount > 0 || depreciation > 0) {
+                    var net = Math.max(0, amount - depAmount);
+                    $preview.css('display', 'flex');
+                    var subtext = type === 'percentage'
+                        ? '৳' + net.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' (অবচয়: ৳' + depAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' / ' + depreciation + '%)'
+                        : '৳' + net.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' (অবচয়: ৳' + depAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ')';
+                    $('#edit_asset_net_val').text(subtext);
+                } else {
+                    $preview.hide();
+                }
+            }
+
+            $(document).on('input', '#create_asset_amount, #create_asset_depreciation', updateCreateNetPreview);
+            $(document).on('change', '#create_asset_depreciation_type', updateCreateNetPreview);
+            $(document).on('input', '#edit_asset_amount, #edit_asset_depreciation', updateEditNetPreview);
+            $(document).on('change', '#edit_asset_depreciation_type', updateEditNetPreview);
+
             $('#btn-open-create-asset-modal').on('click', function () {
                 var $form = $('#create_asset_form');
                 $form[0].reset();
                 clearFormErrors($form);
+                $('#create_asset_depreciation_type').val('flat');
+                $('#create_asset_depreciation').val('');
+                $('#create_asset_validity').val('');
+                $('#create_asset_validity_unit').val('year');
+                updateCreateNetPreview();
                 $('#createAssetModal').addClass('open');
                 setTimeout(function () {
                     $('#create_asset_name').focus();
@@ -228,14 +489,28 @@
                 }
                 $('#edit_asset_name').val($btn.data('name'));
                 $('#edit_asset_amount').val($btn.data('amount'));
+                $('#edit_asset_depreciation_type').val($btn.data('depreciation-type') || 'flat');
+                $('#edit_asset_depreciation').val($btn.data('depreciation') !== undefined ? $btn.data('depreciation') : '0');
+                var valVal = $btn.data('validity') !== undefined ? $btn.data('validity') : ($btn.data('useful-life') !== undefined ? $btn.data('useful-life') : '');
+                var valUnit = $btn.data('validity-unit') || $btn.data('useful-life-unit') || 'year';
+                $('#edit_asset_validity').val(valVal);
+                $('#edit_asset_validity_unit').val(valUnit);
                 $('#edit_asset_note').val($btn.data('note') || '');
+                updateEditNetPreview();
 
                 if (url) {
                     $.getJSON(url, function (data) {
                         if (data) {
                             if (data.name !== undefined) $('#edit_asset_name').val(data.name);
                             if (data.amount !== undefined) $('#edit_asset_amount').val(data.amount);
+                            if (data.depreciation_type !== undefined) $('#edit_asset_depreciation_type').val(data.depreciation_type);
+                            if (data.depreciation !== undefined) $('#edit_asset_depreciation').val(data.depreciation);
+                            var v = data.validity !== undefined ? data.validity : (data.useful_life !== undefined ? data.useful_life : '');
+                            var vu = data.validity_unit || data.useful_life_unit || 'year';
+                            $('#edit_asset_validity').val(v || '');
+                            $('#edit_asset_validity_unit').val(vu);
                             if (data.note !== undefined) $('#edit_asset_note').val(data.note || '');
+                            updateEditNetPreview();
                         }
                     });
                 }

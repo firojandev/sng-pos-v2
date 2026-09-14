@@ -265,7 +265,7 @@ class ReportController extends Controller
     {
         $asOf = $this->resolveAsOf($request);
 
-        $totalAssetsWithSecurity = (float) Asset::where('created_at', '<=', $asOf)->sum('amount')
+        $totalAssetsWithSecurity = (float) Asset::where('created_at', '<=', $asOf)->sum(DB::raw("CASE WHEN amount > (CASE WHEN depreciation_type = 'percentage' THEN (amount * COALESCE(depreciation, 0) / 100.0) ELSE COALESCE(depreciation, 0) END) THEN amount - (CASE WHEN depreciation_type = 'percentage' THEN (amount * COALESCE(depreciation, 0) / 100.0) ELSE COALESCE(depreciation, 0) END) ELSE 0 END"))
             + (float) SecurityMoney::where('status', 'paid')->where('date', '<=', $asOf)->sum('amount');
 
         $stockValue = $this->stockValue($asOf);
@@ -290,7 +290,7 @@ class ReportController extends Controller
         $lendReceivable = (float) Lend::where('status', 'due')->where('date', '<=', $asOf)->sum('amount');
         $securityMoneyPaid = (float) SecurityMoney::where('status', 'paid')->where('date', '<=', $asOf)->sum('amount');
         $stockValue = $this->stockValue($asOf);
-        $fixedAssets = (float) Asset::where('created_at', '<=', $asOf)->sum('amount');
+        $fixedAssets = (float) Asset::where('created_at', '<=', $asOf)->sum(DB::raw("CASE WHEN amount > (CASE WHEN depreciation_type = 'percentage' THEN (amount * COALESCE(depreciation, 0) / 100.0) ELSE COALESCE(depreciation, 0) END) THEN amount - (CASE WHEN depreciation_type = 'percentage' THEN (amount * COALESCE(depreciation, 0) / 100.0) ELSE COALESCE(depreciation, 0) END) ELSE 0 END"));
         $totalAssets = $cashAndBank + $receivable + $lendReceivable + $securityMoneyPaid + $stockValue + $fixedAssets;
 
         $payable = $this->supplierPayable($asOf);

@@ -62,6 +62,7 @@ class ReportFinancialPositionFeatureTest extends TestCase
         $this->user = User::create([
             'name' => 'Test Admin',
             'email' => 'admin@test.com',
+            'email_verified_at' => now(),
             'password' => Hash::make('password'),
             'shop_id' => $this->shop->id,
         ]);
@@ -272,6 +273,7 @@ class ReportFinancialPositionFeatureTest extends TestCase
         $limitedUser = User::create([
             'name' => 'Limited User',
             'email' => 'limited@test.com',
+            'email_verified_at' => now(),
             'password' => Hash::make('password'),
             'shop_id' => $this->shop->id,
         ]);
@@ -294,6 +296,7 @@ class ReportFinancialPositionFeatureTest extends TestCase
         $user = User::create([
             'name' => 'Owner',
             'email' => 'owner@no-reports.test',
+            'email_verified_at' => now(),
             'password' => Hash::make('password'),
             'shop_id' => $shopWithoutFeature->id,
         ]);

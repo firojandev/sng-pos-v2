@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Modules\FinanceManagement\DataTables\AssetsDataTable;
 use Modules\FinanceManagement\Http\Requests\StoreAssetRequest;
@@ -16,8 +17,14 @@ class AssetController extends Controller
 {
     public function index(AssetsDataTable $dataTable): mixed
     {
+        $totalAssets = (float) Asset::sum('amount');
+        $totalDepreciation = (float) Asset::sum(DB::raw("CASE WHEN depreciation_type = 'percentage' THEN (amount * COALESCE(depreciation, 0) / 100.0) ELSE COALESCE(depreciation, 0) END"));
+        $netAssets = max(0, $totalAssets - $totalDepreciation);
+
         $metrics = [
-            'totalAssets' => (float) Asset::sum('amount'),
+            'totalAssets' => $totalAssets,
+            'totalDepreciation' => $totalDepreciation,
+            'netAssets' => $netAssets,
             'totalCount' => (int) Asset::count(),
         ];
 
@@ -53,6 +60,14 @@ class AssetController extends Controller
                 'id' => $asset->id,
                 'name' => $asset->name,
                 'amount' => (float) $asset->amount,
+                'depreciation_type' => $asset->depreciation_type ?? 'flat',
+                'depreciation' => (float) ($asset->depreciation ?? 0),
+                'depreciation_amount' => (float) $asset->depreciation_amount,
+                'net_value' => (float) $asset->net_value,
+                'validity' => $asset->validity !== null ? (float) $asset->validity : null,
+                'validity_unit' => $asset->validity_unit ?? 'year',
+                'useful_life' => $asset->validity !== null ? (float) $asset->validity : null,
+                'useful_life_unit' => $asset->validity_unit ?? 'year',
                 'note' => $asset->note,
                 'update_url' => route('assets.update', $asset),
             ]);
