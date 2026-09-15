@@ -377,6 +377,7 @@
                 [
                     'key' => 'audit-log',
                     'permission' => 'audit',
+                    'gated' => true,
                     'route' => 'audit-log.index',
                     'bn' => 'অ্যাক্টিভিটি লগ',
                     'en' => 'Audit Log',
@@ -492,8 +493,11 @@
         if (isset($item['enabled']) && !$item['enabled']) {
             return false;
         }
+        if ($user && $user->isSuperAdmin()) {
+            return true;
+        }
         if ($item['key'] === 'subscription') {
-            return (bool) ($user && $user->shop && ($user->isSuperAdmin() || $user->shop->hasFeature('subscription')));
+            return (bool) ($user && $user->shop && $user->shop->hasFeature('subscription'));
         }
         if ($item['key'] === 'settings' || $item['key'] === 'printer-settings') {
             return (bool) ($user && $user->isShopAdmin());
@@ -507,7 +511,7 @@
             return true;
         }
         $permissionKey = $item['permission'] ?? $item['key'];
-        return $user && $user->shop && $user->shop->hasFeature($permissionKey) && $user->can("{$permissionKey}.view");
+        return $user && $user->shop && $user->shop->hasFeature($permissionKey) && ($user->can("{$permissionKey}.view") || $user->can($permissionKey));
     };
 
     $isNavItemActive = function (array $item) use ($active): bool {

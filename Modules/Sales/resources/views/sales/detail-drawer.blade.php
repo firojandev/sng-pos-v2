@@ -32,7 +32,7 @@
         <span class="val" style="font-family:var(--font-mono, monospace); font-weight:700;">#{{ $sale->invoice_no }}</span>
     </div>
     <div class="tx-row">
-        <span class="lbl bn">মোট আইটেম</span><span class="lbl en" style="display:none;">Total Items</span>
+        <span class="lbl bn">মোট পরিমাণ</span><span class="lbl en" style="display:none;">Total Quantity</span>
         <span class="val" style="font-family:var(--font-mono, monospace);">
             <span class="bn">{{ rtrim(rtrim(number_format((float) $sale->items->sum('quantity'), 2), '0'), '.') }}</span>
             <span class="en" style="display:none;">{{ rtrim(rtrim(number_format((float) $sale->items->sum('quantity'), 2), '0'), '.') }}</span>

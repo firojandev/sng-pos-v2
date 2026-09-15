@@ -41,6 +41,7 @@ class ShopRolePermissionTest extends TestCase
             'name' => 'Super Admin',
             'email' => 'super@pos.test',
             'password' => bcrypt('password'),
+            'email_verified_at' => now(),
         ]);
         $this->superAdmin->assignRole($superAdminRole);
 
@@ -60,6 +61,7 @@ class ShopRolePermissionTest extends TestCase
             'email' => 'owner.a@pos.test',
             'password' => bcrypt('password'),
             'shop_id' => $this->shopA->id,
+            'email_verified_at' => now(),
         ]);
         setPermissionsTeamId($this->shopA->id);
         $shopARole = Role::where('shop_id', $this->shopA->id)->where('name', 'Admin')->first();
@@ -80,6 +82,7 @@ class ShopRolePermissionTest extends TestCase
             'email' => 'owner.b@pos.test',
             'password' => bcrypt('password'),
             'shop_id' => $this->shopB->id,
+            'email_verified_at' => now(),
         ]);
         setPermissionsTeamId($this->shopB->id);
         $shopBRole = Role::where('shop_id', $this->shopB->id)->where('name', 'Admin')->first();
