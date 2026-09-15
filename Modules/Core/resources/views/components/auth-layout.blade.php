@@ -8,13 +8,13 @@
     'mark' => null,
     'maxWidth' => '400px',
     'showThemeSwitcher' => true,
-    'defaultTheme' => null,
+    'defaultTheme' => 'dark',
 ])
 
 @php
     $cookieTheme = request()->cookie('theme');
     $cookieLang = request()->cookie('lang');
-    $effectiveTheme = $cookieTheme ?: $defaultTheme;
+    $effectiveTheme = $defaultTheme ?? ($cookieTheme ?: 'dark');
     $isDark = $effectiveTheme === 'dark';
     $isEn = $cookieLang === 'en';
 
@@ -250,7 +250,7 @@
 
     <div class="auth-actions">
         @if ($showThemeSwitcher)
-            <x-core::theme-switcher />
+            <x-core::theme-switcher :is-dark="$isDark" :default-theme="$defaultTheme" />
             <div class="auth-action-divider"></div>
         @endif
 

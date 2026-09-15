@@ -36,6 +36,7 @@ class AuthLoginTest extends TestCase
         $response->assertSee('id="theme-toggle"', false);
         $response->assertSee('id="lang-toggle"', false);
         $response->assertSee('form-toggle-wrap', false);
+        $response->assertSee('data-theme="dark"', false);
     }
 
     public function test_renders_auth_layout_component(): void
