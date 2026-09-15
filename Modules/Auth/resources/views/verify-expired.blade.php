@@ -62,14 +62,14 @@
         </x-core::button>
     </div>
 
-    @if (\Modules\Core\Models\Setting::isRegistrationEnabled())
-        <div style="margin-top: 18px; text-align: center; font-size: 12.5px; color: var(--ink-600);">
-            <span class="bn">নতুন দোকান খুলতে চান?</span>
-            <span class="en" style="display:none;">Want to create a new shop?</span>
-            <a href="{{ route('register') }}" style="color: var(--teal-800); font-weight: 700; text-decoration: none; margin-left: 4px;">
-                <span class="bn">রেজিস্ট্রেশন করুন</span>
-                <span class="en" style="display:none;">Register</span>
-            </a>
-        </div>
-    @endif
+{{--    @if (\Modules\Core\Models\Setting::isRegistrationEnabled())--}}
+{{--        <div style="margin-top: 18px; text-align: center; font-size: 12.5px; color: var(--ink-600);">--}}
+{{--            <span class="bn">নতুন দোকান খুলতে চান?</span>--}}
+{{--            <span class="en" style="display:none;">Want to create a new shop?</span>--}}
+{{--            <a href="{{ route('register') }}" style="color: var(--teal-800); font-weight: 700; text-decoration: none; margin-left: 4px;">--}}
+{{--                <span class="bn">রেজিস্ট্রেশন করুন</span>--}}
+{{--                <span class="en" style="display:none;">Register</span>--}}
+{{--            </a>--}}
+{{--        </div>--}}
+{{--    @endif--}}
 </x-core::auth-layout>

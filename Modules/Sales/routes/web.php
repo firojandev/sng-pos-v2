@@ -1,15 +1,20 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\Sales\Http\Controllers\PublicSaleInvoiceController;
 use Modules\Sales\Http\Controllers\QuickSaleController;
 use Modules\Sales\Http\Controllers\SaleController;
 use Modules\Sales\Http\Controllers\SaleReturnController;
+
+// Publicly accessible customer invoice route (unauthenticated)
+Route::get('invoice/{token}', [PublicSaleInvoiceController::class, 'show'])->name('sales.public-invoice');
 
 Route::middleware(['auth', 'feature:sales'])->group(function () {
     Route::get('sales/ledger/print', [SaleController::class, 'printLedger'])->name('sales.ledger.print')->middleware('permission:sales.print');
     Route::get('sales/ledger', [SaleController::class, 'ledger'])->name('sales.ledger')->middleware('permission:sales.view');
     Route::get('sales/{sale}/invoice-modal', [SaleController::class, 'invoiceModal'])->name('sales.invoice-modal')->middleware('permission:sales.view');
     Route::get('sales/{sale}/print-invoice', [SaleController::class, 'printInvoice'])->name('sales.print-invoice')->middleware('permission:sales.print');
+    Route::post('sales/{sale}/send-email', [SaleController::class, 'sendInvoiceEmail'])->name('sales.send-email')->middleware('permission:sales.view');
     Route::get('sale-returns', [SaleReturnController::class, 'index'])->name('sale-returns.index')->middleware('permission:sales.view');
     Route::get('sales/{sale}/returns/create', [SaleReturnController::class, 'create'])->name('sale-returns.create')->middleware('permission:sales.return');
     Route::post('sales/{sale}/returns', [SaleReturnController::class, 'store'])->name('sale-returns.store')->middleware('permission:sales.return');

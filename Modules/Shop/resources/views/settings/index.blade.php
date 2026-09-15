@@ -50,6 +50,21 @@
         </div>
     @endif
 
+{{--    <div class="settings-subnav" style="display:flex; align-items:center; gap:8px; margin-bottom:20px; max-width:1160px; border-bottom:1px solid var(--border); padding-bottom:12px;">--}}
+{{--        <a href="{{ route('settings.index') }}" style="text-decoration:none;">--}}
+{{--            <x-core::button size="sm" color="primary" icon="store">--}}
+{{--                <span class="bn">দোকানের পরিচিতি ও প্রোফাইল</span>--}}
+{{--                <span class="en" style="display:none;">Shop Profile</span>--}}
+{{--            </x-core::button>--}}
+{{--        </a>--}}
+{{--        <a href="{{ route('printer-settings.index') }}" style="text-decoration:none;">--}}
+{{--            <x-core::button size="sm" variant="secondary" icon="printer">--}}
+{{--                <span class="bn">প্রিন্টার ও পেপার সাইজ</span>--}}
+{{--                <span class="en" style="display:none;">Printer Settings</span>--}}
+{{--            </x-core::button>--}}
+{{--        </a>--}}
+{{--    </div>--}}
+
     <div style="width:100%; max-width:1160px;">
         <div style="display:grid; grid-template-columns:310px 1fr; gap:22px; align-items:start;" class="shop-settings-grid">
             {{-- Left Column: Shop Summary & Plan Card --}}

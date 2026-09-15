@@ -116,6 +116,14 @@ class Shop extends Model implements Subscribable
     }
 
     /**
+     * Printer configuration for this shop.
+     */
+    public function printerSetting(): HasOne
+    {
+        return $this->hasOne(PrinterSetting::class, 'shop_id');
+    }
+
+    /**
      * Branches belonging to this shop.
      */
     public function branches(): HasMany

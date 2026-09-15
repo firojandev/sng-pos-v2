@@ -3,10 +3,12 @@
 namespace Modules\Sales\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Modules\Customer\Models\Customer;
@@ -20,6 +22,7 @@ use Modules\Product\Models\StockMovement;
 use Modules\Sales\DataTables\SalesDataTable;
 use Modules\Sales\Http\Requests\StoreSaleRequest;
 use Modules\Sales\Http\Requests\UpdateSaleRequest;
+use Modules\Sales\Mail\SaleInvoiceMail;
 use Modules\Sales\Models\Sale;
 use Modules\Sales\Models\SalePayment;
 use Modules\Shop\Models\Warehouse;
@@ -147,6 +150,47 @@ class SaleController extends Controller
         $sale->load(['customer', 'warehouse', 'items.product.units', 'items.unit', 'items.batch', 'payments']);
 
         return view('sales::sales.print-invoice', compact('sale'));
+    }
+
+    /**
+     * Send sale invoice to customer via email.
+     */
+    public function sendInvoiceEmail(Request $request, Sale $sale): JsonResponse
+    {
+        $request->validate([
+            'email' => ['nullable', 'email', 'max:255'],
+        ]);
+
+        $sale->load(['customer', 'shop', 'items.product', 'items.unit']);
+        $recipientEmail = trim((string) ($request->input('email') ?: $sale->customer?->email));
+
+        if (empty($recipientEmail) || ! filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) {
+            throw ValidationException::withMessages([
+                'email' => 'গ্রাহকের কোনো সঠিক ইমেইল ঠিকানা পাওয়া যায়নি। অনুগ্রহ করে একটি ইমেইল ঠিকানা প্রদান করুন।',
+            ]);
+        }
+
+        // If customer exists and has no email, save it for future invoices
+        if ($sale->customer && empty($sale->customer->email) && $request->filled('email')) {
+            $sale->customer->update(['email' => $recipientEmail]);
+        }
+
+        try {
+            Mail::to($recipientEmail)->send(new SaleInvoiceMail($sale, $recipientEmail));
+
+            return response()->json([
+                'success' => true,
+                'message' => "ইনভয়েস সফলভাবে {$recipientEmail} ঠিকানায় পাঠানো হয়েছে।",
+                'email' => $recipientEmail,
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'ইমেইল পাঠাতে সমস্যা হয়েছে: '.$e->getMessage(),
+            ], 500);
+        }
     }
 
     public function create(Request $request): View

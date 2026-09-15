@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Shop\Http\Controllers\BranchController;
 use Modules\Shop\Http\Controllers\PlanController;
+use Modules\Shop\Http\Controllers\PrinterSettingController;
 use Modules\Shop\Http\Controllers\ShopController;
 use Modules\Shop\Http\Controllers\ShopSelectionController;
 use Modules\Shop\Http\Controllers\ShopSettingsController;
@@ -51,4 +52,6 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('feature:subscription');
     Route::get('settings', [ShopSettingsController::class, 'edit'])->name('settings.index');
     Route::put('settings', [ShopSettingsController::class, 'update'])->name('settings.update');
+    Route::get('settings/printer', [PrinterSettingController::class, 'index'])->name('printer-settings.index');
+    Route::put('settings/printer', [PrinterSettingController::class, 'update'])->name('printer-settings.update');
 });
