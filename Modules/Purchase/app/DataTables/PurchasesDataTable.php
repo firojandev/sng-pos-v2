@@ -70,8 +70,8 @@ class PurchasesDataTable extends BaseDataTable
 
                     return '<div style="white-space:nowrap;">'
                         .'<span style="font-family:var(--font-mono, monospace); color:var(--ink-700); font-weight:600;">'
-                        .'<span class="bn">'.$qtyFormatted.' টি পণ্য</span>'
-                        .'<span class="en" style="display:none;">'.$qtyFormatted.' Items</span>'
+                        .'<span class="bn">'.$qtyFormatted.'</span>'
+                        .'<span class="en" style="display:none;">'.$qtyFormatted.'</span>'
                         .'</span>'
                         .'<div style="font-size:11px; color:var(--red-600); font-weight:700; margin-top:2px;">(বাকি: '.$pendingFormatted.')</div>'
                         .'</div>';
@@ -79,8 +79,8 @@ class PurchasesDataTable extends BaseDataTable
 
                 return '<div style="white-space:nowrap;">'
                     .'<span style="font-family:var(--font-mono, monospace); color:var(--ink-700); font-weight:600;">'
-                    .'<span class="bn">'.$qtyFormatted.' টি পণ্য</span>'
-                    .'<span class="en" style="display:none;">'.$qtyFormatted.' Items</span>'
+                    .'<span class="bn">'.$qtyFormatted.'</span>'
+                    .'<span class="en" style="display:none;">'.$qtyFormatted.'</span>'
                     .'</span>'
                     .'</div>';
             })

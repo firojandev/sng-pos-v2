@@ -26,8 +26,8 @@
                     <span class="en" style="display:none;">Product Performance List</span>
                 </div>
                 <div style="font-size:12px; color:var(--ink-500);">
-                    <span class="bn">মোট {{ $products->count() }} টি পণ্য</span>
-                    <span class="en" style="display:none;">Total {{ $products->count() }} products</span>
+                    <span class="bn">মোট {{ $products->count() }}</span>
+                    <span class="en" style="display:none;">Total {{ $products->count() }}</span>
                 </div>
             </div>
             <div class="table-responsive">

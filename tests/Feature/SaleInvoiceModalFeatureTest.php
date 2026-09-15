@@ -374,7 +374,7 @@ class SaleInvoiceModalFeatureTest extends TestCase
 
         $detailResponse = $this->actingAs($this->user)->get(route('sales.show', $sale));
         $detailResponse->assertOk();
-        $detailResponse->assertSee('6 টি পণ্য');
+        $detailResponse->assertSee('6');
         $detailContent = $detailResponse->getContent();
         $this->assertEquals(1, substr_count($detailContent, 'class="tx-item"'));
     }

@@ -15,6 +15,7 @@
     'multiple' => false,
     'error' => null,
     'helper' => null,
+    'helperEn' => null,
     'helperVariant' => 'default',
     'label' => null,
     'labelEn' => null,
@@ -24,6 +25,10 @@
 
 @php
     $inputId = $id ?? ($name ? 'form-field-' . str_replace(['[', ']', '.'], ['-', '', '-'], $name) : null);
+    $resolvedLabelEn = $labelEn ?? $attributes->get('label-en') ?? null;
+    $resolvedHelperEn = $helperEn ?? $attributes->get('helper-en') ?? null;
+    $resolvedPlaceholderEn = $placeholderEn ?? $attributes->get('placeholder-en') ?? null;
+
     $selectedValue = $value;
     if ($name && $value === null) {
         $selectedValue = old($name);
@@ -91,7 +96,7 @@
     if (in_array($size, ['xs', 'sm', 'md', 'lg', 'xl'])) $groupClasses[] = 'form-input-group-' . $size;
     if ($rounded === 'pill') $groupClasses[] = 'form-rounded-pill';
 
-    $hasWrapper = (bool) ($label || $helper || $hasError);
+    $hasWrapper = (bool) ($label || $resolvedLabelEn || $helper || $resolvedHelperEn || $hasError);
 
     $formatOption = function ($key, $val, $selectedVal) {
         $keyStr = (string) $key;
@@ -154,11 +159,12 @@
         :name="$name"
         :id="$inputId"
         :label="$label"
-        :label-en="$labelEn"
+        :label-en="$resolvedLabelEn"
         :required="$required"
         :optional="$optional"
         :icon="$icon"
         :helper="$helper"
+        :helper-en="$resolvedHelperEn"
         :helper-variant="$helperVariant"
         :error="$errorMessage"
         :no-margin="$noMargin"
@@ -176,10 +182,10 @@
                 @if ($required) required @endif
                 @if ($disabled) disabled @endif
                 @if ($multiple) multiple @endif
-                {{ $attributes->merge(['class' => implode(' ', $controlClasses)]) }}
+                {{ $attributes->except(['label-en', 'helper-en', 'placeholder-en'])->merge(['class' => implode(' ', $controlClasses)]) }}
             >
                 @if ($placeholder)
-                    {!! $formatPlaceholder($placeholder, $placeholderEn, $selectedValue) !!}
+                    {!! $formatPlaceholder($placeholder, $resolvedPlaceholderEn, $selectedValue) !!}
                 @endif
 
                 @if (!empty($options))
@@ -206,10 +212,10 @@
             @if ($required) required @endif
             @if ($disabled) disabled @endif
             @if ($multiple) multiple @endif
-            {{ $attributes->merge(['class' => implode(' ', $controlClasses)]) }}
+            {{ $attributes->except(['label-en', 'helper-en', 'placeholder-en'])->merge(['class' => implode(' ', $controlClasses)]) }}
         >
             @if ($placeholder)
-                {!! $formatPlaceholder($placeholder, $placeholderEn, $selectedValue) !!}
+                {!! $formatPlaceholder($placeholder, $resolvedPlaceholderEn, $selectedValue) !!}
             @endif
 
             @if (!empty($options))
