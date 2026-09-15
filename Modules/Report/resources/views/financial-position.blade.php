@@ -22,7 +22,7 @@
         ])
 
         @unless ($asOf->isToday())
-            <div style="margin-bottom:16px; padding:10px 14px; border-radius:8px; background:var(--gold-100); color:var(--gold-ink); font-size:12px; display:flex; align-items:center; gap:8px;">
+            <div class="fin-notice-bar" style="margin-bottom:16px; padding:10px 14px; border-radius:8px; background:var(--gold-100); color:var(--gold-ink); font-size:12px; display:flex; align-items:center; gap:8px;">
                 <x-core::icon name="info" :size="16" />
                 <div>
                     <span class="bn">দ্রষ্টব্য: ধার, দেনা, জামানত, গ্রাহকের পাওনা ও সরবরাহকারীর দেনা তাদের বর্তমান অবস্থা অনুযায়ী দেখানো হয়েছে, নির্বাচিত তারিখের প্রকৃত অবস্থা নয় — এই আইটেমগুলোর ইতিহাস রক্ষণাবেক্ষণ করা হয় না।</span>
@@ -32,7 +32,7 @@
         @endunless
 
         @if (! $isBalanced)
-            <div style="margin-bottom:16px; padding:12px 16px; border-radius:8px; background:var(--red-100); color:var(--red-600); font-size:13px; font-weight:600; display:flex; align-items:center; gap:8px;">
+            <div class="fin-alert-bar" style="margin-bottom:16px; padding:12px 16px; border-radius:8px; background:var(--red-100); color:var(--red-600); font-size:13px; font-weight:600; display:flex; align-items:center; gap:8px;">
                 <x-core::icon name="alert-triangle" :size="18" />
                 <div>
                     <span class="bn">হিসাবের অমিল সতর্কতা: মোট সম্পদ এবং (মোট দায় + নিট অবস্থান)-এর মধ্যে ৳{{ number_format($variance, 2) }} ব্যবধান সনাক্ত হয়েছে।</span>
@@ -86,7 +86,7 @@
         </div>
 
         {{-- Two-Column Side-by-Side Breakdown: Assets vs Liabilities --}}
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; margin-bottom:16px;">
+        <div class="fin-snapshot-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; margin-bottom:16px;">
             {{-- Left Column: Assets Breakdown --}}
             <div class="table-container table-teal">
                 <div class="panel-head" style="padding:10px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:8px;">
@@ -102,6 +102,10 @@
                 </div>
                 <div class="table-responsive">
                     <table class="app-table">
+                        <colgroup>
+                            <col class="col-name" style="width:60%;">
+                            <col class="col-amount" style="width:40%;">
+                        </colgroup>
                         <tbody>
                             <tr>
                                 <td class="cell-main">
@@ -204,6 +208,10 @@
                 </div>
                 <div class="table-responsive">
                     <table class="app-table">
+                        <colgroup>
+                            <col class="col-name" style="width:60%;">
+                            <col class="col-amount" style="width:40%;">
+                        </colgroup>
                         <tbody>
                             <tr>
                                 <td class="cell-main">
@@ -257,39 +265,39 @@
         </div>
 
         {{-- Management Financial Position Analysis & Equations Card --}}
-        <div class="table-container" style="padding:16px 20px; margin-bottom:16px; background:var(--card); border:1px solid var(--border); border-radius:8px;">
-            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+        <div class="table-container fin-analysis-card" style="padding:16px 20px; margin-bottom:16px; background:var(--card); border:1px solid var(--border); border-radius:8px;">
+            <div class="fin-analysis-header" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
                 <div style="display:flex; align-items:center; gap:10px;">
-                    <div style="width:38px; height:38px; border-radius:8px; display:flex; align-items:center; justify-content:center; background:{{ $isSolvent ? 'var(--green-100)' : 'var(--red-100)' }}; color:{{ $isSolvent ? 'var(--green-ink, #059669)' : 'var(--red-ink, #dc2626)' }}; flex-shrink:0;">
+                    <div class="fin-analysis-icon" style="width:38px; height:38px; border-radius:8px; display:flex; align-items:center; justify-content:center; background:{{ $isSolvent ? 'var(--green-100)' : 'var(--red-100)' }}; color:{{ $isSolvent ? 'var(--green-ink, #059669)' : 'var(--red-ink, #dc2626)' }}; flex-shrink:0;">
                         <x-core::icon :name="$isSolvent ? 'shield-check' : 'alert-triangle'" :size="22" />
                     </div>
                     <div>
-                        <div style="font-size:15.5px; font-weight:800; color:var(--ink-900);">
+                        <div class="fin-analysis-title" style="font-size:15.5px; font-weight:800; color:var(--ink-900);">
                             <span class="bn">ব্যবস্থাপনা আর্থিক সমীকরণ ও বিশ্লেষণ (Financial Position Equations)</span>
                             <span class="en" style="display:none;">Management Financial Position Equations</span>
                         </div>
-                        <div style="font-size:11.5px; color:var(--ink-600); margin-top:2px;">
+                        <div class="fin-analysis-sub" style="font-size:11.5px; color:var(--ink-600); margin-top:2px;">
                             <span class="bn">ব্যবসায়ের নিট আর্থিক অবস্থান এবং ভারসাম্য সমীকরণ সারসংক্ষেপ</span>
                             <span class="en" style="display:none;">Executive summary of net financial standing and balancing identities</span>
                         </div>
                     </div>
                 </div>
 
-                <div style="text-align:right;">
+                <div class="fin-net-badge" style="text-align:right;">
                     <div style="font-size:11.5px; color:var(--ink-500); font-weight:600;">
                         <span class="bn">নিট আর্থিক স্থিতি</span>
                         <span class="en" style="display:none;">Net Financial Position</span>
                     </div>
-                    <div style="font-size:22px; font-weight:800; color:{{ $isSolvent ? 'var(--green-ink, #059669)' : 'var(--red-ink, #dc2626)' }}; line-height:1.2;">
+                    <div class="fin-net-val" style="font-size:22px; font-weight:800; color:{{ $isSolvent ? 'var(--green-ink, #059669)' : 'var(--red-ink, #dc2626)' }}; line-height:1.2;">
                         ৳{{ number_format($netPosition, 2) }}
                     </div>
                 </div>
             </div>
 
             {{-- Dual Equations Container --}}
-            <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
+            <div class="fin-equations-container" style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
                 {{-- Equation 1: Assets - Liabilities = Net Position --}}
-                <div style="background:var(--paper); padding:10px 14px; border-radius:8px; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; font-size:12.5px; font-weight:700;">
+                <div class="fin-equation-box" style="background:var(--paper); padding:10px 14px; border-radius:8px; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; font-size:12.5px; font-weight:700;">
                     <span style="color:var(--ink-500); font-size:11px; margin-right:4px;">
                         <span class="bn">সমীকরণ ১:</span><span class="en" style="display:none;">Eq 1:</span>
                     </span>
@@ -307,7 +315,7 @@
                 </div>
 
                 {{-- Equation 2: Liabilities + Net Position = Assets --}}
-                <div style="background:var(--paper); padding:10px 14px; border-radius:8px; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; font-size:12.5px; font-weight:700;">
+                <div class="fin-equation-box" style="background:var(--paper); padding:10px 14px; border-radius:8px; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; font-size:12.5px; font-weight:700;">
                     <span style="color:var(--ink-500); font-size:11px; margin-right:4px;">
                         <span class="bn">সমীকরণ ২:</span><span class="en" style="display:none;">Eq 2:</span>
                     </span>
@@ -326,7 +334,7 @@
             </div>
 
             {{-- Solvency Coverage & Management Commentary --}}
-            <div style="background:var(--paper); padding:10px 14px; border-radius:8px; border:1px solid var(--border); font-size:12px; color:var(--ink-700); line-height:1.6;">
+            <div class="fin-commentary-box" style="background:var(--paper); padding:10px 14px; border-radius:8px; border:1px solid var(--border); font-size:12px; color:var(--ink-700); line-height:1.6;">
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; font-weight:700; color:var(--ink-900);">
                     <x-core::icon name="info" :size="15" style="color:var(--teal-800);" />
                     <span class="bn">দায় পরিশোধ সক্ষমতা বিশ্লেষণ (Solvency Coverage):</span>
@@ -339,11 +347,11 @@
                 <div style="padding-left:23px;">
                     @if ($totalLiabilities > 0)
                         <span class="bn">
-                            সূত্র: <b>মোট সম্পদ (৳{{ number_format($totalAssets, 2) }}) &divide; মোট দায় (৳{{ number_format($totalLiabilities, 2) }}) = {{ $solvencyMultiple }}x</b>। 
+                            সূত্র: <b>মোট সম্পদ (৳{{ number_format($totalAssets, 2) }}) &divide; মোট দায় (৳{{ number_format($totalLiabilities, 2) }}) = {{ $solvencyMultiple }}x</b>।
                             অর্থাৎ আপনার ব্যবসায়ে প্রতি <b>৳১.০০ দায়ের বিপরীতে ৳{{ $solvencyMultiple }} টাকার সম্পদ</b> বিদ্যমান রয়েছে।
                         </span>
                         <span class="en" style="display:none;">
-                            Formula: <b>Total Assets (৳{{ number_format($totalAssets, 2) }}) &divide; Total Liabilities (৳{{ number_format($totalLiabilities, 2) }}) = {{ $solvencyMultiple }}x</b>. 
+                            Formula: <b>Total Assets (৳{{ number_format($totalAssets, 2) }}) &divide; Total Liabilities (৳{{ number_format($totalLiabilities, 2) }}) = {{ $solvencyMultiple }}x</b>.
                             This means the business holds <b>৳{{ $solvencyMultiple }} in assets for every ৳1.00 of liabilities</b>.
                         </span>
                     @else
@@ -376,4 +384,244 @@
         </div>
         @endcan
     </div>
+
+    @push('styles')
+    <style>
+    @media (max-width: 768px) {
+        .fin-snapshot-grid {
+            grid-template-columns: 1fr !important;
+        }
+    }
+
+    @media print {
+        @page {
+            size: A4 portrait;
+            margin: 8mm 8mm 8mm 8mm;
+        }
+
+        /* Notices & Alerts in Print */
+        .fin-notice-bar,
+        .fin-alert-bar {
+            margin-bottom: 6px !important;
+            padding: 4px 8px !important;
+            font-size: 8.5px !important;
+            line-height: 1.3 !important;
+            border-radius: 4px !important;
+            page-break-inside: avoid !important;
+        }
+        .fin-notice-bar svg,
+        .fin-alert-bar svg {
+            width: 12px !important;
+            height: 12px !important;
+        }
+
+        /* Stat Cards Row */
+        .stat-grid {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: stretch !important;
+            gap: 6px !important;
+            margin-bottom: 8px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            page-break-inside: avoid !important;
+        }
+        .stat-grid > .stat-card {
+            flex: 1 1 0 !important;
+            min-width: 0 !important;
+            padding: 4px 6px !important;
+            gap: 4px !important;
+            border: 1px solid #cbd5e1 !important;
+            background: #f8fafc !important;
+            border-radius: 4px !important;
+            overflow: hidden !important;
+            box-sizing: border-box !important;
+            page-break-inside: avoid !important;
+        }
+        .stat-grid .stat-card .ic {
+            width: 22px !important;
+            height: 22px !important;
+            min-width: 22px !important;
+            max-width: 22px !important;
+            border-radius: 4px !important;
+        }
+        .stat-grid .stat-card .ic svg {
+            width: 12px !important;
+            height: 12px !important;
+        }
+        .stat-grid .stat-card .val {
+            font-size: 11px !important;
+            line-height: 1.15 !important;
+        }
+        .stat-grid .stat-card .lbl {
+            font-size: 8px !important;
+            line-height: 1.15 !important;
+        }
+        .stat-grid .stat-card .stat-card-subtext {
+            font-size: 7.5px !important;
+            line-height: 1.15 !important;
+        }
+
+        /* Two-Column Side-by-Side Snapshot: Assets vs Liabilities & Dues */
+        .fin-snapshot-grid {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: stretch !important;
+            gap: 8px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            margin-bottom: 8px !important;
+            page-break-inside: avoid !important;
+        }
+        .fin-snapshot-grid > .table-container {
+            flex: 1 1 0 !important;
+            width: 50% !important;
+            max-width: 50% !important;
+            min-width: 0 !important;
+            box-sizing: border-box !important;
+            margin: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            border: 1px solid #cbd5e1 !important;
+            background: #ffffff !important;
+            border-radius: 4px !important;
+            overflow: visible !important;
+        }
+        .fin-snapshot-grid .panel-head {
+            padding: 4px 8px !important;
+            background: #f8fafc !important;
+            border-bottom: 1px solid #cbd5e1 !important;
+            font-size: 11px !important;
+        }
+        .fin-snapshot-grid .panel-head .app-badge {
+            font-size: 9px !important;
+            padding: 1px 5px !important;
+        }
+        .fin-snapshot-grid .table-responsive {
+            flex: 1 !important;
+            overflow: visible !important;
+            width: 100% !important;
+        }
+        .fin-snapshot-grid .app-table {
+            width: 100% !important;
+            table-layout: auto !important;
+            font-size: 9px !important;
+            border-collapse: collapse !important;
+            box-sizing: border-box !important;
+        }
+        .fin-snapshot-grid .app-table col.col-name,
+        .fin-snapshot-grid .app-table td:first-child:not([colspan]) {
+            width: 60% !important;
+            max-width: 60% !important;
+            box-sizing: border-box !important;
+            word-break: break-word !important;
+            padding: 3px 6px !important;
+        }
+        .fin-snapshot-grid .app-table col.col-amount,
+        .fin-snapshot-grid .app-table td:last-child:not([colspan]) {
+            width: 40% !important;
+            max-width: 40% !important;
+            text-align: right !important;
+            white-space: nowrap !important;
+            box-sizing: border-box !important;
+            padding: 3px 6px !important;
+        }
+        .fin-snapshot-grid .app-table td {
+            border: 1px solid #e2e8f0 !important;
+            padding: 3px 6px !important;
+            line-height: 1.25 !important;
+            box-sizing: border-box !important;
+        }
+        .fin-snapshot-grid .app-table tr:last-child td {
+            font-size: 10px !important;
+            padding: 4px 6px !important;
+            background: #f1f5f9 !important;
+            border-top: 2px solid #cbd5e1 !important;
+        }
+
+        /* Management Financial Position Analysis & Equations Card */
+        .fin-analysis-card {
+            padding: 8px 10px !important;
+            margin-bottom: 6px !important;
+            background: #ffffff !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 4px !important;
+            box-shadow: none !important;
+            page-break-inside: avoid !important;
+        }
+        .fin-analysis-header {
+            margin-bottom: 6px !important;
+            gap: 6px !important;
+        }
+        .fin-analysis-icon {
+            width: 24px !important;
+            height: 24px !important;
+            border-radius: 4px !important;
+        }
+        .fin-analysis-icon svg {
+            width: 14px !important;
+            height: 14px !important;
+        }
+        .fin-analysis-title {
+            font-size: 11.5px !important;
+            line-height: 1.2 !important;
+        }
+        .fin-analysis-sub {
+            font-size: 8px !important;
+            margin-top: 1px !important;
+        }
+        .fin-net-val {
+            font-size: 14px !important;
+            line-height: 1.15 !important;
+        }
+        .fin-equations-container {
+            display: flex !important;
+            flex-direction: row !important;
+            gap: 6px !important;
+            margin-bottom: 6px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        .fin-equation-box {
+            flex: 1 1 0 !important;
+            width: 50% !important;
+            padding: 4px 6px !important;
+            font-size: 8.5px !important;
+            line-height: 1.2 !important;
+            gap: 4px !important;
+            border: 1px solid #e2e8f0 !important;
+            background: #f8fafc !important;
+            border-radius: 4px !important;
+            justify-content: center !important;
+            white-space: normal !important;
+            box-sizing: border-box !important;
+        }
+        .fin-commentary-box {
+            padding: 5px 8px !important;
+            font-size: 8.5px !important;
+            line-height: 1.35 !important;
+            background: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 4px !important;
+        }
+        .fin-commentary-box svg {
+            width: 12px !important;
+            height: 12px !important;
+        }
+        .fin-commentary-box .app-badge {
+            font-size: 8px !important;
+            padding: 1px 4px !important;
+        }
+
+        /* Print Footer */
+        .report-print-footer {
+            margin-top: 8px !important;
+            padding-top: 6px !important;
+            font-size: 8px !important;
+            page-break-inside: avoid !important;
+        }
+    }
+    </style>
+    @endpush
 </x-core::layout>

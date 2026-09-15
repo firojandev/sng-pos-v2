@@ -398,6 +398,14 @@
                         '<path d="M4 19V9m6 10V5m6 14v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
                 ],
                 [
+                    'key' => 'report-sales-vat',
+                    'route' => 'reports.sales-vat',
+                    'bn' => 'বিক্রয় ভ্যাট রিপোর্ট',
+                    'en' => 'Sales VAT Report',
+                    'icon' =>
+                        '<path d="M4 19V9m6 10V5m6 14v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="17" cy="8" r="2" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="16" r="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 17l10-10" stroke="currentColor" stroke-width="1.5"/>',
+                ],
+                [
                     'key' => 'report-purchase',
                     'route' => 'reports.purchase',
                     'bn' => 'ক্রয় রিপোর্ট',
