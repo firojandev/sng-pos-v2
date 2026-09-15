@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Kstmostofa\LaravelWhatsApp\Exceptions\SidecarException;
+use Kstmostofa\LaravelWhatsApp\Facades\WhatsApp;
+use Kstmostofa\LaravelWhatsApp\Models\WaMessage;
 use Modules\Customer\Models\Customer;
 use Modules\Employee\Models\Employee;
 use Modules\Finance\Models\Account;
@@ -189,6 +192,145 @@ class SaleController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'ইমেইল পাঠাতে সমস্যা হয়েছে: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Send sale invoice link to customer via personal WhatsApp (web sidecar).
+     */
+    public function sendInvoiceWhatsApp(Request $request, Sale $sale): JsonResponse
+    {
+        $request->validate([
+            'phone' => ['nullable', 'string', 'max:20'],
+            'session' => ['nullable', 'string', 'max:50'],
+        ]);
+
+        $sale->load(['customer', 'shop']);
+
+        // Resolve recipient phone
+        $rawPhone = trim((string) ($request->input('phone') ?: $sale->customer?->phone));
+        $rawPhone = preg_replace('/[^0-9]/', '', $rawPhone);
+
+        if (empty($rawPhone)) {
+            throw ValidationException::withMessages([
+                'phone' => 'গ্রাহকের কোনো ফোন নম্বর পাওয়া যায়নি। অনুগ্রহ করে একটি ফোন নম্বর প্রদান করুন।',
+            ]);
+        }
+
+        // Normalize to international format with country code (Bangladesh: 88)
+        if (! str_starts_with($rawPhone, '88')) {
+            $rawPhone = '88'.$rawPhone;
+        }
+
+        // Build the invoice message
+        $shopName = $sale->shop?->name ?? 'ব্যবসা প্রতিষ্ঠান';
+        $publicUrl = $sale->public_url;
+        $message = "প্রিয় গ্রাহক,\n\n"
+            ."আপনার বিক্রয় ইনভয়েস *#{$sale->invoice_no}* প্রস্তুত হয়েছে।\n\n"
+            .'🧾 মোট: ৳'.number_format((float) $sale->total, 2)."\n"
+            .'💰 পরিশোধ: ৳'.number_format((float) $sale->paid_amount, 2)."\n";
+
+        if ((float) $sale->due_amount > 0) {
+            $message .= '📌 বাকি: ৳'.number_format((float) $sale->due_amount, 2)."\n";
+        }
+
+        $message .= "\n📄 অনলাইন ইনভয়েস দেখুন:\n{$publicUrl}\n\n"
+            ."ধন্যবাদান্তে,\n*{$shopName}*";
+
+        $defaultSession = $sale->shop_id ? "shop_{$sale->shop_id}" : config('laravel-whatsapp.ui.default_session', 'main');
+        $sessionId = $request->input('session', $defaultSession);
+
+        // Check if web sidecar is enabled
+        if (! config('laravel-whatsapp.web.enabled')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'হোয়াটসঅ্যাপ ওয়েব সাইডকার সক্রিয় নেই। অনুগ্রহ করে সেটিংসে সক্রিয় করুন।',
+                'fallback_url' => 'https://api.whatsapp.com/send?phone='.$rawPhone.'&text='.urlencode($message),
+            ], 422);
+        }
+
+        try {
+            $whatsapp = WhatsApp::web($sessionId);
+            $state = $whatsapp->state();
+
+            // If specific shop session isn't ready, fallback to 'main' if available
+            if (($state['status'] ?? '') !== 'ready' && $sessionId !== 'main') {
+                try {
+                    $mainWhatsapp = WhatsApp::web('main');
+                    $mainState = $mainWhatsapp->state();
+                    if (($mainState['status'] ?? '') === 'ready') {
+                        $sessionId = 'main';
+                        $whatsapp = $mainWhatsapp;
+                        $state = $mainState;
+                    }
+                } catch (\Throwable) {
+                    // Retain original session state
+                }
+            }
+
+            // Check session state
+            if (($state['status'] ?? '') !== 'ready') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'হোয়াটসঅ্যাপ সেশন প্রস্তুত নেই (স্ট্যাটাস: '.($state['status'] ?? 'unknown').')। অনুগ্রহ করে সেটিংস > হোয়াটসঅ্যাপ সেটিংস থেকে QR কোড স্ক্যান করে পেয়ার করুন।',
+                    'session_status' => $state['status'] ?? 'unknown',
+                    'settings_url' => route('whatsapp-settings.index'),
+                    'fallback_url' => 'https://api.whatsapp.com/send?phone='.$rawPhone.'&text='.urlencode($message),
+                ], 422);
+            }
+
+            // Send the message via web sidecar
+            $result = $whatsapp->messages()->sendText('+'.$rawPhone, $message);
+
+            // Store message in database
+            $waMessageId = is_array($result) ? ($result['id'] ?? null) : null;
+            WaMessage::create([
+                'shop_id' => $sale->shop_id,
+                'sale_id' => $sale->id,
+                'backend' => 'web',
+                'session_id' => $sessionId,
+                'wa_message_id' => $waMessageId,
+                'direction' => 'outbound',
+                'chat_id' => $rawPhone.'@c.us',
+                'from_id' => $sessionId,
+                'to_id' => '+'.$rawPhone,
+                'type' => 'text',
+                'body' => $message,
+                'payload' => [
+                    'sale_id' => $sale->id,
+                    'invoice_no' => $sale->invoice_no,
+                    'shop_id' => $sale->shop_id,
+                    'customer_id' => $sale->customer_id,
+                    'customer_phone' => $rawPhone,
+                    'result' => $result,
+                ],
+                'status' => 'sent',
+                'ack' => 1,
+                'wa_timestamp' => now(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'ইনভয়েস সফলভাবে হোয়াটসঅ্যাপে পাঠানো হয়েছে!',
+                'phone' => $rawPhone,
+                'wa_message_id' => $waMessageId,
+            ]);
+        } catch (SidecarException $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'হোয়াটসঅ্যাপে পাঠাতে সমস্যা হয়েছে: '.$e->getMessage(),
+                'fallback_url' => 'https://api.whatsapp.com/send?phone='.$rawPhone.'&text='.urlencode($message),
+            ], 500);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'হোয়াটসঅ্যাপে পাঠাতে সমস্যা হয়েছে: '.$e->getMessage(),
+                'fallback_url' => 'https://api.whatsapp.com/send?phone='.$rawPhone.'&text='.urlencode($message),
             ], 500);
         }
     }

@@ -5,6 +5,9 @@ namespace Tests\Feature;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
+use Kstmostofa\LaravelWhatsApp\Web\Resources\MessagesResource;
+use Kstmostofa\LaravelWhatsApp\Web\WebClient;
+use Kstmostofa\LaravelWhatsApp\Web\WebSession;
 use Modules\Core\Support\Features;
 use Modules\Core\Support\Permissions;
 use Modules\Customer\Models\Customer;
@@ -320,10 +323,136 @@ class PublicSaleInvoiceFeatureTest extends TestCase
         $response->assertOk();
         $response->assertSee('id="btnSendSaleEmail"', false);
         $response->assertSee('ইমেইল পাঠান');
+        $response->assertSee('Send Email');
         $response->assertSee('id="btnCopyPublicInvoiceLink"', false);
         $response->assertSee('লিংক কপি');
+        $response->assertSee('Copy Link');
         $response->assertSee('id="btnShareWhatsApp"', false);
         $response->assertSee('হোয়াটসঅ্যাপ');
+        $response->assertSee('WhatsApp');
+        $response->assertSee('btn-print-sale-invoice', false);
+        $response->assertSee('প্রিন্ট করুন');
+        $response->assertSee('Print');
+        $response->assertSee('flex-wrap:nowrap', false);
         $response->assertSee($sale->public_url, false);
+    }
+
+    public function test_send_invoice_whatsapp_validation_fails_when_no_phone_provided_and_customer_has_none(): void
+    {
+        $customerWithoutPhone = Customer::create([
+            'shop_id' => $this->shop->id,
+            'name' => 'নো ফোন গ্রাহক',
+            'status' => 'active',
+        ]);
+
+        $sale = Sale::create([
+            'shop_id' => $this->shop->id,
+            'warehouse_id' => $this->warehouse->id,
+            'customer_id' => $customerWithoutPhone->id,
+            'invoice_no' => 'SL-PUB-07',
+            'sale_date' => now()->toDateString(),
+            'subtotal' => 1200,
+            'discount' => 0,
+            'delivery_charge' => 0,
+            'total' => 1200,
+            'paid_amount' => 1200,
+            'due_amount' => 0,
+            'payment_status' => 'paid',
+        ]);
+
+        $response = $this->actingAs($this->user)->postJson(route('sales.send-whatsapp', $sale));
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['phone']);
+    }
+
+    public function test_send_invoice_whatsapp_returns_fallback_url_when_sidecar_disabled(): void
+    {
+        config(['laravel-whatsapp.web.enabled' => false]);
+
+        $sale = Sale::create([
+            'shop_id' => $this->shop->id,
+            'warehouse_id' => $this->warehouse->id,
+            'customer_id' => $this->customer->id,
+            'invoice_no' => 'SL-PUB-08',
+            'sale_date' => now()->toDateString(),
+            'subtotal' => 1200,
+            'discount' => 0,
+            'delivery_charge' => 0,
+            'total' => 1200,
+            'paid_amount' => 1200,
+            'due_amount' => 0,
+            'payment_status' => 'paid',
+        ]);
+
+        $response = $this->actingAs($this->user)->postJson(route('sales.send-whatsapp', $sale));
+
+        $response->assertStatus(422);
+        $response->assertJsonStructure([
+            'success',
+            'message',
+            'fallback_url',
+        ]);
+        $this->assertFalse($response->json('success'));
+        $this->assertStringContainsString('api.whatsapp.com/send', $response->json('fallback_url'));
+    }
+
+    public function test_send_invoice_whatsapp_sends_via_sidecar_when_ready(): void
+    {
+        config(['laravel-whatsapp.web.enabled' => true]);
+
+        $mockWebSession = \Mockery::mock(WebSession::class);
+        $mockWebSession->shouldReceive('state')
+            ->once()
+            ->andReturn(['status' => 'ready']);
+
+        $mockMessagesResource = \Mockery::mock(MessagesResource::class);
+        $mockMessagesResource->shouldReceive('sendText')
+            ->once()
+            ->with(\Mockery::pattern('/^\+8801812345678/'), \Mockery::pattern('/SL-PUB-09/'))
+            ->andReturn(['id' => 'msg-wa-12345']);
+
+        $mockWebSession->shouldReceive('messages')
+            ->once()
+            ->andReturn($mockMessagesResource);
+
+        $mockWebClient = \Mockery::mock(WebClient::class);
+        $mockWebClient->shouldReceive('session')
+            ->withAnyArgs()
+            ->andReturn($mockWebSession);
+
+        $this->app->instance(WebClient::class, $mockWebClient);
+
+        $sale = Sale::create([
+            'shop_id' => $this->shop->id,
+            'warehouse_id' => $this->warehouse->id,
+            'customer_id' => $this->customer->id,
+            'invoice_no' => 'SL-PUB-09',
+            'sale_date' => now()->toDateString(),
+            'subtotal' => 1200,
+            'discount' => 0,
+            'delivery_charge' => 0,
+            'total' => 1200,
+            'paid_amount' => 1200,
+            'due_amount' => 0,
+            'payment_status' => 'paid',
+        ]);
+
+        $response = $this->actingAs($this->user)->postJson(route('sales.send-whatsapp', $sale));
+
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+            'wa_message_id' => 'msg-wa-12345',
+        ]);
+
+        $this->assertDatabaseHas('wa_messages', [
+            'shop_id' => $this->shop->id,
+            'sale_id' => $sale->id,
+            'backend' => 'web',
+            'wa_message_id' => 'msg-wa-12345',
+            'direction' => 'outbound',
+            'status' => 'sent',
+        ]);
     }
 }

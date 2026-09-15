@@ -10,6 +10,7 @@ use Modules\Shop\Http\Controllers\ShopSettingsController;
 use Modules\Shop\Http\Controllers\SubscriptionController;
 use Modules\Shop\Http\Controllers\SystemSettingsController;
 use Modules\Shop\Http\Controllers\WarehouseController;
+use Modules\Shop\Http\Controllers\WhatsAppSettingController;
 
 Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::get('shops/check-availability', [ShopController::class, 'checkAvailability'])->name('shops.check-availability');
@@ -54,4 +55,9 @@ Route::middleware(['auth'])->group(function () {
     Route::put('settings', [ShopSettingsController::class, 'update'])->name('settings.update');
     Route::get('settings/printer', [PrinterSettingController::class, 'index'])->name('printer-settings.index');
     Route::put('settings/printer', [PrinterSettingController::class, 'update'])->name('printer-settings.update');
+    Route::get('settings/whatsapp', [WhatsAppSettingController::class, 'index'])->name('whatsapp-settings.index');
+    Route::post('settings/whatsapp/start', [WhatsAppSettingController::class, 'start'])->name('whatsapp-settings.start');
+    Route::get('settings/whatsapp/status', [WhatsAppSettingController::class, 'status'])->name('whatsapp-settings.status');
+    Route::post('settings/whatsapp/disconnect', [WhatsAppSettingController::class, 'disconnect'])->name('whatsapp-settings.disconnect');
+    Route::post('settings/whatsapp/test', [WhatsAppSettingController::class, 'sendTestMessage'])->name('whatsapp-settings.test');
 });

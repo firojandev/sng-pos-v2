@@ -3,12 +3,13 @@
     $printerSetting = $shop?->printerSetting ?? \Modules\Shop\Models\PrinterSetting::getDefaultForShop($shop->id ?? 1);
 @endphp
 <div class="modal-backdrop" id="saleInvoiceModal" style="z-index:1050;">
-    <div class="modal-box" style="width:{{ $printerSetting->isThermal() ? '460px' : ($printerSetting->isA5() ? '580px' : '760px') }}; max-width:96vw; max-height:94vh; padding:0; border-radius:12px; background:var(--card, #ffffff); border:1px solid var(--border, #e2e8f0); box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); display:flex; flex-direction:column; overflow:hidden;">
+    <div class="modal-box" style="width:{{ $printerSetting->isThermal() ? '500px' : ($printerSetting->isA5() ? '600px' : '760px') }}; max-width:96vw; max-height:94vh; padding:0; border-radius:12px; background:var(--card, #ffffff); border:1px solid var(--border, #e2e8f0); box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); display:flex; flex-direction:column; overflow:hidden;">
 
         {{-- Modal Header: "Sale Invoice" with Close Button --}}
         <div class="modal-head" style="padding:14px 20px; border-bottom:1px solid var(--border, #e2e8f0); display:flex; align-items:center; justify-content:space-between; background:var(--card, #ffffff);">
             <h3 style="font-size:18px; font-weight:700; color:var(--ink-900, #0f172a); margin:0; font-family:'Noto Sans Bengali', sans-serif;">
-                Sale Invoice
+                <span class="bn">বিক্রয় ইনভয়েস</span>
+                <span class="en">Sale Invoice</span>
             </h3>
             <x-core::button
                 type="button"
@@ -27,8 +28,9 @@
         </div>
 
         {{-- Modal Footer: Actions Bar --}}
-        <div class="modal-foot" style="padding:12px 20px; background:var(--card, #ffffff); border-top:1px solid var(--border, #e2e8f0); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
-            <div style="display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        {{-- Modal Footer: Actions Bar (Strictly One Row) --}}
+        <div class="modal-foot" style="padding:10px 16px; background:var(--card, #ffffff); border-top:1px solid var(--border, #e2e8f0); display:flex; align-items:center; justify-content:space-between; flex-wrap:nowrap !important; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch;">
+            <div style="display:flex; align-items:center; gap:6px; flex-wrap:nowrap !important; flex-shrink:0;">
                 {{-- Send via Email --}}
                 <x-core::button
                     type="button"
@@ -38,9 +40,11 @@
                     id="btnSendSaleEmail"
                     data-url="{{ route('sales.send-email', $sale) }}"
                     data-email="{{ $sale->customer?->email ?? '' }}"
-                    title="গ্রাহককে ইমেইল পাঠান / Send via Email"
+                    title="ইমেইল পাঠান / Send Email"
+                    style="white-space:nowrap !important; flex-shrink:0;"
                 >
-                    <span>ইমেইল পাঠান</span>
+                    <span class="bn">ইমেইল পাঠান</span>
+                    <span class="en">Send Email</span>
                 </x-core::button>
 
                 {{-- Copy Public Link --}}
@@ -51,17 +55,17 @@
                     icon="copy"
                     id="btnCopyPublicInvoiceLink"
                     data-url="{{ $sale->public_url }}"
-                    title="পাবলিক লিংক কপি করুন / Copy Public Link"
+                    title="লিংক কপি / Copy Link"
+                    style="white-space:nowrap !important; flex-shrink:0;"
                 >
-                    <span>লিংক কপি</span>
+                    <span class="bn">লিংক কপি</span>
+                    <span class="en">Copy Link</span>
                 </x-core::button>
 
-                {{-- WhatsApp Share --}}
+                {{-- WhatsApp Send (via personal WhatsApp sidecar) --}}
                 @php
                     $rawPhone = preg_replace('/[^0-9]/', '', (string) ($sale->customer?->phone ?? ''));
                     $customerPhone = $rawPhone ? (str_starts_with($rawPhone, '88') ? $rawPhone : '88' . $rawPhone) : '';
-                    $waText = "প্রিয় গ্রাহক, আপনার বিক্রয় ইনভয়েস #{$sale->invoice_no} দেখতে এই লিংকে ক্লিক করুন: " . $sale->public_url;
-                    $waUrl = "https://api.whatsapp.com/send?" . ($customerPhone ? "phone={$customerPhone}&" : "") . "text=" . urlencode($waText);
                 @endphp
                 <x-core::button
                     type="button"
@@ -69,10 +73,13 @@
                     size="sm"
                     icon="share-2"
                     id="btnShareWhatsApp"
-                    title="হোয়াটসঅ্যাপে পাঠান / Share on WhatsApp"
-                    onclick="window.open('{{ $waUrl }}', '_blank')"
+                    data-url="{{ route('sales.send-whatsapp', $sale) }}"
+                    data-phone="{{ $customerPhone }}"
+                    title="হোয়াটসঅ্যাপ / WhatsApp"
+                    style="white-space:nowrap !important; flex-shrink:0;"
                 >
-                    <span>হোয়াটসঅ্যাপ</span>
+                    <span class="bn">হোয়াটসঅ্যাপ</span>
+                    <span class="en">WhatsApp</span>
                 </x-core::button>
             </div>
 
@@ -84,8 +91,11 @@
                 icon="printer"
                 class="btn-print-sale-invoice"
                 onclick="printSaleInvoice('{{ route('sales.print-invoice', $sale) }}')"
+                title="প্রিন্ট করুন / Print"
+                style="white-space:nowrap !important; flex-shrink:0;"
             >
-                <span>প্রিন্ট করুন</span>
+                <span class="bn">প্রিন্ট করুন</span>
+                <span class="en">Print</span>
             </x-core::button>
         </div>
     </div>
@@ -131,18 +141,23 @@
         }
     });
 
+    function isEn() {
+        return $('body').hasClass('lang-en') || $('html').hasClass('lang-en');
+    }
+
     // Copy public invoice link
     $(document).off('click.copyPublicInvoice').on('click.copyPublicInvoice', '#btnCopyPublicInvoiceLink', function (e) {
         e.preventDefault();
         var url = $(this).data('url');
+        var en = isEn();
         if (navigator.clipboard && window.isSecureContext) {
             navigator.clipboard.writeText(url).then(function () {
                 if (typeof window.showToast === 'function') {
-                    window.showToast('ইনভয়েসের পাবলিক লিংক কপি করা হয়েছে!', 'success');
+                    window.showToast(en ? 'Public invoice link copied!' : 'ইনভয়েসের পাবলিক লিংক কপি করা হয়েছে!', 'success');
                 } else if (typeof Swal !== 'undefined') {
                     Swal.fire({
                         icon: 'success',
-                        title: 'লিংক কপি করা হয়েছে',
+                        title: en ? 'Link Copied' : 'লিংক কপি করা হয়েছে',
                         text: url,
                         timer: 2500,
                         showConfirmButton: false
@@ -156,11 +171,11 @@
             document.execCommand('copy');
             $temp.remove();
             if (typeof window.showToast === 'function') {
-                window.showToast('ইনভয়েসের পাবলিক লিংক কপি করা হয়েছে!', 'success');
+                window.showToast(en ? 'Public invoice link copied!' : 'ইনভয়েসের পাবলিক লিংক কপি করা হয়েছে!', 'success');
             } else if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     icon: 'success',
-                    title: 'লিংক কপি করা হয়েছে',
+                    title: en ? 'Link Copied' : 'লিংক কপি করা হয়েছে',
                     text: url,
                     timer: 2500,
                     showConfirmButton: false
@@ -174,14 +189,15 @@
         e.preventDefault();
         var $btn = $(this);
         var url = $btn.data('url');
-        var customerEmail = $btn.data('email');
+        var customerEmail = String($btn.attr('data-email') || $btn.data('email') || '').trim();
+        var en = isEn();
 
         function doSend(emailToSend) {
             $btn.prop('disabled', true).addClass('loading');
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
-                    title: 'ইমেইল পাঠানো হচ্ছে...',
-                    text: 'অনুগ্রহ করে অপেক্ষা করুন।',
+                    title: en ? 'Sending email...' : 'ইমেইল পাঠানো হচ্ছে...',
+                    text: en ? 'Please wait.' : 'অনুগ্রহ করে অপেক্ষা করুন।',
                     allowOutsideClick: false,
                     didOpen: function () {
                         Swal.showLoading();
@@ -198,40 +214,42 @@
                 },
                 success: function (res) {
                     $btn.prop('disabled', false).removeClass('loading');
-                    $btn.data('email', emailToSend);
+                    $btn.attr('data-email', emailToSend);
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
                             icon: 'success',
-                            title: 'ইমেইল সফলভাবে পাঠানো হয়েছে!',
-                            text: res.message || 'গ্রাহকের ইমেইলে ইনভয়েস পৌঁছে গেছে।',
-                            confirmButtonText: 'ঠিক আছে'
+                            title: en ? 'Email Sent Successfully!' : 'ইমেইল সফলভাবে পাঠানো হয়েছে!',
+                            text: res.message || (en ? 'Invoice has been sent to customer email.' : 'গ্রাহকের ইমেইলে ইনভয়েস পৌঁছে গেছে।'),
+                            confirmButtonText: en ? 'OK' : 'ঠিক আছে'
                         });
                     }
                 },
                 error: function (xhr) {
                     $btn.prop('disabled', false).removeClass('loading');
-                    var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'ইমেইল পাঠানো যায়নি। অনুগ্রহ করে পুনরায় চেষ্টা করুন।';
+                    var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : (en ? 'Could not send email. Please try again.' : 'ইমেইল পাঠানো যায়নি। অনুগ্রহ করে পুনরায় চেষ্টা করুন।');
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
                             icon: 'error',
-                            title: 'ব্যর্থ হয়েছে',
+                            title: en ? 'Failed' : 'ব্যর্থ হয়েছে',
                             text: msg,
-                            confirmButtonText: 'ঠিক আছে'
+                            confirmButtonText: en ? 'OK' : 'ঠিক আছে'
                         });
                     }
                 }
             });
         }
 
-        if (customerEmail && customerEmail.trim() !== '') {
+        if (customerEmail !== '') {
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
-                    title: 'ইনভয়েস ইমেইল পাঠান',
-                    text: 'গ্রাহকের সংরক্ষিত ইমেইল (' + customerEmail + ') ঠিকানায় ইনভয়েস পাঠানো হবে। আপনি কি পাঠাতে চান?',
+                    title: en ? 'Send Invoice Email' : 'ইনভয়েস ইমেইল পাঠান',
+                    text: en
+                        ? 'Invoice will be sent to (' + customerEmail + '). Do you want to proceed?'
+                        : 'গ্রাহকের সংরক্ষিত ইমেইল (' + customerEmail + ') ঠিকানায় ইনভয়েস পাঠানো হবে। আপনি কি পাঠাতে চান?',
                     icon: 'question',
                     showCancelButton: true,
-                    confirmButtonText: 'হ্যাঁ, পাঠান',
-                    cancelButtonText: 'বাতিল'
+                    confirmButtonText: en ? 'Yes, Send' : 'হ্যাঁ, পাঠান',
+                    cancelButtonText: en ? 'Cancel' : 'বাতিল'
                 }).then(function (result) {
                     if (result.isConfirmed) {
                         doSend(customerEmail);
@@ -243,16 +261,16 @@
         } else {
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
-                    title: 'ইমেইল ঠিকানা লিখুন',
-                    text: 'গ্রাহকের কোনো ইমেইল ঠিকানা সংরক্ষিত নেই। অনুগ্রহ করে প্রাপকের ইমেইল লিখুন:',
+                    title: en ? 'Enter Email Address' : 'ইমেইল ঠিকানা লিখুন',
+                    text: en ? 'Customer has no saved email. Please enter recipient email:' : 'গ্রাহকের কোনো ইমেইল ঠিকানা সংরক্ষিত নেই। অনুগ্রহ করে প্রাপকের ইমেইল লিখুন:',
                     input: 'email',
                     inputPlaceholder: 'customer@example.com',
                     showCancelButton: true,
-                    confirmButtonText: 'ইমেইল পাঠান',
-                    cancelButtonText: 'বাতিল',
+                    confirmButtonText: en ? 'Send Email' : 'ইমেইল পাঠান',
+                    cancelButtonText: en ? 'Cancel' : 'বাতিল',
                     inputValidator: function (value) {
                         if (!value) {
-                            return 'একটি সঠিক ইমেইল ঠিকানা প্রদান করুন!';
+                            return en ? 'Please provide a valid email address!' : 'একটি সঠিক ইমেইল ঠিকানা প্রদান করুন!';
                         }
                     }
                 }).then(function (result) {
@@ -261,9 +279,127 @@
                     }
                 });
             } else {
-                var manualEmail = prompt('অনুগ্রহ করে গ্রাহকের ইমেইল ঠিকানা লিখুন:');
+                var manualEmail = prompt(en ? 'Please enter customer email address:' : 'অনুগ্রহ করে গ্রাহকের ইমেইল ঠিকানা লিখুন:');
                 if (manualEmail) {
                     doSend(manualEmail);
+                }
+            }
+        }
+    });
+
+    // Send invoice via WhatsApp (personal number via sidecar)
+    $(document).off('click.sendSaleWhatsApp').on('click.sendSaleWhatsApp', '#btnShareWhatsApp', function (e) {
+        e.preventDefault();
+        var $btn = $(this);
+        var url = $btn.data('url');
+        var customerPhone = String($btn.attr('data-phone') || $btn.data('phone') || '').trim();
+        var en = isEn();
+
+        function doWaSend(phoneToSend) {
+            $btn.prop('disabled', true).addClass('loading');
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: en ? 'Sending via WhatsApp...' : 'হোয়াটসঅ্যাপে পাঠানো হচ্ছে...',
+                    text: en ? 'Please wait.' : 'অনুগ্রহ করে অপেক্ষা করুন।',
+                    allowOutsideClick: false,
+                    didOpen: function () {
+                        Swal.showLoading();
+                    }
+                });
+            }
+
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr('content'),
+                    phone: phoneToSend
+                },
+                success: function (res) {
+                    $btn.prop('disabled', false).removeClass('loading');
+                    $btn.attr('data-phone', phoneToSend);
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: en ? 'Sent Successfully!' : 'সফলভাবে পাঠানো হয়েছে!',
+                            text: res.message || (en ? 'Invoice has reached customer WhatsApp.' : 'গ্রাহকের হোয়াটসঅ্যাপে ইনভয়েস পৌঁছে গেছে।'),
+                            confirmButtonText: en ? 'OK' : 'ঠিক আছে'
+                        });
+                    }
+                },
+                error: function (xhr) {
+                    $btn.prop('disabled', false).removeClass('loading');
+                    var resp = xhr.responseJSON || {};
+                    var msg = resp.message || (en ? 'Could not send WhatsApp message.' : 'হোয়াটসঅ্যাপে পাঠানো যায়নি।');
+                    var fallbackUrl = resp.fallback_url || '';
+
+                    if (typeof Swal !== 'undefined') {
+                        var actionsHtml = msg;
+                        if (resp.settings_url) {
+                            actionsHtml += '<br><br><a href="' + resp.settings_url + '" target="_blank" style="display:inline-flex; align-items:center; gap:6px; text-decoration:none; padding:7px 16px; border-radius:6px; background:#2563eb; color:#ffffff; font-weight:600; font-size:13px;">' + (en ? 'Go to QR Code Scan Page' : 'QR কোড স্ক্যান পেজে যান') + '</a>';
+                        }
+                        Swal.fire({
+                            icon: 'warning',
+                            title: en ? 'WhatsApp Not Connected' : 'হোয়াটসঅ্যাপ সংযুক্ত নেই',
+                            html: actionsHtml,
+                            showCancelButton: !!fallbackUrl,
+                            confirmButtonText: fallbackUrl ? (en ? 'Send via WhatsApp Web' : 'WhatsApp Web দিয়ে পাঠান') : (en ? 'OK' : 'ঠিক আছে'),
+                            cancelButtonText: en ? 'Cancel' : 'বাতিল'
+                        }).then(function (result) {
+                            if (result.isConfirmed && fallbackUrl) {
+                                window.open(fallbackUrl, '_blank');
+                            }
+                        });
+                    } else if (fallbackUrl) {
+                        window.open(fallbackUrl, '_blank');
+                    }
+                }
+            });
+        }
+
+        if (customerPhone !== '') {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: en ? 'Send Invoice via WhatsApp' : 'হোয়াটসঅ্যাপে ইনভয়েস পাঠান',
+                    text: en
+                        ? 'Invoice will be sent to (' + customerPhone + ') from your personal WhatsApp.'
+                        : 'গ্রাহকের নম্বর (' + customerPhone + ') এ আপনার ব্যক্তিগত হোয়াটসঅ্যাপ থেকে ইনভয়েস পাঠানো হবে।',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: en ? 'Yes, Send' : 'হ্যাঁ, পাঠান',
+                    cancelButtonText: en ? 'Cancel' : 'বাতিল'
+                }).then(function (result) {
+                    if (result.isConfirmed) {
+                        doWaSend(customerPhone);
+                    }
+                });
+            } else {
+                doWaSend(customerPhone);
+            }
+        } else {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: en ? 'Enter Phone Number' : 'ফোন নম্বর লিখুন',
+                    text: en ? 'Customer has no saved phone number. Please enter recipient phone number:' : 'গ্রাহকের কোনো ফোন নম্বর সংরক্ষিত নেই। অনুগ্রহ করে প্রাপকের ফোন নম্বর লিখুন:',
+                    input: 'text',
+                    inputPlaceholder: '01XXXXXXXXX',
+                    showCancelButton: true,
+                    confirmButtonText: en ? 'Send WhatsApp' : 'হোয়াটসঅ্যাপে পাঠান',
+                    cancelButtonText: en ? 'Cancel' : 'বাতিল',
+                    inputValidator: function (value) {
+                        if (!value || value.replace(/[^0-9]/g, '').length < 10) {
+                            return en ? 'Please provide a valid phone number!' : 'একটি সঠিক ফোন নম্বর প্রদান করুন!';
+                        }
+                    }
+                }).then(function (result) {
+                    if (result.isConfirmed && result.value) {
+                        doWaSend(result.value.replace(/[^0-9]/g, ''));
+                    }
+                });
+            } else {
+                var manualPhone = prompt(en ? 'Please enter customer phone number:' : 'অনুগ্রহ করে গ্রাহকের ফোন নম্বর লিখুন:');
+                if (manualPhone) {
+                    doWaSend(manualPhone.replace(/[^0-9]/g, ''));
                 }
             }
         }

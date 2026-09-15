@@ -12,22 +12,6 @@
         </div>
     @endif
 
-    {{-- Settings Navigation Subnav --}}
-{{--    <div class="settings-subnav" style="display:flex; align-items:center; gap:8px; margin-bottom:20px; max-width:1400px; border-bottom:1px solid var(--border); padding-bottom:12px;">--}}
-{{--        <a href="{{ route('settings.index') }}" style="text-decoration:none;">--}}
-{{--            <x-core::button size="sm" variant="secondary" icon="store">--}}
-{{--                <span class="bn">দোকানের পরিচিতি ও প্রোফাইল</span>--}}
-{{--                <span class="en" style="display:none;">Shop Profile</span>--}}
-{{--            </x-core::button>--}}
-{{--        </a>--}}
-{{--        <a href="{{ route('printer-settings.index') }}" style="text-decoration:none;">--}}
-{{--            <x-core::button size="sm" color="primary" icon="printer">--}}
-{{--                <span class="bn">প্রিন্টার ও পেপার সাইজ</span>--}}
-{{--                <span class="en" style="display:none;">Printer Settings</span>--}}
-{{--            </x-core::button>--}}
-{{--        </a>--}}
-{{--    </div>--}}
-
     <style>
         @media (max-width: 1080px) {
             .printer-settings-grid {
