@@ -332,7 +332,7 @@
                                 label="স্বয়ংক্রিয় প্রিন্ট ডায়ালগ চালু করুন"
                                 label-en="Auto Open Print Dialog"
                                 description="বিক্রয় সম্পন্ন হলে বা ইনভয়েস পেজ খুললে সরাসরি প্রিন্ট উইন্ডো ওপেন হবে।"
-                                color="primary"
+                                color="teal"
                             />
                         </div>
 
