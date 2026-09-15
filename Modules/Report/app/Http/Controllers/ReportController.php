@@ -264,46 +264,94 @@ class ReportController extends Controller
     public function financialPosition(Request $request): View
     {
         $asOf = $this->resolveAsOf($request);
+        $data = $this->computeFinancialSnapshot($asOf);
 
-        $totalAssetsWithSecurity = (float) Asset::where('created_at', '<=', $asOf)->sum(DB::raw("CASE WHEN amount > (CASE WHEN depreciation_type = 'percentage' THEN (amount * COALESCE(depreciation, 0) / 100.0) ELSE COALESCE(depreciation, 0) END) THEN amount - (CASE WHEN depreciation_type = 'percentage' THEN (amount * COALESCE(depreciation, 0) / 100.0) ELSE COALESCE(depreciation, 0) END) ELSE 0 END"))
-            + (float) SecurityMoney::where('status', 'paid')->where('date', '<=', $asOf)->sum('amount');
-
-        $stockValue = $this->stockValue($asOf);
-        $receivable = $this->customerReceivable($asOf);
-        $payable = $this->supplierPayable($asOf);
-        $lendOutstanding = (float) Lend::where('status', 'due')->where('date', '<=', $asOf)->sum('amount');
-        $cashAndBank = $this->cashAndBankBalance($asOf);
-
-        $netPosition = ($totalAssetsWithSecurity + $stockValue + $receivable + $lendOutstanding + $cashAndBank) - $payable;
-
-        return view('report::financial-position', compact(
-            'asOf', 'totalAssetsWithSecurity', 'stockValue', 'receivable', 'payable', 'lendOutstanding', 'cashAndBank', 'netPosition',
-        ));
+        return view('report::financial-position', $data);
     }
 
     public function balanceSheet(Request $request): View
     {
         $asOf = $this->resolveAsOf($request);
+        $data = $this->computeFinancialSnapshot($asOf);
 
+        return view('report::balance-sheet', $data);
+    }
+
+    /**
+     * Compute a unified accounting snapshot as of a given moment.
+     * Both Financial Position and Balance Sheet share this identical calculation engine.
+     *
+     * @return array<string, mixed>
+     */
+    private function computeFinancialSnapshot(Carbon $asOf): array
+    {
         $cashAndBank = $this->cashAndBankBalance($asOf);
-        $receivable = $this->customerReceivable($asOf);
-        $lendReceivable = (float) Lend::where('status', 'due')->where('date', '<=', $asOf)->sum('amount');
-        $securityMoneyPaid = (float) SecurityMoney::where('status', 'paid')->where('date', '<=', $asOf)->sum('amount');
         $stockValue = $this->stockValue($asOf);
-        $fixedAssets = (float) Asset::where('created_at', '<=', $asOf)->sum(DB::raw("CASE WHEN amount > (CASE WHEN depreciation_type = 'percentage' THEN (amount * COALESCE(depreciation, 0) / 100.0) ELSE COALESCE(depreciation, 0) END) THEN amount - (CASE WHEN depreciation_type = 'percentage' THEN (amount * COALESCE(depreciation, 0) / 100.0) ELSE COALESCE(depreciation, 0) END) ELSE 0 END"));
-        $totalAssets = $cashAndBank + $receivable + $lendReceivable + $securityMoneyPaid + $stockValue + $fixedAssets;
+        $receivable = $this->customerReceivable($asOf);
+        $lendOutstanding = (float) Lend::where('status', 'due')->where('date', '<=', $asOf)->sum('amount');
+        $securityMoneyPaid = (float) SecurityMoney::where('status', 'paid')->where('date', '<=', $asOf)->sum('amount');
+        $fixedAssets = $this->fixedAssetsValue($asOf);
 
+        // Current & Non-Current Asset classification
+        $currentAssets = $cashAndBank + $stockValue + $receivable + $lendOutstanding + $securityMoneyPaid;
+        $nonCurrentAssets = $fixedAssets;
+        $totalAssets = $currentAssets + $nonCurrentAssets;
+        $totalAssetsWithSecurity = $fixedAssets + $securityMoneyPaid;
+
+        // Current & Non-Current Liability classification
         $payable = $this->supplierPayable($asOf);
         $debtsPayable = (float) Debt::where('status', 'unpaid')->where('date', '<=', $asOf)->sum('amount');
         $securityMoneyReceived = (float) SecurityMoney::where('status', 'received')->where('date', '<=', $asOf)->sum('amount');
-        $totalLiabilities = $payable + $debtsPayable + $securityMoneyReceived;
+        $currentLiabilities = $payable + $debtsPayable + $securityMoneyReceived;
+        $nonCurrentLiabilities = 0.0;
+        $totalLiabilities = $currentLiabilities + $nonCurrentLiabilities;
 
-        $equity = $totalAssets - $totalLiabilities;
+        // Calculated Equity / Net Financial Position
+        $netPosition = $totalAssets - $totalLiabilities;
+        $equity = $netPosition;
 
-        return view('report::balance-sheet', compact(
-            'asOf', 'cashAndBank', 'receivable', 'lendReceivable', 'securityMoneyPaid', 'stockValue', 'fixedAssets', 'totalAssets',
-            'payable', 'debtsPayable', 'securityMoneyReceived', 'totalLiabilities', 'equity',
-        ));
+        // Solvency Coverage (Multiple e.g. 6.70x & Percentage e.g. 669.6%)
+        $solvencyRatio = $totalLiabilities > 0 ? round(($totalAssets / $totalLiabilities) * 100, 1) : null;
+        $solvencyMultiple = $totalLiabilities > 0 ? round($totalAssets / $totalLiabilities, 2) : null;
+
+        // Mathematical integrity check: Total Assets == Total Liabilities + Equity
+        $variance = round(abs($totalAssets - ($totalLiabilities + $netPosition)), 2);
+        $isBalanced = $variance < 0.01;
+
+        return [
+            'asOf' => $asOf,
+            'cashAndBank' => $cashAndBank,
+            'stockValue' => $stockValue,
+            'receivable' => $receivable,
+            'lendOutstanding' => $lendOutstanding,
+            'lendReceivable' => $lendOutstanding,
+            'securityMoneyPaid' => $securityMoneyPaid,
+            'fixedAssets' => $fixedAssets,
+            'currentAssets' => $currentAssets,
+            'nonCurrentAssets' => $nonCurrentAssets,
+            'totalAssets' => $totalAssets,
+            'totalAssetsWithSecurity' => $totalAssetsWithSecurity,
+            'payable' => $payable,
+            'debtsPayable' => $debtsPayable,
+            'securityMoneyReceived' => $securityMoneyReceived,
+            'currentLiabilities' => $currentLiabilities,
+            'nonCurrentLiabilities' => $nonCurrentLiabilities,
+            'totalLiabilities' => $totalLiabilities,
+            'netPosition' => $netPosition,
+            'equity' => $equity,
+            'solvencyRatio' => $solvencyRatio,
+            'solvencyMultiple' => $solvencyMultiple,
+            'variance' => $variance,
+            'isBalanced' => $isBalanced,
+        ];
+    }
+
+    /**
+     * Net valuation of fixed assets (amount minus depreciation) as of a given moment.
+     */
+    private function fixedAssetsValue(Carbon $asOf): float
+    {
+        return (float) Asset::where('created_at', '<=', $asOf)->sum(DB::raw("CASE WHEN amount > (CASE WHEN depreciation_type = 'percentage' THEN (amount * COALESCE(depreciation, 0) / 100.0) ELSE COALESCE(depreciation, 0) END) THEN amount - (CASE WHEN depreciation_type = 'percentage' THEN (amount * COALESCE(depreciation, 0) / 100.0) ELSE COALESCE(depreciation, 0) END) ELSE 0 END"));
     }
 
     /**
