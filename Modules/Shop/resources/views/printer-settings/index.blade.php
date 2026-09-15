@@ -33,7 +33,7 @@
                         <div style="display:flex; align-items:center; gap:8px;">
                             <x-core::icon name="printer" size="18" style="color:var(--teal-800);" />
                             <span style="font-size:14.5px; font-weight:700; color:var(--ink-900);">
-                                <span class="bn">প্রিন্টারের ধরন (Printer Type)</span>
+                                <span class="bn">প্রিন্টারের ধরন</span>
                                 <span class="en" style="display:none;">Select Printer Type</span>
                             </span>
                         </div>
@@ -116,7 +116,7 @@
                     <div style="margin-bottom:18px; padding-bottom:10px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px;">
                         <x-core::icon name="maximize-2" size="18" style="color:var(--teal-800);" />
                         <span style="font-size:14px; font-weight:700; color:var(--ink-900);">
-                            <span class="bn">কাগজের সাইজ ও পরিমাপ (Paper Size Configuration)</span>
+                            <span class="bn">কাগজের সাইজ ও পরিমাপ</span>
                             <span class="en" style="display:none;">Paper Size Configuration</span>
                         </span>
                     </div>
@@ -142,7 +142,7 @@
                         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
                             <x-core::input
                                 name="a4_width_display"
-                                label="প্রস্থ (Width)"
+                                label="প্রস্থ"
                                 label-en="Width"
                                 value="210 mm"
                                 size="sm"
@@ -152,7 +152,7 @@
 
                             <x-core::input
                                 name="a4_height_display"
-                                label="উচ্চতা (Height)"
+                                label="উচ্চতা"
                                 label-en="Height"
                                 value="297 mm"
                                 size="sm"
@@ -162,7 +162,7 @@
 
                             <x-core::input
                                 name="a4_unit_display"
-                                label="একক (Unit)"
+                                label="একক"
                                 label-en="Unit"
                                 value="mm (Millimeter)"
                                 size="sm"
@@ -193,7 +193,7 @@
                         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
                             <x-core::input
                                 name="a5_width_display"
-                                label="প্রস্থ (Width)"
+                                label="প্রস্থ"
                                 label-en="Width"
                                 value="148 mm"
                                 size="sm"
@@ -203,7 +203,7 @@
 
                             <x-core::input
                                 name="a5_height_display"
-                                label="উচ্চতা (Height)"
+                                label="উচ্চতা"
                                 label-en="Height"
                                 value="210 mm"
                                 size="sm"
@@ -213,7 +213,7 @@
 
                             <x-core::input
                                 name="a5_unit_display"
-                                label="একক (Unit)"
+                                label="একক"
                                 label-en="Unit"
                                 value="mm (Millimeter)"
                                 size="sm"
@@ -251,7 +251,7 @@
                                 id="thermalPaperWidth"
                                 type="number"
                                 step="any"
-                                label="কাগজের প্রস্থ (Width)"
+                                label="কাগজের প্রস্থ"
                                 label-en="Paper Width"
                                 :value="old('paper_width', $printerSetting->paper_width ?: 80)"
                                 placeholder="যেমন: 80"
@@ -268,7 +268,7 @@
                                 id="thermalPaperHeight"
                                 type="number"
                                 step="any"
-                                label="উচ্চতা (Height)"
+                                label="উচ্চতা"
                                 label-en="Paper Height"
                                 :value="old('paper_height', $printerSetting->paper_height)"
                                 placeholder="ফাঁকা = অটো রোল"
@@ -282,7 +282,7 @@
                             <x-core::select
                                 name="unit"
                                 id="thermalUnit"
-                                label="একক (Unit)"
+                                label="একক"
                                 label-en="Unit"
                                 :value="old('unit', $printerSetting->unit ?: 'mm')"
                                 :options="[
@@ -300,12 +300,12 @@
                         <x-core::select
                             name="orientation"
                             id="orientationSelect"
-                            label="কাগজের ওরিয়েন্টেশন (Orientation)"
+                            label="কাগজের ওরিয়েন্টেশন"
                             label-en="Paper Orientation"
                             :value="old('orientation', $printerSetting->orientation ?: 'portrait')"
                             :options="[
-                                'portrait' => 'পোর্ট্রেট (উল্লম্ব / Portrait)',
-                                'landscape' => 'ল্যান্ডস্কেপ (আনুভূমিক / Landscape)',
+                                'portrait' => 'পোর্ট্রেট (Portrait)',
+                                'landscape' => 'ল্যান্ডস্কেপ (Landscape)',
                             ]"
                             size="sm"
                             icon="compass"
@@ -318,7 +318,7 @@
                     <div style="margin-bottom:18px; padding-bottom:10px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px;">
                         <x-core::icon name="sliders" size="18" style="color:var(--teal-800);" />
                         <span style="font-size:14px; font-weight:700; color:var(--ink-900);">
-                            <span class="bn">প্রিন্টিং আচরণ ও উপাদান সেটিংস (Printing Behavior)</span>
+                            <span class="bn">প্রিন্টিং আচরণ ও উপাদান সেটিংস</span>
                             <span class="en" style="display:none;">Printing Behavior & Layout</span>
                         </span>
                     </div>
@@ -332,6 +332,7 @@
                                 label="স্বয়ংক্রিয় প্রিন্ট ডায়ালগ চালু করুন"
                                 label-en="Auto Open Print Dialog"
                                 description="বিক্রয় সম্পন্ন হলে বা ইনভয়েস পেজ খুললে সরাসরি প্রিন্ট উইন্ডো ওপেন হবে।"
+                                description-en="Directly opens system print dialog upon sale completion."
                                 color="teal"
                             />
                         </div>
@@ -344,6 +345,7 @@
                                 label="রসিদে দোকানের লোগো প্রদর্শন"
                                 label-en="Print Shop Logo on Receipt"
                                 description="দোকানের লোগো স্লিপের শীর্ষে প্রিন্ট হবে।"
+                                description-en="Prints shop logo on the top of receipt."
                                 color="teal"
                             />
                         </div>
@@ -353,9 +355,10 @@
                                 name="show_shop_info"
                                 id="toggleShopInfo"
                                 :checked="old('show_shop_info', $printerSetting->show_shop_info)"
-                                label="দোকানের বিবরণ প্রদর্শন (ঠিকানা ও ফোন নম্বর)"
-                                label-en="Print Shop Details (Address & Phone)"
+                                label="দোকানের বিবরণ প্রদর্শন"
+                                label-en="Print Shop Details"
                                 description="দোকানের পূর্ণ ঠিকানা এবং অফিসিয়াল মোবাইল নম্বর প্রিন্ট হবে।"
+                                description-en="Prints full shop address and official contact number."
                                 color="teal"
                             />
                         </div>
@@ -368,6 +371,7 @@
                                 label="কাস্টমারের পূর্বের বাকি ও মোট বাকি প্রদর্শন"
                                 label-en="Print Customer Due Summary"
                                 description="রসিদে কাস্টমারের অতীত বকেয়া এবং সর্বমোট বাকি প্রিন্ট হবে।"
+                                description-en="Prints customer previous balance and total remaining due on receipt."
                                 color="teal"
                             />
                         </div>
@@ -378,8 +382,9 @@
                                 id="toggleFooterNote"
                                 :checked="old('show_footer_note', $printerSetting->show_footer_note)"
                                 label="ইনভয়েস শর্তাবলী / ফুটার নোট প্রদর্শন"
-                                label-en="Print Invoice Footer Note / Policy"
+                                label-en="Print Invoice Footer Note"
                                 description="দোকান সেটিংসে নির্ধারিত বিক্রয় শর্তাবলী বা কৃতজ্ঞতা বার্তা স্লিপের নিচে মুদ্রিত হবে।"
+                                description-en="Prints terms & conditions or note at the bottom of the receipt."
                                 color="teal"
                             />
                         </div>
@@ -392,7 +397,7 @@
                                 step="0.5"
                                 min="0"
                                 max="50"
-                                label="মার্জিন (Margin in mm)"
+                                label="মার্জিন (মিমি)"
                                 label-en="Page Margin (mm)"
                                 :value="old('page_margin', $printerSetting->page_margin ?: 2)"
                                 placeholder="যেমন: 2"
