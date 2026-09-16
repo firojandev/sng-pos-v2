@@ -14,6 +14,7 @@ use Modules\Purchase\Models\Purchase;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
 use Modules\Shop\Models\Branch;
 use Modules\Shop\Models\Plan;
+use Modules\Shop\Models\PrinterSetting;
 use Modules\Shop\Models\Shop;
 use Modules\Shop\Models\Warehouse;
 use Modules\Supplier\Models\Supplier;
@@ -65,6 +66,7 @@ class PurchaseInvoiceModalFeatureTest extends TestCase
             'name' => 'Admin User',
             'email' => 'admin@gadgetparks.test',
             'password' => bcrypt('password'),
+            'email_verified_at' => now(),
             'shop_id' => $this->shop->id,
         ]);
         $this->user->syncRoles([$adminRole]);
@@ -390,5 +392,95 @@ class PurchaseInvoiceModalFeatureTest extends TestCase
         $response->assertSee('Hawkins Black Berry Infrared Cooker (Model: ME-IFCH-53 / 54)');
         $response->assertSee('col-product-name');
         $response->assertSee('white-space:normal !important', false);
+    }
+
+    public function test_thermal_printer_setting_effects_purchase_invoice_modal_and_print(): void
+    {
+        PrinterSetting::updateOrCreate(
+            ['shop_id' => $this->shop->id],
+            [
+                'printer_type' => 'thermal',
+                'paper_width' => 80,
+                'unit' => 'mm',
+                'auto_print' => true,
+            ]
+        );
+
+        $purchase = Purchase::create([
+            'shop_id' => $this->shop->id,
+            'supplier_id' => $this->supplier->id,
+            'warehouse_id' => $this->warehouse->id,
+            'purchase_date' => now()->toDateString(),
+            'invoice_no' => 'PU-TH-01',
+            'subtotal' => 6750,
+            'discount' => 0,
+            'delivery_charge' => 0,
+            'total' => 6750,
+            'paid_amount' => 5000,
+            'due_amount' => 1750,
+            'payment_status' => 'partial',
+        ]);
+
+        $purchase->items()->create([
+            'product_id' => $this->product->id,
+            'quantity' => 1,
+            'received_quantity' => 1,
+            'purchase_price' => 6750,
+            'total' => 6750,
+            'batch_no' => 'KM-20318',
+        ]);
+
+        $modalResponse = $this->actingAs($this->user)->get(route('purchase.invoice-modal', $purchase));
+        $modalResponse->assertOk();
+        $modalResponse->assertSee('purchase-thermal-receipt-sheet');
+        $modalResponse->assertSee('ক্রয় চালান কপি');
+
+        $printResponse = $this->actingAs($this->user)->get(route('purchase.print-invoice', $purchase));
+        $printResponse->assertOk();
+        $printResponse->assertSee('purchase-thermal-receipt-sheet');
+        $printResponse->assertSee('80mm auto');
+        $printResponse->assertSee('window.print()', false);
+    }
+
+    public function test_a5_printer_setting_effects_purchase_print_page(): void
+    {
+        PrinterSetting::updateOrCreate(
+            ['shop_id' => $this->shop->id],
+            [
+                'printer_type' => 'a5',
+                'orientation' => 'landscape',
+                'page_margin' => 6,
+            ]
+        );
+
+        $purchase = Purchase::create([
+            'shop_id' => $this->shop->id,
+            'supplier_id' => $this->supplier->id,
+            'warehouse_id' => $this->warehouse->id,
+            'purchase_date' => now()->toDateString(),
+            'invoice_no' => 'PU-A5-01',
+            'subtotal' => 6750,
+            'discount' => 0,
+            'delivery_charge' => 0,
+            'total' => 6750,
+            'paid_amount' => 6750,
+            'due_amount' => 0,
+            'payment_status' => 'paid',
+        ]);
+
+        $purchase->items()->create([
+            'product_id' => $this->product->id,
+            'quantity' => 1,
+            'received_quantity' => 1,
+            'purchase_price' => 6750,
+            'total' => 6750,
+            'batch_no' => 'KM-20318',
+        ]);
+
+        $printResponse = $this->actingAs($this->user)->get(route('purchase.print-invoice', $purchase));
+        $printResponse->assertOk();
+        $printResponse->assertSee('size: A5 landscape', false);
+        $printResponse->assertSee('margin: 6mm', false);
+        $printResponse->assertSee('max-width: 520px', false);
     }
 }

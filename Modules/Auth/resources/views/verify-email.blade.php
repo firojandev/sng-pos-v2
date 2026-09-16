@@ -58,25 +58,33 @@
         </form>
 
         <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding-top: 14px; border-top: 1px solid var(--border);">
-            <a href="{{ route('dashboard') }}" style="font-size: 12.5px; color: var(--teal-800); text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 4px;">
-                <x-core::icon name="refresh-cw" size="13" />
-                <span class="bn">ভেরিফাই করেছি, এগিয়ে যান</span>
-                <span class="en" style="display:none;">I have verified, proceed</span>
-            </a>
+            @auth
+                <a href="{{ route('dashboard') }}" style="font-size: 12.5px; color: var(--teal-800); text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                    <x-core::icon name="refresh-cw" size="13" />
+                    <span class="bn">ভেরিফাই করেছি, এগিয়ে যান</span>
+                    <span class="en" style="display:none;">I have verified, proceed</span>
+                </a>
 
-            <form method="POST" action="{{ route('logout') }}" style="margin: 0;">
-                @csrf
-                <x-core::button
-                    type="submit"
-                    variant="soft"
-                    color="secondary"
-                    size="sm"
-                    icon="log-out"
-                >
-                    <span class="bn">লগআউট</span>
-                    <span class="en" style="display:none;">Log Out</span>
-                </x-core::button>
-            </form>
+                <form method="POST" action="{{ route('logout') }}" style="margin: 0;">
+                    @csrf
+                    <x-core::button
+                        type="submit"
+                        variant="soft"
+                        color="secondary"
+                        size="sm"
+                        icon="log-out"
+                    >
+                        <span class="bn">লগআউট</span>
+                        <span class="en" style="display:none;">Log Out</span>
+                    </x-core::button>
+                </form>
+            @else
+                <a href="{{ route('login') }}" style="font-size: 12.5px; color: var(--teal-800); text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                    <x-core::icon name="log-in" size="13" />
+                    <span class="bn">লগইন পেজে যান</span>
+                    <span class="en" style="display:none;">Go to Login</span>
+                </a>
+            @endauth
         </div>
     </div>
 </x-core::auth-layout>

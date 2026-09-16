@@ -115,7 +115,7 @@
                 <span class="en" style="display:none;">Transfer Items</span>
             </div>
             <x-core::badge color="teal" size="xs">
-                {{ $transfer->items->count() }} টি পণ্য &middot; মোট {{ rtrim(rtrim(number_format($transfer->items->sum('quantity'), 2), '0'), '.') }} একক
+                {{ $transfer->items->count() }} &middot; মোট {{ rtrim(rtrim(number_format($transfer->items->sum('quantity'), 2), '0'), '.') }} একক
             </x-core::badge>
         </div>
 

@@ -7,9 +7,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Modules\Core\Concerns\BelongsToShop;
 use Modules\Core\Observers\AuditObserver;
 use Modules\Customer\Models\Customer;
+use Modules\Shop\Models\Shop;
 use Modules\Shop\Models\Warehouse;
 
 class Sale extends Model
@@ -19,10 +21,16 @@ class Sale extends Model
     protected static function booted(): void
     {
         static::observe(AuditObserver::class);
+
+        static::creating(function (Sale $sale) {
+            if (empty($sale->public_token)) {
+                $sale->public_token = Str::random(32);
+            }
+        });
     }
 
     protected $fillable = [
-        'shop_id', 'warehouse_id', 'customer_id', 'invoice_no', 'sale_date',
+        'shop_id', 'warehouse_id', 'customer_id', 'invoice_no', 'public_token', 'sale_date',
         'subtotal', 'discount', 'product_discount', 'tax', 'delivery_charge', 'adjustment', 'total', 'paid_amount', 'due_amount', 'profit',
         'payment_status', 'payment_method', 'note', 'employee_name', 'employee_phone',
     ];
@@ -41,6 +49,11 @@ class Sale extends Model
         'profit' => 'decimal:2',
     ];
 
+    public function shop(): BelongsTo
+    {
+        return $this->belongsTo(Shop::class);
+    }
+
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
@@ -54,6 +67,32 @@ class Sale extends Model
     public function items(): HasMany
     {
         return $this->hasMany(SaleItem::class);
+    }
+
+    /**
+     * Get or generate the public access token.
+     */
+    public function getPublicToken(): string
+    {
+        if (empty($this->public_token)) {
+            $this->public_token = Str::random(32);
+            $this->saveQuietly();
+        }
+
+        return $this->public_token;
+    }
+
+    /**
+     * Get the full public invoice URL.
+     */
+    public function getPublicUrlAttribute(): string
+    {
+        return route('sales.public-invoice', $this->getPublicToken());
+    }
+
+    public function getPublicUrl(): string
+    {
+        return $this->public_url;
     }
 
     /**

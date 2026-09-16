@@ -45,8 +45,8 @@
                     <span class="en" style="display:none;">Current Stock List</span>
                 </div>
                 <div style="font-size:12px; color:var(--ink-500);">
-                    <span class="bn">মোট {{ $onHand->count() }} টি পণ্য</span>
-                    <span class="en" style="display:none;">Total {{ $onHand->count() }} products</span>
+                    <span class="bn">মোট {{ $onHand->count() }}</span>
+                    <span class="en" style="display:none;">Total {{ $onHand->count() }}</span>
                 </div>
             </div>
             <div class="table-responsive">

@@ -56,6 +56,7 @@ class Permissions
             'security-money' => ['view', 'create', 'edit', 'delete'],
             'tax' => ['view', 'edit'],
             'report-sales' => ['view', 'print'],
+            'report-sales-vat' => ['view', 'print'],
             'report-purchase' => ['view', 'print'],
             'report-stock' => ['view', 'print'],
             'report-products' => ['view', 'print'],

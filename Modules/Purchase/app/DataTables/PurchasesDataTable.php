@@ -60,29 +60,39 @@ class PurchasesDataTable extends BaseDataTable
 
                 return '<div style="font-family:var(--font-mono, monospace); font-size:12px; color:var(--ink-700); max-width:140px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word;" title="'.e($batchList).'">'.e($batchList).'</div>';
             })
-            ->addColumn('items_count', function (Purchase $purchase) {
+            ->addColumn('ordered_quantity', function (Purchase $purchase) {
                 $qty = (float) $purchase->items->sum('quantity');
                 $qtyFormatted = rtrim(rtrim(number_format($qty, 2), '0'), '.');
+
+                return '<span style="font-family:var(--font-mono, monospace); color:var(--ink-800); font-weight:600;">'
+                    .'<span class="bn">'.$qtyFormatted.'</span>'
+                    .'<span class="en" style="display:none;">'.$qtyFormatted.'</span>'
+                    .'</span>';
+            })
+            ->addColumn('received_quantity', function (Purchase $purchase) {
+                $received = (float) $purchase->totalReceivedQuantity();
+                $receivedFormatted = rtrim(rtrim(number_format($received, 2), '0'), '.');
 
                 if ($purchase->hasPendingItems()) {
                     $pending = (float) $purchase->totalPendingQuantity();
                     $pendingFormatted = rtrim(rtrim(number_format($pending, 2), '0'), '.');
 
                     return '<div style="white-space:nowrap;">'
-                        .'<span style="font-family:var(--font-mono, monospace); color:var(--ink-700); font-weight:600;">'
-                        .'<span class="bn">'.$qtyFormatted.' টি পণ্য</span>'
-                        .'<span class="en" style="display:none;">'.$qtyFormatted.' Items</span>'
+                        .'<span style="font-family:var(--font-mono, monospace); color:var(--teal-700); font-weight:600;">'
+                        .'<span class="bn">'.$receivedFormatted.'</span>'
+                        .'<span class="en" style="display:none;">'.$receivedFormatted.'</span>'
                         .'</span>'
-                        .'<div style="font-size:11px; color:var(--red-600); font-weight:700; margin-top:2px;">(বাকি: '.$pendingFormatted.')</div>'
+                        .'<div style="font-size:11px; color:var(--red-600); font-weight:700; margin-top:2px;">'
+                        .'<span class="bn">(বাকি: '.$pendingFormatted.')</span>'
+                        .'<span class="en" style="display:none;">(Due: '.$pendingFormatted.')</span>'
+                        .'</div>'
                         .'</div>';
                 }
 
-                return '<div style="white-space:nowrap;">'
-                    .'<span style="font-family:var(--font-mono, monospace); color:var(--ink-700); font-weight:600;">'
-                    .'<span class="bn">'.$qtyFormatted.' টি পণ্য</span>'
-                    .'<span class="en" style="display:none;">'.$qtyFormatted.' Items</span>'
-                    .'</span>'
-                    .'</div>';
+                return '<span style="font-family:var(--font-mono, monospace); color:var(--teal-700); font-weight:600;">'
+                    .'<span class="bn">'.$receivedFormatted.'</span>'
+                    .'<span class="en" style="display:none;">'.$receivedFormatted.'</span>'
+                    .'</span>';
             })
             ->addColumn('purchase_price', function (Purchase $purchase) {
                 $prices = $purchase->items->map(function ($it) {
@@ -179,7 +189,7 @@ class PurchasesDataTable extends BaseDataTable
                 'class' => 'clickable-purchase-row',
                 'style' => 'cursor:pointer;',
             ])
-            ->rawColumns(['supplier', 'invoice_no', 'batch_no', 'items_count', 'purchase_price', 'total', 'purchase_date', 'payment_status', 'action'])
+            ->rawColumns(['supplier', 'invoice_no', 'batch_no', 'ordered_quantity', 'received_quantity', 'purchase_price', 'total', 'purchase_date', 'payment_status', 'action'])
             ->setRowId('id');
     }
 
@@ -245,7 +255,7 @@ class PurchasesDataTable extends BaseDataTable
     public function html(): HtmlBuilder
     {
         return $this->defaultHtml()
-            ->orderBy([6, 'desc'])
+            ->orderBy([7, 'desc'])
             ->minifiedAjax('', '
                 data.from = $("#filter-from").val();
                 data.to = $("#filter-to").val();
@@ -263,38 +273,44 @@ class PurchasesDataTable extends BaseDataTable
     {
         return [
             Column::computed('supplier')
-                ->title('<span class="bn">যোগাযোগ</span><span class="en">Contact</span>')
+                ->title('<span class="bn">যোগাযোগ</span><span class="en" style="display:none;">Contact</span>')
                 ->width(180),
             Column::make('invoice_no')
-                ->title('<span class="bn">ইনভয়েস নং</span><span class="en">Invoice No</span>')
+                ->title('<span class="bn">ইনভয়েস নং</span><span class="en" style="display:none;">Invoice No</span>')
                 ->width(120),
             Column::computed('batch_no')
-                ->title('<span class="bn">ব্যাচ নং</span><span class="en">Batch No</span>')
+                ->title('<span class="bn">ব্যাচ নং</span><span class="en" style="display:none;">Batch No</span>')
                 ->orderable(false)
                 ->width(110),
-            Column::computed('items_count')
-                ->title('<span class="bn">আইটেম</span><span class="en">Item</span>')
+            Column::computed('ordered_quantity')
+                ->title('<span class="bn">অর্ডার পরিমাণ</span><span class="en" style="display:none;">Order Qty</span>')
                 ->orderable(false)
-                ->width(100),
+                ->addClass('table-cell-center')
+                ->width(110),
+            Column::computed('received_quantity')
+                ->title('<span class="bn">গৃহীত পরিমাণ</span><span class="en" style="display:none;">Received Qty</span>')
+                ->orderable(false)
+                ->addClass('table-cell-center')
+                ->width(115),
             Column::computed('purchase_price')
-                ->title('<span class="bn">ক্রয় মূল্য</span><span class="en">Purchase Price</span>')
+                ->title('<span class="bn">ক্রয় মূল্য</span><span class="en" style="display:none;">Purchase Price</span>')
                 ->orderable(false)
                 ->addClass('table-cell-right')
                 ->width(110),
             Column::make('total')
-                ->title('<span class="bn">টাকার পরিমাণ</span><span class="en">Amount</span>')
+                ->title('<span class="bn">টাকার পরিমাণ</span><span class="en" style="display:none;">Amount</span>')
                 ->addClass('table-cell-right')
                 ->width(120),
             Column::make('purchase_date')
-                ->title('<span class="bn">তারিখ</span><span class="en">Date</span>')
+                ->title('<span class="bn">তারিখ</span><span class="en" style="display:none;">Date</span>')
                 ->addClass('table-cell-center')
                 ->width(110),
             Column::make('payment_status')
-                ->title('<span class="bn">পেমেন্ট অবস্থা</span><span class="en">Payment Status</span>')
+                ->title('<span class="bn">পেমেন্ট অবস্থা</span><span class="en" style="display:none;">Payment Status</span>')
                 ->addClass('table-cell-center')
                 ->width(110),
             Column::computed('action')
-                ->title('<span class="bn">অ্যাকশন</span><span class="en">Action</span>')
+                ->title('<span class="bn">অ্যাকশন</span><span class="en" style="display:none;">Action</span>')
                 ->orderable(false)
                 ->searchable(false)
                 ->exportable(false)

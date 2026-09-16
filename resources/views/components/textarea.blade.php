@@ -18,6 +18,7 @@
     'readonly' => false,
     'error' => null,
     'helper' => null,
+    'helperEn' => null,
     'helperVariant' => 'default',
     'label' => null,
     'labelEn' => null,
@@ -27,6 +28,10 @@
 
 @php
     $inputId = $id ?? ($name ? 'form-field-' . str_replace(['[', ']', '.'], ['-', '', '-'], $name) : null);
+    $resolvedLabelEn = $labelEn ?? $attributes->get('label-en') ?? null;
+    $resolvedHelperEn = $helperEn ?? $attributes->get('helper-en') ?? null;
+    $resolvedPlaceholderEn = $placeholderEn ?? $attributes->get('placeholder-en') ?? null;
+
     $textValue = $value;
     if ($name && $value === null) {
         $textValue = old($name);
@@ -38,8 +43,8 @@
     if (is_string($placeholder)) {
         $placeholder = htmlspecialchars_decode($placeholder, ENT_QUOTES);
     }
-    if (is_string($placeholderEn)) {
-        $placeholderEn = htmlspecialchars_decode($placeholderEn, ENT_QUOTES);
+    if (is_string($resolvedPlaceholderEn)) {
+        $resolvedPlaceholderEn = htmlspecialchars_decode($resolvedPlaceholderEn, ENT_QUOTES);
     }
 
     $hasError = (bool) ($error || ($name && isset($errors) && $errors->has($name)));
@@ -106,7 +111,7 @@
     if ($hasError) $groupClasses[] = 'is-invalid';
     if (in_array($size, ['xs', 'sm', 'md', 'lg', 'xl'])) $groupClasses[] = 'form-input-group-' . $size;
 
-    $hasWrapper = (bool) ($label || $helper || $hasError || $showCount);
+    $hasWrapper = (bool) ($label || $resolvedLabelEn || $helper || $resolvedHelperEn || $hasError || $showCount);
 @endphp
 
 @if ($hasWrapper)
@@ -114,11 +119,12 @@
         :name="$name"
         :id="$inputId"
         :label="$label"
-        :label-en="$labelEn"
+        :label-en="$resolvedLabelEn"
         :required="$required"
         :optional="$optional"
         :icon="$icon"
         :helper="$helper"
+        :helper-en="$resolvedHelperEn"
         :helper-variant="$helperVariant"
         :error="$errorMessage"
         :no-margin="$noMargin"
@@ -134,13 +140,14 @@
                 @if ($name) name="{{ $name }}" @endif
                 @if ($inputId) id="{{ $inputId }}" @endif
                 rows="{{ $rows }}"
-                @if ($placeholder) placeholder="{{ $placeholder }}" @endif
+                @if ($placeholder) placeholder="{{ $placeholder }}" data-placeholder-bn="{{ $placeholder }}" @endif
+                @if ($resolvedPlaceholderEn) data-placeholder-en="{{ $resolvedPlaceholderEn }}" @endif
                 @if ($maxLength) maxlength="{{ $maxLength }}" @endif
                 @if ($required) required @endif
                 @if ($disabled) disabled @endif
                 @if ($readonly) readonly @endif
                 @if ($showCount) oninput="const c=this.parentElement.nextElementSibling; if(c && c.classList.contains('form-textarea-count')) c.querySelector('.count-val').textContent=this.value.length;" @endif
-                {{ $attributes->merge(['class' => implode(' ', $controlClasses)]) }}
+                {{ $attributes->except(['label-en', 'helper-en', 'placeholder-en'])->merge(['class' => implode(' ', $controlClasses)]) }}
             >{{ $textValue ?? (string) $slot }}</textarea>
         </div>
 
@@ -162,12 +169,13 @@
             @if ($name) name="{{ $name }}" @endif
             @if ($inputId) id="{{ $inputId }}" @endif
             rows="{{ $rows }}"
-            @if ($placeholder) placeholder="{{ $placeholder }}" @endif
+            @if ($placeholder) placeholder="{{ $placeholder }}" data-placeholder-bn="{{ $placeholder }}" @endif
+            @if ($resolvedPlaceholderEn) data-placeholder-en="{{ $resolvedPlaceholderEn }}" @endif
             @if ($maxLength) maxlength="{{ $maxLength }}" @endif
             @if ($required) required @endif
             @if ($disabled) disabled @endif
             @if ($readonly) readonly @endif
-            {{ $attributes->merge(['class' => implode(' ', $controlClasses)]) }}
+            {{ $attributes->except(['label-en', 'helper-en', 'placeholder-en'])->merge(['class' => implode(' ', $controlClasses)]) }}
         >{{ $textValue ?? (string) $slot }}</textarea>
     </div>
 @endif

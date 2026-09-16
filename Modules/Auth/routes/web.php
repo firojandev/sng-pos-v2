@@ -19,6 +19,8 @@ Route::prefix('email')->group(function () {
     Route::get('/verify/{id}/{hash}', [VerificationController::class, 'verify'])
         ->middleware(['signed', 'throttle:6,1'])
         ->name('verification.verify');
+    Route::get('/verify-success', [VerificationController::class, 'success'])
+        ->name('verification.success');
     Route::post('/verification-notification', [VerificationController::class, 'send'])
         ->middleware(['throttle:6,1'])
         ->name('verification.send');

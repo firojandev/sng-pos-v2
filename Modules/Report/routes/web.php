@@ -9,6 +9,9 @@ Route::middleware(['auth'])->prefix('reports')->name('reports.')->group(function
     Route::middleware(['permission:report-sales.view', 'feature:report-sales'])
         ->get('/sales', [ReportController::class, 'sales'])->name('sales');
 
+    Route::middleware(['permission:report-sales-vat.view', 'feature:report-sales-vat'])
+        ->get('/sales-vat', [ReportController::class, 'salesVat'])->name('sales-vat');
+
     Route::middleware(['permission:report-purchase.view', 'feature:report-purchase'])
         ->get('/purchase', [ReportController::class, 'purchase'])->name('purchase');
 

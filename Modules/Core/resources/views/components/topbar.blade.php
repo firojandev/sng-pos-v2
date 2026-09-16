@@ -369,7 +369,7 @@
                         </a>
                     @endif
 
-                    @if ($authUser?->can('audit.view') || $authUser?->can('audit'))
+                    @if (($authUser?->isSuperAdmin() || ($authUser?->shop && $authUser->shop->hasFeature('audit'))) && ($authUser?->can('audit.view') || $authUser?->can('audit') || $authUser?->isSuperAdmin()) && Route::has('audit-log.index'))
                         <a href="{{ route('audit-log.index') }}" class="user-menu-link">
                             <svg class="user-menu-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
