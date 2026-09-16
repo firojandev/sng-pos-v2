@@ -209,7 +209,8 @@ class PurchaseDueLedgerDataTable extends BaseDataTable
             ->where(function ($q) {
                 $q->where('suppliers.opening_due', '>', 0)
                     ->orWhereHas('purchases', fn ($sq) => $sq->where('due_amount', '>', 0));
-            });
+            })
+            ->latest('suppliers.id');
     }
 
     /**

@@ -25,6 +25,7 @@ abstract class BaseDataTable extends DataTable
             ->responsive(true)
             ->autoWidth(false)
             ->parameters([
+                'order' => [],
                 'pageLength' => 10,
                 'pagingType' => 'full_numbers',
                 'lengthMenu' => [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],

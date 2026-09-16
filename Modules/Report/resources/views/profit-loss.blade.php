@@ -56,7 +56,7 @@
                                 <span class="bn">বিক্রয় থেকে মুনাফা</span>
                                 <span class="en" style="display:none;">Profit from Sales</span>
                             </td>
-                            <td style="text-align:right; font-weight:700; color:var(--green-ink, #059669);">৳{{ number_format($profitFromSales, 2) }}</td>
+                            <td style="text-align:right; font-weight:700; color:{{ $profitFromSales < 0 ? 'var(--red-600)' : 'var(--green-ink, #059669)' }};">৳{{ number_format($profitFromSales, 2) }}</td>
                         </tr>
                         <tr>
                             <td class="cell-main">
@@ -70,21 +70,21 @@
                                 <span class="bn">মোট ব্যয়</span>
                                 <span class="en" style="display:none;">Total Expense</span>
                             </td>
-                            <td style="text-align:right; font-weight:700; color:var(--red-ink, #dc2626);">৳{{ number_format($totalExpense, 2) }}</td>
+                            <td style="text-align:right; font-weight:700; color:var(--red-600);">৳{{ number_format($totalExpense, 2) }}</td>
                         </tr>
                         <tr style="border-top:2px solid var(--border);">
                             <td class="cell-main">
                                 <span class="bn">নিট মুনাফা</span>
                                 <span class="en" style="display:none;">Net Profit</span>
                             </td>
-                            <td style="text-align:right; font-weight:800; font-size:15px; color:var(--green-ink, #059669);">৳{{ number_format($netProfit, 2) }}</td>
+                            <td style="text-align:right; font-weight:800; font-size:15px; color:{{ $netProfit < 0 ? 'var(--red-600)' : 'var(--green-ink, #059669)' }};">৳{{ number_format($netProfit, 2) }}</td>
                         </tr>
                         <tr>
                             <td class="cell-main">
                                 <span class="bn">মোট ক্ষতি</span>
                                 <span class="en" style="display:none;">Total Loss</span>
                             </td>
-                            <td style="text-align:right; font-weight:800; font-size:15px; color:var(--red-ink, #dc2626);">৳{{ number_format($totalLoss, 2) }}</td>
+                            <td style="text-align:right; font-weight:800; font-size:15px; color:var(--red-600);">৳{{ number_format($totalLoss, 2) }}</td>
                         </tr>
                     </tbody>
                 </table>

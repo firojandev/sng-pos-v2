@@ -97,9 +97,19 @@
         'info' => 'var(--blue-ink)',
         'gold' => 'var(--gold-ink)',
         'warning' => 'var(--gold-ink)',
+        'grey' => 'var(--ink-700)',
+        'secondary' => 'var(--ink-700)',
+        'neutral' => 'var(--ink-700)',
     ];
 
     $finalValueColor = $valueColor ? ($valueColorMap[strtolower(trim((string) $valueColor))] ?? $valueColor) : null;
+
+    if ($value !== null) {
+        $cleanedVal = trim(str_replace(['৳', '$', '€', '£', '₹', ',', ' '], '', (string) $value));
+        if (str_starts_with($cleanedVal, '-') || (is_numeric($cleanedVal) && (float) $cleanedVal < 0)) {
+            $finalValueColor = 'var(--red-600)';
+        }
+    }
 @endphp
 
 <div {{ $attributes->merge(['class' => 'stat-card']) }}>

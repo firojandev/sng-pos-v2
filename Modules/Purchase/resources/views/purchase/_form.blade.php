@@ -352,7 +352,7 @@
                     class="purchase-payment-btn"
                     style="flex: 0 0 auto; height: 38px; font-weight: 700; font-size: 13.5px; padding: 0 22px; justify-content: center;"
                 >
-                    <span class="bn">Make Payment</span><span class="en" style="display:none;">Make Payment</span>
+                    <span class="bn">পরবর্তী</span><span class="en" style="display:none;">Next</span>
                 </x-core::button>
             </div>
         </div>
@@ -711,11 +711,13 @@
                 id="drawer-save-btn"
                 style="width:100%; justify-content:center; height:38px; font-size:13.5px;"
             >
-                <span class="bn">সংরক্ষণ করুন</span><span class="en" style="display:none;">Save</span>
+                <span class="bn">দেখে নিন</span><span class="en" style="display:none;">Preview</span>
             </x-core::button>
         </div>
     </div>
 </div>
+
+@include('purchase::purchase._invoice_preview_modal')
 
 <script>
     (function () {
@@ -1639,127 +1641,442 @@
             });
         }
 
-        document.getElementById('drawer-save-btn').addEventListener('click', () => {
-            const total = calcGrandTotalCost();
-            const paymentType = $('#drawer-payment-type-select').val() || 'cash';
-            const defaultCashAccountId = document.getElementById('purchase-default-cash-account-id') ? JSON.parse(document.getElementById('purchase-default-cash-account-id').textContent) : null;
+    /* ---------------- Quick Add Supplier Modal & Invoice Preview Modal ---------------- */
+    $(function () {
+        const $quickModal = $('#quickSupplierModal');
+        if ($quickModal.length && !$quickModal.parent().is('body')) {
+            $('body').append($quickModal);
+        }
 
-            const accountSelect = document.getElementById('drawer-account-select');
-            const selectedOpt = accountSelect && accountSelect.selectedIndex >= 0 ? accountSelect.options[accountSelect.selectedIndex] : null;
-            const selectedBankAccountId = selectedOpt ? selectedOpt.value : null;
-            const selectedAccountType = selectedOpt ? selectedOpt.getAttribute('data-type') : 'bank';
-            const bankMethod = selectedAccountType === 'mfs' ? 'mobile_banking' : 'bank';
+        const $previewModal = $('#purchaseInvoicePreviewModal');
+        if ($previewModal.length && !$previewModal.parent().is('body')) {
+            $('body').append($previewModal);
+        }
+    });
 
-            let paymentsToSubmit = [];
-            let enteredTotalPayment = 0;
+    const BN_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+    const BN_MONTHS = ['', 'জানু', 'ফেব্রু', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্ট', 'অক্টো', 'নভে', 'ডিসে'];
+    const BN_WORDS = {
+        0: 'শূন্য', 1: 'এক', 2: 'দুই', 3: 'তিন', 4: 'চার', 5: 'পাঁচ', 6: 'ছয়', 7: 'সাত', 8: 'আট', 9: 'নয়',
+        10: 'দশ', 11: 'এগারো', 12: 'বারো', 13: 'তেরো', 14: 'চৌদ্দ', 15: 'পনেরো', 16: 'ষোলো', 17: 'সতেরো', 18: 'আঠারো', 19: 'উনিশ',
+        20: 'বিশ', 21: 'একুশ', 22: 'বাইশ', 23: 'তেইশ', 24: 'চব্বিশ', 25: 'পঁচিশ', 26: 'ছাব্বিশ', 27: 'সাতাশ', 28: 'আঠাশ', 29: 'উনত্রিশ',
+        30: 'ত্রিশ', 31: 'একত্রিশ', 32: 'বত্রিশ', 33: 'তেত্রিশ', 34: 'চৌত্রিশ', 35: 'পঁয়ত্রিশ', 36: 'ছত্রিশ', 37: 'সাঁইত্রিশ', 38: 'আটত্রিশ', 39: 'উনচল্লিশ',
+        40: 'চল্লিশ', 41: 'একচল্লিশ', 42: 'বিয়াল্লিশ', 43: 'তেতাল্লিশ', 44: 'চুয়াল্লিশ', 45: 'পঁয়তাল্লিশ', 46: 'ছেচল্লিশ', 47: 'সাতচল্লিশ', 48: 'আটচল্লিশ', 49: 'উনপঞ্চাশ',
+        50: 'পঞ্চাশ', 51: 'একান্ন', 52: 'বায়ান্ন', 53: 'তিপ্পান্ন', 54: 'চুয়ান্ন', 55: 'পঞ্চান্ন', 56: 'ছাপ্পান্ন', 57: 'সাতান্ন', 58: 'আটান্ন', 59: 'উনষাট',
+        60: 'ষাট', 61: 'একষট্টি', 62: 'বাষট্টি', 63: 'তেষট্টি', 64: 'চৌষট্টি', 65: 'পঁয়ষট্টি', 66: 'ছেষট্টি', 67: 'সাতষট্টি', 68: 'আটষট্টি', 69: 'উনসত্তর',
+        70: 'সত্তর', 71: 'একাত্তর', 72: 'বাহাত্তর', 73: 'তিয়াত্তর', 74: 'চুয়াত্তর', 75: 'পঁচাত্তর', 76: 'ছিয়াত্তর', 77: 'সাতাত্তর', 78: 'আটাত্তর', 79: 'উনাশি',
+        80: 'আশি', 81: 'একাশি', 82: 'বিরাশি', 83: 'তিরাশি', 84: 'চুরাশি', 85: 'পঁচাশি', 86: 'ছিয়াশি', 87: 'সাতাশি', 88: 'আটাশি', 89: 'ঊননব্বই',
+        90: 'নব্বই', 91: 'একানব্বই', 92: 'বানব্বই', 93: 'তিরানব্বই', 94: 'চুরানব্বই', 95: 'পঁচানব্বই', 96: 'ছিয়ানব্বই', 97: 'সাতানব্বই', 98: 'আটানব্বই', 99: 'নিরানব্বই'
+    };
 
-            if (paymentType === 'cash') {
-                let amount = parseFloat(document.getElementById('drawer-amount-input').value) || 0;
-                if (drawerMode === 'cash' && amount <= 0 && !amountManuallyEdited) amount = total;
-                enteredTotalPayment = amount;
-                amount = Math.min(Math.max(amount, 0), total);
-                if (amount > 0) {
-                    paymentsToSubmit.push({
-                        account_id: defaultCashAccountId || '',
-                        method: 'cash',
-                        amount: fmt(amount),
-                    });
-                }
-            } else if (paymentType === 'bank') {
-                let amount = parseFloat(document.getElementById('drawer-amount-input').value) || 0;
-                if (drawerMode === 'cash' && amount <= 0 && !amountManuallyEdited) amount = total;
-                enteredTotalPayment = amount;
-                amount = Math.min(Math.max(amount, 0), total);
-                if (amount > 0) {
-                    paymentsToSubmit.push({
-                        account_id: selectedBankAccountId || '',
-                        method: bankMethod,
-                        amount: fmt(amount),
-                    });
-                }
-            } else if (paymentType === 'both') {
-                let cashAmount = parseFloat(document.getElementById('drawer-cash-amount-input').value) || 0;
-                let bankAmount = parseFloat(document.getElementById('drawer-bank-amount-input').value) || 0;
-                cashAmount = Math.max(0, cashAmount);
-                bankAmount = Math.max(0, bankAmount);
-                enteredTotalPayment = cashAmount + bankAmount;
+    function toBn(val) {
+        if (val === null || val === undefined || val === '') return '';
+        return String(val).replace(/\d/g, (d) => BN_DIGITS[d]);
+    }
 
-                if (cashAmount + bankAmount > total) {
-                    if (cashAmount > total) {
-                        cashAmount = total;
-                        bankAmount = 0;
-                    } else {
-                        bankAmount = Math.max(0, total - cashAmount);
-                    }
-                }
+    function convertIntToBnWords(number) {
+        if (!number || number <= 0) return '';
+        let parts = [];
+        if (number >= 10000000) {
+            let crore = Math.floor(number / 10000000);
+            parts.push(convertIntToBnWords(crore) + ' কোটি');
+            number %= 10000000;
+        }
+        if (number >= 100000) {
+            let lakh = Math.floor(number / 100000);
+            parts.push((BN_WORDS[lakh] || lakh) + ' লক্ষ');
+            number %= 100000;
+        }
+        if (number >= 1000) {
+            let thousand = Math.floor(number / 1000);
+            parts.push((BN_WORDS[thousand] || thousand) + ' হাজার');
+            number %= 1000;
+        }
+        if (number >= 100) {
+            let hundred = Math.floor(number / 100);
+            parts.push((BN_WORDS[hundred] || hundred) + ' শত');
+            number %= 100;
+        }
+        if (number > 0) {
+            parts.push(BN_WORDS[number] || number);
+        }
+        return parts.join(' ');
+    }
 
-                if (cashAmount > 0) {
-                    paymentsToSubmit.push({
-                        account_id: defaultCashAccountId || '',
-                        method: 'cash',
-                        amount: fmt(cashAmount),
-                    });
-                }
-                if (bankAmount > 0) {
-                    paymentsToSubmit.push({
-                        account_id: selectedBankAccountId || '',
-                        method: bankMethod,
-                        amount: fmt(bankAmount),
-                    });
-                }
-            }
+    function toBnWords(amount) {
+        let val = Math.round((parseFloat(amount) || 0) * 100) / 100;
+        if (val === 0) return 'শূন্য টাকা';
+        let abs = Math.abs(val);
+        let whole = Math.floor(abs);
+        let fraction = Math.round((abs - whole) * 100);
+        if (fraction === 100) {
+            whole += 1;
+            fraction = 0;
+        }
+        let words = convertIntToBnWords(whole);
+        let res = words ? words + ' টাকা' : '';
+        if (fraction > 0) {
+            let fracWords = BN_WORDS[fraction] || convertIntToBnWords(fraction);
+            res = (res ? res + ' ' : '') + fracWords + ' পয়সা';
+        }
+        return val < 0 ? 'মাইনাস ' + res : res;
+    }
 
-            if (Math.round((enteredTotalPayment - total) * 100) / 100 > 0.01) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'অতিরিক্ত পরিশোধ সম্ভব নয়',
-                    text: 'প্রদেয় টাকার পরিমাণ মোট প্রদেয় (সর্বমোট) এর চেয়ে বেশি হতে পারে না (সর্বোচ্চ: ৳' + fmt(total) + ')।',
-                    confirmButtonText: 'ঠিক আছে',
+    function formatBnDateTime(dateStr) {
+        if (!dateStr) return '—';
+        const d = new Date(dateStr + (dateStr.includes('T') ? '' : 'T' + new Date().toTimeString().slice(0, 8)));
+        const now = new Date();
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = BN_MONTHS[d.getMonth() + 1] || (d.getMonth() + 1);
+        const year = toBn(d.getFullYear());
+        let hours = now.getHours();
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12 || 12;
+        const timeHour = toBn(String(hours).padStart(2, '0'));
+        const timeMin = toBn(String(now.getMinutes()).padStart(2, '0'));
+        return `${toBn(day)} ${month} ${year}, ${timeHour}:${timeMin} ${ampm}`;
+    }
+
+    function buildPurchasePaymentsToSubmit() {
+        const total = calcGrandTotalCost();
+        const paymentType = $('#drawer-payment-type-select').val() || 'cash';
+        const defaultCashAccountId = document.getElementById('purchase-default-cash-account-id') ? JSON.parse(document.getElementById('purchase-default-cash-account-id').textContent) : null;
+
+        const accountSelect = document.getElementById('drawer-account-select');
+        const selectedOpt = accountSelect && accountSelect.selectedIndex >= 0 ? accountSelect.options[accountSelect.selectedIndex] : null;
+        const selectedBankAccountId = selectedOpt ? selectedOpt.value : null;
+        const selectedAccountType = selectedOpt ? selectedOpt.getAttribute('data-type') : 'bank';
+        const bankMethod = selectedAccountType === 'mfs' ? 'mobile_banking' : 'bank';
+
+        let paymentsToSubmit = [];
+        let enteredTotalPayment = 0;
+
+        if (paymentType === 'cash') {
+            let amount = parseFloat(document.getElementById('drawer-amount-input').value) || 0;
+            if (drawerMode === 'cash' && amount <= 0 && !amountManuallyEdited) amount = total;
+            enteredTotalPayment = amount;
+            amount = Math.min(Math.max(amount, 0), total);
+            if (amount > 0) {
+                paymentsToSubmit.push({
+                    account_id: defaultCashAccountId || '',
+                    method: 'cash',
+                    amount: fmt(amount),
                 });
-                return;
             }
-
-            const totalPaidToSubmit = paymentsToSubmit.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
-            const remainingDueToSubmit = Math.max(0, total - totalPaidToSubmit);
-
-            if (hasNoSupplier() && remainingDueToSubmit > 0.01) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'সরবরাহকারী নির্বাচন বাধ্যতামূলক',
-                    text: 'সরবরাহকারী নির্বাচন ছাড়া বাকি ক্রয় সম্ভব নয়। সম্পূর্ণ মূল্য পরিশোধ করতে হবে অথবা সরবরাহকারী নির্বাচন করুন।',
-                    confirmButtonText: 'ঠিক আছে',
+        } else if (paymentType === 'bank') {
+            let amount = parseFloat(document.getElementById('drawer-amount-input').value) || 0;
+            if (drawerMode === 'cash' && amount <= 0 && !amountManuallyEdited) amount = total;
+            enteredTotalPayment = amount;
+            amount = Math.min(Math.max(amount, 0), total);
+            if (amount > 0) {
+                paymentsToSubmit.push({
+                    account_id: selectedBankAccountId || '',
+                    method: bankMethod,
+                    amount: fmt(amount),
                 });
-                return;
+            }
+        } else if (paymentType === 'both') {
+            let cashAmount = parseFloat(document.getElementById('drawer-cash-amount-input').value) || 0;
+            let bankAmount = parseFloat(document.getElementById('drawer-bank-amount-input').value) || 0;
+            cashAmount = Math.max(0, cashAmount);
+            bankAmount = Math.max(0, bankAmount);
+            enteredTotalPayment = cashAmount + bankAmount;
+
+            if (cashAmount + bankAmount > total) {
+                if (cashAmount > total) {
+                    cashAmount = total;
+                    bankAmount = 0;
+                } else {
+                    bankAmount = Math.max(0, total - cashAmount);
+                }
             }
 
-            const $hiddenPayments = $('#hidden-payments-container');
-            $hiddenPayments.empty();
+            if (cashAmount > 0) {
+                paymentsToSubmit.push({
+                    account_id: defaultCashAccountId || '',
+                    method: 'cash',
+                    amount: fmt(cashAmount),
+                });
+            }
+            if (bankAmount > 0) {
+                paymentsToSubmit.push({
+                    account_id: selectedBankAccountId || '',
+                    method: bankMethod,
+                    amount: fmt(bankAmount),
+                });
+            }
+        }
 
-            paymentsToSubmit.forEach((p, idx) => {
-                if (p.account_id) {
-                    $hiddenPayments.append(`<input type="hidden" name="payments[${idx}][account_id]" value="${escapeHtml(p.account_id)}">`);
-                }
-                $hiddenPayments.append(`<input type="hidden" name="payments[${idx}][method]" value="${escapeHtml(p.method)}">`);
-                $hiddenPayments.append(`<input type="hidden" name="payments[${idx}][amount]" value="${p.amount}">`);
+        return { total, enteredTotalPayment, paymentsToSubmit };
+    }
+
+    function renderPurchaseInvoicePreview() {
+        const { total, paymentsToSubmit } = buildPurchasePaymentsToSubmit();
+        const totalPaid = paymentsToSubmit.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+        const sub = subtotal();
+        const disc = parseFloat($('#discount-hidden').val()) || 0;
+        const tax = 0;
+        const transportCost = parseFloat($('#transportation_cost').val()) || 0;
+        const adj = parseFloat($('#adjustment_cost').val()) || 0;
+        const prevDue = parseFloat($('#total_previous_due').val()) || 0;
+        const curDue = Math.max(0, total - totalPaid);
+        const totalSupplierDue = prevDue + curDue;
+
+        const supplierId = $('#supplier-id-select').val();
+        const suppPhone = $('#supplier-phone-input').val() ? $('#supplier-phone-input').val().trim() : '';
+        const suppAddr = $('#supplier-address-input').val() ? $('#supplier-address-input').val().trim() : '';
+        const displaySuppName = supplierId && supplierId !== '__create_new__' ? $('#supplier-id-select option:selected').text().split(' (')[0].trim() : '—';
+        const displaySuppPhone = suppPhone || '—';
+        const displaySuppAddr = suppAddr || '—';
+
+        const customInvChecked = $('#custom-invoice-toggle').is(':checked');
+        const invoiceNoVal = customInvChecked && $('#invoice-no-input').val().trim() ? $('#invoice-no-input').val().trim() : 'স্বয়ংক্রিয়ভাবে তৈরি হবে';
+
+        const purchaseDateVal = $('#purchase-date-input').val() || new Date().toISOString().slice(0, 10);
+        const formattedDate = formatBnDateTime(purchaseDateVal);
+        const currentDateTimeStr = formatBnDateTime(new Date().toISOString().slice(0, 10));
+
+        const whName = $('#purchase-warehouse-select option:selected').text() || '—';
+
+        // 1. Standard Layout Fields
+        $('#purchase-preview-supplier-name').text(displaySuppName);
+        $('#purchase-preview-supplier-phone').text(displaySuppPhone);
+        $('#purchase-preview-supplier-address').text(displaySuppAddr);
+        $('#purchase-preview-invoice-no').text(invoiceNoVal.startsWith('#') ? invoiceNoVal : '#' + invoiceNoVal);
+        $('#purchase-preview-date').text(formattedDate);
+        $('#purchase-preview-warehouse').text(whName);
+        $('#purchase-preview-print-time').text(currentDateTimeStr);
+
+        let itemsHtml = '';
+        let totalQty = 0;
+        cart.forEach((item, idx) => {
+            const p = productData[item.productId] || { name: 'Unknown', price: 0, units: [] };
+            const u = (p.units || []).find((x) => String(x.id) === String(item.unitId));
+            const unitName = u ? u.label.split(' (')[0] : 'পিছ';
+            const lineTot = item.qty * item.price;
+            totalQty += item.qty;
+
+            let extraMeta = [];
+            if (item.barcode || p.barcode) extraMeta.push('বারকোড : ' + (item.barcode || p.barcode));
+            if (p.sku) extraMeta.push('SKU : ' + p.sku);
+            if (item.batchNo) extraMeta.push('ব্যাচ : ' + item.batchNo);
+            const metaStr = extraMeta.length ? `<div style="font-size:10px; color:#64748b; margin-top:2px;">${escapeHtml(extraMeta.join(' · '))}</div>` : '';
+
+            itemsHtml += `
+                <tr>
+                    <td style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; padding:6px 2px; text-align:center; vertical-align:middle;">${toBn(idx + 1)}.</td>
+                    <td class="col-product-name" style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; padding:6px 8px; text-align:left; vertical-align:middle; white-space:normal !important; word-break:break-word;">
+                        <div class="product-title" style="font-weight:600; color:#0f172a; line-height:1.4;">${escapeHtml(p.name)}</div>
+                        ${metaStr}
+                    </td>
+                    <td style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; padding:6px 2px; text-align:center; vertical-align:middle; white-space:nowrap;">${toBn(item.qty)}</td>
+                    <td style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; padding:6px 2px; text-align:center; vertical-align:middle; white-space:nowrap;">${escapeHtml(unitName)}</td>
+                    <td style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; padding:6px 4px; text-align:right; vertical-align:middle; white-space:nowrap;">${toBn(fmt(item.price))}</td>
+                    <td style="border-bottom:1px solid #94a3b8 !important; padding:6px 4px; text-align:right; vertical-align:middle; white-space:nowrap;">${toBn(fmt(lineTot))}</td>
+                </tr>
+            `;
+        });
+        $('#purchase-preview-items-body').html(itemsHtml);
+        $('#purchase-preview-total-qty').text(toBn(fmt(totalQty)));
+        $('#purchase-preview-table-subtotal').text(toBn(fmt(sub)));
+
+        $('#purchase-preview-subtotal').text('৳' + toBn(fmt(sub)));
+        if (disc > 0) {
+            $('#purchase-preview-discount').text('৳' + toBn(fmt(disc)));
+            $('#purchase-preview-discount-row').css('display', 'flex');
+        } else {
+            $('#purchase-preview-discount-row').hide();
+        }
+
+        if (tax > 0) {
+            $('#purchase-preview-tax').text('৳' + toBn(fmt(tax)));
+            $('#purchase-preview-tax-row').css('display', 'flex');
+        } else {
+            $('#purchase-preview-tax-row').hide();
+        }
+
+        if (transportCost > 0) {
+            $('#purchase-preview-transport').text('৳' + toBn(fmt(transportCost)));
+            $('#purchase-preview-transport-row').css('display', 'flex');
+        } else {
+            $('#purchase-preview-transport-row').hide();
+        }
+
+        if (adj !== 0) {
+            $('#purchase-preview-adjustment-lbl').text(adj > 0 ? '(+) সমন্বয়' : '(-) সমন্বয়');
+            $('#purchase-preview-adjustment').text('৳' + toBn(fmt(Math.abs(adj))));
+            $('#purchase-preview-adjustment-row').css('display', 'flex');
+        } else {
+            $('#purchase-preview-adjustment-row').hide();
+        }
+
+        $('#purchase-preview-grand-total').text('৳' + toBn(fmt(total)));
+        $('#purchase-preview-paid').text('৳' + toBn(fmt(totalPaid)));
+        $('#purchase-preview-due').text('৳' + toBn(fmt(curDue)));
+        if (curDue > 0) {
+            $('#purchase-preview-due').css('color', '#dc2626');
+        } else {
+            $('#purchase-preview-due').css('color', '#0f172a');
+        }
+
+        if (supplierId && supplierId !== '__create_new__') {
+            $('#purchase-preview-due-box').show();
+            $('#purchase-preview-prev-due').text('৳' + toBn(fmt(prevDue)));
+            $('#purchase-preview-current-due').text('৳' + toBn(fmt(curDue)));
+            $('#purchase-preview-total-supplier-due').text('৳' + toBn(fmt(totalSupplierDue)));
+        } else {
+            $('#purchase-preview-due-box').hide();
+        }
+
+        $('#purchase-preview-amount-words').text(toBnWords(total));
+
+        // 2. Thermal Layout Fields (if present)
+        $('#purchase-thermal-preview-invoice-no').text(invoiceNoVal);
+        $('#purchase-thermal-preview-date').text(formattedDate);
+        $('#purchase-thermal-preview-supplier-name').text(displaySuppName);
+        if (suppPhone) {
+            $('#purchase-thermal-preview-supplier-phone').text(suppPhone);
+            $('#purchase-thermal-preview-supplier-phone-wrap').show();
+        } else {
+            $('#purchase-thermal-preview-supplier-phone-wrap').hide();
+        }
+        if (suppAddr) {
+            $('#purchase-thermal-preview-supplier-address').text(suppAddr);
+            $('#purchase-thermal-preview-supplier-addr-wrap').show();
+        } else {
+            $('#purchase-thermal-preview-supplier-addr-wrap').hide();
+        }
+        $('#purchase-thermal-preview-warehouse').text(whName);
+
+        let thermalItemsHtml = '';
+        cart.forEach((item) => {
+            const p = productData[item.productId] || { name: 'Unknown', price: 0, units: [] };
+            const u = (p.units || []).find((x) => String(x.id) === String(item.unitId));
+            const unitName = u ? u.label.split(' (')[0] : 'পিছ';
+            const lineTot = item.qty * item.price;
+
+            thermalItemsHtml += `
+                <tr>
+                    <td style="padding:3px 2px; vertical-align:top; text-align:left;">
+                        <div style="font-weight:600;">${escapeHtml(p.name)}</div>
+                        ${item.barcode ? `<div style="font-size:8px; color:#555;">${escapeHtml(item.barcode)}</div>` : ''}
+                    </td>
+                    <td style="padding:3px 2px; vertical-align:top; text-align:center; white-space:nowrap;">${toBn(item.qty)} ${escapeHtml(unitName)}</td>
+                    <td style="padding:3px 2px; vertical-align:top; text-align:right; white-space:nowrap;">${toBn(fmt(item.price))}</td>
+                    <td style="padding:3px 2px; vertical-align:top; text-align:right; white-space:nowrap;">${toBn(fmt(lineTot))}</td>
+                </tr>
+            `;
+        });
+        $('#purchase-thermal-preview-items-body').html(thermalItemsHtml);
+
+        $('#purchase-thermal-preview-subtotal').text('৳' + toBn(fmt(sub)));
+        if (disc > 0) {
+            $('#purchase-thermal-preview-discount').text('৳' + toBn(fmt(disc)));
+            $('#purchase-thermal-preview-discount-row').css('display', 'flex');
+        } else {
+            $('#purchase-thermal-preview-discount-row').hide();
+        }
+        if (tax > 0) {
+            $('#purchase-thermal-preview-tax').text('৳' + toBn(fmt(tax)));
+            $('#purchase-thermal-preview-tax-row').css('display', 'flex');
+        } else {
+            $('#purchase-thermal-preview-tax-row').hide();
+        }
+        if (transportCost > 0) {
+            $('#purchase-thermal-preview-transport').text('৳' + toBn(fmt(transportCost)));
+            $('#purchase-thermal-preview-transport-row').css('display', 'flex');
+        } else {
+            $('#purchase-thermal-preview-transport-row').hide();
+        }
+        if (adj !== 0) {
+            $('#purchase-thermal-preview-adjustment-lbl').text(adj > 0 ? '(+) সমন্বয়:' : '(-) সমন্বয়:');
+            $('#purchase-thermal-preview-adjustment').text('৳' + toBn(fmt(Math.abs(adj))));
+            $('#purchase-thermal-preview-adjustment-row').css('display', 'flex');
+        } else {
+            $('#purchase-thermal-preview-adjustment-row').hide();
+        }
+
+        $('#purchase-thermal-preview-grand-total').text('৳' + toBn(fmt(total)));
+        $('#purchase-thermal-preview-paid').text('৳' + toBn(fmt(totalPaid)));
+        $('#purchase-thermal-preview-due').text('৳' + toBn(fmt(curDue)));
+
+        if (supplierId && supplierId !== '__create_new__') {
+            $('#purchase-thermal-preview-due-box').show();
+            $('#purchase-thermal-preview-prev-due').text('৳' + toBn(fmt(prevDue)));
+            $('#purchase-thermal-preview-total-due').text('৳' + toBn(fmt(totalSupplierDue)));
+        } else {
+            $('#purchase-thermal-preview-due-box').hide();
+        }
+    }
+
+    $(document).on('click', '#drawer-save-btn', function () {
+        if (cart.length === 0) {
+            toast('কার্টে অন্তত একটি পণ্য যোগ করুন', 'Add at least one product to the cart');
+            return;
+        }
+
+        const { total, enteredTotalPayment, paymentsToSubmit } = buildPurchasePaymentsToSubmit();
+
+        if (Math.round((enteredTotalPayment - total) * 100) / 100 > 0.01) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'অতিরিক্ত পরিশোধ সম্ভব নয়',
+                text: 'প্রদেয় টাকার পরিমাণ মোট প্রদেয় (সর্বমোট) এর চেয়ে বেশি হতে পারে না (সর্বোচ্চ: ৳' + fmt(total) + ')।',
+                confirmButtonText: 'ঠিক আছে',
             });
+            return;
+        }
 
-            renderHiddenFields();
-            document.getElementById('purchase-form').submit();
-        });
+        const totalPaidToSubmit = paymentsToSubmit.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+        const remainingDueToSubmit = Math.max(0, total - totalPaidToSubmit);
 
-        $(document).on('change', '#purchase-warehouse-select', function () {
-            const whId = $(this).val();
-            if (whId) {
-                @if ($purchase->exists)
-                    window.location.href = '{{ route('purchase.edit', $purchase) }}?warehouse_id=' + whId;
-                @else
-                    window.location.href = '{{ route('purchase.create') }}?warehouse_id=' + whId;
-                @endif
+        if (hasNoSupplier() && remainingDueToSubmit > 0.01) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'সরবরাহকারী নির্বাচন বাধ্যতামূলক',
+                text: 'সরবরাহকারী নির্বাচন ছাড়া বাকি ক্রয় সম্ভব নয়। সম্পূর্ণ মূল্য পরিশোধ করতে হবে অথবা সরবরাহকারী নির্বাচন করুন।',
+                confirmButtonText: 'ঠিক আছে',
+            });
+            return;
+        }
+
+        renderPurchaseInvoicePreview();
+        openModal('purchaseInvoicePreviewModal');
+    });
+
+    $(document).on('click', '#btn-confirm-purchase-submit', function () {
+        const $btn = $(this);
+        $btn.prop('disabled', true).css('opacity', '0.7');
+
+        const { paymentsToSubmit } = buildPurchasePaymentsToSubmit();
+        const $hiddenPayments = $('#hidden-payments-container');
+        $hiddenPayments.empty();
+
+        paymentsToSubmit.forEach((p, idx) => {
+            if (p.account_id) {
+                $hiddenPayments.append(`<input type="hidden" name="payments[${idx}][account_id]" value="${escapeHtml(p.account_id)}">`);
             }
+            $hiddenPayments.append(`<input type="hidden" name="payments[${idx}][method]" value="${escapeHtml(p.method)}">`);
+            $hiddenPayments.append(`<input type="hidden" name="payments[${idx}][amount]" value="${p.amount}">`);
         });
 
-        syncPaymentTypeUI();
-        renderAll();
-        updateSupplierDueNotice($('#supplier-id-select').val());
-    })();
+        renderHiddenFields();
+        document.getElementById('purchase-form').submit();
+    });
+
+    $(document).on('change', '#purchase-warehouse-select', function () {
+        const whId = $(this).val();
+        if (whId) {
+            @if ($purchase->exists)
+                window.location.href = '{{ route('purchase.edit', $purchase) }}?warehouse_id=' + whId;
+            @else
+                window.location.href = '{{ route('purchase.create') }}?warehouse_id=' + whId;
+            @endif
+        }
+    });
+
+    syncPaymentTypeUI();
+    renderAll();
+    updateSupplierDueNotice($('#supplier-id-select').val());
+})();
 </script>

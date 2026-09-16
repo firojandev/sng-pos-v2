@@ -707,8 +707,12 @@
                 });
 
                 var enteredTotal = Math.max(parseFloat(totalVal) || 0, 0);
-                var afterDue = Math.max(totalSupplierDue - enteredTotal, 0);
-                $('#supplier-balance-after').text('৳' + afterDue.toFixed(2));
+                var afterDue = totalSupplierDue - enteredTotal;
+                if (afterDue < 0) {
+                    $('#supplier-balance-after').css('color', 'var(--red-600)').text('-৳' + Math.abs(afterDue).toFixed(2));
+                } else {
+                    $('#supplier-balance-after').css('color', 'var(--ink-900)').text('৳' + afterDue.toFixed(2));
+                }
                 $('#lbl-supplier-pay-total').text('৳' + enteredTotal.toFixed(2));
             }
 
@@ -781,8 +785,12 @@
                     }
                 }
 
-                var afterDue = Math.max(totalSupplierDue - totalAllocated, 0);
-                $('#supplier-balance-after').text('৳' + afterDue.toFixed(2));
+                var afterDue = totalSupplierDue - totalAllocated;
+                if (afterDue < 0) {
+                    $('#supplier-balance-after').css('color', 'var(--red-600)').text('-৳' + Math.abs(afterDue).toFixed(2));
+                } else {
+                    $('#supplier-balance-after').css('color', 'var(--ink-900)').text('৳' + afterDue.toFixed(2));
+                }
                 $('#lbl-supplier-pay-total').text('৳' + totalAllocated.toFixed(2));
             });
 
