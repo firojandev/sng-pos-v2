@@ -250,7 +250,7 @@
                     icon-after="arrow-right"
                     style="flex: 0 0 auto; height: 38px; font-weight: 700; font-size: 13.5px; padding: 0 22px; justify-content: center;"
                 >
-                    <span class="bn">Make Sale</span><span class="en" style="display:none;">Make Sale</span>
+                    <span class="bn">পরবর্তী</span><span class="en" style="display:none;">Next</span>
                 </x-core::button>
             </div>
         </div>
@@ -651,11 +651,13 @@
                 id="drawer-save-btn"
                 style="width:100%; justify-content:center; height:38px; font-size:13.5px;"
             >
-                <span class="bn">সংরক্ষণ করুন</span><span class="en" style="display:none;">Save</span>
+                <span class="bn">দেখে নিন</span><span class="en" style="display:none;">Preview</span>
             </x-core::button>
         </div>
     </div>
 </div>
+
+@include('sales::sales._invoice_preview_modal')
 
 <script>
 (function () {
@@ -1765,7 +1767,103 @@
         }
     });
 
-    $(document).on('click', '#drawer-save-btn', function () {
+    /* ---------------- Quick Add Customer Modal & Invoice Preview Modal ---------------- */
+    $(function () {
+        const $quickModal = $('#quickCustomerModal');
+        if ($quickModal.length && !$quickModal.parent().is('body')) {
+            $('body').append($quickModal);
+        }
+
+        const $previewModal = $('#saleInvoicePreviewModal');
+        if ($previewModal.length && !$previewModal.parent().is('body')) {
+            $('body').append($previewModal);
+        }
+    });
+
+    const BN_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+    const BN_MONTHS = ['', 'জানু', 'ফেব্রু', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্ট', 'অক্টো', 'নভে', 'ডিসে'];
+    const BN_WORDS = {
+        0: 'শূন্য', 1: 'এক', 2: 'দুই', 3: 'তিন', 4: 'চার', 5: 'পাঁচ', 6: 'ছয়', 7: 'সাত', 8: 'আট', 9: 'নয়',
+        10: 'দশ', 11: 'এগারো', 12: 'বারো', 13: 'তেরো', 14: 'চৌদ্দ', 15: 'পনেরো', 16: 'ষোলো', 17: 'সতেরো', 18: 'আঠারো', 19: 'উনিশ',
+        20: 'বিশ', 21: 'একুশ', 22: 'বাইশ', 23: 'তেইশ', 24: 'চব্বিশ', 25: 'পঁচিশ', 26: 'ছাব্বিশ', 27: 'সাতাশ', 28: 'আঠাশ', 29: 'উনত্রিশ',
+        30: 'ত্রিশ', 31: 'একত্রিশ', 32: 'বত্রিশ', 33: 'তেত্রিশ', 34: 'চৌত্রিশ', 35: 'পঁয়ত্রিশ', 36: 'ছত্রিশ', 37: 'সাঁইত্রিশ', 38: 'আটত্রিশ', 39: 'উনচল্লিশ',
+        40: 'চল্লিশ', 41: 'একচল্লিশ', 42: 'বিয়াল্লিশ', 43: 'তেতাল্লিশ', 44: 'চুয়াল্লিশ', 45: 'পঁয়তাল্লিশ', 46: 'ছেচল্লিশ', 47: 'সাতচল্লিশ', 48: 'আটচল্লিশ', 49: 'উনপঞ্চাশ',
+        50: 'পঞ্চাশ', 51: 'একান্ন', 52: 'বায়ান্ন', 53: 'তিপ্পান্ন', 54: 'চুয়ান্ন', 55: 'পঞ্চান্ন', 56: 'ছাপ্পান্ন', 57: 'সাতান্ন', 58: 'আটান্ন', 59: 'উনষাট',
+        60: 'ষাট', 61: 'একষট্টি', 62: 'বাষট্টি', 63: 'তেষট্টি', 64: 'চৌষট্টি', 65: 'পঁয়ষট্টি', 66: 'ছেষট্টি', 67: 'সাতষট্টি', 68: 'আটষট্টি', 69: 'উনসত্তর',
+        70: 'সত্তর', 71: 'একাত্তর', 72: 'বাহাত্তর', 73: 'তিয়াত্তর', 74: 'চুয়াত্তর', 75: 'পঁচাত্তর', 76: 'ছিয়াত্তর', 77: 'সাতাত্তর', 78: 'আটাত্তর', 79: 'উনাশি',
+        80: 'আশি', 81: 'একাশি', 82: 'বিরাশি', 83: 'তিরাশি', 84: 'চুরাশি', 85: 'পঁচাশি', 86: 'ছিয়াশি', 87: 'সাতাশি', 88: 'আটাশি', 89: 'ঊননব্বই',
+        90: 'নব্বই', 91: 'একানব্বই', 92: 'বানব্বই', 93: 'তিরানব্বই', 94: 'চুরানব্বই', 95: 'পঁচানব্বই', 96: 'ছিয়ানব্বই', 97: 'সাতানব্বই', 98: 'আটানব্বই', 99: 'নিরানব্বই'
+    };
+
+    function toBn(val) {
+        if (val === null || val === undefined || val === '') return '';
+        return String(val).replace(/\d/g, (d) => BN_DIGITS[d]);
+    }
+
+    function convertIntToBnWords(number) {
+        if (!number || number <= 0) return '';
+        let parts = [];
+        if (number >= 10000000) {
+            let crore = Math.floor(number / 10000000);
+            parts.push(convertIntToBnWords(crore) + ' কোটি');
+            number %= 10000000;
+        }
+        if (number >= 100000) {
+            let lakh = Math.floor(number / 100000);
+            parts.push((BN_WORDS[lakh] || lakh) + ' লক্ষ');
+            number %= 100000;
+        }
+        if (number >= 1000) {
+            let thousand = Math.floor(number / 1000);
+            parts.push((BN_WORDS[thousand] || thousand) + ' হাজার');
+            number %= 1000;
+        }
+        if (number >= 100) {
+            let hundred = Math.floor(number / 100);
+            parts.push((BN_WORDS[hundred] || hundred) + ' শত');
+            number %= 100;
+        }
+        if (number > 0) {
+            parts.push(BN_WORDS[number] || number);
+        }
+        return parts.join(' ');
+    }
+
+    function toBnWords(amount) {
+        let val = Math.round((parseFloat(amount) || 0) * 100) / 100;
+        if (val === 0) return 'শূন্য টাকা';
+        let abs = Math.abs(val);
+        let whole = Math.floor(abs);
+        let fraction = Math.round((abs - whole) * 100);
+        if (fraction === 100) {
+            whole += 1;
+            fraction = 0;
+        }
+        let words = convertIntToBnWords(whole);
+        let res = words ? words + ' টাকা' : '';
+        if (fraction > 0) {
+            let fracWords = BN_WORDS[fraction] || convertIntToBnWords(fraction);
+            res = (res ? res + ' ' : '') + fracWords + ' পয়সা';
+        }
+        return val < 0 ? 'মাইনাস ' + res : res;
+    }
+
+    function formatBnDateTime(dateStr) {
+        if (!dateStr) return '—';
+        const d = new Date(dateStr + (dateStr.includes('T') ? '' : 'T' + new Date().toTimeString().slice(0, 8)));
+        const now = new Date();
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = BN_MONTHS[d.getMonth() + 1] || (d.getMonth() + 1);
+        const year = toBn(d.getFullYear());
+        let hours = now.getHours();
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12 || 12;
+        const timeHour = toBn(String(hours).padStart(2, '0'));
+        const timeMin = toBn(String(now.getMinutes()).padStart(2, '0'));
+        return `${toBn(day)} ${month} ${year}, ${timeHour}:${timeMin} ${ampm}`;
+    }
+
+    function buildSalePaymentsToSubmit() {
         const total = calcGrandTotalCost();
         const paymentType = $('#drawer-payment-type-select').val() || 'cash';
         const defaultCashAccountId = document.getElementById('sale-default-cash-account-id') ? JSON.parse(document.getElementById('sale-default-cash-account-id').textContent) : null;
@@ -1777,8 +1875,8 @@
         const bankMethod = selectedAccountType === 'mfs' ? 'mobile_banking' : 'bank';
 
         let paymentsToSubmit = [];
-
         let enteredTotalPayment = 0;
+
         if (paymentType === 'cash') {
             let amount = parseFloat($('#drawer-amount-input').val()) || 0;
             if (drawerMode === 'cash' && amount <= 0 && !amountManuallyEdited) amount = total;
@@ -1824,6 +1922,231 @@
             }
         }
 
+        return { total, enteredTotalPayment, paymentsToSubmit };
+    }
+
+    function renderSaleInvoicePreview() {
+        const { total, paymentsToSubmit } = buildSalePaymentsToSubmit();
+        const totalPaid = paymentsToSubmit.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+        const sub = subtotal();
+        const disc = discountAmount();
+        const prodDisc = cart.reduce((sum, item) => sum + lineDiscountAmount(item), 0);
+        const tax = totalTax();
+        const delCharge = parseFloat($('#delivery-charge-input').val()) || 0;
+        const adj = parseFloat($('#adjustment-input').val()) || 0;
+        const prevDue = parseFloat($('#total_previous_due').val()) || 0;
+        const curDue = Math.max(0, total - totalPaid);
+        const totalCustomerDue = prevDue + curDue;
+
+        const customerId = $('#customer-id-select').val();
+        const custName = $('#customer-name-input').val() ? $('#customer-name-input').val().trim() : '';
+        const custPhone = $('#customer-phone-input').val() ? $('#customer-phone-input').val().trim() : '';
+        const custAddr = $('#customer-address-input').val() ? $('#customer-address-input').val().trim() : '';
+
+        const displayCustName = custName || (customerId && customerId !== '__create_new__' ? $('#customer-id-select option:selected').text().split(' (')[0].trim() : 'ওয়াক-ইন গ্রাহক');
+        const displayCustPhone = custPhone || '—';
+        const displayCustAddr = custAddr || '—';
+
+        const customInvChecked = $('#custom-invoice-toggle').is(':checked');
+        const invoiceNoVal = customInvChecked && $('#invoice-no-input').val().trim() ? $('#invoice-no-input').val().trim() : 'স্বয়ংক্রিয়ভাবে তৈরি হবে';
+
+        const saleDateVal = $('#sale-date-input').val() || new Date().toISOString().slice(0, 10);
+        const formattedDate = formatBnDateTime(saleDateVal);
+        const currentDateTimeStr = formatBnDateTime(new Date().toISOString().slice(0, 10));
+
+        const empName = $('#employee-name-input').val() ? $('#employee-name-input').val().trim() : '{{ auth()->user()?->name ?? 'অ্যাডমিন' }}';
+
+        // 1. Standard Layout Fields
+        $('#sale-preview-customer-name').text(displayCustName);
+        $('#sale-preview-customer-phone').text(displayCustPhone);
+        $('#sale-preview-customer-address').text(displayCustAddr);
+        $('#sale-preview-seller-name').text(empName);
+        $('#sale-preview-invoice-no').text(invoiceNoVal.startsWith('#') ? invoiceNoVal : '#' + invoiceNoVal);
+        $('#sale-preview-date').text(formattedDate);
+        $('#sale-preview-print-time').text(currentDateTimeStr);
+
+        let itemsHtml = '';
+        let totalQty = 0;
+        cart.forEach((item, idx) => {
+            const p = productData[item.productId] || { name: 'Unknown', price: 0, units: [] };
+            const u = (p.units || []).find((x) => String(x.id) === String(item.unitId));
+            const unitName = u ? u.label.split(' (')[0] : 'পিছ';
+            const lineTot = lineAmount(item);
+            totalQty += item.qty;
+
+            let extraMeta = [];
+            if (item.barcode || p.barcode) extraMeta.push('বারকোড : ' + (item.barcode || p.barcode));
+            if (p.sku) extraMeta.push('SKU : ' + p.sku);
+            const metaStr = extraMeta.length ? `<div style="font-size:10px; color:#64748b; margin-top:2px;">${escapeHtml(extraMeta.join(' · '))}</div>` : '';
+
+            itemsHtml += `
+                <tr>
+                    <td style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; padding:6px 2px; text-align:center; vertical-align:middle;">${toBn(idx + 1)}.</td>
+                    <td class="col-product-name" style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; padding:6px 8px; text-align:left; vertical-align:middle; white-space:normal !important; word-break:break-word;">
+                        <div class="product-title" style="font-weight:600; color:#0f172a; line-height:1.4;">${escapeHtml(p.name)}</div>
+                        ${metaStr}
+                    </td>
+                    <td style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; padding:6px 2px; text-align:center; vertical-align:middle; white-space:nowrap;">${toBn(item.qty)}</td>
+                    <td style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; padding:6px 2px; text-align:center; vertical-align:middle; white-space:nowrap;">${escapeHtml(unitName)}</td>
+                    <td style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; padding:6px 4px; text-align:right; vertical-align:middle; white-space:nowrap;">${toBn(fmt(item.price))}</td>
+                    <td style="border-bottom:1px solid #94a3b8 !important; padding:6px 4px; text-align:right; vertical-align:middle; white-space:nowrap;">${toBn(fmt(lineTot))}</td>
+                </tr>
+            `;
+        });
+        $('#sale-preview-items-body').html(itemsHtml);
+        $('#sale-preview-total-qty').text(toBn(fmt(totalQty)));
+        $('#sale-preview-table-subtotal').text(toBn(fmt(sub + prodDisc)));
+
+        $('#sale-preview-subtotal').text('৳' + toBn(fmt(sub + prodDisc)));
+        if (prodDisc > 0) {
+            $('#sale-preview-product-discount').text('৳' + toBn(fmt(prodDisc)));
+            $('#sale-preview-product-discount-row').css('display', 'flex');
+        } else {
+            $('#sale-preview-product-discount-row').hide();
+        }
+
+        if (disc > 0) {
+            $('#sale-preview-discount').text('৳' + toBn(fmt(disc)));
+            $('#sale-preview-discount-row').css('display', 'flex');
+        } else {
+            $('#sale-preview-discount-row').hide();
+        }
+
+        if (tax > 0) {
+            $('#sale-preview-tax').text('৳' + toBn(fmt(tax)));
+            $('#sale-preview-tax-row').css('display', 'flex');
+        } else {
+            $('#sale-preview-tax-row').hide();
+        }
+
+        if (delCharge > 0) {
+            $('#sale-preview-delivery').text('৳' + toBn(fmt(delCharge)));
+            $('#sale-preview-delivery-row').css('display', 'flex');
+        } else {
+            $('#sale-preview-delivery-row').hide();
+        }
+
+        if (adj !== 0) {
+            $('#sale-preview-adjustment-lbl').text(adj > 0 ? '(+) সমন্বয়' : '(-) সমন্বয়');
+            $('#sale-preview-adjustment').text('৳' + toBn(fmt(Math.abs(adj))));
+            $('#sale-preview-adjustment-row').css('display', 'flex');
+        } else {
+            $('#sale-preview-adjustment-row').hide();
+        }
+
+        $('#sale-preview-grand-total').text('৳' + toBn(fmt(total)));
+        $('#sale-preview-paid').text('৳' + toBn(fmt(totalPaid)));
+        $('#sale-preview-due').text('৳' + toBn(fmt(curDue)));
+        if (curDue > 0) {
+            $('#sale-preview-due').css('color', '#dc2626');
+        } else {
+            $('#sale-preview-due').css('color', '#0f172a');
+        }
+
+        if (customerId && customerId !== '__create_new__') {
+            $('#sale-preview-due-box').show();
+            $('#sale-preview-prev-due').text('৳' + toBn(fmt(prevDue)));
+            $('#sale-preview-current-due').text('৳' + toBn(fmt(curDue)));
+            $('#sale-preview-total-customer-due').text('৳' + toBn(fmt(totalCustomerDue)));
+        } else {
+            $('#sale-preview-due-box').hide();
+        }
+
+        $('#sale-preview-amount-words').text(toBnWords(total));
+
+        // 2. Thermal Layout Fields (if present)
+        $('#sale-thermal-preview-invoice-no').text(invoiceNoVal);
+        $('#sale-thermal-preview-date').text(formattedDate);
+        $('#sale-thermal-preview-customer-name').text(displayCustName);
+        if (custPhone) {
+            $('#sale-thermal-preview-customer-phone').text(custPhone);
+            $('#sale-thermal-preview-customer-phone-wrap').show();
+        } else {
+            $('#sale-thermal-preview-customer-phone-wrap').hide();
+        }
+        if (custAddr) {
+            $('#sale-thermal-preview-customer-address').text(custAddr);
+            $('#sale-thermal-preview-customer-addr-wrap').show();
+        } else {
+            $('#sale-thermal-preview-customer-addr-wrap').hide();
+        }
+        $('#sale-thermal-preview-seller-name').text(empName);
+
+        let thermalItemsHtml = '';
+        cart.forEach((item) => {
+            const p = productData[item.productId] || { name: 'Unknown', price: 0, units: [] };
+            const u = (p.units || []).find((x) => String(x.id) === String(item.unitId));
+            const unitName = u ? u.label.split(' (')[0] : 'পিছ';
+            const lineTot = lineAmount(item);
+
+            thermalItemsHtml += `
+                <tr>
+                    <td style="padding:3px 2px; vertical-align:top; text-align:left;">
+                        <div style="font-weight:600;">${escapeHtml(p.name)}</div>
+                        ${item.barcode ? `<div style="font-size:8px; color:#555;">${escapeHtml(item.barcode)}</div>` : ''}
+                    </td>
+                    <td style="padding:3px 2px; vertical-align:top; text-align:center; white-space:nowrap;">${toBn(item.qty)} ${escapeHtml(unitName)}</td>
+                    <td style="padding:3px 2px; vertical-align:top; text-align:right; white-space:nowrap;">${toBn(fmt(item.price))}</td>
+                    <td style="padding:3px 2px; vertical-align:top; text-align:right; white-space:nowrap;">${toBn(fmt(lineTot))}</td>
+                </tr>
+            `;
+        });
+        $('#sale-thermal-preview-items-body').html(thermalItemsHtml);
+
+        $('#sale-thermal-preview-subtotal').text('৳' + toBn(fmt(sub + prodDisc)));
+        if (prodDisc > 0) {
+            $('#sale-thermal-preview-product-discount').text('৳' + toBn(fmt(prodDisc)));
+            $('#sale-thermal-preview-product-discount-row').css('display', 'flex');
+        } else {
+            $('#sale-thermal-preview-product-discount-row').hide();
+        }
+        if (disc > 0) {
+            $('#sale-thermal-preview-discount').text('৳' + toBn(fmt(disc)));
+            $('#sale-thermal-preview-discount-row').css('display', 'flex');
+        } else {
+            $('#sale-thermal-preview-discount-row').hide();
+        }
+        if (tax > 0) {
+            $('#sale-thermal-preview-tax').text('৳' + toBn(fmt(tax)));
+            $('#sale-thermal-preview-tax-row').css('display', 'flex');
+        } else {
+            $('#sale-thermal-preview-tax-row').hide();
+        }
+        if (delCharge > 0) {
+            $('#sale-thermal-preview-delivery').text('৳' + toBn(fmt(delCharge)));
+            $('#sale-thermal-preview-delivery-row').css('display', 'flex');
+        } else {
+            $('#sale-thermal-preview-delivery-row').hide();
+        }
+        if (adj !== 0) {
+            $('#sale-thermal-preview-adjustment-lbl').text(adj > 0 ? '(+) সমন্বয়:' : '(-) সমন্বয়:');
+            $('#sale-thermal-preview-adjustment').text('৳' + toBn(fmt(Math.abs(adj))));
+            $('#sale-thermal-preview-adjustment-row').css('display', 'flex');
+        } else {
+            $('#sale-thermal-preview-adjustment-row').hide();
+        }
+
+        $('#sale-thermal-preview-grand-total').text('৳' + toBn(fmt(total)));
+        $('#sale-thermal-preview-paid').text('৳' + toBn(fmt(totalPaid)));
+        $('#sale-thermal-preview-due').text('৳' + toBn(fmt(curDue)));
+
+        if (customerId && customerId !== '__create_new__') {
+            $('#sale-thermal-preview-due-box').show();
+            $('#sale-thermal-preview-prev-due').text('৳' + toBn(fmt(prevDue)));
+            $('#sale-thermal-preview-total-due').text('৳' + toBn(fmt(totalCustomerDue)));
+        } else {
+            $('#sale-thermal-preview-due-box').hide();
+        }
+    }
+
+    $(document).on('click', '#drawer-save-btn', function () {
+        if (cart.length === 0) {
+            toast('কার্টে অন্তত একটি পণ্য যোগ করুন', 'Add at least one product to the cart');
+            return;
+        }
+
+        const { total, enteredTotalPayment, paymentsToSubmit } = buildSalePaymentsToSubmit();
+
         if (Math.round((enteredTotalPayment - total) * 100) / 100 > 0.01) {
             Swal.fire({
                 icon: 'warning',
@@ -1833,17 +2156,6 @@
             });
             return;
         }
-
-        const $hiddenPayments = $('#hidden-payments-container');
-        $hiddenPayments.empty();
-
-        paymentsToSubmit.forEach((p, idx) => {
-            if (p.account_id) {
-                $hiddenPayments.append(`<input type="hidden" name="payments[${idx}][account_id]" value="${escapeHtml(p.account_id)}">`);
-            }
-            $hiddenPayments.append(`<input type="hidden" name="payments[${idx}][method]" value="${escapeHtml(p.method)}">`);
-            $hiddenPayments.append(`<input type="hidden" name="payments[${idx}][amount]" value="${p.amount}">`);
-        });
 
         const totalPaidToSubmit = paymentsToSubmit.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
         const remainingDueToSubmit = Math.max(0, total - totalPaidToSubmit);
@@ -1858,6 +2170,26 @@
             return;
         }
 
+        renderSaleInvoicePreview();
+        openModal('saleInvoicePreviewModal');
+    });
+
+    $(document).on('click', '#btn-confirm-sale-submit', function () {
+        const $btn = $(this);
+        $btn.prop('disabled', true).css('opacity', '0.7');
+
+        const { paymentsToSubmit } = buildSalePaymentsToSubmit();
+        const $hiddenPayments = $('#hidden-payments-container');
+        $hiddenPayments.empty();
+
+        paymentsToSubmit.forEach((p, idx) => {
+            if (p.account_id) {
+                $hiddenPayments.append(`<input type="hidden" name="payments[${idx}][account_id]" value="${escapeHtml(p.account_id)}">`);
+            }
+            $hiddenPayments.append(`<input type="hidden" name="payments[${idx}][method]" value="${escapeHtml(p.method)}">`);
+            $hiddenPayments.append(`<input type="hidden" name="payments[${idx}][amount]" value="${p.amount}">`);
+        });
+
         renderHiddenFields();
         document.getElementById('sale-form').submit();
     });
@@ -1867,3 +2199,4 @@
     updateCustomerDueNotice($('#customer-id-select').val());
 })();
 </script>
+

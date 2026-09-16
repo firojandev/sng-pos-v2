@@ -150,7 +150,7 @@
                                         <x-core::badge color="danger" size="sm" rounded="rounded">MFS</x-core::badge>
                                     @endif
                                 </td>
-                                <td style="text-align:right; font-weight:700; font-size:14px; font-family:'Manrope',sans-serif; color:{{ $item->current_balance < 0 ? '#dc2626' : 'inherit' }};">
+                                <td style="text-align:right; font-weight:700; font-size:14px; font-family:'Manrope',sans-serif; color:{{ $item->current_balance < 0 ? 'var(--red-600)' : 'inherit' }};">
                                     ৳ {{ number_format($item->current_balance, 2) }}
                                 </td>
                                 <td style="text-align:center;">
@@ -457,7 +457,14 @@
                             $('#edit_branch_name_input').val(data.branch_name || '');
                             $('#edit_mfs_provider_select').val(data.mfs_provider || '');
                             $('#edit_mfs_type_select').val(data.mfs_type || '');
-                            $('#edit_current_balance_display').val(data.current_balance_formatted || ('৳ ' + parseFloat(data.current_balance || 0).toFixed(2)));
+                            var numBal = parseFloat(data.current_balance || 0);
+                            var formattedBal = data.current_balance_formatted || ('৳ ' + numBal.toFixed(2));
+                            $('#edit_current_balance_display').val(formattedBal);
+                            if (numBal < 0) {
+                                $('#edit_current_balance_display').css('color', 'var(--red-600)');
+                            } else {
+                                $('#edit_current_balance_display').css('color', '');
+                            }
                             $('#edit_status_select').val(data.status);
                             $('#edit_note_input').val(data.note || '');
                             $('#edit_is_default_toggle').prop('checked', !!data.is_default);

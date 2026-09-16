@@ -222,7 +222,7 @@ class UsersDataTable extends BaseDataTable
             $query->whereDate('users.created_at', '<=', $to);
         }
 
-        return $query;
+        return $query->latest('users.id');
     }
 
     /**

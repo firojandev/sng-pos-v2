@@ -91,7 +91,8 @@ class BranchesDataTable extends BaseDataTable
                 'branches.status',
                 'branches.created_at',
             ])
-            ->withCount('warehouses');
+            ->withCount('warehouses')
+            ->latest('branches.id');
     }
 
     /**

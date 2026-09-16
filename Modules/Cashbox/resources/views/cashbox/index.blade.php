@@ -413,7 +413,14 @@
             $('#cashbox-data-table').on('xhr.dt', function (e, settings, json) {
                 if (json && json.summary) {
                     if (json.summary.balance !== undefined) {
-                        $('#stat-cashbox-balance').text('৳' + parseFloat(json.summary.balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                        var numBal = parseFloat(json.summary.balance);
+                        var $statBal = $('#stat-cashbox-balance');
+                        $statBal.text((numBal < 0 ? '-৳' : '৳') + Math.abs(numBal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                        if (numBal < 0) {
+                            $statBal.css('color', 'var(--red-600)');
+                        } else {
+                            $statBal.css('color', '');
+                        }
                     }
                     if (json.summary.cash_in !== undefined) {
                         $('#stat-cashbox-in').text('৳' + parseFloat(json.summary.cash_in).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));

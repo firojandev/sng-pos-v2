@@ -129,7 +129,8 @@ class PlansDataTable extends BaseDataTable
                 'plans.status',
                 'plans.created_at',
             ])
-            ->withCount('subscriptions');
+            ->withCount('subscriptions')
+            ->latest('plans.id');
     }
 
     /**
@@ -137,8 +138,7 @@ class PlansDataTable extends BaseDataTable
      */
     public function html(): HtmlBuilder
     {
-        return $this->defaultHtml()
-            ->orderBy(1, 'asc');
+        return $this->defaultHtml();
     }
 
     /**

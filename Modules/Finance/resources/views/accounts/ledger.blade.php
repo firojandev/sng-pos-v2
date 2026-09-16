@@ -25,7 +25,7 @@
 
             <div style="text-align:right;">
                 <div style="font-size:12px; color:var(--text-muted);">বর্তমান ব্যালেন্স</div>
-                <div style="font-size:24px; font-weight:700; color:#16a34a; font-family:'Manrope',sans-serif;">
+                <div style="font-size:24px; font-weight:700; color:{{ $account->current_balance < 0 ? 'var(--red-600)' : 'var(--green-ink, #16a34a)' }}; font-family:'Manrope',sans-serif;">
                     ৳ {{ number_format($account->current_balance, 2) }}
                 </div>
             </div>
@@ -152,7 +152,7 @@
                                 <td style="text-align:right; font-weight:700; font-family:'Manrope',sans-serif; color:{{ $tx->type === 'in' ? '#16a34a' : '#dc2626' }};">
                                     {{ $tx->type === 'in' ? '+' : '-' }} ৳ {{ number_format($tx->amount, 2) }}
                                 </td>
-                                <td style="text-align:right; font-weight:600; font-family:'Manrope',sans-serif;">
+                                <td style="text-align:right; font-weight:600; font-family:'Manrope',sans-serif; color:{{ $tx->balance_after < 0 ? 'var(--red-600)' : 'inherit' }};">
                                     ৳ {{ number_format($tx->balance_after, 2) }}
                                 </td>
                                 <td style="font-size:12px; color:var(--text-muted);">

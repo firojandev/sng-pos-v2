@@ -90,7 +90,7 @@ class ExpenseSubCategoriesDataTable extends BaseDataTable
             $query->where('categories.parent_id', $parentId);
         }
 
-        return $query;
+        return $query->latest('categories.id');
     }
 
     /**
