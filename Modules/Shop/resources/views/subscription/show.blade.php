@@ -6,7 +6,7 @@
     active="subscription"
 >
     @if ($subscription && ! $subscription->isUsable())
-        <div class="panel" style="margin-top:0; max-width:840px; border-color:var(--red-600); background:var(--red-50);">
+        <div class="panel" style="margin-top:0; width:100%; border-color:var(--red-600); background:var(--red-50);">
             <div class="panel-body">
                 <div class="badge b-red bn" style="margin-bottom:8px;">সাবস্ক্রিপশন নিষ্ক্রিয় (Inactive)</div>
                 <div class="badge b-red en" style="display:none; margin-bottom:8px;">Subscription Inactive</div>
@@ -16,9 +16,47 @@
         </div>
     @endif
 
-    <div style="display:grid; grid-template-columns:1.2fr 1fr; gap:20px; max-width:1100px; align-items:start;">
-        {{-- Left: Current Plan & Resource Limits --}}
+    <style>
+        .subscription-container {
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            gap: 20px;
+            width: 100%;
+            align-items: start;
+        }
+        .subscription-features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            width: 100%;
+        }
+        @media (max-width: 1400px) {
+            .subscription-container {
+                grid-template-columns: 380px 1fr;
+            }
+            .subscription-features-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            }
+        }
+        @media (max-width: 1024px) {
+            .subscription-container {
+                grid-template-columns: 1fr !important;
+            }
+            .subscription-features-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            }
+        }
+        @media (max-width: 640px) {
+            .subscription-features-grid {
+                grid-template-columns: 1fr !important;
+            }
+        }
+    </style>
+
+    <div class="subscription-container">
+        {{-- Left Column: Current Plan, Quota Limits & Payment History --}}
         <div style="display:flex; flex-direction:column; gap:20px;">
+            {{-- Current Plan Panel --}}
             <div class="panel" style="margin-top:0;">
                 <div class="panel-head">
                     <div class="panel-title" style="display:flex; align-items:center; gap:8px;">
@@ -72,13 +110,26 @@
                                 </span>
                             </div>
                         @endif
+                    @else
+                        <div class="helper" style="margin-top:0;">
+                            <span class="bn">কোনো সাবস্ক্রিপশন তথ্য পাওয়া যায়নি।</span>
+                            <span class="en" style="display:none;">No subscription information available.</span>
+                        </div>
+                    @endif
+                </div>
+            </div>
 
-                        {{-- Quota / Limits --}}
-                        <div class="drawer-title" style="font-size:14px; margin:22px 0 12px; color:var(--teal-800); font-weight:700;">
-                            <span class="bn">রিসোর্স কোটা ও ব্যবহার (Quota Limits)</span>
+            {{-- Resource Quotas & Usage Panel --}}
+            @if ($subscription && $subscription->plan)
+                <div class="panel" style="margin-top:0;">
+                    <div class="panel-head">
+                        <div class="panel-title" style="display:flex; align-items:center; gap:8px;">
+                            <x-core::icon name="bar-chart-2" size="18" style="color:var(--teal-800);" />
+                            <span class="bn">রিসোর্স কোটা ও ব্যবহার</span>
                             <span class="en" style="display:none;">Resource Quotas & Usage</span>
                         </div>
-
+                    </div>
+                    <div class="panel-body">
                         @php
                             $quotaItems = [
                                 'users' => ['bn' => 'ইউজার / স্টাফ', 'en' => 'Users / Staff', 'icon' => 'user'],
@@ -120,16 +171,11 @@
                                 </div>
                             @endforeach
                         </div>
-                    @else
-                        <div class="helper" style="margin-top:0;">
-                            <span class="bn">কোনো সাবস্ক্রিপশন তথ্য পাওয়া যায়নি।</span>
-                            <span class="en" style="display:none;">No subscription information available.</span>
-                        </div>
-                    @endif
+                    </div>
                 </div>
-            </div>
+            @endif
 
-            {{-- Payment History --}}
+            {{-- Payment History Panel --}}
             @if ($subscription && $subscription->payments->isNotEmpty())
                 <div class="panel" style="margin-top:0;">
                     <div class="panel-head">
@@ -159,7 +205,7 @@
             @endif
         </div>
 
-        {{-- Right: Features & Modules Included in Plan --}}
+        {{-- Right Column: Features & Modules Included in Plan --}}
         <div class="panel" style="margin-top:0;">
             <div class="panel-head">
                 <div class="panel-title" style="display:flex; align-items:center; gap:8px;">
@@ -173,27 +219,27 @@
                     আপনার বর্তমান প্ল্যানে অনুমোদিত সমস্ত মডিউল ও পারমিশন নিচে তালিকাভুক্ত করা হয়েছে:
                 </p>
 
-                <div style="display:grid; grid-template-columns:1fr; gap:8px;">
+                <div class="subscription-features-grid">
                     @php
                         $featureNames = \Modules\Core\Support\Features::all();
                     @endphp
 
                     @foreach ($featureNames as $slug => $labels)
                         @php $hasAccess = $shop ? $shop->hasFeature($slug) : false; @endphp
-                        <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-radius:var(--radius-sm); background:{{ $hasAccess ? 'var(--paper)' : 'rgba(0,0,0,.02)' }}; border:1px solid {{ $hasAccess ? 'var(--border)' : 'transparent' }}; opacity:{{ $hasAccess ? '1' : '.5' }};">
-                            <span style="font-size:12.5px; font-weight:600; color:var(--ink-800); display:flex; align-items:center; gap:8px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-radius:var(--radius-sm); background:{{ $hasAccess ? 'var(--paper)' : 'rgba(0,0,0,.02)' }}; border:1px solid {{ $hasAccess ? 'var(--border)' : 'transparent' }}; opacity:{{ $hasAccess ? '1' : '.55' }}; gap:6px;">
+                            <span style="font-size:12px; font-weight:600; color:var(--ink-800); display:flex; align-items:center; gap:7px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                                 @if ($hasAccess)
-                                    <x-core::icon name="check-circle" size="16" style="color:var(--teal-700);" />
+                                    <x-core::icon name="check-circle" size="15" style="color:var(--teal-700); flex-shrink:0;" />
                                 @else
-                                    <x-core::icon name="x-circle" size="16" style="color:var(--ink-400);" />
+                                    <x-core::icon name="x-circle" size="15" style="color:var(--ink-400); flex-shrink:0;" />
                                 @endif
-                                <span class="bn">{{ $labels['bn'] }}</span>
-                                <span class="en" style="display:none;">{{ $labels['en'] }}</span>
+                                <span class="bn" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ $labels['bn'] }}</span>
+                                <span class="en" style="display:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ $labels['en'] }}</span>
                             </span>
                             @if ($hasAccess)
-                                <span class="badge b-teal" style="font-size:10.5px; padding:2px 6px;">সক্রিয় (Active)</span>
+                                <span class="badge b-teal" style="font-size:10px; padding:2px 6px; flex-shrink:0;">সক্রিয়</span>
                             @else
-                                <span class="badge b-dark" style="font-size:10.5px; padding:2px 6px; opacity:.7;">লকড (Locked)</span>
+                                <span class="badge b-dark" style="font-size:10px; padding:2px 6px; opacity:.7; flex-shrink:0;">লকড</span>
                             @endif
                         </div>
                     @endforeach

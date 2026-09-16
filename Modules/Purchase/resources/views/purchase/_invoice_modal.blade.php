@@ -1,6 +1,6 @@
 @php
     $shop = auth()->user()?->shop ?? $purchase->shop ?? \Modules\Shop\Models\Shop::first();
-    $printerSetting = $shop?->printerSetting ?? \Modules\Shop\Models\PrinterSetting::getDefaultForShop($shop->id ?? 1);
+    $printerSetting = $shop ? $shop->getEffectivePrinterSetting() : \Modules\Shop\Models\PrinterSetting::getDefaultForShop(1);
 @endphp
 <div class="modal-backdrop" id="purchaseInvoiceModal" style="z-index:1050;">
     <div class="modal-box" style="width:{{ $printerSetting->isThermal() ? '460px' : ($printerSetting->isA5() ? '580px' : '760px') }}; max-width:96vw; max-height:94vh; padding:0; border-radius:12px; background:var(--card, #ffffff); border:1px solid var(--border, #e2e8f0); box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); display:flex; flex-direction:column; overflow:hidden;">

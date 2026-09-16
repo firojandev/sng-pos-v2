@@ -97,10 +97,34 @@ class PrinterSetting extends Model
     }
 
     /**
+     * Check if printer customization is enabled for this shop.
+     * If the shop's plan does not have the 'printer-settings' feature,
+     * it falls back to standard A4 printing.
+     */
+    public function isCustomizationEnabled(): bool
+    {
+        if (! $this->shop_id) {
+            return true;
+        }
+
+        $shop = $this->relationLoaded('shop') ? $this->shop : Shop::find($this->shop_id);
+
+        if (! $shop) {
+            return true;
+        }
+
+        return (bool) $shop->hasFeature('printer-settings');
+    }
+
+    /**
      * Check if printer is thermal.
      */
     public function isThermal(): bool
     {
+        if (! $this->isCustomizationEnabled()) {
+            return false;
+        }
+
         return $this->printer_type === self::TYPE_THERMAL;
     }
 
@@ -109,6 +133,10 @@ class PrinterSetting extends Model
      */
     public function isA4(): bool
     {
+        if (! $this->isCustomizationEnabled()) {
+            return true;
+        }
+
         return $this->printer_type === self::TYPE_A4;
     }
 
@@ -117,6 +145,10 @@ class PrinterSetting extends Model
      */
     public function isA5(): bool
     {
+        if (! $this->isCustomizationEnabled()) {
+            return false;
+        }
+
         return $this->printer_type === self::TYPE_A5;
     }
 
@@ -125,6 +157,10 @@ class PrinterSetting extends Model
      */
     public function isLandscape(): bool
     {
+        if (! $this->isCustomizationEnabled()) {
+            return false;
+        }
+
         return $this->orientation === self::ORIENTATION_LANDSCAPE;
     }
 
@@ -161,9 +197,7 @@ class PrinterSetting extends Model
      */
     public function getCssPageSize(): string
     {
-        $unit = $this->unit ?: self::UNIT_MM;
-
-        if ($this->isA4()) {
+        if (! $this->isCustomizationEnabled() || $this->isA4()) {
             return $this->isLandscape() ? '297mm 210mm landscape' : '210mm 297mm portrait';
         }
 
@@ -172,6 +206,7 @@ class PrinterSetting extends Model
         }
 
         // Thermal Printer
+        $unit = $this->unit ?: self::UNIT_MM;
         $widthStr = ($this->paper_width ?: 80).$unit;
         $heightStr = $this->paper_height ? ($this->paper_height.$unit) : 'auto';
 
@@ -183,15 +218,15 @@ class PrinterSetting extends Model
      */
     public function getCssPaperWidth(): string
     {
-        $unit = $this->unit ?: self::UNIT_MM;
-
-        if ($this->isA4()) {
+        if (! $this->isCustomizationEnabled() || $this->isA4()) {
             return $this->isLandscape() ? '297mm' : '210mm';
         }
 
         if ($this->isA5()) {
             return $this->isLandscape() ? '210mm' : '148mm';
         }
+
+        $unit = $this->unit ?: self::UNIT_MM;
 
         return ($this->paper_width ?: 80).$unit;
     }
