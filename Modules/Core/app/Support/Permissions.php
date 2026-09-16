@@ -68,6 +68,8 @@ class Permissions
             'audit' => ['view'],
             'employees' => ['view', 'create', 'edit', 'delete'],
             'users' => ['view', 'create', 'edit', 'delete'],
+            'printer-settings' => ['view', 'edit'],
+            'whatsapp-settings' => ['view', 'edit'],
             'cashbox' => ['view', 'cash-in', 'cash-out'],
             'backup' => ['view', 'create', 'download', 'delete'],
         ];

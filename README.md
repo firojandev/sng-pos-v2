@@ -9,6 +9,8 @@
 
 php artisan db:seed --class=DemoDataSeeder
 
+# whatsapp setup by oneclick
+php artisan whatsapp:setup
 
 ## About Laravel
 

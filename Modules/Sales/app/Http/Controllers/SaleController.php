@@ -208,6 +208,13 @@ class SaleController extends Controller
 
         $sale->load(['customer', 'shop']);
 
+        if (! ($sale->shop?->hasFeature('whatsapp-settings') ?? false)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'হোয়াটসঅ্যাপ ফিচারটি আপনার সাবস্ক্রিপশন প্ল্যানে সক্রিয় নেই।',
+            ], 403);
+        }
+
         // Resolve recipient phone
         $rawPhone = trim((string) ($request->input('phone') ?: $sale->customer?->phone));
         $rawPhone = preg_replace('/[^0-9]/', '', $rawPhone);
