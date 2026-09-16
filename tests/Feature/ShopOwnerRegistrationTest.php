@@ -346,8 +346,22 @@ class ShopOwnerRegistrationTest extends TestCase
         // Access signed verification URL
         $response = $this->get($verificationUrl);
 
-        $response->assertRedirect(route('dashboard'));
-        $response->assertSessionHas('status');
+        $response->assertRedirect(route('verification.success'));
+        $this->assertGuest();
+
+        // Verify success page renders with login link
+        $successResponse = $this->get(route('verification.success'));
+        $successResponse->assertStatus(200);
+        $successResponse->assertSee(route('login'));
+        $successResponse->assertSee('ইমেইল ভেরিফিকেশন সম্পন্ন');
+        $successResponse->assertSee('লগইন করুন');
+
+        // Accessing the same verification link a second time shows expired
+        $secondResponse = $this->get($verificationUrl);
+        $secondResponse->assertStatus(200);
+        $secondResponse->assertViewIs('auth::verify-expired');
+        $secondResponse->assertSee('মেয়াদ শেষ');
+        $this->assertGuest();
 
         // Refresh owner model
         $owner->refresh();
@@ -372,8 +386,15 @@ class ShopOwnerRegistrationTest extends TestCase
             return $mail->hasTo('admin@softngear.com');
         });
 
-        // 3. Now verified shop owner can access dashboard without redirection
-        $dashboardResponse = $this->actingAs($owner)->get(route('dashboard'));
+        // 3. Now verified shop owner can login manually and access dashboard
+        $loginResponse = $this->post(route('login.store'), [
+            'login' => 'martowner@fresh.test',
+            'password' => 'password123',
+        ]);
+        $loginResponse->assertRedirect(route('dashboard'));
+        $this->assertAuthenticatedAs($owner);
+
+        $dashboardResponse = $this->get(route('dashboard'));
         $dashboardResponse->assertStatus(200);
     }
 
@@ -512,5 +533,81 @@ class ShopOwnerRegistrationTest extends TestCase
             'phone' => 'মোবাইল নম্বর প্রদান করা আবশ্যক।',
             'email' => 'ইমেইল ঠিকানা প্রদান করা আবশ্যক।',
         ]);
+    }
+
+    public function test_logged_in_user_is_logged_out_upon_email_verification(): void
+    {
+        Mail::fake();
+
+        $shop = Shop::create([
+            'name' => 'Logout Shop',
+            'slug' => 'logout-shop',
+            'store_code' => 'LS-01',
+            'status' => 'active',
+        ]);
+
+        $owner = User::create([
+            'name' => 'Logout Owner',
+            'phone' => '01700112233',
+            'email' => 'logoutowner@test.com',
+            'password' => bcrypt('password123'),
+            'shop_id' => $shop->id,
+            'email_verified_at' => null,
+        ]);
+
+        $shop->users()->syncWithoutDetaching([
+            $owner->id => ['role' => 'Admin', 'is_owner' => true],
+        ]);
+
+        $verificationUrl = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addMinutes(60),
+            [
+                'id' => $owner->id,
+                'hash' => sha1($owner->getEmailForVerification()),
+            ]
+        );
+
+        // Access verification link while logged in
+        $response = $this->actingAs($owner)->get($verificationUrl);
+
+        $response->assertRedirect(route('verification.success'));
+        $this->assertGuest();
+        $this->assertTrue($owner->fresh()->hasVerifiedEmail());
+    }
+
+    public function test_expired_signature_renders_expired_page_with_forbidden_status(): void
+    {
+        $shop = Shop::create([
+            'name' => 'Expired Shop',
+            'slug' => 'expired-shop',
+            'store_code' => 'ES-01',
+            'status' => 'active',
+        ]);
+
+        $owner = User::create([
+            'name' => 'Expired Owner',
+            'phone' => '01700445566',
+            'email' => 'expiredowner@test.com',
+            'password' => bcrypt('password123'),
+            'shop_id' => $shop->id,
+            'email_verified_at' => null,
+        ]);
+
+        // URL expired in the past
+        $expiredUrl = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->subMinutes(5),
+            [
+                'id' => $owner->id,
+                'hash' => sha1($owner->getEmailForVerification()),
+            ]
+        );
+
+        $response = $this->get($expiredUrl);
+
+        $response->assertStatus(403);
+        $response->assertViewIs('auth::verify-expired');
+        $response->assertSee('মেয়াদ শেষ');
     }
 }

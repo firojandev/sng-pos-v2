@@ -77,7 +77,7 @@
                 </div>
 
                 <div style="display:flex; justify-content:space-between; align-items:center; background:var(--paper-line); padding:10px 16px; border-radius:6px; margin-top:12px; font-size:13px;">
-                    <span style="font-weight:600; color:var(--ink-600);" class="bn">মোট আইটেম: <b id="pdo-item-count" style="color:var(--ink-900);">0</b></span>
+                    <span style="font-weight:600; color:var(--ink-600);" class="bn">মোট পরিমাণ: <b id="pdo-item-count" style="color:var(--ink-900);">0</b></span>
                     <span style="font-weight:600; color:var(--ink-600);" class="bn">মোট পরিমাণ: <b id="pdo-qty-count" style="color:var(--ink-900);">0</b></span>
                     <span style="font-weight:700; font-size:14px; color:var(--ink-900);" class="bn">সাবটোটাল: ৳<span id="pdo-subtotal-display">0.00</span></span>
                 </div>

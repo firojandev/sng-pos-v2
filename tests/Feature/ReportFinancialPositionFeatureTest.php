@@ -155,6 +155,8 @@ class ReportFinancialPositionFeatureTest extends TestCase
 
         // Fixed Assets (10000) + Security Money paid only (2000) — the received one (500) excluded.
         $response->assertViewHas('totalAssetsWithSecurity', fn ($v) => abs($v - 12000) < 0.01);
+        $response->assertViewHas('fixedAssets', fn ($v) => abs($v - 10000) < 0.01);
+        $response->assertViewHas('securityMoneyPaid', fn ($v) => abs($v - 2000) < 0.01);
         // 20 qty * 50 purchase price.
         $response->assertViewHas('stockValue', fn ($v) => abs($v - 1000) < 0.01);
         // 300 opening due + 700 sale due.
@@ -167,8 +169,16 @@ class ReportFinancialPositionFeatureTest extends TestCase
         // Debt/Lend/SecurityMoney observers post to the default cash account
         // (no account_id given on any fixture): -2000 +500 -1500 +4000 = +1000.
         $response->assertViewHas('cashAndBank', fn ($v) => abs($v - 18000) < 0.01);
-        // (12000 + 1000 + 1000 + 1500 + 18000) - 1000 payable.
-        $response->assertViewHas('netPosition', fn ($v) => abs($v - 32500) < 0.01);
+        // Liabilities: supplier payable (1000) + unpaid debt (4000) + received security money (500) = 5500.
+        $response->assertViewHas('debtsPayable', fn ($v) => abs($v - 4000) < 0.01);
+        $response->assertViewHas('securityMoneyReceived', fn ($v) => abs($v - 500) < 0.01);
+        $response->assertViewHas('totalAssets', fn ($v) => abs($v - 33500) < 0.01);
+        $response->assertViewHas('totalLiabilities', fn ($v) => abs($v - 5500) < 0.01);
+        // Net Position = Total Assets (33500) - Total Liabilities (5500) = 28000 (matches Balance Sheet equity).
+        $response->assertViewHas('netPosition', fn ($v) => abs($v - 28000) < 0.01);
+        $response->assertViewHas('isBalanced', true);
+        $response->assertViewHas('variance', fn ($v) => abs($v - 0) < 0.01);
+        $response->assertViewHas('solvencyMultiple', fn ($v) => abs($v - 6.09) < 0.01);
     }
 
     public function test_balance_sheet_assets_equal_liabilities_plus_equity(): void
@@ -180,10 +190,14 @@ class ReportFinancialPositionFeatureTest extends TestCase
 
         // Cash&Bank (18000, see financial-position test) + receivable (1000) + lend
         // receivable (1500) + security paid (2000) + stock (1000) + fixed assets (10000).
+        $response->assertViewHas('currentAssets', fn ($v) => abs($v - 23500) < 0.01);
+        $response->assertViewHas('nonCurrentAssets', fn ($v) => abs($v - 10000) < 0.01);
         $response->assertViewHas('totalAssets', fn ($v) => abs($v - 33500) < 0.01);
         // Supplier due (1000) + unpaid debt only (4000, not the paid 999) + security money received (500).
+        $response->assertViewHas('currentLiabilities', fn ($v) => abs($v - 5500) < 0.01);
         $response->assertViewHas('totalLiabilities', fn ($v) => abs($v - 5500) < 0.01);
         $response->assertViewHas('equity', fn ($v) => abs($v - 28000) < 0.01);
+        $response->assertViewHas('isBalanced', true);
 
         // The balancing identity must always hold, since equity is a plug figure.
         $totalAssets = $response->viewData('totalAssets');

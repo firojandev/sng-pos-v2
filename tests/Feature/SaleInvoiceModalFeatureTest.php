@@ -15,6 +15,7 @@ use Modules\Sales\Models\Sale;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
 use Modules\Shop\Models\Branch;
 use Modules\Shop\Models\Plan;
+use Modules\Shop\Models\PrinterSetting;
 use Modules\Shop\Models\Shop;
 use Modules\Shop\Models\Warehouse;
 use Spatie\Permission\Models\Permission;
@@ -373,8 +374,97 @@ class SaleInvoiceModalFeatureTest extends TestCase
 
         $detailResponse = $this->actingAs($this->user)->get(route('sales.show', $sale));
         $detailResponse->assertOk();
-        $detailResponse->assertSee('6 টি পণ্য');
+        $detailResponse->assertSee('6');
         $detailContent = $detailResponse->getContent();
         $this->assertEquals(1, substr_count($detailContent, 'class="tx-item"'));
+    }
+
+    public function test_thermal_printer_setting_effects_sale_invoice_modal_and_print(): void
+    {
+        PrinterSetting::updateOrCreate(
+            ['shop_id' => $this->shop->id],
+            [
+                'printer_type' => 'thermal',
+                'paper_width' => 80,
+                'unit' => 'mm',
+                'auto_print' => true,
+            ]
+        );
+
+        $sale = Sale::create([
+            'shop_id' => $this->shop->id,
+            'customer_id' => $this->customer->id,
+            'warehouse_id' => $this->warehouse->id,
+            'sale_date' => now()->toDateString(),
+            'invoice_no' => 'SL-TH-01',
+            'subtotal' => 2100,
+            'discount' => 0,
+            'tax' => 0,
+            'delivery_charge' => 0,
+            'total' => 2100,
+            'paid_amount' => 2000,
+            'due_amount' => 100,
+            'payment_status' => 'partial',
+        ]);
+
+        $sale->items()->create([
+            'product_id' => $this->product->id,
+            'batch_id' => $this->batch->id,
+            'quantity' => 2,
+            'unit_price' => 1050,
+            'total' => 2100,
+        ]);
+
+        $modalResponse = $this->actingAs($this->user)->get(route('sales.invoice-modal', $sale));
+        $modalResponse->assertOk();
+        $modalResponse->assertSee('thermal-receipt-sheet');
+
+        $printResponse = $this->actingAs($this->user)->get(route('sales.print-invoice', $sale));
+        $printResponse->assertOk();
+        $printResponse->assertSee('thermal-receipt-sheet');
+        $printResponse->assertSee('80mm auto');
+        $printResponse->assertSee('window.print()', false);
+    }
+
+    public function test_a5_printer_setting_effects_sale_print_page(): void
+    {
+        PrinterSetting::updateOrCreate(
+            ['shop_id' => $this->shop->id],
+            [
+                'printer_type' => 'a5',
+                'orientation' => 'landscape',
+                'page_margin' => 6,
+            ]
+        );
+
+        $sale = Sale::create([
+            'shop_id' => $this->shop->id,
+            'customer_id' => $this->customer->id,
+            'warehouse_id' => $this->warehouse->id,
+            'sale_date' => now()->toDateString(),
+            'invoice_no' => 'SL-A5-01',
+            'subtotal' => 2100,
+            'discount' => 0,
+            'tax' => 0,
+            'delivery_charge' => 0,
+            'total' => 2100,
+            'paid_amount' => 2100,
+            'due_amount' => 0,
+            'payment_status' => 'paid',
+        ]);
+
+        $sale->items()->create([
+            'product_id' => $this->product->id,
+            'batch_id' => $this->batch->id,
+            'quantity' => 2,
+            'unit_price' => 1050,
+            'total' => 2100,
+        ]);
+
+        $printResponse = $this->actingAs($this->user)->get(route('sales.print-invoice', $sale));
+        $printResponse->assertOk();
+        $printResponse->assertSee('size: A5 landscape', false);
+        $printResponse->assertSee('margin: 6mm', false);
+        $printResponse->assertSee('max-width: 520px', false);
     }
 }

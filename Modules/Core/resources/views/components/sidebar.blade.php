@@ -357,8 +357,27 @@
                         '<circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/><path d="M19 12a7 7 0 0 0-.14-1.4l2-1.5-2-3.5-2.3.9a7 7 0 0 0-2.4-1.4L14 2h-4l-.16 2.1a7 7 0 0 0-2.4 1.4l-2.3-.9-2 3.5 2 1.5A7 7 0 0 0 5 12a7 7 0 0 0 .14 1.4l-2 1.5 2 3.5 2.3-.9a7 7 0 0 0 2.4 1.4L10 22h4l.16-2.1a7 7 0 0 0 2.4-1.4l2.3.9 2-3.5-2-1.5c.09-.46.14-.93.14-1.4Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>',
                 ],
                 [
+                    'key' => 'printer-settings',
+                    'route' => 'printer-settings.index',
+                    'bn' => 'প্রিন্টার সেটিংস',
+                    'en' => 'Printer Settings',
+                    'gated' => false,
+                    'icon' =>
+                        '<path d="M6 9V2h12v7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="6" y="14" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.6"/>',
+                ],
+                [
+                    'key' => 'whatsapp-settings',
+                    'route' => 'whatsapp-settings.index',
+                    'bn' => 'হোয়াটসঅ্যাপ সেটিংস',
+                    'en' => 'WhatsApp Settings',
+                    'gated' => false,
+                    'icon' =>
+                        '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+                ],
+                [
                     'key' => 'audit-log',
                     'permission' => 'audit',
+                    'gated' => true,
                     'route' => 'audit-log.index',
                     'bn' => 'অ্যাক্টিভিটি লগ',
                     'en' => 'Audit Log',
@@ -378,6 +397,14 @@
                     'en' => 'Sales Report',
                     'icon' =>
                         '<path d="M4 19V9m6 10V5m6 14v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+                ],
+                [
+                    'key' => 'report-sales-vat',
+                    'route' => 'reports.sales-vat',
+                    'bn' => 'বিক্রয় ভ্যাট রিপোর্ট',
+                    'en' => 'Sales VAT Report',
+                    'icon' =>
+                        '<path d="M4 19V9m6 10V5m6 14v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="17" cy="8" r="2" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="16" r="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 17l10-10" stroke="currentColor" stroke-width="1.5"/>',
                 ],
                 [
                     'key' => 'report-purchase',
@@ -466,10 +493,13 @@
         if (isset($item['enabled']) && !$item['enabled']) {
             return false;
         }
-        if ($item['key'] === 'subscription') {
-            return (bool) ($user && $user->shop && ($user->isSuperAdmin() || $user->shop->hasFeature('subscription')));
+        if ($user && $user->isSuperAdmin()) {
+            return true;
         }
-        if ($item['key'] === 'settings') {
+        if ($item['key'] === 'subscription') {
+            return (bool) ($user && $user->shop && $user->shop->hasFeature('subscription'));
+        }
+        if ($item['key'] === 'settings' || $item['key'] === 'printer-settings') {
             return (bool) ($user && $user->isShopAdmin());
         }
         if ($item['key'] === 'backup') {
@@ -481,7 +511,64 @@
             return true;
         }
         $permissionKey = $item['permission'] ?? $item['key'];
-        return $user && $user->shop && $user->shop->hasFeature($permissionKey) && $user->can("{$permissionKey}.view");
+        return $user && $user->shop && $user->shop->hasFeature($permissionKey) && ($user->can("{$permissionKey}.view") || $user->can($permissionKey));
+    };
+
+    $isNavItemActive = function (array $item) use ($active): bool {
+        // 1. Explicit active prop takes highest priority
+        if (!empty($active)) {
+            if ($active === $item['key'] || $active === $item['route']) {
+                return true;
+            }
+
+            if ($item['key'] === 'due-ledger' && in_array($active, ['due-ledger', 'sales-due-ledger'])) {
+                return true;
+            }
+
+            if ($item['key'] === 'purchase-due-ledger' && in_array($active, ['purchase-due-ledger', 'suppliers-due-ledger'])) {
+                return true;
+            }
+
+            return false;
+        }
+
+        // 2. Exact route match
+        if (request()->routeIs($item['route'])) {
+            return true;
+        }
+
+        // 3. Specific route-prefix matching with exclusion of conflicting sub-items
+        if ($item['key'] === 'sales') {
+            return request()->routeIs('sales.*') && !request()->routeIs('sales.ledger*');
+        }
+
+        if ($item['key'] === 'purchase') {
+            return request()->routeIs('purchase.*') && !request()->routeIs('purchase.ledger*');
+        }
+
+        if ($item['key'] === 'sales-ledger') {
+            return request()->routeIs('sales.ledger*');
+        }
+
+        if ($item['key'] === 'purchase-ledger') {
+            return request()->routeIs('purchase.ledger*');
+        }
+
+        if ($item['key'] === 'due-ledger') {
+            return request()->routeIs('due-ledger.sales*');
+        }
+
+        if ($item['key'] === 'purchase-due-ledger') {
+            return request()->routeIs('due-ledger.purchase*');
+        }
+
+        // 4. Default: match resource sub-routes (e.g. products.create, customers.edit)
+        $routePrefix = explode('.', $item['route'])[0] ?? '';
+        if ($routePrefix && request()->routeIs("{$routePrefix}.*")) {
+            return true;
+        }
+
+        return request()->routeIs("{$item['key']}.*");
     };
 
     $siteTitle = $siteTitle ?? \Modules\Core\Models\Setting::getSiteTitle();
@@ -524,7 +611,7 @@
 
                     @foreach ($group['items'] as $item)
                         <a href="{{ route($item['route']) }}"
-                            class="nav-item {{ ($active === $item['key'] || $active === $item['route'] || request()->routeIs($item['route']) || request()->routeIs($item['key'].'*')) ? 'active' : '' }}">
+                            class="nav-item {{ $isNavItemActive($item) ? 'active' : '' }}">
                             <svg viewBox="0 0 24 24" fill="none">{!! $item['icon'] !!}</svg>
                             <span class="bn">{{ $item['bn'] }}</span>
                             <span class="en">{{ $item['en'] }}</span>
@@ -548,7 +635,7 @@
                         @endif
 
                         @foreach ($visibleItems as $item)
-                            <a href="{{ route($item['route']) }}" class="nav-item {{ $active === $item['key'] || ($item['key'] === 'due-ledger' && $active === 'sales-due-ledger') ? 'active' : '' }}" @if ($item['key'] === 'quick-sale') data-quick-sale-trigger="true" @endif>
+                            <a href="{{ route($item['route']) }}" class="nav-item {{ $isNavItemActive($item) ? 'active' : '' }}" @if ($item['key'] === 'quick-sale') data-quick-sale-trigger="true" @endif>
                                 <svg viewBox="0 0 24 24" fill="none">{!! $item['icon'] !!}</svg>
                                 <span class="bn">{{ $item['bn'] }}</span>
                                 <span class="en">{{ $item['en'] }}</span>

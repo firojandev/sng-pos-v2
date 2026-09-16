@@ -219,7 +219,8 @@ function updateThemeButtons() {
     let stored = null;
     try { stored = localStorage.getItem('theme'); } catch (e) {}
     const systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const effective = stored || (systemDark ? 'dark' : 'light');
+    const domTheme = $('html').attr('data-theme');
+    const effective = domTheme || stored || (systemDark ? 'dark' : 'light');
     const isDark = effective === 'dark';
     $('#theme-light').toggleClass('active', !isDark);
     $('#theme-dark').toggleClass('active', isDark);

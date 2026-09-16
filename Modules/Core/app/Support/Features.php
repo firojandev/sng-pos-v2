@@ -32,6 +32,7 @@ class Features
             'security-money' => ['bn' => 'জামানত', 'en' => 'Security Money'],
             'tax' => ['bn' => 'ট্যাক্স ও ভ্যাট', 'en' => 'Tax & VAT'],
             'report-sales' => ['bn' => 'বিক্রয় রিপোর্ট', 'en' => 'Sales Report'],
+            'report-sales-vat' => ['bn' => 'বিক্রয় ভ্যাট রিপোর্ট', 'en' => 'Sales VAT Report'],
             'report-purchase' => ['bn' => 'ক্রয় রিপোর্ট', 'en' => 'Purchase Report'],
             'report-stock' => ['bn' => 'স্টক রিপোর্ট', 'en' => 'Stock Report'],
             'report-products' => ['bn' => 'পণ্য রিপোর্ট', 'en' => 'Product Report'],

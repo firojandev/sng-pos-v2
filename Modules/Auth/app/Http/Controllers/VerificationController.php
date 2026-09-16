@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
@@ -34,9 +35,9 @@ class VerificationController extends Controller
     }
 
     /**
-     * Mark the authenticated user's email address as verified.
+     * Mark the user's email address as verified.
      */
-    public function verify(Request $request, int|string $id, string $hash): RedirectResponse
+    public function verify(Request $request, int|string $id, string $hash): RedirectResponse|Response|View
     {
         $user = User::findOrFail($id);
 
@@ -44,44 +45,68 @@ class VerificationController extends Controller
             abort(403, 'ভেরিফিকেশন লিংকটি অবৈধ বা পরিবর্তন করা হয়েছে।');
         }
 
-        if (! $user->hasVerifiedEmail()) {
-            $user->markEmailAsVerified();
-            event(new Verified($user));
+        // If user has already verified their email, this link has already been used and is expired
+        if ($user->hasVerifiedEmail()) {
+            if (Auth::check()) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
 
-            $shop = $user->shop;
+            return response()->view('auth::verify-expired', [
+                'reason' => 'already_used',
+                'email' => $user->email,
+            ]);
+        }
 
-            // 1. Send Welcome Email to the Shop Owner
-            if ($shop && ! empty($user->email)) {
-                try {
-                    Mail::to($user->email)->send(new WelcomeShopMail($user, $shop));
-                } catch (\Throwable $e) {
-                    report($e);
+        // Mark email as verified
+        $user->markEmailAsVerified();
+        event(new Verified($user));
+
+        $shop = $user->shop;
+
+        // 1. Send Welcome Email to the Shop Owner
+        if ($shop && ! empty($user->email)) {
+            try {
+                Mail::to($user->email)->send(new WelcomeShopMail($user, $shop));
+            } catch (\Throwable $e) {
+                report($e);
+            }
+
+            // 2. Notify the Admin (Super Admin) for new shop registration
+            try {
+                $adminEmails = User::getSuperAdminEmails();
+
+                if (! empty($adminEmails)) {
+                    Mail::to($adminEmails)->send(new NewShopAdminNotificationMail($shop, $user));
                 }
-
-                // 2. Notify the Admin (Super Admin) for new shop registration
-                try {
-                    $adminEmails = User::getSuperAdminEmails();
-
-                    if (! empty($adminEmails)) {
-                        Mail::to($adminEmails)->send(new NewShopAdminNotificationMail($shop, $user));
-                    }
-                } catch (\Throwable $e) {
-                    report($e);
-                }
+            } catch (\Throwable $e) {
+                report($e);
             }
         }
 
-        // Auto login user if not authenticated
-        if (! Auth::check() || Auth::id() !== $user->id) {
-            Auth::login($user);
-            $request->session()->regenerate();
+        // Ensure user is logged out (do not auto-login, require manual login with credentials)
+        if (Auth::check()) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
         }
 
-        if ($user->shop_id) {
-            session(['current_shop_id' => $user->shop_id]);
-        }
+        return redirect()->route('verification.success')->with([
+            'verified_email' => $user->email,
+        ]);
+    }
 
-        return redirect()->route('dashboard')->with('status', 'অভিনন্দন! আপনার ইমেইল সফলভাবে ভেরিফাই করা হয়েছে। দোকান ড্যাশবোর্ডে স্বাগতম।');
+    /**
+     * Show the email verification successful page.
+     */
+    public function success(Request $request): View
+    {
+        $email = session('verified_email');
+
+        return view('auth::verify-success', [
+            'email' => $email,
+        ]);
     }
 
     /**
