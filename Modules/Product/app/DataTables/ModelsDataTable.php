@@ -69,7 +69,7 @@ class ModelsDataTable extends BaseDataTable
             $query->where('product_models.brand_id', $brandId);
         }
 
-        return $query;
+        return $query->latest('product_models.id');
     }
 
     /**

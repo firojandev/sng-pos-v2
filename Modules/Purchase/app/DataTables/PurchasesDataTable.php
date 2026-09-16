@@ -246,7 +246,7 @@ class PurchasesDataTable extends BaseDataTable
             });
         }
 
-        return $query;
+        return $query->latest('purchases.purchase_date')->latest('purchases.id');
     }
 
     /**

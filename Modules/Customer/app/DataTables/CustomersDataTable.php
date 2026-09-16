@@ -251,7 +251,7 @@ class CustomersDataTable extends BaseDataTable
             });
         }
 
-        return $query;
+        return $query->latest('customers.id');
     }
 
     /**

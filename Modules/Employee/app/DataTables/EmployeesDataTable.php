@@ -171,7 +171,7 @@ class EmployeesDataTable extends BaseDataTable
             $query->whereDate('employees.joining_date', '<=', $to);
         }
 
-        return $query;
+        return $query->latest('employees.id');
     }
 
     /**

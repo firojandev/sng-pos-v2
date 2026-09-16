@@ -603,6 +603,7 @@ function initDataTable(selector, options = {}) {
     }
 
     const defaultOptions = {
+        order: [],
         responsive: true,
         processing: true,
         pageLength: 10,

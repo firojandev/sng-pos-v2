@@ -175,7 +175,7 @@ class StockTransfersDataTable extends BaseDataTable
             $query->where('stock_transfers.to_warehouse_id', $toId);
         }
 
-        return $query;
+        return $query->latest('stock_transfers.id');
     }
 
     /**

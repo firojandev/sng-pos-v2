@@ -235,7 +235,7 @@ class SuppliersDataTable extends BaseDataTable
             });
         }
 
-        return $query;
+        return $query->latest('suppliers.id');
     }
 
     /**

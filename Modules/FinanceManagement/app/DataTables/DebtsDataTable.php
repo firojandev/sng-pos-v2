@@ -89,7 +89,7 @@ class DebtsDataTable extends BaseDataTable
             $query->where('debts.status', $status);
         }
 
-        return $query;
+        return $query->latest('debts.date')->latest('debts.id');
     }
 
     /**

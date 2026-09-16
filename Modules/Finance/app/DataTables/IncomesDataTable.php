@@ -196,7 +196,7 @@ class IncomesDataTable extends BaseDataTable
             $query->whereDate('incomes.income_date', '<=', $dateTo);
         }
 
-        return $query;
+        return $query->latest('incomes.income_date')->latest('incomes.id');
     }
 
     /**
