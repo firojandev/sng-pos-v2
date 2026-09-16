@@ -92,7 +92,7 @@ class CashTransactionsDataTable extends BaseDataTable
                 $baseQuery = CashTransaction::query();
                 $this->applyFilters($baseQuery);
 
-                $summary = (clone $baseQuery)->selectRaw(
+                $summary = (clone $baseQuery)->reorder()->selectRaw(
                     "SUM(CASE WHEN type = 'in' THEN amount ELSE 0 END) as cash_in, ".
                     "SUM(CASE WHEN type = 'out' THEN amount ELSE 0 END) as cash_out, ".
                     'COUNT(*) as total_count'
