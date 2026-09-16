@@ -46,7 +46,7 @@ class CashboxController extends Controller
             $query->where('created_by', $creator);
         }
 
-        $summary = (clone $query)->selectRaw(
+        $summary = (clone $query)->reorder()->selectRaw(
             "SUM(CASE WHEN type = 'in' THEN amount ELSE 0 END) as cash_in, ".
             "SUM(CASE WHEN type = 'out' THEN amount ELSE 0 END) as cash_out, ".
             'COUNT(*) as total_count'
