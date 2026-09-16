@@ -93,7 +93,7 @@ class AssetsDataTable extends BaseDataTable
             'assets.validity_unit',
             'assets.note',
             'assets.created_at',
-        ]);
+        ])->latest('assets.id');
     }
 
     /**
@@ -101,7 +101,7 @@ class AssetsDataTable extends BaseDataTable
      */
     public function html(): HtmlBuilder
     {
-        return $this->defaultHtml()->orderBy([0, 'desc']);
+        return $this->defaultHtml();
     }
 
     /**

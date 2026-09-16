@@ -125,7 +125,7 @@ class WarehousesDataTable extends BaseDataTable
             }
         }
 
-        return $query;
+        return $query->latest('warehouses.id');
     }
 
     /**

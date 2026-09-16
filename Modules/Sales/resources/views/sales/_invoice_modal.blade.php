@@ -85,25 +85,166 @@
                 @endif
             </div>
 
-            {{-- Print Button --}}
-            <x-core::button
-                type="button"
-                color="primary"
-                size="sm"
-                icon="printer"
-                class="btn-print-sale-invoice"
-                onclick="printSaleInvoice('{{ route('sales.print-invoice', $sale) }}')"
-                title="প্রিন্ট করুন / Print"
-                style="white-space:nowrap !important; flex-shrink:0;"
-            >
-                <span class="bn">প্রিন্ট করুন</span>
-                <span class="en">Print</span>
-            </x-core::button>
+            <div style="display:flex; align-items:center; gap:6px; flex-wrap:nowrap !important; flex-shrink:0;">
+                {{-- Download Invoice Button --}}
+                <x-core::button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    icon="download"
+                    class="btn-download-sale-invoice"
+                    onclick="downloadSaleInvoice('{{ $sale->invoice_no }}')"
+                    title="ডাউনলোড / Download PDF"
+                    style="white-space:nowrap !important; flex-shrink:0;"
+                >
+                    <span class="bn">ডাউনলোড</span>
+                    <span class="en" style="display:none;">Download</span>
+                </x-core::button>
+
+                {{-- Print Button --}}
+                <x-core::button
+                    type="button"
+                    color="primary"
+                    size="sm"
+                    icon="printer"
+                    class="btn-print-sale-invoice"
+                    onclick="printSaleInvoice('{{ route('sales.print-invoice', $sale) }}')"
+                    title="প্রিন্ট করুন / Print"
+                    style="white-space:nowrap !important; flex-shrink:0;"
+                >
+                    <span class="bn">প্রিন্ট করুন</span>
+                    <span class="en">Print</span>
+                </x-core::button>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
+    window.downloadSaleInvoice = function(invoiceNo) {
+        var $btn = $('.btn-download-sale-invoice');
+        $btn.prop('disabled', true).css('opacity', '0.7');
+
+        var modal = document.getElementById('saleInvoiceModal');
+        var element = modal ? (modal.querySelector('#saleInvoiceSheet') || modal.querySelector('.sale-invoice-sheet') || modal.querySelector('.thermal-receipt-sheet') || modal.querySelector('.modal-body')) : document.getElementById('saleInvoiceSheet');
+        if (!element) {
+            $btn.prop('disabled', false).css('opacity', '1');
+            return;
+        }
+
+        var loadScript = function(src, callback) {
+            var existing = document.querySelector('script[src="' + src + '"]');
+            if (existing) {
+                if (existing.getAttribute('data-loaded') === 'true') {
+                    callback();
+                } else {
+                    existing.addEventListener('load', callback);
+                }
+                return;
+            }
+            var s = document.createElement('script');
+            s.src = src;
+            s.onload = function() {
+                s.setAttribute('data-loaded', 'true');
+                callback();
+            };
+            s.onerror = function() {
+                console.error('Failed to load: ' + src);
+            };
+            document.head.appendChild(s);
+        };
+
+        var ensurePdfLibraries = function(cb) {
+            if (window.htmlToImage && (window.jspdf || window.jsPDF)) {
+                cb();
+                return;
+            }
+            loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', function() {
+                loadScript('https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js', function() {
+                    cb();
+                });
+            });
+        };
+
+        ensurePdfLibraries(function() {
+            var isThermal = {{ $printerSetting->isThermal() ? 'true' : 'false' }};
+            var isA5 = {{ $printerSetting->isA5() ? 'true' : 'false' }};
+            var paperWidth = {{ ($printerSetting->paper_width ?: 80) }};
+            var filename = 'Sale-Invoice-' + (invoiceNo || '{{ $sale->invoice_no }}') + '.pdf';
+
+            var readyPromise = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+
+            readyPromise.then(function() {
+                return window.htmlToImage.toPng(element, {
+                    quality: 0.98,
+                    pixelRatio: 2.5,
+                    backgroundColor: '#ffffff',
+                    cacheBust: true,
+                    style: {
+                        background: '#ffffff',
+                        color: '#0f172a'
+                    }
+                });
+            }).then(function(dataUrl) {
+                var img = new Image();
+                img.onload = function() {
+                    var imgWidth = img.naturalWidth || img.width;
+                    var imgHeight = img.naturalHeight || img.height;
+                    var jsPDF = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
+
+                    var pdf;
+                    if (isThermal) {
+                        var paperWidthMm = paperWidth || 80;
+                        var pdfHeightMm = (imgHeight * paperWidthMm) / imgWidth;
+                        pdf = new jsPDF({
+                            unit: 'mm',
+                            format: [paperWidthMm, pdfHeightMm + 2],
+                            orientation: 'portrait'
+                        });
+                        pdf.addImage(img, 'PNG', 0, 1, paperWidthMm, pdfHeightMm);
+                    } else {
+                        var format = isA5 ? 'a5' : 'a4';
+                        pdf = new jsPDF({
+                            unit: 'mm',
+                            format: format,
+                            orientation: 'portrait'
+                        });
+                        var pageWidth = pdf.internal.pageSize.getWidth();
+                        var pageHeight = pdf.internal.pageSize.getHeight();
+                        var margin = 6;
+                        var printWidth = pageWidth - (margin * 2);
+                        var printHeight = (imgHeight * printWidth) / imgWidth;
+
+                        if (printHeight <= pageHeight - (margin * 2)) {
+                            pdf.addImage(img, 'PNG', margin, margin, printWidth, printHeight);
+                        } else {
+                            var heightLeft = printHeight;
+                            var position = margin;
+                            pdf.addImage(img, 'PNG', margin, position, printWidth, printHeight);
+                            heightLeft -= (pageHeight - margin * 2);
+                            while (heightLeft > 0) {
+                                position = position - pageHeight + (margin * 2);
+                                pdf.addPage();
+                                pdf.addImage(img, 'PNG', margin, position, printWidth, printHeight);
+                                heightLeft -= (pageHeight - margin * 2);
+                            }
+                        }
+                    }
+                    pdf.save(filename);
+                    $btn.prop('disabled', false).css('opacity', '1');
+                };
+                img.onerror = function() {
+                    $btn.prop('disabled', false).css('opacity', '1');
+                };
+                img.src = dataUrl;
+            }).catch(function(err) {
+                console.error('PDF export error:', err);
+                $btn.prop('disabled', false).css('opacity', '1');
+                window.open('{{ route('sales.print-invoice', $sale) }}?autoprint=1', '_blank');
+            });
+        });
+    };
+
     window.printSaleInvoice = function(url) {
         var printUrl = url + (url.indexOf('?') > -1 ? '&' : '?') + 'autoprint=1';
         var printWindow = window.open(printUrl, '_blank');

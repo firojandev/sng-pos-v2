@@ -209,7 +209,8 @@ class SalesDueLedgerDataTable extends BaseDataTable
             ->where(function ($q) {
                 $q->where('customers.opening_due', '>', 0)
                     ->orWhereHas('sales', fn ($sq) => $sq->where('due_amount', '>', 0));
-            });
+            })
+            ->latest('customers.id');
     }
 
     /**

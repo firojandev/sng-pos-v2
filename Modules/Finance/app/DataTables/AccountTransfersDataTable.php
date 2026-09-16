@@ -203,7 +203,7 @@ class AccountTransfersDataTable extends BaseDataTable
             $query->whereDate('account_transfers.transfer_date', '<=', $dateTo);
         }
 
-        return $query;
+        return $query->latest('account_transfers.transfer_date')->latest('account_transfers.id');
     }
 
     /**

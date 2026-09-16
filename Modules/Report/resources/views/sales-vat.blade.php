@@ -60,11 +60,11 @@
 
         {{-- Top Summary Stat Cards --}}
         <div class="stat-grid" style="grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); margin-bottom:16px;">
-            <x-core::stat-card icon="shopping-cart" color="teal" :value="'৳' . number_format($summary['gross_sales'], 2)" label="মোট বিক্রয় (Gross Sales)" label-en="Gross Sales" />
-            <x-core::stat-card icon="rotate-ccw" color="gold" :value="'৳' . number_format($summary['sales_return'], 2)" label="বিক্রয় ফেরত (Sales Return)" label-en="Sales Return" />
-            <x-core::stat-card icon="dollar-sign" color="blue" :value="'৳' . number_format($summary['net_sales'], 2)" label="নিট বিক্রয় (Net Sales)" label-en="Net Sales" />
-            <x-core::stat-card icon="receipt" color="purple" :value="'৳' . number_format($summary['taxable_sales_value'], 2)" label="করযোগ্য বিক্রয় মূল্য (Taxable Sales)" label-en="Taxable Sales Value" />
-            <x-core::stat-card icon="percent" color="green" :value="'৳' . number_format($summary['output_vat'], 2)" label="নিট আউটপুট ভ্যাট (Net Output VAT)" label-en="Output VAT" />
+            <x-core::stat-card icon="shopping-cart" color="teal" :value="'৳' . number_format($summary['gross_sales'], 2)" label="মোট বিক্রয়" label-en="Gross Sales" />
+            <x-core::stat-card icon="rotate-ccw" color="gold" :value="'৳' . number_format($summary['sales_return'], 2)" label="বিক্রয় ফেরত" label-en="Sales Return" />
+            <x-core::stat-card icon="dollar-sign" color="blue" :value="'৳' . number_format($summary['net_sales'], 2)" label="নিট বিক্রয়" label-en="Net Sales" />
+            <x-core::stat-card icon="receipt" color="purple" :value="'৳' . number_format($summary['taxable_sales_value'], 2)" label="করযোগ্য বিক্রয় মূল্য" label-en="Taxable Sales Value" />
+            <x-core::stat-card icon="percent" color="green" :value="'৳' . number_format($summary['output_vat'], 2)" label="নিট আউটপুট ভ্যাট" label-en="Output VAT" />
         </div>
 
         <style>
@@ -174,12 +174,12 @@
                 <x-slot:actions>
                     @if ($reconciliation['is_valid'])
                         <x-core::badge color="green" size="xs" variant="soft">
-                            <span class="bn">হিসাব সমন্বিত (Reconciled)</span>
+                            <span class="bn">হিসাব সমন্বিত</span>
                             <span class="en" style="display:none;">Reconciled</span>
                         </x-core::badge>
                     @else
                         <x-core::badge color="red" size="xs" variant="soft">
-                            <span class="bn">অসমন্বিত (Mismatch)</span>
+                            <span class="bn">অসমন্বিত</span>
                             <span class="en" style="display:none;">Mismatch</span>
                         </x-core::badge>
                     @endif

@@ -249,7 +249,8 @@ class AuditLogDataTable extends BaseDataTable
                 'audit_logs.new_values',
                 'audit_logs.created_at',
             ])
-            ->with(['user' => fn ($q) => $q->select(['id', 'name', 'email', 'avatar', 'phone'])]);
+            ->with(['user' => fn ($q) => $q->select(['id', 'name', 'email', 'avatar', 'phone'])])
+            ->latest('audit_logs.id');
     }
 
     /**
@@ -259,13 +260,11 @@ class AuditLogDataTable extends BaseDataTable
     {
         return $this->defaultHtml()
             ->setTableId('audit-log-table')
+            ->orderBy([0, 'desc'])
             ->minifiedAjax(
                 '',
                 'data.filter_model = $("#filter-model").val(); data.filter_action = $("#filter-action").val(); data.filter_user_id = $("#filter-user").val(); data.filter_date_from = $("#filter-date-from").val(); data.filter_date_to = $("#filter-date-to").val();'
-            )
-            ->parameters([
-                'order' => [[0, 'desc']],
-            ]);
+            );
     }
 
     /**
