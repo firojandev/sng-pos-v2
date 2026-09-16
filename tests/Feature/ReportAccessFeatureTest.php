@@ -86,8 +86,8 @@ class ReportAccessFeatureTest extends TestCase
         $response->assertSee('আজ');
         $response->assertSee('Today');
         $response->assertSee('btn-report-export-pdf');
-        $response->assertSee('পিডিএফ এক্সপোর্ট');
-        $response->assertSee('Export PDF');
+        $response->assertSee('প্রিন্ট');
+        $response->assertSee('Print');
     }
 
     public function test_reports_default_to_today_filter(): void

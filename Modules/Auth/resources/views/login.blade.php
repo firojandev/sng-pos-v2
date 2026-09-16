@@ -3,6 +3,7 @@
     title-en="Login"
     card-subtitle="আপনার হিসাব পরিচালনা করতে লগইন করুন"
     card-subtitle-en="Sign in to manage your business account"
+    default-theme="dark"
 >
     @if ($errors->any() && !$errors->has('email') && !$errors->has('password'))
         <div class="auth-error">

@@ -1,5 +1,9 @@
+@php
+    $shop = auth()->user()?->shop ?? $purchase->shop ?? \Modules\Shop\Models\Shop::first();
+    $printerSetting = $shop?->printerSetting ?? \Modules\Shop\Models\PrinterSetting::getDefaultForShop($shop->id ?? 1);
+@endphp
 <div class="modal-backdrop" id="purchaseInvoiceModal" style="z-index:1050;">
-    <div class="modal-box" style="width:760px; max-width:96vw; max-height:94vh; padding:0; border-radius:12px; background:var(--card, #ffffff); border:1px solid var(--border, #e2e8f0); box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); display:flex; flex-direction:column; overflow:hidden;">
+    <div class="modal-box" style="width:{{ $printerSetting->isThermal() ? '460px' : ($printerSetting->isA5() ? '580px' : '760px') }}; max-width:96vw; max-height:94vh; padding:0; border-radius:12px; background:var(--card, #ffffff); border:1px solid var(--border, #e2e8f0); box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); display:flex; flex-direction:column; overflow:hidden;">
 
         {{-- Modal Header: "Purchase Invoice" with Close Button --}}
         <div class="modal-head" style="padding:14px 20px; border-bottom:1px solid var(--border, #e2e8f0); display:flex; align-items:center; justify-content:space-between; background:var(--card, #ffffff);">
@@ -42,27 +46,36 @@
 <script>
     if (typeof window.printPurchaseInvoice !== 'function') {
         window.printPurchaseInvoice = function(url) {
-            let iframe = document.getElementById('purchase-print-iframe');
-            if (!iframe) {
-                iframe = document.createElement('iframe');
-                iframe.id = 'purchase-print-iframe';
-                iframe.style.position = 'fixed';
-                iframe.style.right = '0';
-                iframe.style.bottom = '0';
-                iframe.style.width = '0';
-                iframe.style.height = '0';
-                iframe.style.border = '0';
-                document.body.appendChild(iframe);
+            var printUrl = url + (url.indexOf('?') > -1 ? '&' : '?') + 'autoprint=1';
+            var printWindow = window.open(printUrl, '_blank');
+            if (printWindow) {
+                printWindow.focus();
+                return;
             }
-            iframe.src = url;
+
+            let iframe = document.getElementById('purchase-print-iframe');
+            if (iframe) {
+                iframe.remove();
+            }
+            iframe = document.createElement('iframe');
+            iframe.id = 'purchase-print-iframe';
+            iframe.style.position = 'fixed';
+            iframe.style.right = '0';
+            iframe.style.bottom = '0';
+            iframe.style.width = '100px';
+            iframe.style.height = '100px';
+            iframe.style.opacity = '0.01';
+            iframe.style.border = '0';
             iframe.onload = function() {
                 try {
                     iframe.contentWindow.focus();
                     iframe.contentWindow.print();
                 } catch (e) {
-                    window.open(url, '_blank');
+                    window.location.href = printUrl;
                 }
             };
+            iframe.src = printUrl;
+            document.body.appendChild(iframe);
         };
     }
 

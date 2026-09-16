@@ -18,20 +18,29 @@
             margin-bottom: 24px;
             padding: 0 8px;
         }
-        .stepper-line {
+        .stepper-line-track {
             position: absolute;
             top: 18px;
             left: 36px;
             right: 36px;
             height: 2px;
-            background: var(--paper-line);
             z-index: 1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .stepper-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--paper-line);
         }
         .stepper-line-fill {
             position: absolute;
-            top: 18px;
-            left: 36px;
-            height: 2px;
+            top: 0;
+            left: 0;
+            height: 100%;
             background: var(--teal-800);
             z-index: 2;
             transition: width 0.3s ease;
@@ -161,7 +170,7 @@
         /* Responsive Form Grids */
         .reg-grid {
             display: grid;
-            gap: 14px;
+            gap: 20px;
         }
         .reg-grid-2 {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -198,8 +207,7 @@
                 margin-bottom: 18px;
                 padding: 0 4px;
             }
-            .stepper-line,
-            .stepper-line-fill {
+            .stepper-line-track {
                 left: 20px;
                 right: 20px;
                 top: 16px;
@@ -248,11 +256,16 @@
 
     {{-- Stepper Progress Bar --}}
     <div class="stepper-header">
-        <div class="stepper-line"></div>
-        <div class="stepper-line-fill" id="stepper-fill"></div>
+        <div class="stepper-line-track">
+            <div class="stepper-line"></div>
+            <div class="stepper-line-fill" id="stepper-fill"></div>
+        </div>
 
         <div class="step-item active" id="step-nav-1" data-step="1">
-            <div class="step-circle" id="step-circle-1">১</div>
+            <div class="step-circle" id="step-circle-1">
+                <span class="bn">১</span>
+                <span class="en" style="display:none;">1</span>
+            </div>
             <div class="step-label">
                 <span class="bn">আপনার তথ্য</span>
                 <span class="en" style="display:none;">Your Info</span>
@@ -260,7 +273,10 @@
         </div>
 
         <div class="step-item" id="step-nav-2" data-step="2">
-            <div class="step-circle" id="step-circle-2">২</div>
+            <div class="step-circle" id="step-circle-2">
+                <span class="bn">২</span>
+                <span class="en" style="display:none;">2</span>
+            </div>
             <div class="step-label">
                 <span class="bn">দোকানের বিবরণ</span>
                 <span class="en" style="display:none;">Shop Details</span>
@@ -268,7 +284,10 @@
         </div>
 
         <div class="step-item" id="step-nav-3" data-step="3">
-            <div class="step-circle" id="step-circle-3">৩</div>
+            <div class="step-circle" id="step-circle-3">
+                <span class="bn">৩</span>
+                <span class="en" style="display:none;">3</span>
+            </div>
             <div class="step-label">
                 <span class="bn">সেটআপ ও প্ল্যান</span>
                 <span class="en" style="display:none;">Setup & Plan</span>
@@ -290,8 +309,8 @@
         {{-- STEP 1: OWNER ACCOUNT INFORMATION                         --}}
         {{-- ======================================================== --}}
         <div class="step-pane active" id="step-pane-1">
-            <div style="font-size:13px; font-weight:700; color:var(--ink-900); margin-bottom:14px; display:flex; align-items:center; gap:8px;">
-                <x-core::icon name="user" size="16" style="color:var(--teal-800);" />
+            <div style="font-size:13px; font-weight:700; color:var(--ink-900); margin-bottom:25px; display:flex; align-items:center; gap:8px;">
+                <x-core::icon name="contact" size="16" style="color:var(--teal-800);" />
                 <span class="bn">ধাপ ১: দোকান মালিকের লগইন ও ব্যক্তিগত তথ্য</span>
                 <span class="en" style="display:none;">Step 1: Shop Owner Credentials & Personal Info</span>
             </div>
@@ -310,7 +329,10 @@
                         :value="old('name')"
                         required
                     />
-                    <div class="client-error-message" id="err-reg-name">নাম প্রদান করা আবশ্যক।</div>
+                    <div class="client-error-message" id="err-reg-name">
+                        <span class="bn">নাম প্রদান করা আবশ্যক।</span>
+                        <span class="en" style="display:none;">Full name is required.</span>
+                    </div>
                 </div>
 
                 <div class="reg-field-item">
@@ -328,7 +350,10 @@
                         required
                     />
                     <div id="phone-feedback" class="availability-status"></div>
-                    <div class="client-error-message" id="err-reg-phone">সঠিক মোবাইল নম্বর প্রদান করা আবশ্যক।</div>
+                    <div class="client-error-message" id="err-reg-phone">
+                        <span class="bn">সঠিক মোবাইল নম্বর প্রদান করা আবশ্যক।</span>
+                        <span class="en" style="display:none;">A valid mobile number is required.</span>
+                    </div>
                 </div>
 
                 <div class="reg-field-item">
@@ -346,7 +371,10 @@
                         required
                     />
                     <div id="email-feedback" class="availability-status"></div>
-                    <div class="client-error-message" id="err-reg-email">সঠিক ইমেইল ঠিকানা প্রদান করা আবশ্যক।</div>
+                    <div class="client-error-message" id="err-reg-email">
+                        <span class="bn">সঠিক ইমেইল ঠিকানা প্রদান করা আবশ্যক।</span>
+                        <span class="en" style="display:none;">A valid email address is required.</span>
+                    </div>
                 </div>
 
                 <div class="reg-col-full reg-field-item">
@@ -362,7 +390,10 @@
                         :value="old('username')"
                     />
                     <div id="username-feedback" class="availability-status"></div>
-                    <div class="client-error-message" id="err-reg-username">ইউজারনেমে শুধুমাত্র ইংরেজি অক্ষর, সংখ্যা, ড্যাশ বা আন্ডারস্কোর ব্যবহার করুন।</div>
+                    <div class="client-error-message" id="err-reg-username">
+                        <span class="bn">ইউজারনেমে শুধুমাত্র ইংরেজি অক্ষর, সংখ্যা, ড্যাশ বা আন্ডারস্কোর ব্যবহার করুন।</span>
+                        <span class="en" style="display:none;">Username may only contain letters, numbers, hyphens or underscores.</span>
+                    </div>
                 </div>
 
                 <div class="reg-field-item">
@@ -379,7 +410,10 @@
                         password-toggle
                         required
                     />
-                    <div class="client-error-message" id="err-reg-password">পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।</div>
+                    <div class="client-error-message" id="err-reg-password">
+                        <span class="bn">পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।</span>
+                        <span class="en" style="display:none;">Password must be at least 6 characters.</span>
+                    </div>
                 </div>
 
                 <div class="reg-field-item">
@@ -396,7 +430,10 @@
                         password-toggle
                         required
                     />
-                    <div class="client-error-message" id="err-reg-password-confirmation">পাসওয়ার্ড নিশ্চিতকরণ মিলছে না।</div>
+                    <div class="client-error-message" id="err-reg-password-confirmation">
+                        <span class="bn">পাসওয়ার্ড নিশ্চিতকরণ মিলছে না।</span>
+                        <span class="en" style="display:none;">Password confirmation does not match.</span>
+                    </div>
                 </div>
             </div>
 
@@ -414,8 +451,8 @@
                     size="sm"
                     iconRight="arrow-right"
                 >
-                    <span class="bn">পরবর্তী ধাপ (দোকানের বিবরণ)</span>
-                    <span class="en" style="display:none;">Next Step (Shop Details)</span>
+                    <span class="bn">পরবর্তী ধাপ</span>
+                    <span class="en" style="display:none;">Next Step</span>
                 </x-core::button>
             </div>
         </div>
@@ -424,8 +461,8 @@
         {{-- STEP 2: SHOP INFORMATION                                 --}}
         {{-- ======================================================== --}}
         <div class="step-pane" id="step-pane-2">
-            <div style="font-size:13px; font-weight:700; color:var(--ink-900); margin-bottom:14px; display:flex; align-items:center; gap:8px;">
-                <x-core::icon name="shopping-bag" size="16" style="color:var(--teal-800);" />
+            <div style="font-size:13px; font-weight:700; color:var(--ink-900); margin-bottom:25px; display:flex; align-items:center; gap:8px;">
+                <x-core::icon name="store" size="16" style="color:var(--teal-800);" />
                 <span class="bn">ধাপ ২: আপনার দোকানের প্রাথমিক বিবরণ</span>
                 <span class="en" style="display:none;">Step 2: Your Shop Information</span>
             </div>
@@ -444,7 +481,10 @@
                         :value="old('shop_name')"
                         required
                     />
-                    <div class="client-error-message" id="err-reg-shop-name">দোকানের নাম প্রদান করা আবশ্যক।</div>
+                    <div class="client-error-message" id="err-reg-shop-name">
+                        <span class="bn">দোকানের নাম প্রদান করা আবশ্যক।</span>
+                        <span class="en" style="display:none;">Shop name is required.</span>
+                    </div>
                 </div>
 
                 <div class="reg-col-full reg-grid reg-grid-slug" style="padding:0;">
@@ -462,7 +502,10 @@
                             required
                         />
                         <div id="slug-feedback" class="availability-status"></div>
-                        <div class="client-error-message" id="err-reg-shop-slug">দোকানের স্লাগ আবশ্যক ও শুধুমাত্র ইংরেজি অক্ষর, সংখ্যা এবং হাইফেন প্রযোজ্য।</div>
+                        <div class="client-error-message" id="err-reg-shop-slug">
+                            <span class="bn">দোকানের স্লাগ আবশ্যক ও শুধুমাত্র ইংরেজি অক্ষর, সংখ্যা এবং হাইফেন প্রযোজ্য।</span>
+                            <span class="en" style="display:none;">Store slug is required and may only contain letters, numbers and hyphens.</span>
+                        </div>
                     </div>
 
                     <div class="reg-field-item">
@@ -492,7 +535,10 @@
                         size="sm"
                         :value="old('shop_phone')"
                     />
-                    <div style="font-size:11px; color:var(--ink-500); margin-top:4px;">খালি রাখলে আপনার ব্যক্তিগত ফোন নম্বরটি ব্যবহৃত হবে</div>
+                    <div style="font-size:11px; color:var(--ink-500); margin-top:4px;">
+                        <span class="bn">খালি রাখলে আপনার ব্যক্তিগত ফোন নম্বরটি ব্যবহৃত হবে</span>
+                        <span class="en" style="display:none;">If left blank, your personal phone number will be used</span>
+                    </div>
                 </div>
 
                 <div class="reg-field-item">
@@ -528,10 +574,10 @@
                     id="btn-step-2-next"
                     color="primary"
                     size="sm"
-                    icon="arrow-right"
+                    iconRight="arrow-right"
                 >
-                    <span class="bn">পরবর্তী ধাপ (সেটআপ ও প্ল্যান)</span>
-                    <span class="en" style="display:none;">Next Step (Setup & Plan)</span>
+                    <span class="bn">পরবর্তী ধাপ</span>
+                    <span class="en" style="display:none;">Next Step</span>
                 </x-core::button>
             </div>
         </div>
@@ -540,7 +586,7 @@
         {{-- STEP 3: INITIAL SETUP & FREE PACKAGE                     --}}
         {{-- ======================================================== --}}
         <div class="step-pane" id="step-pane-3">
-            <div style="font-size:13px; font-weight:700; color:var(--ink-900); margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+            <div style="font-size:13px; font-weight:700; color:var(--ink-900); margin-bottom:25px; display:flex; align-items:center; gap:8px;">
                 <x-core::icon name="settings" size="16" style="color:var(--teal-800);" />
                 <span class="bn">ধাপ ৩: প্রাথমিক শাখা, গুদাম ও ফ্রি প্যাকেজ কনফার্মেশন</span>
                 <span class="en" style="display:none;">Step 3: Initial Branch, Warehouse & Free Package Confirmation</span>
@@ -590,7 +636,10 @@
                         min="0"
                         :value="old('opening_cash_balance', '0')"
                     />
-                    <div style="font-size:11px; color:var(--ink-500); margin-top:4px;">ক্যাশ ড্রয়ারে শুরুতে কোনো নগদ টাকা থাকলে তা লিখুন, অন্যথায় ০ রাখতে পারেন।</div>
+                    <div style="font-size:11px; color:var(--ink-500); margin-top:4px;">
+                        <span class="bn">ক্যাশ ড্রয়ারে শুরুতে কোনো নগদ টাকা থাকলে তা লিখুন, অন্যথায় ০ রাখতে পারেন।</span>
+                        <span class="en" style="display:none;">Enter initial cash in cash drawer if any, otherwise keep it 0.</span>
+                    </div>
                 </div>
             </div>
 
@@ -603,48 +652,72 @@
                         </div>
                         <div>
                             <div style="font-size:14px; font-weight:700; color:var(--ink-900);">
-                                {{ $freePlan?->name ?? 'ফ্রি প্ল্যান (Free Plan)' }}
+                                <span class="bn">{{ $freePlan?->name ?? 'ফ্রি প্ল্যান' }}</span>
+                                <span class="en" style="display:none;">{{ $freePlan?->name ?? 'Free Plan' }}</span>
                             </div>
                             <div style="font-size:11px; color:var(--ink-500);">
-                                আজীবন বিনামূল্যে ব্যবহারের সুযোগ (Lifetime Free)
+                                <span class="bn">আজীবন বিনামূল্যে ব্যবহারের সুযোগ</span>
+                                <span class="en" style="display:none;">Lifetime Free Access</span>
                             </div>
                         </div>
                     </div>
                     <x-core::badge color="green" size="sm" rounded>
-                        ৳০ / আজীবন
+                        <span class="bn">৳০ / আজীবন</span>
+                        <span class="en" style="display:none;">৳0 / Lifetime</span>
                     </x-core::badge>
                 </div>
 
                 <div class="reg-plan-features-grid">
                     <div class="plan-feature-row">
                         <x-core::icon name="check" size="14" style="color:var(--green-600, #10b981);" />
-                        <span>১ জন ইউজার / এডমিন</span>
+                        <span>
+                            <span class="bn">১ জন ইউজার / এডমিন</span>
+                            <span class="en" style="display:none;">1 User / Admin</span>
+                        </span>
                     </div>
                     <div class="plan-feature-row">
                         <x-core::icon name="check" size="14" style="color:var(--green-600, #10b981);" />
-                        <span>১টি শাখা ও ১টি গুদাম</span>
+                        <span>
+                            <span class="bn">১টি শাখা ও ১টি গুদাম</span>
+                            <span class="en" style="display:none;">1 Branch & 1 Warehouse</span>
+                        </span>
                     </div>
                     <div class="plan-feature-row">
                         <x-core::icon name="check" size="14" style="color:var(--green-600, #10b981);" />
-                        <span>১০০ টি পণ্য ক্যাটালগ</span>
+                        <span>
+                            <span class="bn">১০০ টি পণ্য ক্যাটালগ</span>
+                            <span class="en" style="display:none;">100 Products Catalog</span>
+                        </span>
                     </div>
                     <div class="plan-feature-row">
                         <x-core::icon name="check" size="14" style="color:var(--green-600, #10b981);" />
-                        <span>দ্রুত বেচা (POS) ও ক্রয় রসিদ</span>
+                        <span>
+                            <span class="bn">দ্রুত বেচা (POS) ও ক্রয় রসিদ</span>
+                            <span class="en" style="display:none;">Fast POS & Purchase Invoice</span>
+                        </span>
                     </div>
                     <div class="plan-feature-row">
                         <x-core::icon name="check" size="14" style="color:var(--green-600, #10b981);" />
-                        <span>স্টক ট্র্যাকিং ও ক্যাশবক্স</span>
+                        <span>
+                            <span class="bn">স্টক ট্র্যাকিং ও ক্যাশবক্স</span>
+                            <span class="en" style="display:none;">Stock Tracking & Cashbox</span>
+                        </span>
                     </div>
                     <div class="plan-feature-row">
                         <x-core::icon name="check" size="14" style="color:var(--green-600, #10b981);" />
-                        <span>গ্রাহক ও বাকি খাতা</span>
+                        <span>
+                            <span class="bn">গ্রাহক ও বাকি খাতা</span>
+                            <span class="en" style="display:none;">Customer & Due Ledger</span>
+                        </span>
                     </div>
                 </div>
 
                 <div style="margin-top:12px; padding-top:10px; border-top:1px dashed var(--border); font-size:11.5px; color:var(--ink-500); display:flex; align-items:center; gap:6px;">
                     <x-core::icon name="info" size="14" style="color:var(--teal-800);" />
-                    <span>দোকান তৈরির সাথে সাথে ফ্রি প্যাকেজটি তাৎক্ষণিকভাবে সক্রিয় হয়ে যাবে। পরবর্তীতে যে কোনো সময় আপগ্রেড করতে পারবেন।</span>
+                    <span>
+                        <span class="bn">দোকান তৈরির সাথে সাথে ফ্রি প্যাকেজটি তাৎক্ষণিকভাবে সক্রিয় হয়ে যাবে। পরবর্তীতে যে কোনো সময় আপগ্রেড করতে পারবেন।</span>
+                        <span class="en" style="display:none;">The free plan will be activated immediately upon shop creation. You can upgrade anytime.</span>
+                    </span>
                 </div>
             </div>
 
@@ -668,8 +741,8 @@
                     size="sm"
                     icon="check-circle"
                 >
-                    <span class="bn">রেজিস্ট্রেশন ও দোকান চালু করুন</span>
-                    <span class="en" style="display:none;">Launch Shop & Complete</span>
+                    <span class="bn">দোকান চালু করুন</span>
+                    <span class="en" style="display:none;">Launch Shop</span>
                 </x-core::button>
             </div>
         </div>
@@ -697,6 +770,40 @@
         let emailCheckTimer = null;
         let usernameCheckTimer = null;
 
+        function updateStepperProgress(step) {
+            const $header = $('.stepper-header');
+            const $track = $('.stepper-line-track');
+            const $c1 = $('#step-circle-1');
+            const $c2 = $('#step-circle-2');
+            const $c3 = $('#step-circle-3');
+            if (!$header.length || !$track.length || !$c1.length || !$c2.length || !$c3.length) return;
+
+            const headerLeft = $header.offset().left;
+            const c1Center = $c1.offset().left - headerLeft + ($c1.outerWidth() / 2);
+            const c2Center = $c2.offset().left - headerLeft + ($c2.outerWidth() / 2);
+            const c3Center = $c3.offset().left - headerLeft + ($c3.outerWidth() / 2);
+            const c1Top = $c1.offset().top - $header.offset().top + ($c1.outerHeight() / 2) - 1;
+
+            const totalWidth = Math.max(0, c3Center - c1Center);
+            if (totalWidth <= 0) return;
+
+            $track.css({
+                left: c1Center + 'px',
+                width: totalWidth + 'px',
+                top: c1Top + 'px',
+                right: 'auto'
+            });
+
+            let fillPct = 0;
+            if (step === 2) {
+                fillPct = Math.min(100, Math.max(0, ((c2Center - c1Center) / totalWidth) * 100));
+            } else if (step === 3) {
+                fillPct = 100;
+            }
+
+            $('#stepper-fill').css('width', fillPct + '%');
+        }
+
         function updateStepperUI(step) {
             $('.step-pane').removeClass('active');
             $('#step-pane-' + step).addClass('active');
@@ -709,16 +816,15 @@
                 } else if (i === step) {
                     $('#step-nav-' + i).addClass('active');
                     const bengaliDigits = ['১', '২', '৩'];
-                    $('#step-circle-' + i).text(bengaliDigits[i - 1]);
+                    $('#step-circle-' + i).html('<span class="bn">' + bengaliDigits[i - 1] + '</span><span class="en" style="display:none;">' + i + '</span>');
                 } else {
                     const bengaliDigits = ['১', '২', '৩'];
-                    $('#step-circle-' + i).text(bengaliDigits[i - 1]);
+                    $('#step-circle-' + i).html('<span class="bn">' + bengaliDigits[i - 1] + '</span><span class="en" style="display:none;">' + i + '</span>');
                 }
             }
 
-            const fillWidths = { 1: '0%', 2: '50%', 3: '100%' };
-            $('#stepper-fill').css('width', fillWidths[step] || '0%');
             currentStep = step;
+            updateStepperProgress(step);
         }
 
         // Slugify helper
@@ -772,10 +878,10 @@
                 $.get('{{ route("register.check-availability") }}', { phone: phone }, function (res) {
                     if (res.phone_available) {
                         isPhoneAvailable = true;
-                        $('#phone-feedback').html('<span class="text-valid">✓ মোবাইল নম্বরটি ব্যবহারযোগ্য</span>');
+                        $('#phone-feedback').html('<span class="text-valid"><span class="bn">✓ মোবাইল নম্বরটি ব্যবহারযোগ্য</span><span class="en" style="display:none;">✓ Mobile number is available</span></span>');
                     } else {
                         isPhoneAvailable = false;
-                        $('#phone-feedback').html('<span class="text-invalid">✕ এই মোবাইল নম্বরটি ইতিমধ্যে নিবন্ধিত</span>');
+                        $('#phone-feedback').html('<span class="text-invalid"><span class="bn">✕ এই মোবাইল নম্বরটি ইতিমধ্যে নিবন্ধিত</span><span class="en" style="display:none;">✕ This mobile number is already registered</span></span>');
                     }
                 });
             }, 300);
@@ -792,7 +898,7 @@
                 return;
             }
             if (!emailRegex.test(email)) {
-                $('#email-feedback').html('<span class="text-invalid">✕ সঠিক ইমেইল ঠিকানা প্রদান করুন</span>');
+                $('#email-feedback').html('<span class="text-invalid"><span class="bn">✕ সঠিক ইমেইল ঠিকানা প্রদান করুন</span><span class="en" style="display:none;">✕ Please enter a valid email address</span></span>');
                 isEmailAvailable = false;
                 return;
             }
@@ -801,10 +907,10 @@
                 $.get('{{ route("register.check-availability") }}', { email: email }, function (res) {
                     if (res.email_available) {
                         isEmailAvailable = true;
-                        $('#email-feedback').html('<span class="text-valid">✓ ইমেইল ঠিকানাটি ব্যবহারযোগ্য</span>');
+                        $('#email-feedback').html('<span class="text-valid"><span class="bn">✓ ইমেইল ঠিকানাটি ব্যবহারযোগ্য</span><span class="en" style="display:none;">✓ Email address is available</span></span>');
                     } else {
                         isEmailAvailable = false;
-                        $('#email-feedback').html('<span class="text-invalid">✕ এই ইমেইলটি ইতিমধ্যে ব্যবহৃত হয়েছে</span>');
+                        $('#email-feedback').html('<span class="text-invalid"><span class="bn">✕ এই ইমেইলটি ইতিমধ্যে ব্যবহৃত হয়েছে</span><span class="en" style="display:none;">✕ This email is already registered</span></span>');
                     }
                 });
             }, 300);
@@ -835,10 +941,10 @@
                 $.get('{{ route("register.check-availability") }}', { username: username }, function (res) {
                     if (res.username_available) {
                         isUsernameAvailable = true;
-                        $('#username-feedback').html('<span class="text-valid">✓ ইউজারনেমটি ব্যবহারযোগ্য</span>');
+                        $('#username-feedback').html('<span class="text-valid"><span class="bn">✓ ইউজারনেমটি ব্যবহারযোগ্য</span><span class="en" style="display:none;">✓ Username is available</span></span>');
                     } else {
                         isUsernameAvailable = false;
-                        $('#username-feedback').html('<span class="text-invalid">✕ এই ইউজারনেমটি ইতিমধ্যে ব্যবহৃত হয়েছে</span>');
+                        $('#username-feedback').html('<span class="text-invalid"><span class="bn">✕ এই ইউজারনেমটি ইতিমধ্যে ব্যবহৃত হয়েছে</span><span class="en" style="display:none;">✕ This username is already taken</span></span>');
                     }
                 });
             }, 300);
@@ -858,10 +964,10 @@
                 $.get('{{ route("register.check-availability") }}', { slug: slug }, function (res) {
                     if (res.slug_available) {
                         isSlugAvailable = true;
-                        $('#slug-feedback').html('<span class="text-valid">✓ URL / স্লাগটি খালি আছে</span>');
+                        $('#slug-feedback').html('<span class="text-valid"><span class="bn">✓ URL / স্লাগটি খালি আছে</span><span class="en" style="display:none;">✓ Store URL / slug is available</span></span>');
                     } else {
                         isSlugAvailable = false;
-                        $('#slug-feedback').html('<span class="text-invalid">✕ এই স্লাগটি ইতিমধ্যে অন্য দোকানে ব্যবহৃত</span>');
+                        $('#slug-feedback').html('<span class="text-invalid"><span class="bn">✕ এই স্লাগটি ইতিমধ্যে অন্য দোকানে ব্যবহৃত</span><span class="en" style="display:none;">✕ This slug is already in use</span></span>');
                     }
                 });
             }, 300);
@@ -989,6 +1095,33 @@
         @else
             updateStepperUI(1);
         @endif
+
+        // Responsive alignment & language toggle updates
+        $(window).on('resize', function () {
+            updateStepperProgress(currentStep);
+        });
+
+        if (window.ResizeObserver && $('.stepper-header').length) {
+            const ro = new ResizeObserver(function () {
+                updateStepperProgress(currentStep);
+            });
+            ro.observe($('.stepper-header')[0]);
+        }
+
+        $(document).on('click', '[data-action="set-lang-bn"], [data-action="set-lang-en"], .lang-segmented-switcher, .switch-opt-bn, .switch-opt-en, #lang-toggle', function () {
+            setTimeout(function () {
+                updateStepperProgress(currentStep);
+            }, 60);
+        });
+
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(function () {
+                updateStepperProgress(currentStep);
+            });
+        }
+        setTimeout(function () {
+            updateStepperProgress(currentStep);
+        }, 100);
     });
     </script>
     @endpush

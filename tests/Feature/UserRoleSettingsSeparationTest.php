@@ -50,6 +50,7 @@ class UserRoleSettingsSeparationTest extends TestCase
             'email' => 'admin@separation.test',
             'password' => Hash::make('password'),
             'shop_id' => $shop->id,
+            'email_verified_at' => now(),
         ]);
         $user->assignRole($adminRole);
 

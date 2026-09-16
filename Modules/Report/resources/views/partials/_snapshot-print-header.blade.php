@@ -73,9 +73,9 @@
     </div>
 
     {{-- Centered Title with Horizontal Accent Lines --}}
-    <div style="display:flex; align-items:center; justify-content:center; gap:16px; margin:12px 0 14px 0;">
+    <div style="display:flex; align-items:center; justify-content:center; gap:16px; margin:8px 0 10px 0;">
         <div style="flex:1; height:1px; background:#94a3b8;"></div>
-        <div style="font-size:22px; font-weight:800; color:#0f172a; letter-spacing:1px; padding:0 8px;">
+        <div style="font-size:18px; font-weight:800; color:#0f172a; letter-spacing:0.5px; padding:0 8px;">
             <span class="bn">{{ $reportTitle ?? 'প্রতিবেদন' }}</span>
             <span class="en" style="display:none;">{{ $reportTitleEn ?? 'Report' }}</span>
         </div>
@@ -83,7 +83,7 @@
     </div>
 
     {{-- Metadata: Report Information --}}
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; font-size:12px; line-height:1.6; margin-bottom:14px; color:#0f172a;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; font-size:11px; line-height:1.5; margin-bottom:10px; color:#0f172a;">
         <div>
             <div>
                 <b><span class="bn">তারিখ অনুযায়ী : </span><span class="en" style="display:none;">As of : </span></b>
@@ -104,16 +104,45 @@
 @media print {
     @page {
         size: A4 portrait;
-        margin: 10mm 10mm 12mm 10mm;
+        margin: 8mm 8mm 10mm 8mm;
     }
+
+    /* ===== RESET DARK MODE: Force light values in print ===== */
+    :root, :root[data-theme="dark"], html, html[data-theme="dark"] {
+        --ink-900: #0f172a !important;
+        --ink-800: #1e293b !important;
+        --ink-700: #334155 !important;
+        --ink-600: #475569 !important;
+        --ink-500: #64748b !important;
+        --ink-400: #94a3b8 !important;
+        --card: #ffffff !important;
+        --paper: #f8fafc !important;
+        --paper-line: #f1f5f9 !important;
+        --border: #e2e8f0 !important;
+        --table-color: #0f172a !important;
+        --table-bg: #ffffff !important;
+        --table-border: #e2e8f0 !important;
+        --table-header-bg: #f8fafc !important;
+        --table-header-color: #334155 !important;
+        --table-font-size: 9.5px !important;
+        --table-header-font-size: 9px !important;
+        --table-px: 6px !important;
+        --table-py: 3.5px !important;
+        --table-radius: 4px !important;
+        --shadow-sm: none !important;
+        --shadow-card: none !important;
+        color-scheme: light !important;
+    }
+
     html, body {
         background: #ffffff !important;
         color: #0f172a !important;
         font-family: 'Noto Sans Bengali', 'Plus Jakarta Sans', sans-serif !important;
-        font-size: 11px !important;
+        font-size: 10px !important;
         margin: 0 !important;
         padding: 0 !important;
         width: 100% !important;
+        height: auto !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
     }
@@ -123,21 +152,41 @@
     .report-printable-area,
     .report-printable-area * {
         visibility: visible !important;
+        color-adjust: exact !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    /* Force all text inside printable area to be dark */
+    .report-printable-area {
+        color: #0f172a !important;
+    }
+    .app, .main, .content {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        min-width: 100% !important;
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        display: block !important;
+        position: static !important;
+        overflow: visible !important;
     }
     .report-printable-area {
-        position: absolute !important;
-        left: 0 !important;
-        top: 0 !important;
+        position: static !important;
+        left: auto !important;
+        top: auto !important;
         width: 100% !important;
         max-width: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
         background: #ffffff !important;
         box-sizing: border-box !important;
+        overflow: visible !important;
     }
     .report-print-header {
         display: block !important;
-        margin-bottom: 14px !important;
+        margin-bottom: 10px !important;
     }
     .report-print-footer {
         display: flex !important;
@@ -260,15 +309,37 @@
         display: none !important;
     }
 
-    /* Table in Print */
+    /* ===== TWO-COLUMN TABLE GRID ===== */
     .table-container {
         border: 1px solid #cbd5e1 !important;
         box-shadow: none !important;
         background: #ffffff !important;
         border-radius: 6px !important;
         overflow: visible !important;
-        width: 100% !important;
         box-sizing: border-box !important;
+        width: auto !important;
+    }
+    .report-snapshot-grid,
+    .fin-snapshot-grid {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        margin-bottom: 10px !important;
+        page-break-inside: avoid !important;
+    }
+    .report-snapshot-grid > .table-container,
+    .fin-snapshot-grid > .table-container {
+        flex: 1 1 0 !important;
+        width: 50% !important;
+        max-width: 50% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+        overflow: visible !important;
     }
     .table-responsive {
         overflow: visible !important;
@@ -281,32 +352,83 @@
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
     }
+
+    /* ===== TABLE LAYOUT ===== */
     .app-table {
         width: 100% !important;
+        table-layout: auto !important;
         border-collapse: collapse !important;
-        font-size: 11px !important;
+        font-size: 9.5px !important;
+        box-sizing: border-box !important;
+        color: #0f172a !important;
+    }
+    .app-table colgroup {
+        display: table-column-group !important;
+    }
+    .app-table col.col-name {
+        width: 55% !important;
+    }
+    .app-table col.col-amount {
+        width: 45% !important;
+    }
+    .app-table th:first-child:not([colspan]),
+    .app-table td:first-child:not([colspan]) {
+        width: 60% !important;
+        max-width: 60% !important;
+        box-sizing: border-box !important;
+        word-break: break-word !important;
+        overflow: visible !important;
+    }
+    .app-table th:last-child:not([colspan]),
+    .app-table td:last-child:not([colspan]),
+    .app-table th:nth-child(2):not([colspan]),
+    .app-table td:nth-child(2):not([colspan]) {
+        width: 40% !important;
+        max-width: 40% !important;
+        text-align: right !important;
+        white-space: nowrap !important;
+        box-sizing: border-box !important;
+    }
+    .app-table th[colspan],
+    .app-table td[colspan] {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
     .app-table th {
         background: #f1f5f9 !important;
         color: #0f172a !important;
         border: 1px solid #cbd5e1 !important;
-        padding: 6px 8px !important;
+        padding: 4px 6px !important;
         font-weight: 700 !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
+        box-sizing: border-box !important;
     }
     .app-table td {
         border: 1px solid #e2e8f0 !important;
-        padding: 6px 8px !important;
+        padding: 3.5px 6px !important;
         color: #0f172a !important;
+        line-height: 1.25 !important;
+        box-sizing: border-box !important;
+    }
+    /* Higher-specificity override to beat compiled CSS rules */
+    .app-table tbody td,
+    .report-printable-area .app-table td,
+    .report-printable-area .app-table tbody td {
+        padding: 3.5px 6px !important;
+        color: #0f172a !important;
+        font-size: 9.5px !important;
+        line-height: 1.25 !important;
+        box-sizing: border-box !important;
     }
     .app-table tr {
         page-break-inside: avoid !important;
     }
     .app-badge, .badge {
         border: 1px solid #cbd5e1 !important;
-        font-size: 9.5px !important;
-        padding: 2px 6px !important;
+        font-size: 9px !important;
+        padding: 1px 5px !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
     }
@@ -318,7 +440,34 @@
 $(function () {
     $(document).on('click', '#btn-report-export-pdf', function (e) {
         e.preventDefault();
-        window.print();
+
+        // Remember current theme and force light mode for print
+        var $html = $('html');
+        var originalTheme = $html.attr('data-theme') || '';
+        $html.attr('data-theme', 'light');
+
+        // Small delay to allow CSS variables to recalculate
+        setTimeout(function () {
+            window.print();
+        }, 50);
+
+        // Restore theme after print dialog closes
+        $(window).one('afterprint', function () {
+            if (originalTheme) {
+                $html.attr('data-theme', originalTheme);
+            } else {
+                $html.removeAttr('data-theme');
+            }
+        });
+
+        // Fallback: restore after 3 seconds if afterprint doesn't fire
+        setTimeout(function () {
+            if (originalTheme) {
+                $html.attr('data-theme', originalTheme);
+            } else {
+                $html.removeAttr('data-theme');
+            }
+        }, 3000);
     });
 });
 </script>

@@ -13,6 +13,7 @@ use Modules\Purchase\DataTables\PurchasesDataTable;
 use Modules\Purchase\Models\Purchase;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
 use Modules\Shop\Models\Branch;
+use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
 use Modules\Shop\Models\Warehouse;
 use Modules\Supplier\Models\Supplier;
@@ -43,19 +44,26 @@ class PurchasesDataTableTest extends TestCase
             Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
         }
 
-        $adminRole = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
-        $adminRole->syncPermissions(Permission::where('guard_name', 'web')->get());
-
         $this->shop = Shop::create([
             'name' => 'Purchase Test Shop',
             'slug' => 'purchase-test-shop',
             'status' => 'active',
         ]);
+
+        $standardPlan = Plan::where('slug', 'standard')->first();
+        if ($standardPlan) {
+            $this->shop->subscribe($standardPlan);
+        }
         $this->subscribeShopToFeatures($this->shop, Features::keys());
+        setPermissionsTeamId($this->shop->id);
+
+        $adminRole = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web', 'shop_id' => $this->shop->id]);
+        $adminRole->syncPermissions(Permission::where('guard_name', 'web')->get());
 
         $this->user = User::create([
             'name' => 'Purchase Admin',
             'email' => 'admin@purchase.test',
+            'email_verified_at' => now(),
             'password' => bcrypt('password'),
             'shop_id' => $this->shop->id,
         ]);
@@ -106,7 +114,7 @@ class PurchasesDataTableTest extends TestCase
         $html = $dataTable->html();
 
         $this->assertEquals('purchases-data-table', $html->getTableAttribute('id'));
-        $this->assertCount(9, $dataTable->getColumns());
+        $this->assertCount(10, $dataTable->getColumns());
     }
 
     public function test_purchases_datatable_query_returns_query_builder(): void
@@ -184,6 +192,8 @@ class PurchasesDataTableTest extends TestCase
         $this->assertEquals(1, $json['recordsTotal']);
         $this->assertStringContainsString('INV-9001', $json['data'][0]['invoice_no']);
         $this->assertStringContainsString('Acme Supplies', $json['data'][0]['supplier']);
+        $this->assertStringContainsString('5', $json['data'][0]['ordered_quantity']);
+        $this->assertStringContainsString('5', $json['data'][0]['received_quantity']);
         $this->assertStringContainsString('100.00', $json['data'][0]['purchase_price']);
         $this->assertStringContainsString('470.00', $json['data'][0]['total']);
         $this->assertEquals('470.00', $json['totalAmount']);
