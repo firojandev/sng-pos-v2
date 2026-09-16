@@ -20,6 +20,8 @@ class PurchasesDataTable extends BaseDataTable
     public function dataTable(QueryBuilder $query): EloquentDataTable
     {
         $clone = (clone $query);
+        $clone->reorder();
+        $clone->getQuery()->orders = null;
         $clone->getQuery()->columns = null;
         $totals = $clone->selectRaw('
             COALESCE(SUM(purchases.total), 0) as agg_total,
