@@ -55,6 +55,8 @@ class AccountTransaction extends Model
             'transfer_in' => ['bn' => 'ফান্ড গ্রহণ (ইন)', 'en' => 'Transfer In'],
             'transfer_out' => ['bn' => 'ফান্ড পাঠানো (আউট)', 'en' => 'Transfer Out'],
             'manual_adjustment' => ['bn' => 'ম্যানুয়াল সমন্বয়', 'en' => 'Manual Adjustment'],
+            'cash_in' => ['bn' => 'ক্যাশ ইন', 'en' => 'Cash In'],
+            'cash_out' => ['bn' => 'ক্যাশ আউট', 'en' => 'Cash Out'],
         ];
     }
 
