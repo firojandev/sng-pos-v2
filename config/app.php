@@ -43,6 +43,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Landing Page Enabled
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, visitors accessing the root URL will see the public
+    | landing page. When disabled, users are redirected to login/dashboard.
+    |
+    */
+
+    'landing_page_enabled' => (bool) env('LANDING_PAGE_ENABLED', true),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application URL
     |--------------------------------------------------------------------------
     |

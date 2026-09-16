@@ -25,7 +25,7 @@ class AuditLogDataTable extends BaseDataTable
                 $date = $log->created_at ? $log->created_at->format('d M, Y') : '—';
                 $diff = $log->created_at ? $log->created_at->diffForHumans() : '';
 
-                return '<div style="display:flex; flex-direction:column; gap:2px;">'
+                return '<div style="display:flex; flex-direction:column; gap:2px; white-space:nowrap;">'
                     .'<div style="display:flex; align-items:center; gap:5px; font-weight:600; font-size:12.5px; color:var(--ink-900);">'
                     .'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
                     .'<span>'.$date.' '.$time.'</span>'
@@ -35,7 +35,7 @@ class AuditLogDataTable extends BaseDataTable
             })
             ->addColumn('user', function (AuditLog $log) {
                 if (! $log->user) {
-                    return '<div style="display:inline-flex; align-items:center; gap:6px; background:var(--paper-line); padding:3px 8px; border-radius:6px;">'
+                    return '<div style="display:inline-flex; align-items:center; gap:6px; background:var(--paper-line); padding:3px 8px; border-radius:6px; white-space:nowrap;">'
                         .'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6;"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>'
                         .'<span style="font-size:12px; font-weight:600; color:var(--ink-600);">সিস্টেম / System</span>'
                         .'</div>';
@@ -51,9 +51,9 @@ class AuditLogDataTable extends BaseDataTable
 
                 return '<div class="row-avatar" style="display:flex; align-items:center; gap:8px;">'
                     .$avatar
-                    .'<div style="min-width:0;">'
-                    .'<div style="font-weight:600; color:var(--ink-900); font-size:12.5px; line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'.e($user->name).'</div>'
-                    .'<div style="font-size:11px; color:var(--ink-500); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'.e($subtext).'</div>'
+                    .'<div style="min-width:0; max-width:140px;">'
+                    .'<div style="font-weight:600; color:var(--ink-900); font-size:12.5px; line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="'.e($user->name).'">'.e($user->name).'</div>'
+                    .'<div style="font-size:11px; color:var(--ink-500); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="'.e($subtext).'">'.e($subtext).'</div>'
                     .'</div>'
                     .'</div>';
             })
@@ -148,7 +148,7 @@ class AuditLogDataTable extends BaseDataTable
                     : '<span style="color:var(--ink-400); font-size:11px;">—</span>';
 
                 $devText = ($dev['browser'] !== 'System / Unknown' || $dev['platform'] !== 'Unknown')
-                    ? '<div style="font-size:10.5px; color:var(--ink-500); margin-top:2px;">'.e($dev['platform'].' · '.$dev['browser']).'</div>'
+                    ? '<div style="font-size:10.5px; color:var(--ink-500); margin-top:2px; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="'.e($dev['platform'].' · '.$dev['browser']).'">'.e($dev['platform'].' · '.$dev['browser']).'</div>'
                     : '';
 
                 return '<div>'.$ipBadge.$devText.'</div>';

@@ -42,13 +42,13 @@ class EmployeeDataTableTest extends TestCase
             'name' => 'Employee Test Shop',
             'slug' => 'employee-test-shop',
             'status' => 'active',
-            'enabled_features' => Features::keys(),
         ]);
 
         $standardPlan = Plan::where('slug', 'standard')->first();
         if ($standardPlan) {
             $this->shop->subscribe($standardPlan);
         }
+        $this->subscribeShopToFeatures($this->shop, Features::keys());
 
         $this->user = User::create([
             'name' => 'Employee Manager',

@@ -25,6 +25,7 @@
     'loading' => false,
     'error' => null,
     'helper' => null,
+    'helperEn' => null,
     'helperVariant' => 'default',
     'label' => null,
     'labelEn' => null,
@@ -34,9 +35,23 @@
 
 @php
     $inputId = $id ?? ($name ? 'form-field-' . str_replace(['[', ']', '.'], ['-', '', '-'], $name) : null);
+    $resolvedLabelEn = $labelEn ?? $attributes->get('label-en') ?? null;
+    $resolvedHelperEn = $helperEn ?? $attributes->get('helper-en') ?? null;
+    $resolvedPlaceholderEn = $placeholderEn ?? $attributes->get('placeholder-en') ?? null;
+
     $inputValue = $value;
     if ($name && $value === null) {
         $inputValue = old($name);
+    }
+
+    if (is_string($inputValue)) {
+        $inputValue = htmlspecialchars_decode($inputValue, ENT_QUOTES);
+    }
+    if (is_string($placeholder)) {
+        $placeholder = htmlspecialchars_decode($placeholder, ENT_QUOTES);
+    }
+    if (is_string($resolvedPlaceholderEn)) {
+        $resolvedPlaceholderEn = htmlspecialchars_decode($resolvedPlaceholderEn, ENT_QUOTES);
     }
 
     if (($type === 'number' || $type === 'tel')) {
@@ -48,8 +63,8 @@
         }
     }
 
-    $hasError = (bool) ($error || ($name && isset($errors) && $errors->has($name)));
-    $errorMessage = $error ?? ($name && isset($errors) && $errors->has($name) ? $errors->first($name) : null);
+    $hasError = $error === false ? false : (bool) ($error || ($name && isset($errors) && $errors->has($name)));
+    $errorMessage = $error === false ? null : ($error ?? ($name && isset($errors) && $errors->has($name) ? $errors->first($name) : null));
 
     $leftIcon = $icon ?? $iconLeft;
     $leftAddon = $addonLeft ?? $prefix;
@@ -120,7 +135,7 @@
     $hasStepper = ($type === 'number' && $stepper && ! $disabled && ! $readonly);
     if ($hasStepper) $groupClasses[] = 'has-stepper';
 
-    $hasWrapper = (bool) ($label || $helper || $hasError);
+    $hasWrapper = (bool) ($label || $resolvedLabelEn || $helper || $resolvedHelperEn || $hasError);
 @endphp
 
 @if ($hasWrapper)
@@ -128,11 +143,12 @@
         :name="$name"
         :id="$inputId"
         :label="$label"
-        :label-en="$labelEn"
+        :label-en="$resolvedLabelEn"
         :required="$required"
         :optional="$optional"
         :icon="$leftIcon"
         :helper="$helper"
+        :helper-en="$resolvedHelperEn"
         :helper-variant="$helperVariant"
         :error="$errorMessage"
         :no-margin="$noMargin"
@@ -154,12 +170,12 @@
                 @if ($inputId) id="{{ $inputId }}" @endif
                 @if ($inputValue !== null) value="{{ $inputValue }}" @endif
                 @if ($placeholder) placeholder="{{ $placeholder }}" @endif
-                @if ($placeholderEn) data-placeholder-en="{{ $placeholderEn }}" data-placeholder-bn="{{ $placeholder }}" @endif
+                @if ($resolvedPlaceholderEn) data-placeholder-en="{{ $resolvedPlaceholderEn }}" data-placeholder-bn="{{ $placeholder }}" @endif
                 @if ($required) required @endif
                 @if ($disabled) disabled @endif
                 @if ($readonly) readonly @endif
                 @if ($type === 'number' || $type === 'tel') lang="en" dir="ltr" @endif
-                {{ $attributes->merge(['class' => implode(' ', $controlClasses)]) }}
+                {{ $attributes->except(['label-en', 'helper-en', 'placeholder-en'])->merge(['class' => implode(' ', $controlClasses)]) }}
             />
 
             @if ($loading)
@@ -226,12 +242,12 @@
             @if ($inputId) id="{{ $inputId }}" @endif
             @if ($inputValue !== null) value="{{ $inputValue }}" @endif
             @if ($placeholder) placeholder="{{ $placeholder }}" @endif
-            @if ($placeholderEn) data-placeholder-en="{{ $placeholderEn }}" data-placeholder-bn="{{ $placeholder }}" @endif
+            @if ($resolvedPlaceholderEn) data-placeholder-en="{{ $resolvedPlaceholderEn }}" data-placeholder-bn="{{ $placeholder }}" @endif
             @if ($required) required @endif
             @if ($disabled) disabled @endif
             @if ($readonly) readonly @endif
             @if ($type === 'number' || $type === 'tel') lang="en" dir="ltr" @endif
-            {{ $attributes->merge(['class' => implode(' ', $controlClasses)]) }}
+            {{ $attributes->except(['label-en', 'helper-en', 'placeholder-en'])->merge(['class' => implode(' ', $controlClasses)]) }}
         />
 
         @if ($loading)

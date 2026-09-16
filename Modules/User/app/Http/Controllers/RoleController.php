@@ -49,9 +49,13 @@ class RoleController extends Controller
         return redirect()->route('roles.index')->with('status', 'রোল সফলভাবে যোগ করা হয়েছে');
     }
 
-    public function edit(Role $role): View
+    public function edit(Role $role): View|RedirectResponse
     {
         $this->ensureSameShop($role);
+
+        if ($role->name === 'Admin') {
+            return redirect()->route('roles.index')->with('status', 'ডিফল্ট এডমিন রোলের পারমিশন পরিবর্তন করা যাবে না');
+        }
 
         return view('user::roles.edit', [
             'role' => $role,
@@ -64,9 +68,11 @@ class RoleController extends Controller
     {
         $this->ensureSameShop($role);
 
-        if ($role->name !== 'Admin') {
-            $role->update(['name' => $request->validated('name')]);
+        if ($role->name === 'Admin') {
+            return redirect()->route('roles.index')->with('status', 'ডিফল্ট এডমিন রোলের পারমিশন পরিবর্তন করা যাবে না');
         }
+
+        $role->update(['name' => $request->validated('name')]);
         $role->syncPermissions($request->validated('permissions', []));
 
         return redirect()->route('roles.index')->with('status', 'রোল হালনাগাদ করা হয়েছে');

@@ -6,9 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Modules\Core\Concerns\BelongsToShop;
 use Modules\Core\Observers\AuditObserver;
 use Modules\Customer\Models\Customer;
+use Modules\Shop\Models\Shop;
 use Modules\Shop\Models\Warehouse;
 
 class Sale extends Model
@@ -18,11 +21,17 @@ class Sale extends Model
     protected static function booted(): void
     {
         static::observe(AuditObserver::class);
+
+        static::creating(function (Sale $sale) {
+            if (empty($sale->public_token)) {
+                $sale->public_token = Str::random(32);
+            }
+        });
     }
 
     protected $fillable = [
-        'shop_id', 'warehouse_id', 'customer_id', 'invoice_no', 'sale_date',
-        'subtotal', 'discount', 'delivery_charge', 'total', 'paid_amount', 'due_amount', 'profit',
+        'shop_id', 'warehouse_id', 'customer_id', 'invoice_no', 'public_token', 'sale_date',
+        'subtotal', 'discount', 'product_discount', 'tax', 'delivery_charge', 'adjustment', 'total', 'paid_amount', 'due_amount', 'profit',
         'payment_status', 'payment_method', 'note', 'employee_name', 'employee_phone',
     ];
 
@@ -30,12 +39,20 @@ class Sale extends Model
         'sale_date' => 'date',
         'subtotal' => 'decimal:2',
         'discount' => 'decimal:2',
+        'product_discount' => 'decimal:2',
+        'tax' => 'decimal:2',
         'delivery_charge' => 'decimal:2',
+        'adjustment' => 'decimal:2',
         'total' => 'decimal:2',
         'paid_amount' => 'decimal:2',
         'due_amount' => 'decimal:2',
         'profit' => 'decimal:2',
     ];
+
+    public function shop(): BelongsTo
+    {
+        return $this->belongsTo(Shop::class);
+    }
 
     public function customer(): BelongsTo
     {
@@ -50,6 +67,75 @@ class Sale extends Model
     public function items(): HasMany
     {
         return $this->hasMany(SaleItem::class);
+    }
+
+    /**
+     * Get or generate the public access token.
+     */
+    public function getPublicToken(): string
+    {
+        if (empty($this->public_token)) {
+            $this->public_token = Str::random(32);
+            $this->saveQuietly();
+        }
+
+        return $this->public_token;
+    }
+
+    /**
+     * Get the full public invoice URL.
+     */
+    public function getPublicUrlAttribute(): string
+    {
+        return route('sales.public-invoice', $this->getPublicToken());
+    }
+
+    public function getPublicUrl(): string
+    {
+        return $this->public_url;
+    }
+
+    /**
+     * Group items that share the same product, unit, and price (e.g. lines split across batches)
+     * into a single aggregated line for customer invoices, sale details, and carts.
+     *
+     * @return Collection<int, SaleItem>
+     */
+    public function getGroupedItemsAttribute(): Collection
+    {
+        return $this->items
+            ->groupBy(function ($item) {
+                return $item->product_id.'-'.($item->unit_id ?? 'default').'-'.(string) $item->unit_price;
+            })
+            ->map(function ($group) {
+                $first = $group->first();
+                if ($group->count() === 1) {
+                    $first->batch_no_display = $first->batch?->batch_no;
+                    $first->batches_count = $first->batch ? 1 : 0;
+
+                    return $first;
+                }
+
+                $totalQuantity = (float) $group->sum('quantity');
+                $totalDiscount = (float) $group->sum('discount');
+                $totalAmount = (float) $group->sum('total');
+
+                $batches = $group->map(fn ($i) => $i->batch)->filter();
+                $batchNos = $batches->pluck('batch_no')->filter()->unique();
+
+                $latestWarrantyItem = $group->sortByDesc('warranty_expires_at')->first();
+
+                $cloned = clone $first;
+                $cloned->quantity = $totalQuantity;
+                $cloned->discount = $totalDiscount;
+                $cloned->total = $totalAmount;
+                $cloned->warranty_expires_at = $latestWarrantyItem?->warranty_expires_at;
+                $cloned->batch_no_display = $batchNos->implode(', ');
+                $cloned->batches_count = $batchNos->count();
+
+                return $cloned;
+            })
+            ->values();
     }
 
     public function payments(): HasMany

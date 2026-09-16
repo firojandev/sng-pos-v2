@@ -16,10 +16,10 @@ class AuthLoginTest extends TestCase
         $response = $this->get('/login');
 
         $response->assertStatus(200);
-        $response->assertSee('মাস্টারপস-এ লগইন করুন');
-        $response->assertSee('Sign in to MasterPOS');
-        $response->assertSee('ইমেইল');
-        $response->assertSee('Email');
+        $response->assertSee('SNGPOS-এ লগইন করুন');
+        $response->assertSee('Sign in to SNGPOS');
+        $response->assertSee('ইউজারনেম');
+        $response->assertSee('Username');
         $response->assertSee('পাসওয়ার্ড');
         $response->assertSee('Password');
         $response->assertSee('মনে রাখুন');
@@ -36,6 +36,7 @@ class AuthLoginTest extends TestCase
         $response->assertSee('id="theme-toggle"', false);
         $response->assertSee('id="lang-toggle"', false);
         $response->assertSee('form-toggle-wrap', false);
+        $response->assertSee('data-theme="dark"', false);
     }
 
     public function test_renders_auth_layout_component(): void

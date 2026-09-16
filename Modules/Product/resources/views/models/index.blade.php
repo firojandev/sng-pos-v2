@@ -7,15 +7,23 @@
 >
     <x-product::tabbar active="models" />
 
+@php
+    $brandSelectOptions = ['' => ['bn' => '-- নির্বাচন করুন --', 'en' => '-- Select --']];
+    foreach ($brands as $brand) {
+        $brandSelectOptions[$brand->id] = $brand->name;
+    }
+@endphp
+
     <div class="section-row" style="margin-bottom:16px; margin-top:16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
         <div class="filters" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-            <div style="min-width:220px;">
-                <select name="filter_brand" id="filter-brand" style="height:36px; padding:0 12px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--ink-800); font-size:13px; outline:none;">
-                    <option value="" data-text-bn="সকল ব্র্যান্ড" data-text-en="All Brands">সকল ব্র্যান্ড</option>
-                    @foreach ($brands as $b)
-                        <option value="{{ $b->id }}">{{ $b->name }}</option>
-                    @endforeach
-                </select>
+            <div style="width:200px; flex-shrink:0;">
+                <x-core::select
+                    name="filter_brand"
+                    id="filter-brand"
+                    size="sm"
+                    :no-margin="true"
+                    :options="['' => ['bn' => 'সকল ব্র্যান্ড', 'en' => 'All Brands']] + $brands->pluck('name', 'id')->toArray()"
+                />
             </div>
             <x-core::button
                 type="button"
@@ -31,7 +39,7 @@
         </div>
         @can('products.create')
             <x-core::button color="primary" size="sm" type="button" icon="plus" id="btn-open-create-model-modal">
-                <span class="bn">নতুন মডেল</span><span class="en">New Model</span>
+                <span class="bn">নতুন মডেল</span><span class="en" style="display:none;">New Model</span>
             </x-core::button>
         @endcan
     </div>
@@ -60,24 +68,28 @@
             <form method="POST" action="{{ route('models.store') }}" id="create_model_form">
                 @csrf
                 <div style="display:flex; flex-direction:column; gap:14px;">
-                    <div class="field" style="margin-top:0;">
-                        <label class="bn">ব্র্যান্ড <span class="text-danger">*</span></label>
-                        <label class="en" style="display:none;">Brand <span class="text-danger">*</span></label>
-                        <select name="brand_id" id="create_model_brand_id" required>
-                            <option value="" data-text-bn="-- নির্বাচন করুন --" data-text-en="-- Select --">-- নির্বাচন করুন --</option>
-                            @foreach ($brands as $brand)
-                                <option value="{{ $brand->id }}" {{ (int) old('brand_id') === $brand->id ? 'selected' : '' }}>{{ $brand->name }}</option>
-                            @endforeach
-                        </select>
-                        @error('brand_id') <div class="field-error">{{ $message }}</div> @enderror
-                    </div>
+                    <x-core::select
+                        name="brand_id"
+                        id="create_model_brand_id"
+                        label="ব্র্যান্ড"
+                        label-en="Brand"
+                        :options="$brandSelectOptions"
+                        :value="old('brand_id')"
+                        size="sm"
+                        :required="true"
+                    />
 
-                    <div class="field" style="margin-top:0;">
-                        <label class="bn">মডেলের নাম <span class="text-danger">*</span></label>
-                        <label class="en" style="display:none;">Model Name <span class="text-danger">*</span></label>
-                        <input type="text" name="name" id="create_model_name" value="{{ old('name') }}" placeholder="যেমন: গ্যালাক্সি এস২৪" required>
-                        @error('name') <div class="field-error">{{ $message }}</div> @enderror
-                    </div>
+                    <x-core::input
+                        name="name"
+                        id="create_model_name"
+                        label="মডেলের নাম"
+                        label-en="Model Name"
+                        placeholder="যেমন: গ্যালাক্সি এস২৪"
+                        placeholder-en="e.g. Galaxy S24"
+                        :value="old('name')"
+                        size="sm"
+                        :required="true"
+                    />
                 </div>
 
                 <div style="margin-top:20px; padding-top:14px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:flex-end; gap:8px;">
@@ -113,24 +125,27 @@
                 @csrf
                 @method('PUT')
                 <div style="display:flex; flex-direction:column; gap:14px;">
-                    <div class="field" style="margin-top:0;">
-                        <label class="bn">ব্র্যান্ড <span class="text-danger">*</span></label>
-                        <label class="en" style="display:none;">Brand <span class="text-danger">*</span></label>
-                        <select name="brand_id" id="edit_model_brand_id" required>
-                            <option value="" data-text-bn="-- নির্বাচন করুন --" data-text-en="-- Select --">-- নির্বাচন করুন --</option>
-                            @foreach ($brands as $brand)
-                                <option value="{{ $brand->id }}">{{ $brand->name }}</option>
-                            @endforeach
-                        </select>
-                        @error('brand_id') <div class="field-error">{{ $message }}</div> @enderror
-                    </div>
+                    <x-core::select
+                        name="brand_id"
+                        id="edit_model_brand_id"
+                        label="ব্র্যান্ড"
+                        label-en="Brand"
+                        :options="$brandSelectOptions"
+                        size="sm"
+                        :required="true"
+                    />
 
-                    <div class="field" style="margin-top:0;">
-                        <label class="bn">মডেলের নাম <span class="text-danger">*</span></label>
-                        <label class="en" style="display:none;">Model Name <span class="text-danger">*</span></label>
-                        <input type="text" name="name" id="edit_model_name" value="{{ old('name') }}" placeholder="যেমন: গ্যালাক্সি এস২৪" required>
-                        @error('name') <div class="field-error">{{ $message }}</div> @enderror
-                    </div>
+                    <x-core::input
+                        name="name"
+                        id="edit_model_name"
+                        label="মডেলের নাম"
+                        label-en="Model Name"
+                        placeholder="যেমন: গ্যালাক্সি এস২৪"
+                        placeholder-en="e.g. Galaxy S24"
+                        :value="old('name')"
+                        size="sm"
+                        :required="true"
+                    />
                 </div>
 
                 <div style="margin-top:20px; padding-top:14px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:flex-end; gap:8px;">

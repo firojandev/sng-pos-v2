@@ -2,6 +2,7 @@
 
 namespace Modules\User\Http\Requests;
 
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateProfileRequest extends FormRequest
@@ -16,13 +17,16 @@ class UpdateProfileRequest extends FormRequest
      */
     public function rules(): array
     {
-        $userId = (int) auth()->id();
+        /** @var User|null $user */
+        $user = auth()->user();
+        $userId = (int) ($user?->id ?? 0);
+        $isOwner = (bool) $user?->isShopOwner();
 
         return [
             'name' => ['required', 'string', 'max:255'],
             'username' => ['nullable', 'string', 'max:50', 'alpha_dash', 'unique:users,username,'.$userId],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email,'.$userId],
-            'phone' => ['nullable', 'string', 'max:30', 'unique:users,phone,'.$userId],
+            'email' => ['nullable', 'email', 'max:255', 'unique:users,email,'.$userId],
+            'phone' => $isOwner ? ['nullable', 'string'] : ['nullable', 'string', 'max:30', 'unique:users,phone,'.$userId],
             'current_password' => ['nullable', 'required_with:password', 'current_password'],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             'pin' => ['nullable', 'digits:4'],

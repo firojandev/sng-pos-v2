@@ -3,10 +3,14 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Shop\Http\Controllers\BranchController;
 use Modules\Shop\Http\Controllers\PlanController;
+use Modules\Shop\Http\Controllers\PrinterSettingController;
 use Modules\Shop\Http\Controllers\ShopController;
 use Modules\Shop\Http\Controllers\ShopSelectionController;
+use Modules\Shop\Http\Controllers\ShopSettingsController;
 use Modules\Shop\Http\Controllers\SubscriptionController;
+use Modules\Shop\Http\Controllers\SystemSettingsController;
 use Modules\Shop\Http\Controllers\WarehouseController;
+use Modules\Shop\Http\Controllers\WhatsAppSettingController;
 
 Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::get('shops/check-availability', [ShopController::class, 'checkAvailability'])->name('shops.check-availability');
@@ -16,6 +20,13 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
     Route::post('shops/{shop}/admins', [ShopController::class, 'storeAdmin'])->name('shops.admins.store');
     Route::delete('shops/{shop}/admins/{admin}', [ShopController::class, 'destroyAdmin'])->name('shops.admins.destroy');
     Route::put('shops/{shop}/subscription', [ShopController::class, 'updateSubscription'])->name('shops.subscription.update');
+
+    Route::get('system-settings', [SystemSettingsController::class, 'index'])->name('system-settings.index');
+    Route::post('system-settings', [SystemSettingsController::class, 'update'])->name('system-settings.update');
+    Route::post('system-settings/toggle-landing', [SystemSettingsController::class, 'toggleLanding'])->name('system-settings.toggle-landing');
+    Route::post('system-settings/toggle-registration', [SystemSettingsController::class, 'toggleRegistration'])->name('system-settings.toggle-registration');
+    Route::post('system-settings/toggle-terms-policy', [SystemSettingsController::class, 'toggleTermsAndPolicy'])->name('system-settings.toggle-terms-policy');
+    Route::post('system-settings/toggle-credit-text', [SystemSettingsController::class, 'toggleCreditText'])->name('system-settings.toggle-credit-text');
 });
 
 Route::middleware(['auth', 'feature:branches'])->group(function () {
@@ -40,4 +51,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('subscription', [SubscriptionController::class, 'show'])
         ->name('subscription.show')
         ->middleware('feature:subscription');
+    Route::get('settings', [ShopSettingsController::class, 'edit'])->name('settings.index');
+    Route::put('settings', [ShopSettingsController::class, 'update'])->name('settings.update');
+    Route::get('settings/printer', [PrinterSettingController::class, 'index'])->name('printer-settings.index');
+    Route::put('settings/printer', [PrinterSettingController::class, 'update'])->name('printer-settings.update');
+    Route::get('settings/whatsapp', [WhatsAppSettingController::class, 'index'])->name('whatsapp-settings.index');
+    Route::post('settings/whatsapp/start', [WhatsAppSettingController::class, 'start'])->name('whatsapp-settings.start');
+    Route::get('settings/whatsapp/status', [WhatsAppSettingController::class, 'status'])->name('whatsapp-settings.status');
+    Route::post('settings/whatsapp/disconnect', [WhatsAppSettingController::class, 'disconnect'])->name('whatsapp-settings.disconnect');
+    Route::post('settings/whatsapp/test', [WhatsAppSettingController::class, 'sendTestMessage'])->name('whatsapp-settings.test');
 });

@@ -21,13 +21,13 @@ class ExpenseSubCategoriesDataTable extends BaseDataTable
     {
         return (new EloquentDataTable($query))
             ->editColumn('name', function (ExpenseSubCategory $subCategory) {
-                return '<div style="font-weight:700; color:var(--ink-900); font-size:13.5px;">'
+                return '<div style="font-weight:700; color:var(--ink-900); font-size:13.5px; max-width:200px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word;" title="'.e($subCategory->name).'">'
                     .e($subCategory->name)
                     .'</div>';
             })
             ->addColumn('parent_category', function (ExpenseSubCategory $subCategory) {
                 if ($subCategory->category) {
-                    return '<span style="font-weight:600; color:var(--ink-800); font-size:13px;">'
+                    return '<span style="font-weight:600; color:var(--ink-800); font-size:13px; max-width:180px; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="'.e($subCategory->category->name).'">'
                         .e($subCategory->category->name)
                         .'</span>';
                 }
@@ -37,14 +37,16 @@ class ExpenseSubCategoriesDataTable extends BaseDataTable
             ->editColumn('expenses_count', function (ExpenseSubCategory $subCategory) {
                 $count = (int) ($subCategory->expenses_count ?? 0);
 
-                return Blade::render('<x-core::badge color="teal" size="xs" variant="soft">{{ $count }} টি</x-core::badge>', ['count' => $count]);
+                return '<span style="white-space:nowrap;">'.Blade::render('<x-core::badge color="teal" size="xs" variant="soft">{{ $count }} টি</x-core::badge>', ['count' => $count]).'</span>';
             })
             ->editColumn('description', function (ExpenseSubCategory $subCategory) {
                 if (! $subCategory->description) {
                     return '<span style="color:var(--ink-400);">—</span>';
                 }
 
-                return '<span style="color:var(--ink-700); font-size:13px;">'.e($subCategory->description).'</span>';
+                return '<div style="color:var(--ink-700); font-size:13px; max-width:260px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word;" title="'.e($subCategory->description).'">'
+                    .e($subCategory->description)
+                    .'</div>';
             })
             ->addColumn('action', function (ExpenseSubCategory $subCategory) {
                 return view('finance::expense-sub-categories.datatables-actions', compact('subCategory'))->render();
@@ -73,7 +75,6 @@ class ExpenseSubCategoriesDataTable extends BaseDataTable
     {
         $query = $model->newQuery()
             ->with(['category'])
-            ->withCount('expenses')
             ->select([
                 'categories.id',
                 'categories.shop_id',
@@ -82,7 +83,8 @@ class ExpenseSubCategoriesDataTable extends BaseDataTable
                 'categories.name',
                 'categories.description',
                 'categories.created_at',
-            ]);
+            ])
+            ->withCount('expenses');
 
         if ($parentId = request('parent_id')) {
             $query->where('categories.parent_id', $parentId);
@@ -111,7 +113,7 @@ class ExpenseSubCategoriesDataTable extends BaseDataTable
             Column::make('name')->title('<span class="bn">নাম</span><span class="en">Name</span>')->width(200),
             Column::computed('parent_category')->title('<span class="bn">মূল ক্যাটাগরি</span><span class="en">Parent Category</span>')->orderable(false)->width(200),
             Column::make('expenses_count')->title('<span class="bn">ব্যয় সংখ্যা</span><span class="en">Expenses</span>')->addClass('table-cell-center')->width(120)->searchable(false),
-            Column::make('description')->title('<span class="bn">বিবরণ</span><span class="en">Description</span>'),
+            Column::make('description')->title('<span class="bn">বিবরণ</span><span class="en">Description</span>')->width(240),
             Column::computed('action')
                 ->title('<span class="bn">অ্যাকশন</span><span class="en">Action</span>')
                 ->orderable(false)

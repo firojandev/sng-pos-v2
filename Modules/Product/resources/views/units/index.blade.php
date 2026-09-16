@@ -23,25 +23,32 @@
                     <div class="mini-card pm-card">
                         <div class="mini-card-actions">
                             @can('products.edit')
-                                <button
+                                <x-core::button
                                     type="button"
-                                    class="act btn-edit-unit"
+                                    size="sm"
+                                    variant="ghost"
+                                    color="secondary"
+                                    icon="edit"
+                                    class="btn-edit-unit"
                                     title="Edit"
                                     data-id="{{ $unit->id }}"
                                     data-name="{{ $unit->name }}"
                                     data-short-code="{{ $unit->short_code }}"
                                     data-action="{{ route('units.update', $unit) }}"
-                                >
-                                    <x-core::icon name="edit" size="14" />
-                                </button>
+                                />
                             @endcan
                             @can('products.delete')
-                                <form method="POST" action="{{ route('units.destroy', $unit) }}" class="delete-form">
+                                <form method="POST" action="{{ route('units.destroy', $unit) }}" class="delete-form" style="display:inline;">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="act" title="Delete">
-                                        <x-core::icon name="trash-2" size="14" class="text-danger" />
-                                    </button>
+                                    <x-core::button
+                                        type="submit"
+                                        size="sm"
+                                        variant="ghost"
+                                        color="danger"
+                                        icon="trash-2"
+                                        title="Delete"
+                                    />
                                 </form>
                             @endcan
                         </div>
@@ -83,19 +90,30 @@
             <form method="POST" action="{{ route('units.store') }}" id="create_unit_form">
                 @csrf
                 <div style="display:flex; flex-direction:column; gap:14px;">
-                    <div class="field" style="margin-top:0;">
-                        <label class="bn">ইউনিটের নাম <span class="text-danger">*</span></label>
-                        <label class="en" style="display:none;">Unit Name <span class="text-danger">*</span></label>
-                        <input type="text" name="name" id="create_unit_name" value="{{ old('name') }}" placeholder="যেমন: কিলোগ্রাম / পিস" required autofocus>
-                        @error('name') <div class="field-error">{{ $message }}</div> @enderror
-                    </div>
+                    <x-core::input
+                        name="name"
+                        id="create_unit_name"
+                        label="ইউনিটের নাম"
+                        label-en="Unit Name"
+                        placeholder="যেমন: কিলোগ্রাম / পিস"
+                        placeholder-en="e.g. Kilogram / Pcs"
+                        :value="old('name')"
+                        size="sm"
+                        :required="true"
+                        autofocus
+                    />
 
-                    <div class="field" style="margin-top:0;">
-                        <label class="bn">সংক্ষিপ্ত কোড <span class="text-danger">*</span></label>
-                        <label class="en" style="display:none;">Short Code <span class="text-danger">*</span></label>
-                        <input type="text" name="short_code" id="create_unit_short_code" value="{{ old('short_code') }}" placeholder="যেমন: Kg / Pcs" required>
-                        @error('short_code') <div class="field-error">{{ $message }}</div> @enderror
-                    </div>
+                    <x-core::input
+                        name="short_code"
+                        id="create_unit_short_code"
+                        label="সংক্ষিপ্ত কোড"
+                        label-en="Short Code"
+                        placeholder="যেমন: Kg / Pcs"
+                        placeholder-en="e.g. Kg / Pcs"
+                        :value="old('short_code')"
+                        size="sm"
+                        :required="true"
+                    />
                 </div>
 
                 <div style="margin-top:20px; padding-top:14px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:flex-end; gap:8px;">
@@ -131,19 +149,29 @@
                 @csrf
                 @method('PUT')
                 <div style="display:flex; flex-direction:column; gap:14px;">
-                    <div class="field" style="margin-top:0;">
-                        <label class="bn">ইউনিটের নাম <span class="text-danger">*</span></label>
-                        <label class="en" style="display:none;">Unit Name <span class="text-danger">*</span></label>
-                        <input type="text" name="name" id="edit_unit_name" value="{{ old('name') }}" placeholder="যেমন: কিলোগ্রাম / পিস" required>
-                        @error('name') <div class="field-error">{{ $message }}</div> @enderror
-                    </div>
+                    <x-core::input
+                        name="name"
+                        id="edit_unit_name"
+                        label="ইউনিটের নাম"
+                        label-en="Unit Name"
+                        placeholder="যেমন: কিলোগ্রাম / পিস"
+                        placeholder-en="e.g. Kilogram / Pcs"
+                        :value="old('name')"
+                        size="sm"
+                        :required="true"
+                    />
 
-                    <div class="field" style="margin-top:0;">
-                        <label class="bn">সংক্ষিপ্ত কোড <span class="text-danger">*</span></label>
-                        <label class="en" style="display:none;">Short Code <span class="text-danger">*</span></label>
-                        <input type="text" name="short_code" id="edit_unit_short_code" value="{{ old('short_code') }}" placeholder="যেমন: Kg / Pcs" required>
-                        @error('short_code') <div class="field-error">{{ $message }}</div> @enderror
-                    </div>
+                    <x-core::input
+                        name="short_code"
+                        id="edit_unit_short_code"
+                        label="সংক্ষিপ্ত কোড"
+                        label-en="Short Code"
+                        placeholder="যেমন: Kg / Pcs"
+                        placeholder-en="e.g. Kg / Pcs"
+                        :value="old('short_code')"
+                        size="sm"
+                        :required="true"
+                    />
                 </div>
 
                 <div style="margin-top:20px; padding-top:14px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:flex-end; gap:8px;">

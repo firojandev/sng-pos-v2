@@ -1,33 +1,10 @@
 <x-core::layout
     title="নতুন দোকান তৈরি"
     title-en="Create Shop"
-    subtitle="নতুন দোকান, প্রথম এডমিন অ্যাকাউন্ট ও ফিচার অনুমতি কনফিগার করুন"
-    subtitle-en="Create a new shop, assign initial shop admin, and configure active modules"
+    subtitle="নতুন দোকান, প্রথম এডমিন অ্যাকাউন্ট ও সাবস্ক্রিপশন প্যাকেজ নির্ধারণ করুন"
+    subtitle-en="Create a new shop, assign initial shop admin, and choose a subscription plan"
     active="shops"
 >
-    @php
-        $selectedFeatures = (array) old('features', array_keys($features));
-        $featureIcons = [
-            'sales' => 'shopping-cart',
-            'purchase' => 'truck',
-            'cashbox' => 'wallet',
-            'quick-sale' => 'sparkles',
-            'stock' => 'box',
-            'products' => 'tag',
-            'branches' => 'building',
-            'customers' => 'users',
-            'suppliers' => 'truck',
-            'income' => 'trending-up',
-            'expense' => 'trending-down',
-            'tax' => 'percent',
-            'reports' => 'file-text',
-            'audit' => 'shield',
-            'employees' => 'user',
-            'users' => 'lock',
-            'subscription' => 'sparkles',
-        ];
-    @endphp
-
     <style>
     .shop-form-grid {
         display: grid;
@@ -70,8 +47,8 @@
                     <div class="panel-title bn" style="font-size:16px;">নতুন দোকান তৈরি করুন</div>
                     <div class="panel-title en" style="display:none; font-size:16px;">Create New Shop</div>
                     <div style="font-size:11.5px; color:var(--ink-500); margin-top:2px;">
-                        <span class="bn">দোকানের মৌলিক তথ্য, প্রথম এডমিনের লগইন এবং সক্রিয় ফিচার নির্ধারণ করুন</span>
-                        <span class="en" style="display:none;">Set basic shop info, first admin credentials, and accessible features</span>
+                        <span class="bn">দোকানের মৌলিক তথ্য, প্রথম এডমিনের লগইন এবং সাবস্ক্রিপশন প্যাকেজ নির্ধারণ করুন</span>
+                        <span class="en" style="display:none;">Set basic shop info, first admin credentials, and subscription plan</span>
                     </div>
                 </div>
             </div>
@@ -247,17 +224,19 @@
                                 {{-- Section: Existing Owner Selection --}}
                                 <div id="section-existing-owner" style="{{ old('owner_type') === 'existing' ? '' : 'display:none;' }} margin-bottom:14px;">
                                     <x-core::form-group name="existing_user_id" label="বিদ্যমান মালিক নির্বাচন করুন" label-en="Select Existing Owner" icon="user-check">
-                                        <select name="existing_user_id" id="shop-existing-user-select" class="form-control form-select">
+                                        <select name="existing_user_id" id="shop-existing-user-select" class="form-control form-select" {{ old('owner_type') === 'existing' ? 'required' : 'disabled' }}>
                                             <option value="" disabled {{ old('existing_user_id') ? '' : 'selected' }}>-- তালিকা থেকে মালিক বেছে নিন --</option>
                                             @foreach ($existingOwners ?? [] as $owner)
                                                 <option
                                                     value="{{ $owner->id }}"
                                                     data-name="{{ $owner->name }}"
+                                                    data-phone="{{ $owner->phone }}"
                                                     data-email="{{ $owner->email }}"
+                                                    data-username="{{ $owner->username }}"
                                                     data-shop="{{ $owner->shop?->name }}"
                                                     {{ (string) old('existing_user_id') === (string) $owner->id ? 'selected' : '' }}
                                                 >
-                                                    {{ $owner->name }} ({{ $owner->email }}) {{ $owner->shop ? '— ' . $owner->shop->name : '' }}
+                                                    {{ $owner->name }} ({{ $owner->phone ?: ($owner->username ? '@'.$owner->username : $owner->email) }}) {{ $owner->shop ? '— ' . $owner->shop->name : '' }}
                                                 </option>
                                             @endforeach
                                         </select>
@@ -271,11 +250,44 @@
                                             <x-core::input
                                                 name="admin_name"
                                                 id="shop-admin-name-input"
-                                                label="এডমিনের নাম"
-                                                label-en="Admin Name"
+                                                label="মালিকের নাম"
+                                                label-en="Owner Name"
                                                 icon="user"
                                                 placeholder="যেমন: মোঃ রহিম উল্লাহ"
                                                 :value="old('admin_name')"
+                                                :required="old('owner_type', 'new') === 'new'"
+                                                :disabled="old('owner_type', 'new') !== 'new'"
+                                            />
+                                        </div>
+                                        <div>
+                                            <x-core::input
+                                                type="tel"
+                                                name="admin_phone"
+                                                id="shop-admin-phone-input"
+                                                label="ফোন নম্বর"
+                                                label-en="Phone Number"
+                                                icon="phone"
+                                                placeholder="017xxxxxxxx"
+                                                :value="old('admin_phone')"
+                                                helper="লগইনের মূল নম্বর (পরবর্তীতে পরিবর্তনযোগ্য নয়)"
+                                                helper-en="Primary login number (cannot be changed later)"
+                                                :required="old('owner_type', 'new') === 'new'"
+                                                :disabled="old('owner_type', 'new') !== 'new'"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:12px;">
+                                        <div>
+                                            <x-core::input
+                                                name="admin_username"
+                                                id="shop-admin-username-input"
+                                                label="ইউজারনেম (ঐচ্ছিক)"
+                                                label-en="Username (Optional)"
+                                                icon="at-sign"
+                                                placeholder="যেমন: rahim101"
+                                                :value="old('admin_username')"
+                                                :disabled="old('owner_type', 'new') !== 'new'"
                                             />
                                         </div>
                                         <div>
@@ -283,11 +295,12 @@
                                                 type="email"
                                                 name="admin_email"
                                                 id="shop-admin-email-input"
-                                                label="এডমিনের ইমেইল"
-                                                label-en="Admin Email"
+                                                label="ইমেইল অ্যাড্রেস (ঐচ্ছিক)"
+                                                label-en="Email Address (Optional)"
                                                 icon="mail"
                                                 placeholder="admin@example.com"
                                                 :value="old('admin_email')"
+                                                :disabled="old('owner_type', 'new') !== 'new'"
                                             />
                                         </div>
                                     </div>
@@ -303,6 +316,7 @@
                                                 label-en="Password"
                                                 icon="lock"
                                                 placeholder="কমপক্ষে ৮ অক্ষর"
+                                                :disabled="old('owner_type', 'new') !== 'new'"
                                             />
                                         </div>
                                         <div>
@@ -315,27 +329,60 @@
                                                 label-en="Confirm Password"
                                                 icon="lock"
                                                 placeholder="পাসওয়ার্ড পুনরায় দিন"
+                                                :disabled="old('owner_type', 'new') !== 'new'"
                                             />
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
 
-                                <div>
-                                    <x-core::form-group name="admin_role" label="এডমিন রোল নির্ধারণ করুন" label-en="Assign Role" icon="shield" required>
-                                        <select name="admin_role" id="shop-admin-role-select" class="form-control form-select" required>
-                                            <option value="" disabled {{ old('admin_role') ? '' : 'selected' }}>-- রোল নির্বাচন করুন --</option>
-                                            @foreach ($roles as $role)
-                                                <option value="{{ $role->name }}" {{ old('admin_role', 'Admin') === $role->name ? 'selected' : '' }}>
-                                                    {{ $role->name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </x-core::form-group>
+                        {{-- Card 3: Initial Cash Account Setup --}}
+                        <div class="panel" style="margin-top:0;">
+                            <div class="panel-head" style="padding:14px 18px;">
+                                <div class="panel-title" style="display:flex; align-items:center; gap:8px; font-size:15px;">
+                                    <x-core::icon name="wallet" size="18" style="color:var(--teal-800);" />
+                                    <span class="bn">প্রাথমিক ক্যাশ অ্যাকাউন্ট</span>
+                                    <span class="en" style="display:none;">Initial Cash Account</span>
+                                </div>
+                            </div>
+                            <div class="panel-body" style="padding:18px;">
+                                <div class="helper" style="background:var(--blue-100); color:var(--blue-ink); border:1px solid var(--blue-ic-bg); margin-top:0; margin-bottom:14px; padding:10px 14px; border-radius:8px; font-size:12.5px;">
+                                    <span class="bn">দোকান তৈরির সাথে সাথে একটি প্রধান ক্যাশ অ্যাকাউন্ট স্বয়ংক্রিয়ভাবে তৈরি হবে (ব্যবহারকারী নিজে কোনো ক্যাশ অ্যাকাউন্ট তৈরি করতে পারেন না)। আপনি চাইলে নাম ও প্রারম্ভিক ক্যাশ ব্যালেন্স নির্ধারণ করতে পারেন।</span>
+                                    <span class="en" style="display:none;">A primary cash account is automatically created for this shop (users cannot create cash accounts). You can optionally configure its name and opening balance.</span>
+                                </div>
+
+                                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
+                                    <div>
+                                        <x-core::input
+                                            name="cash_account_name"
+                                            id="shop-cash-name-input"
+                                            label="ক্যাশ অ্যাকাউন্টের নাম"
+                                            label-en="Cash Account Name"
+                                            icon="wallet"
+                                            placeholder="যেমন: নগদ টাকা (Cash)"
+                                            :value="old('cash_account_name', 'নগদ টাকা (Cash)')"
+                                        />
+                                    </div>
+                                    <div>
+                                        <x-core::input
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            name="cash_opening_balance"
+                                            id="shop-cash-balance-input"
+                                            label="প্রারম্ভিক ব্যালেন্স (টাকা)"
+                                            label-en="Opening Balance (৳)"
+                                            icon="coins"
+                                            placeholder="0.00"
+                                            :value="old('cash_opening_balance', '0')"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        {{-- Card 3: Subscription Package & Duration --}}
+                        {{-- Card 4: Subscription Package & Duration --}}
                         <div class="panel" style="margin-top:0;">
                             <div class="panel-head" style="padding:14px 18px;">
                                 <div class="panel-title" style="display:flex; align-items:center; gap:8px; font-size:15px;">
@@ -371,10 +418,14 @@
                                     </div>
 
                                     <div>
+                                        @php
+                                            $rawCreateSubStatus = old('subscription_status', 'active');
+                                            $currentCreateSubStatus = $rawCreateSubStatus === 'trial' ? 'trialing' : $rawCreateSubStatus;
+                                        @endphp
                                         <x-core::form-group name="subscription_status" label="সাবস্ক্রিপশন অবস্থা" label-en="Subscription Status" icon="check-circle">
                                             <select name="subscription_status" id="subscription-status-select" class="form-control form-select">
                                                 @foreach (\Modules\Shop\Models\Subscription::statusLabels() as $key => $label)
-                                                    <option value="{{ $key }}" {{ old('subscription_status', 'active') === $key ? 'selected' : '' }}>
+                                                    <option value="{{ $key }}" {{ $currentCreateSubStatus === $key ? 'selected' : '' }}>
                                                         {{ $label['bn'] }} ({{ $label['en'] }})
                                                     </option>
                                                 @endforeach
@@ -392,7 +443,7 @@
                                             label="মেয়াদ শুরু (Start Date)"
                                             label-en="Start Date"
                                             icon="calendar"
-                                            :value="old('current_period_start', date('Y-m-d'))"
+                                            :value="old('current_period_start')"
                                         />
                                     </div>
                                     <div>
@@ -403,7 +454,7 @@
                                             label="মেয়াদ সমাপ্তি (End Date)"
                                             label-en="End Date"
                                             icon="calendar"
-                                            :value="old('current_period_end', date('Y-m-d', strtotime('+30 days')))"
+                                            :value="old('current_period_end')"
                                         />
                                     </div>
                                     <div>
@@ -418,92 +469,6 @@
                                         />
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-
-                        {{-- Card 4: Active Modules & Features Selection --}}
-                        <div class="panel" style="margin-top:0;">
-                            <div class="panel-head" style="padding:14px 18px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
-                                <div class="panel-title" style="display:flex; align-items:center; gap:8px; font-size:15px;">
-                                    <x-core::icon name="shield" size="18" style="color:var(--teal-800);" />
-                                    <span class="bn">এই দোকানের জন্য সক্রিয় মডিউল ও ফিচার</span>
-                                    <span class="en" style="display:none;">Active Modules & Features</span>
-                                    <x-core::badge id="selected-features-count" color="teal" size="xs">
-                                        {{ count($selectedFeatures) }} টি নির্বাচিত
-                                    </x-core::badge>
-                                </div>
-
-                                <div style="display:flex; align-items:center; gap:6px;">
-                                    <x-core::button
-                                        type="button"
-                                        variant="soft"
-                                        color="teal"
-                                        size="xs"
-                                        id="btn-select-all-features"
-                                        icon="check"
-                                    >
-                                        <span class="bn">সবগুলো নির্বাচন</span>
-                                        <span class="en" style="display:none;">Select All</span>
-                                    </x-core::button>
-
-                                    <x-core::button
-                                        type="button"
-                                        variant="soft"
-                                        color="secondary"
-                                        size="xs"
-                                        id="btn-deselect-all-features"
-                                        icon="x"
-                                    >
-                                        <span class="bn">সব বাতিল</span>
-                                        <span class="en" style="display:none;">Deselect All</span>
-                                    </x-core::button>
-                                </div>
-                            </div>
-                            <div class="panel-body" style="padding:18px;">
-                                <div style="font-size:12px; color:var(--ink-500); margin-bottom:12px;">
-                                    <span class="bn">শুধু নির্বাচিত মডিউলগুলো এই দোকানের এডমিন সাইডবারে দেখতে ও ব্যবহার করতে পারবে।</span>
-                                    <span class="en" style="display:none;">Only checked modules will be visible and usable in this shop's dashboard.</span>
-                                </div>
-
-                                <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:10px;">
-                                    @foreach ($features as $key => $labels)
-                                        @php
-                                            $isChecked = in_array($key, $selectedFeatures);
-                                            $iconName = $featureIcons[$key] ?? 'check-circle';
-                                        @endphp
-                                        <label
-                                            class="form-radio-card feature-card {{ $isChecked ? 'active' : '' }}"
-                                            style="padding:10px 12px; gap:10px; border-radius:10px;"
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                name="features[]"
-                                                value="{{ $key }}"
-                                                class="feature-checkbox"
-                                                data-feature-key="{{ $key }}"
-                                                data-feature-name-bn="{{ $labels['bn'] }}"
-                                                data-feature-name-en="{{ $labels['en'] }}"
-                                                {{ $isChecked ? 'checked' : '' }}
-                                            />
-                                            <span class="card-icon" style="width:30px; height:30px; border-radius:8px;">
-                                                <x-core::icon :name="$iconName" size="15" />
-                                            </span>
-                                            <span class="card-content">
-                                                <span class="card-title" style="font-size:12.5px;">
-                                                    <span class="bn">{{ $labels['bn'] }}</span>
-                                                    <span class="en" style="display:none;">{{ $labels['en'] }}</span>
-                                                </span>
-                                                <span class="card-desc" style="font-size:11px; font-family:monospace; color:var(--ink-400);">
-                                                    {{ $key }}
-                                                </span>
-                                            </span>
-                                        </label>
-                                    @endforeach
-                                </div>
-
-                                @error('features')
-                                    <div class="form-error" style="margin-top:10px;">{{ $message }}</div>
-                                @enderror
                             </div>
                         </div>
                     </div>
@@ -565,8 +530,8 @@
                                 {{-- Admin Preview section --}}
                                 <div style="margin-bottom:14px; padding-top:12px; border-top:1px dashed var(--border);">
                                     <div style="font-size:11px; font-weight:700; color:var(--ink-500); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">
-                                        <span class="bn">দায়িত্বপ্রাপ্ত এডমিন</span>
-                                        <span class="en" style="display:none;">Designated Admin</span>
+                                        <span class="bn">দায়িত্বপ্রাপ্ত মালিক / এডমিন</span>
+                                        <span class="en" style="display:none;">Shop Owner / Admin</span>
                                     </div>
                                     <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
                                         <div style="display:flex; align-items:center; gap:8px; min-width:0;">
@@ -575,16 +540,17 @@
                                             </div>
                                             <div style="min-width:0;">
                                                 <div id="preview-admin-name" style="font-weight:700; font-size:13px; color:var(--ink-800); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                                                    {{ old('admin_name') ?: 'এডমিনের নাম' }}
+                                                    {{ old('admin_name') ?: 'মালিকের নাম' }}
+                                                </div>
+                                                <div id="preview-admin-phone" style="font-size:11.5px; font-family:var(--font-mono, monospace); color:var(--teal-800); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                                    {{ old('admin_phone') ?: 'ফোন নম্বর' }}
                                                 </div>
                                                 <div id="preview-admin-email" style="font-size:11px; color:var(--ink-500); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                                                    {{ old('admin_email') ?: 'admin@example.com' }}
+                                                    {{ old('admin_username') ? '@' . old('admin_username') : (old('admin_email') ?: '—') }}
                                                 </div>
                                             </div>
                                         </div>
-                                        <x-core::badge id="preview-admin-role" color="teal" size="xs">
-                                            {{ old('admin_role') ?: 'Role' }}
-                                        </x-core::badge>
+                                        <x-core::badge color="teal" size="xs">Owner</x-core::badge>
                                     </div>
                                 </div>
 
@@ -609,13 +575,25 @@
                                     </div>
                                 </div>
 
-                                {{-- Feature tags preview --}}
-                                <div style="font-size:11.5px; font-weight:700; color:var(--ink-700); margin-bottom:6px;">
-                                    <span class="bn">সক্রিয় মডিউলসমূহ:</span>
-                                    <span class="en" style="display:none;">Active Modules:</span>
-                                </div>
-                                <div id="preview-feature-tags" style="display:flex; flex-wrap:wrap; gap:5px; min-height:28px;">
-                                    <!-- Populated via jQuery -->
+                                {{-- Cash Account Preview section --}}
+                                <div id="preview-cash-section" style="margin-bottom:14px; padding-top:12px; border-top:1px dashed var(--border);">
+                                    <div style="font-size:11px; font-weight:700; color:var(--ink-500); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">
+                                        <span class="bn">ডিফল্ট ক্যাশ অ্যাকাউন্ট</span>
+                                        <span class="en" style="display:none;">Default Cash Account</span>
+                                    </div>
+                                    <div style="background:var(--paper); border-radius:8px; border:1px solid var(--border); padding:8px 10px; display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                                        <div style="min-width:0;">
+                                            <div id="preview-cash-name" style="font-weight:700; font-size:12.5px; color:var(--ink-900); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                                {{ old('cash_account_name', 'নগদ টাকা (Cash)') }}
+                                            </div>
+                                            <div id="preview-cash-balance" style="font-size:10.5px; color:var(--ink-500); margin-top:2px;">
+                                                প্রারম্ভিক ব্যালেন্স: ৳<span id="preview-cash-amount">{{ number_format((float) old('cash_opening_balance', 0), 2) }}</span>
+                                            </div>
+                                        </div>
+                                        <x-core::badge color="green" size="xs">
+                                            সক্রিয়
+                                        </x-core::badge>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -627,7 +605,7 @@
                                 href="{{ route('shops.index') }}"
                                 variant="outline"
                                 color="secondary"
-                                size="md"
+                                size="sm"
                                 icon="arrow-left"
                                 style="flex:1; justify-content:center;"
                             >
@@ -638,8 +616,8 @@
                             <x-core::button
                                 type="submit"
                                 variant="solid"
-                                color="gold"
-                                size="md"
+                                color="primary"
+                                size="sm"
                                 icon="save"
                                 id="btn-submit-shop"
                                 style="flex:1.4; justify-content:center;"
@@ -753,50 +731,6 @@
                 checkTimer = setTimeout(performAvailabilityCheck, 280);
             }
 
-            // 2. Feature tags live update and counter
-            function updateFeaturesPreview() {
-                var $checked = $('input[name="features[]"]:checked');
-                $('#selected-features-count').text($checked.length + ' টি নির্বাচিত');
-
-                var $tagsContainer = $('#preview-feature-tags');
-                $tagsContainer.empty();
-
-                if ($checked.length === 0) {
-                    $tagsContainer.html('<span style="font-size:11px; color:var(--ink-400);">কোনো ফিচার নির্বাচিত নেই</span>');
-                    return;
-                }
-
-                $checked.each(function () {
-                    var nameBn = $(this).data('feature-name-bn') || $(this).val();
-                    $tagsContainer.append(
-                        '<span class="badge b-teal badge-teal badge-xs" style="padding:2px 7px;">' + nameBn + '</span>'
-                    );
-                });
-            }
-
-            // Feature checkbox changes
-            $(document).on('change', 'input[name="features[]"]', function () {
-                var isChecked = $(this).is(':checked');
-                $(this).closest('.feature-card').toggleClass('active', isChecked);
-                updateFeaturesPreview();
-            });
-
-            // Select All Features
-            $(document).on('click', '#btn-select-all-features', function (e) {
-                e.preventDefault();
-                $('input[name="features[]"]').prop('checked', true);
-                $('.feature-card').addClass('active');
-                updateFeaturesPreview();
-            });
-
-            // Deselect All Features
-            $(document).on('click', '#btn-deselect-all-features', function (e) {
-                e.preventDefault();
-                $('input[name="features[]"]').prop('checked', false);
-                $('.feature-card').removeClass('active');
-                updateFeaturesPreview();
-            });
-
             // 3. Slug and Store Code Auto-generation from Shop Name
             $(document).on('input', '#shop-slug-input', function () {
                 slugManuallyEdited = true;
@@ -834,17 +768,74 @@
                 $('#preview-shop-address').text($(this).val() || 'ঠিকানা দেওয়া হয়নি');
             });
 
+            // 4.1 Live Cash Account Updates
+            $(document).on('input', '#shop-cash-name-input', function () {
+                $('#preview-cash-name').text($(this).val() || 'নগদ টাকা (Cash)');
+            });
+
+            $(document).on('input', '#shop-cash-balance-input', function () {
+                var val = parseFloat($(this).val()) || 0;
+                $('#preview-cash-amount').text(val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+            });
+
             // 5. Live Admin Info Updates
+            function updateNewOwnerPreview() {
+                var name = $('#shop-admin-name-input').val() || 'মালিকের নাম';
+                var phone = $('#shop-admin-phone-input').val() || 'ফোন নম্বর';
+                var username = $('#shop-admin-username-input').val();
+                var email = $('#shop-admin-email-input').val();
+
+                $('#preview-admin-name').text(name);
+                $('#preview-admin-phone').text(phone);
+                var subtext = username ? ('@' + username + (email ? ' · ' + email : '')) : (email || '—');
+                $('#preview-admin-email').text(subtext);
+            }
+
             function updateExistingOwnerPreview() {
                 var $selected = $('#shop-existing-user-select option:selected');
                 if ($selected.length && $selected.val()) {
                     var name = $selected.data('name');
+                    var phone = $selected.data('phone');
                     var email = $selected.data('email');
+                    var username = $selected.data('username');
+
                     if (name) $('#preview-admin-name').text(name);
-                    if (email) $('#preview-admin-email').text(email);
+                    $('#preview-admin-phone').text(phone || 'ফোন নম্বর নেই');
+                    var sub = username ? ('@' + username + (email ? ' · ' + email : '')) : (email || '—');
+                    $('#preview-admin-email').text(sub);
                 } else {
                     $('#preview-admin-name').text('বিদ্যমান মালিক নির্বাচন করুন');
+                    $('#preview-admin-phone').text('ফোন নম্বর');
                     $('#preview-admin-email').text('—');
+                }
+            }
+
+            $(document).on('input', '#shop-admin-name-input, #shop-admin-phone-input, #shop-admin-username-input, #shop-admin-email-input', function () {
+                var isExisting = $('input[name="owner_type"]:checked').val() === 'existing';
+                if (!isExisting) {
+                    updateNewOwnerPreview();
+                }
+            });
+
+            function setOwnerType(ownerType) {
+                if (ownerType === 'existing') {
+                    $('#section-new-owner').hide();
+                    $('#section-new-owner').find('input, select, textarea').prop('disabled', true).prop('required', false);
+
+                    $('#section-existing-owner').show();
+                    $('#shop-existing-user-select').prop('disabled', false).prop('required', true);
+
+                    updateExistingOwnerPreview();
+                } else {
+                    $('#section-existing-owner').hide();
+                    $('#shop-existing-user-select').prop('disabled', true).prop('required', false);
+
+                    $('#section-new-owner').show();
+                    $('#section-new-owner').find('input, select, textarea').prop('disabled', false);
+                    $('#shop-admin-name-input').prop('required', true);
+                    $('#shop-admin-phone-input').prop('required', true);
+
+                    updateNewOwnerPreview();
                 }
             }
 
@@ -853,16 +844,7 @@
                 $('.owner-type-card').removeClass('active');
                 $(this).closest('.owner-type-card').addClass('active');
 
-                if (val === 'existing') {
-                    $('#section-new-owner').hide();
-                    $('#section-existing-owner').show();
-                    updateExistingOwnerPreview();
-                } else {
-                    $('#section-existing-owner').hide();
-                    $('#section-new-owner').show();
-                    $('#preview-admin-name').text($('#shop-admin-name-input').val() || 'এডমিনের নাম');
-                    $('#preview-admin-email').text($('#shop-admin-email-input').val() || 'admin@example.com');
-                }
+                setOwnerType(val);
             });
 
             $(document).on('change', '#shop-existing-user-select', function () {
@@ -879,10 +861,6 @@
                 if ($('input[name="owner_type"]:checked').val() !== 'existing') {
                     $('#preview-admin-email').text($(this).val() || 'admin@example.com');
                 }
-            });
-
-            $(document).on('change', '#shop-admin-role-select', function () {
-                $('#preview-admin-role').text($(this).val() || 'Role');
             });
 
             // 6. Live Subscription & Date Calculations
@@ -930,6 +908,9 @@
                 var planId = $selectedPlan.val();
 
                 if (!planId) {
+                    $('#subscription-start-input').val('');
+                    $('#subscription-end-input').val('');
+                    $('#subscription-trial-input').val('');
                     updateSubscriptionPreview();
                     return;
                 }
@@ -956,6 +937,8 @@
                     var trialDate = new Date(startDate.getTime());
                     trialDate.setDate(trialDate.getDate() + trialDays);
                     $('#subscription-trial-input').val(formatYMD(trialDate));
+                } else {
+                    $('#subscription-trial-input').val('');
                 }
 
                 updateSubscriptionPreview();
@@ -967,17 +950,27 @@
 
             $(document).on('change', '#subscription-start-input', function () {
                 var startVal = $(this).val();
-                if (startVal) {
-                    var $selectedPlan = $('#shop-plan-select option:selected');
+                var $selectedPlan = $('#shop-plan-select option:selected');
+                var planId = $selectedPlan.val();
+
+                if (startVal && planId) {
                     var cycle = String($selectedPlan.data('billing-cycle') || 'month').toLowerCase();
+                    var trialDays = parseInt($selectedPlan.data('trial-days') || 0, 10);
                     var d = new Date(startVal);
                     if (!isNaN(d.getTime())) {
+                        var endD = new Date(d.getTime());
                         if (cycle === 'yearly' || cycle === 'year' || cycle === 'annual') {
-                            d.setDate(d.getDate() + 365);
+                            endD.setDate(endD.getDate() + 365);
                         } else {
-                            d.setDate(d.getDate() + 30);
+                            endD.setDate(endD.getDate() + 30);
                         }
-                        $('#subscription-end-input').val(formatYMD(d));
+                        $('#subscription-end-input').val(formatYMD(endD));
+
+                        if (trialDays > 0) {
+                            var trialD = new Date(d.getTime());
+                            trialD.setDate(trialD.getDate() + trialDays);
+                            $('#subscription-trial-input').val(formatYMD(trialD));
+                        }
                     }
                 }
                 updateSubscriptionPreview();
@@ -1018,23 +1011,14 @@
                 var addressVal = $('#shop-address-input').val();
                 if (addressVal) $('#preview-shop-address').text(addressVal);
 
-                var isExisting = $('input[name="owner_type"]:checked').val() === 'existing';
-                if (isExisting) {
-                    updateExistingOwnerPreview();
+                var initialOwnerType = $('input[name="owner_type"]:checked').val() || 'new';
+                setOwnerType(initialOwnerType);
+
+                if ($('#shop-plan-select').val() && !$('#subscription-start-input').val()) {
+                    calculateDatesForPlan();
                 } else {
-                    var adminNameVal = $('#shop-admin-name-input').val();
-                    if (adminNameVal) $('#preview-admin-name').text(adminNameVal);
-
-                    var adminEmailVal = $('#shop-admin-email-input').val();
-                    if (adminEmailVal) $('#preview-admin-email').text(adminEmailVal);
+                    updateSubscriptionPreview();
                 }
-
-                var adminRoleVal = $('#shop-admin-role-select').val();
-                if (adminRoleVal) $('#preview-admin-role').text(adminRoleVal);
-
-                updateSubscriptionPreview();
-
-                updateFeaturesPreview();
 
                 if (slugVal || codeVal) {
                     performAvailabilityCheck();

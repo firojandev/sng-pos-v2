@@ -16,7 +16,6 @@ use Modules\Sales\DataTables\SalesDataTable;
 use Modules\Sales\Models\Sale;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
 use Modules\Shop\Models\Branch;
-use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
 use Modules\Shop\Models\Warehouse;
 use Spatie\Permission\Models\Permission;
@@ -59,13 +58,8 @@ class SalesDataTableTest extends TestCase
             'phone' => '01711000000',
             'address' => 'ঢাকা, বাংলাদেশ',
             'status' => 'active',
-            'enabled_features' => Features::keys(),
         ]);
-
-        $standardPlan = Plan::where('slug', 'standard')->first();
-        if ($standardPlan) {
-            $this->shop->subscribe($standardPlan);
-        }
+        $this->subscribeShopToFeatures($this->shop, Features::keys());
 
         $branch = Branch::create([
             'shop_id' => $this->shop->id,

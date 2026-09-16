@@ -1,3 +1,8 @@
+@php
+    $shop = auth()->user()?->shop ?? $sale->shop ?? \Modules\Shop\Models\Shop::first();
+    $printerSetting = $shop?->printerSetting ?? \Modules\Shop\Models\PrinterSetting::getDefaultForShop($shop->id ?? 1);
+    $isThermal = $printerSetting->isThermal();
+@endphp
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -10,29 +15,52 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         @page {
-            size: A4 portrait;
-            margin: 8mm 10mm;
+            @if ($isThermal)
+                size: {{ $printerSetting->getCssPageSize() }};
+                margin: {{ $printerSetting->page_margin ?? 2 }}mm;
+            @elseif ($printerSetting->isA5())
+                size: A5 {{ $printerSetting->orientation ?: 'portrait' }};
+                margin: {{ $printerSetting->page_margin ?? 6 }}mm;
+            @else
+                size: A4 {{ $printerSetting->orientation ?: 'portrait' }};
+                margin: {{ $printerSetting->page_margin ?? 8 }}mm;
+            @endif
         }
         body {
             font-family: 'Noto Sans Bengali', sans-serif;
             color: #0f172a;
             background: #f1f5f9;
             padding: 20px;
-            font-size: 12.5px;
+            font-size: {{ $isThermal ? '10px' : ($printerSetting->isA5() ? '11.5px' : '12.5px') }};
             line-height: 1.4;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
         .no-print {
-            max-width: 680px;
-            margin: 0 auto 16px;
+            width: 100%;
+            max-width: 720px;
+            margin: 0 auto 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 16px;
+            background: #ffffff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+        .no-print-title {
+            font-weight: 700;
+            font-size: 14px;
+            color: #1e293b;
+            white-space: nowrap;
         }
         .btn-group {
             display: inline-flex;
+            align-items: center;
             gap: 10px;
+            flex-shrink: 0;
         }
         .btn {
             display: inline-flex;
@@ -46,6 +74,7 @@
             border: none;
             text-decoration: none;
             font-family: inherit;
+            white-space: nowrap;
         }
         .btn-primary {
             background: #1c1c1c;
@@ -59,7 +88,7 @@
         }
         .btn-secondary:hover { background: #f8fafc; }
         .sale-invoice-sheet {
-            max-width: 680px !important;
+            max-width: {{ $isThermal ? $printerSetting->getCssPaperWidth() : ($printerSetting->isA5() ? '520px' : '680px') }} !important;
         }
         table.invoice-items-table {
             width: 100% !important;
@@ -79,6 +108,14 @@
             word-break: break-word !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+        }
+        table.invoice-items-table td.col-product-name,
+        table.invoice-items-table td.col-product-name div,
+        table.invoice-items-table .product-title {
+            white-space: normal !important;
+            word-break: break-word !important;
+            overflow-wrap: anywhere !important;
+            line-height: 1.4 !important;
         }
         @media print {
             body {
@@ -104,13 +141,25 @@
             tr {
                 page-break-inside: avoid;
             }
+            .report-credit-watermark {
+                display: block !important;
+                position: fixed !important;
+                bottom: 2mm !important;
+                right: 0 !important;
+                font-size: 7.5px !important;
+                color: #94a3b8 !important;
+                opacity: 0.6 !important;
+                font-weight: 400 !important;
+                text-align: right !important;
+                font-family: 'Noto Sans Bengali', 'Plus Jakarta Sans', sans-serif !important;
+            }
         }
     </style>
 </head>
 <body>
     <div class="no-print">
-        <div>
-            <span style="font-weight:700; color:#334155;">বিক্রয় ইনভয়েস স্লিপ প্রিভিউ</span>
+        <div class="no-print-title">
+            <span>বিক্রয় ইনভয়েস স্লিপ প্রিভিউ</span>
         </div>
         <div class="btn-group">
             <button type="button" class="btn btn-secondary" onclick="window.close()">উইন্ডো বন্ধ করুন</button>
@@ -121,9 +170,14 @@
         </div>
     </div>
 
-    @include('sales::sales._invoice_sheet')
+    @for ($copy = 0; $copy < max(1, (int) ($printerSetting->print_copies ?? 1)); $copy++)
+        @include('sales::sales._invoice_sheet')
+        @if ($copy < max(1, (int) ($printerSetting->print_copies ?? 1)) - 1)
+            <div style="page-break-after: always; break-after: page; height: 0;"></div>
+        @endif
+    @endfor
 
-    @if(request()->query('autoprint') === '1')
+    @if(request()->query('autoprint') === '1' || $printerSetting->auto_print)
         <script>
             if (document.readyState === 'complete') {
                 setTimeout(function() { window.print(); }, 100);
@@ -133,6 +187,12 @@
                 });
             }
         </script>
+    @endif
+
+    @if (\Modules\Core\Models\Setting::isCreditTextEnabled())
+        <div class="report-credit-watermark" style="display:none;">
+            {{ \Modules\Core\Models\Setting::getCreditText() }}
+        </div>
     @endif
 </body>
 </html>

@@ -3,6 +3,8 @@
 namespace Modules\Shop\Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Modules\Shop\Models\Branch;
+use Modules\Shop\Models\Warehouse;
 
 class ShopDatabaseSeeder extends Seeder
 {
@@ -11,6 +13,16 @@ class ShopDatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // $this->call([]);
+        $shopId = 1;
+
+        $branch = Branch::firstOrCreate(
+            ['shop_id' => $shopId, 'name' => 'Main Branch'],
+            ['status' => 'active']
+        );
+
+        Warehouse::firstOrCreate(
+            ['shop_id' => $shopId, 'branch_id' => $branch->id, 'name' => 'Main Warehouse'],
+            ['status' => 'active', 'is_default' => true]
+        );
     }
 }

@@ -11,6 +11,7 @@
     'labelEn' => null,
     'subtext' => null,
     'subtextEn' => null,
+    'subtextId' => null,
     'trend' => null,
     'trendType' => 'up',
 ])
@@ -133,20 +134,20 @@
         @endif
 
         @if ($subtext && $subtextEn)
-            <div class="stat-card-subtext">
+            <div class="stat-card-subtext" @if($subtextId) id="{{ $subtextId }}" @endif>
                 <span class="bn">{{ $subtext }}</span>
                 <span class="en" style="display:none;">{{ $subtextEn }}</span>
             </div>
         @elseif ($subtext)
-            <div class="stat-card-subtext">
+            <div class="stat-card-subtext" @if($subtextId) id="{{ $subtextId }}" @endif>
                 <span class="bn">{{ $subtext }}</span>
             </div>
         @elseif ($subtextEn)
-            <div class="stat-card-subtext">
+            <div class="stat-card-subtext" @if($subtextId) id="{{ $subtextId }}" @endif>
                 <span class="en">{{ $subtextEn }}</span>
             </div>
         @elseif (isset($subtextSlot))
-            <div class="stat-card-subtext">
+            <div class="stat-card-subtext" @if($subtextId) id="{{ $subtextId }}" @endif>
                 {{ $subtextSlot }}
             </div>
         @endif

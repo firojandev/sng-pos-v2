@@ -49,19 +49,20 @@ class ProductDataTablesTest extends TestCase
             'name' => 'Test Shop',
             'slug' => 'test-shop',
             'status' => 'active',
-            'enabled_features' => Features::keys(),
         ]);
 
         $standardPlan = Plan::where('slug', 'standard')->first();
         if ($standardPlan) {
             $this->shop->subscribe($standardPlan);
         }
+        $this->subscribeShopToFeatures($this->shop, Features::keys());
 
         $this->user = User::create([
             'name' => 'Test Admin',
             'email' => 'admin@test.com',
             'password' => bcrypt('password'),
             'shop_id' => $this->shop->id,
+            'email_verified_at' => now(),
         ]);
         $this->user->syncRoles([$adminRole]);
     }
@@ -118,6 +119,19 @@ class ProductDataTablesTest extends TestCase
         $this->assertStringContainsString('Samsung', $response->json('data.0.brand'));
     }
 
+    public function test_can_delete_product_model(): void
+    {
+        $brand = Brand::create(['shop_id' => $this->shop->id, 'name' => 'Samsung']);
+        $model = ProductModel::create(['shop_id' => $this->shop->id, 'brand_id' => $brand->id, 'name' => 'Galaxy S24']);
+
+        $response = $this->actingAs($this->user)
+            ->delete(route('models.destroy', $model));
+
+        $response->assertRedirect(route('models.index'));
+        $response->assertSessionHas('status', 'মডেল মুছে ফেলা হয়েছে');
+        $this->assertDatabaseMissing('product_models', ['id' => $model->id]);
+    }
+
     public function test_batches_datatable_generates_html_and_query(): void
     {
         $dataTable = new BatchesDataTable;
@@ -158,6 +172,72 @@ class ProductDataTablesTest extends TestCase
         $this->assertEquals(1, $response->json('recordsTotal'));
         $this->assertStringContainsString('BT-2026-999', $response->json('data.0.batch_no'));
         $this->assertStringContainsString('Test Product', $response->json('data.0.product'));
+        $this->assertStringContainsString('৳100.00', $response->json('data.0.purchase_price'));
+        $this->assertStringContainsString('৳150.00', $response->json('data.0.sale_price'));
+        $this->assertStringContainsString('৳10,000.00', $response->json('data.0.stock_valuation'));
+    }
+
+    public function test_batches_index_view_auto_selects_product_when_product_id_in_url(): void
+    {
+        $category = Category::create(['shop_id' => $this->shop->id, 'name' => 'General']);
+        $product = Product::create([
+            'shop_id' => $this->shop->id,
+            'category_id' => $category->id,
+            'name' => 'Specific Product',
+            'purchase_price' => 100,
+            'sale_price' => 150,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->get(route('batches.index', ['product_id' => $product->id]));
+
+        $response->assertOk();
+        $response->assertSee('value="'.$product->id.'" selected', false);
+    }
+
+    public function test_batches_datatable_ajax_filters_by_product_id(): void
+    {
+        $category = Category::create(['shop_id' => $this->shop->id, 'name' => 'General']);
+        $product1 = Product::create([
+            'shop_id' => $this->shop->id,
+            'category_id' => $category->id,
+            'name' => 'Product One',
+            'purchase_price' => 100,
+            'sale_price' => 150,
+            'status' => 'active',
+        ]);
+        $product2 = Product::create([
+            'shop_id' => $this->shop->id,
+            'category_id' => $category->id,
+            'name' => 'Product Two',
+            'purchase_price' => 200,
+            'sale_price' => 300,
+            'status' => 'active',
+        ]);
+
+        Batch::create([
+            'shop_id' => $this->shop->id,
+            'product_id' => $product1->id,
+            'batch_no' => 'BT-PROD-1',
+            'quantity' => 50,
+        ]);
+        Batch::create([
+            'shop_id' => $this->shop->id,
+            'product_id' => $product2->id,
+            'batch_no' => 'BT-PROD-2',
+            'quantity' => 80,
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->getJson(route('batches.index', ['product_id' => $product1->id]), [
+                'X-Requested-With' => 'XMLHttpRequest',
+            ]);
+
+        $response->assertOk();
+        $this->assertEquals(1, $response->json('recordsTotal'));
+        $this->assertEquals(1, $response->json('recordsFiltered'));
+        $this->assertStringContainsString('BT-PROD-1', $response->json('data.0.batch_no'));
     }
 
     public function test_products_datatable_generates_html_and_query(): void
@@ -285,6 +365,10 @@ class ProductDataTablesTest extends TestCase
         $response->assertSee('stockHistoryModal');
         $response->assertSee('স্টকের ইতিহাস: iPad Air');
         $response->assertSee('SKU: IPAD-AIR');
+        $response->assertSee('ক্রয়');
+        $response->assertSee('বিক্রয়');
+        $response->assertSee('৳600.00');
+        $response->assertSee('৳750.00');
         $response->assertSee('BT-IPAD-01');
         $response->assertSee('+15');
         $response->assertSee('Initial inventory');
@@ -308,5 +392,59 @@ class ProductDataTablesTest extends TestCase
         $response->assertOk();
         $response->assertSee('AirPods Pro');
         $response->assertSee('SKU: APP-2');
+    }
+
+    public function test_product_can_be_created_without_sku(): void
+    {
+        $category = Category::create(['shop_id' => $this->shop->id, 'name' => 'General']);
+        $unit = Unit::create(['shop_id' => $this->shop->id, 'name' => 'Piece', 'short_code' => 'pc']);
+
+        $response = $this->actingAs($this->user)->post(route('products.store'), [
+            'name' => 'Product without SKU',
+            'category_id' => $category->id,
+            'purchase_price' => 100,
+            'sale_price' => 150,
+            'alert_qty' => 5,
+            'status' => 'active',
+            'units' => [
+                ['unit_id' => $unit->id, 'is_base' => true, 'conversion_factor' => 1],
+            ],
+        ]);
+
+        $response->assertRedirect(route('products.index'));
+        $this->assertDatabaseHas('products', [
+            'name' => 'Product without SKU',
+            'sku' => null,
+        ]);
+    }
+
+    public function test_multiple_products_can_exist_without_sku(): void
+    {
+        $category = Category::create(['shop_id' => $this->shop->id, 'name' => 'General']);
+        $unit = Unit::create(['shop_id' => $this->shop->id, 'name' => 'Piece', 'short_code' => 'pc']);
+
+        $product1 = Product::create([
+            'shop_id' => $this->shop->id,
+            'category_id' => $category->id,
+            'name' => 'Product One',
+            'sku' => null,
+            'purchase_price' => 50,
+            'sale_price' => 70,
+            'status' => 'active',
+        ]);
+
+        $product2 = Product::create([
+            'shop_id' => $this->shop->id,
+            'category_id' => $category->id,
+            'name' => 'Product Two',
+            'sku' => null,
+            'purchase_price' => 80,
+            'sale_price' => 120,
+            'status' => 'active',
+        ]);
+
+        $this->assertNull($product1->sku);
+        $this->assertNull($product2->sku);
+        $this->assertDatabaseCount('products', 2);
     }
 }

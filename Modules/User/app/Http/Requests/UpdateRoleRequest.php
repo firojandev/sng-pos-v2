@@ -18,6 +18,7 @@ class UpdateRoleRequest extends FormRequest
         return [
             'name' => [
                 'required', 'string', 'max:255',
+                Rule::notIn(['Admin', 'admin', 'Super Admin', 'super admin']),
                 Rule::unique('roles', 'name')
                     ->where('guard_name', 'web')
                     ->where('shop_id', auth()->user()->shop_id)
@@ -25,6 +26,16 @@ class UpdateRoleRequest extends FormRequest
             ],
             'permissions' => ['array'],
             'permissions.*' => ['string', Rule::in(Permissions::all())],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'name.not_in' => 'ডিফল্ট বা সংরক্ষিত নামের রোল তৈরি বা পরিবর্তন করা যাবে না।',
         ];
     }
 }

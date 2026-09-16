@@ -29,8 +29,8 @@ class SupplierDataTableTest extends TestCase
             'name' => 'Supplier Test Shop',
             'slug' => 'supplier-test-shop',
             'status' => 'active',
-            'enabled_features' => ['suppliers'],
         ]);
+        $this->subscribeShopToFeatures($shop, ['suppliers']);
 
         Permission::firstOrCreate(['name' => 'suppliers.view', 'guard_name' => 'web']);
         Permission::firstOrCreate(['name' => 'suppliers.create', 'guard_name' => 'web']);
@@ -211,6 +211,60 @@ class SupplierDataTableTest extends TestCase
         ]);
     }
 
+    public function test_supplier_can_be_updated_via_post_with_method_override(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+
+        $supplier = Supplier::create([
+            'shop_id' => $shop->id,
+            'name' => 'Supplier Method Override',
+            'phone' => '01700000001',
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($user)->postJson(route('suppliers.update', $supplier), [
+            '_method' => 'PUT',
+            'name' => 'Supplier Method Override Updated',
+            'status' => 'active',
+        ], ['X-HTTP-Method-Override' => 'PUT']);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+        ]);
+        $this->assertDatabaseHas('suppliers', [
+            'id' => $supplier->id,
+            'name' => 'Supplier Method Override Updated',
+        ]);
+    }
+
+    public function test_supplier_can_be_updated_via_direct_post(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+
+        $supplier = Supplier::create([
+            'shop_id' => $shop->id,
+            'name' => 'Supplier Direct POST',
+            'phone' => '01700000002',
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($user)->postJson(url("/suppliers/{$supplier->id}"), [
+            'name' => 'Supplier Direct POST Updated',
+            'status' => 'inactive',
+        ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+        ]);
+        $this->assertDatabaseHas('suppliers', [
+            'id' => $supplier->id,
+            'name' => 'Supplier Direct POST Updated',
+            'status' => 'inactive',
+        ]);
+    }
+
     public function test_supplier_can_be_deleted(): void
     {
         [$user, $shop] = $this->createShopUser();
@@ -224,5 +278,55 @@ class SupplierDataTableTest extends TestCase
         $response = $this->actingAs($user)->delete(route('suppliers.destroy', $supplier));
         $response->assertRedirect(route('suppliers.index'));
         $this->assertDatabaseMissing('suppliers', ['id' => $supplier->id]);
+    }
+
+    public function test_supplier_create_rejects_negative_opening_due_and_allows_positive(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+
+        // Negative opening due (-3000) should be rejected with 422
+        $responseNegative = $this->actingAs($user)->postJson(route('suppliers.store'), [
+            'name' => 'Negative Supplier',
+            'opening_due' => -3000,
+            'status' => 'active',
+        ]);
+
+        $responseNegative->assertStatus(422);
+        $responseNegative->assertJsonValidationErrors(['opening_due']);
+
+        // Positive opening due (3000) should be allowed
+        $responsePositive = $this->actingAs($user)->postJson(route('suppliers.store'), [
+            'name' => 'Positive Supplier',
+            'opening_due' => 3000,
+            'status' => 'active',
+        ]);
+
+        $responsePositive->assertOk();
+        $this->assertDatabaseHas('suppliers', [
+            'shop_id' => $shop->id,
+            'name' => 'Positive Supplier',
+            'opening_due' => 3000,
+        ]);
+    }
+
+    public function test_supplier_update_rejects_negative_opening_due(): void
+    {
+        [$user, $shop] = $this->createShopUser();
+
+        $supplier = Supplier::create([
+            'shop_id' => $shop->id,
+            'name' => 'Original Supplier',
+            'opening_due' => 500,
+            'status' => 'active',
+        ]);
+
+        $responseNegative = $this->actingAs($user)->putJson(route('suppliers.update', $supplier), [
+            'name' => 'Updated Supplier',
+            'opening_due' => -3000,
+            'status' => 'active',
+        ]);
+
+        $responseNegative->assertStatus(422);
+        $responseNegative->assertJsonValidationErrors(['opening_due']);
     }
 }

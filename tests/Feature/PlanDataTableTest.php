@@ -36,7 +36,7 @@ class PlanDataTableTest extends TestCase
         $html = $dataTable->html();
 
         $this->assertEquals('plans-data-table', $html->getTableAttribute('id'));
-        $this->assertCount(9, $dataTable->getColumns());
+        $this->assertCount(10, $dataTable->getColumns());
     }
 
     public function test_plans_datatable_query_returns_query_builder(): void
@@ -102,7 +102,7 @@ class PlanDataTableTest extends TestCase
             'max_branches' => 3,
             'max_warehouses' => 2,
             'max_products' => 5000,
-            'features' => ['sales', 'stock', 'customers'],
+            'features' => ['sales', 'stock', 'customers', 'report-sales'],
             'status' => 'active',
         ]);
 
@@ -112,6 +112,87 @@ class PlanDataTableTest extends TestCase
             'name' => 'Custom Pro Plan',
             'price' => 1500,
             'status' => 'active',
+        ]);
+
+        $plan = Plan::where('slug', 'custom-pro-plan')->firstOrFail();
+        $this->assertEqualsCanonicalizing(
+            ['sales', 'stock', 'customers', 'report-sales'],
+            $plan->features->pluck('slug')->all(),
+        );
+    }
+
+    public function test_plan_features_can_be_updated_via_put(): void
+    {
+        $user = $this->createSuperAdmin();
+
+        $plan = Plan::create([
+            'name' => 'Update Test Plan',
+            'slug' => 'update-test-plan',
+            'price' => 500,
+            'billing_cycle' => 'monthly',
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($user)->put(route('plans.update', $plan), [
+            'name' => $plan->name,
+            'slug' => $plan->slug,
+            'price' => 500,
+            'billing_cycle' => 'monthly',
+            'status' => 'active',
+            'features' => ['report-purchase', 'report-income'],
+        ]);
+
+        $response->assertRedirect(route('plans.index'));
+        $plan->refresh();
+        $this->assertEqualsCanonicalizing(
+            ['report-purchase', 'report-income'],
+            $plan->features->pluck('slug')->all(),
+        );
+    }
+
+    public function test_plan_sort_order_and_popular_label_can_be_stored_and_updated(): void
+    {
+        $user = $this->createSuperAdmin();
+
+        $response = $this->actingAs($user)->post(route('plans.store'), [
+            'name' => 'Popular Plan Test',
+            'slug' => 'popular-plan-test',
+            'price' => 1200,
+            'billing_cycle' => 'monthly',
+            'status' => 'active',
+            'sort_order' => 5,
+            'is_popular' => 1,
+            'popular_label' => 'সেরা প্যাকেজ (Best Package)',
+        ]);
+
+        $response->assertRedirect(route('plans.index'));
+        $this->assertDatabaseHas('plans', [
+            'slug' => 'popular-plan-test',
+            'sort_order' => 5,
+            'is_popular' => 1,
+            'popular_label' => 'সেরা প্যাকেজ (Best Package)',
+        ]);
+
+        $plan = Plan::where('slug', 'popular-plan-test')->firstOrFail();
+
+        // Test updating to remove popular and change sort_order
+        $updateResponse = $this->actingAs($user)->put(route('plans.update', $plan), [
+            'name' => 'Popular Plan Test',
+            'slug' => 'popular-plan-test',
+            'price' => 1200,
+            'billing_cycle' => 'monthly',
+            'status' => 'active',
+            'sort_order' => 1,
+            'is_popular' => 0,
+            'popular_label' => null,
+        ]);
+
+        $updateResponse->assertRedirect(route('plans.index'));
+        $this->assertDatabaseHas('plans', [
+            'slug' => 'popular-plan-test',
+            'sort_order' => 1,
+            'is_popular' => 0,
+            'popular_label' => null,
         ]);
     }
 }

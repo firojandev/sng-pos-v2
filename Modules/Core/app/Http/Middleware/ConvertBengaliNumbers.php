@@ -42,7 +42,7 @@ class ConvertBengaliNumbers extends TransformsRequest
 
         // Check if the attribute name matches numeric, money, quantity, measurement, or contact terms
         $isNumericKey = (bool) preg_match(
-            '/(price|qty|quantity|amount|discount|tax|vat|rate|cost|charge|due|balance|total|subtotal|alert|factor|duration|phone|mobile|date|year|month|day|min|max|step|code|sku|barcode|otp|pin|opening_due|wholesale|page|per_page)/i',
+            '/(price|qty|quantity|amount|discount|depreciation|tax|vat|rate|cost|charge|due|balance|total|subtotal|alert|factor|duration|phone|mobile|date|year|month|day|min|max|step|code|sku|barcode|otp|pin|opening_due|wholesale|page|per_page)/i',
             $key
         );
 

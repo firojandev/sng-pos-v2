@@ -12,7 +12,6 @@ use Modules\Product\Models\Product;
 use Modules\Purchase\Models\Purchase;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
 use Modules\Shop\Models\Branch;
-use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
 use Modules\Shop\Models\Warehouse;
 use Modules\Supplier\Models\Supplier;
@@ -50,13 +49,8 @@ class PurchaseStockReceivedQuantityFeatureTest extends TestCase
             'name' => 'Stock Test Shop',
             'slug' => 'stock-test-shop',
             'status' => 'active',
-            'enabled_features' => Features::keys(),
         ]);
-
-        $standardPlan = Plan::where('slug', 'standard')->first();
-        if ($standardPlan) {
-            $this->shop->subscribe($standardPlan);
-        }
+        $this->subscribeShopToFeatures($this->shop, Features::keys());
 
         $this->user = User::create([
             'name' => 'Stock Admin',

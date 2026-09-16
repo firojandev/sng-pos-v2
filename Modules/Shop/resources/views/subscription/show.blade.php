@@ -92,9 +92,14 @@
                             @foreach ($quotaItems as $key => $meta)
                                 @php
                                     $used = $usage[$key] ?? 0;
-                                    $isUnlimited = $shop->isUnlimitedUsage($key);
-                                    $limit = $isUnlimited ? null : ($shop->subscription()?->getPlan()?->features()->where('slug', $key)->first()?->pivot?->value ?? $subscription->plan->{'max_' . $key} ?? null);
-                                    $percent = ($limit && $limit > 0) ? min(100, round(($used / $limit) * 100)) : ($isUnlimited ? 15 : 0);
+                                    $featureSlug = 'max-' . $key;
+                                    $featurePivot = $shop->subscription()?->getPlan()?->features()->where('slug', $featureSlug)->first()?->pivot?->value;
+                                    $columnLimit = $subscription->plan->{'max_' . $key} ?? null;
+                                    $isUnlimited = ($featurePivot !== null && (int) $featurePivot === 0)
+                                        || ($featurePivot === null && $columnLimit === null)
+                                        || $shop->isUnlimitedUsage($featureSlug);
+                                    $limit = $isUnlimited ? null : ($featurePivot !== null && (int) $featurePivot > 0 ? (int) $featurePivot : ($columnLimit !== null ? (int) $columnLimit : null));
+                                    $percent = ($limit && $limit > 0) ? min(100, round(($used / $limit) * 100)) : 0;
                                 @endphp
                                 <div style="background:var(--paper); padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border);">
                                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:12.5px;">
@@ -170,21 +175,7 @@
 
                 <div style="display:grid; grid-template-columns:1fr; gap:8px;">
                     @php
-                        $featureNames = [
-                            'sales' => ['bn' => 'বিক্রয় ও ইনভয়েস', 'en' => 'Sales & Invoicing'],
-                            'purchase' => ['bn' => 'ক্রয় ব্যবস্থাপনা', 'en' => 'Purchase Management'],
-                            'cashbox' => ['bn' => 'ক্যাশবক্স ও লেনদেন খাতা', 'en' => 'Cashbox & Drawer'],
-                            'quick-sale' => ['bn' => 'দ্রুত বেচা (POS Checkout)', 'en' => 'Quick Sale POS'],
-                            'stock' => ['bn' => 'রিয়েলটাইম স্টক ট্র্যাকিং', 'en' => 'Realtime Stock'],
-                            'customers' => ['bn' => 'গ্রাহক ও বাকি খাতা', 'en' => 'Customer Due Ledger'],
-                            'suppliers' => ['bn' => 'সরবরাহকারী তালিকা', 'en' => 'Supplier Directory'],
-                            'income' => ['bn' => 'অন্যান্য আয় ব্যবস্থাপনা', 'en' => 'Income Tracking'],
-                            'expense' => ['bn' => 'দৈনন্দিন ব্যয় ট্র্যাকিং', 'en' => 'Expense Tracking'],
-                            'tax' => ['bn' => 'ট্যাক্স ও ভ্যাট হিসাব', 'en' => 'Tax & VAT Calculations'],
-                            'reports' => ['bn' => 'অ্যানালিটিক্স ও রিপোর্টস', 'en' => 'Reports & Analytics'],
-                            'audit' => ['bn' => 'ইউজার অ্যাক্টিভিটি অডিট লগ', 'en' => 'Audit Activity Trail'],
-                            'employees' => ['bn' => 'কর্মচারী ও বেতন', 'en' => 'Employees & Payroll'],
-                        ];
+                        $featureNames = \Modules\Core\Support\Features::all();
                     @endphp
 
                     @foreach ($featureNames as $slug => $labels)

@@ -15,6 +15,7 @@ use Modules\Sales\Models\Sale;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
 use Modules\Shop\Models\Branch;
 use Modules\Shop\Models\Plan;
+use Modules\Shop\Models\PrinterSetting;
 use Modules\Shop\Models\Shop;
 use Modules\Shop\Models\Warehouse;
 use Spatie\Permission\Models\Permission;
@@ -238,7 +239,7 @@ class SaleInvoiceModalFeatureTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('id="saleInvoiceModal"', false);
-        $response->assertSee('Successful');
+        $response->assertSee('Sale Invoice');
         $response->assertSee('আলহাজ্ব বস্ত্রালয়');
         $response->assertSee('SL-1003');
         $response->assertSee('মো: জাহিদ');
@@ -309,5 +310,161 @@ class SaleInvoiceModalFeatureTest extends TestCase
         $json = $ajaxResponse->json();
         $this->assertStringContainsString('btn-show-sale-invoice', $json['data'][0]['action']);
         $this->assertStringContainsString(route('sales.invoice-modal', $sale), $json['data'][0]['action']);
+    }
+
+    public function test_multi_batch_same_product_is_grouped_in_one_row_on_invoice_and_details(): void
+    {
+        $batch2 = Batch::create([
+            'shop_id' => $this->shop->id,
+            'product_id' => $this->product->id,
+            'warehouse_id' => $this->warehouse->id,
+            'batch_no' => 'BT-TEST-002',
+            'quantity' => 10,
+            'purchase_price' => 1200,
+        ]);
+
+        $sale = Sale::create([
+            'shop_id' => $this->shop->id,
+            'warehouse_id' => $this->warehouse->id,
+            'customer_id' => $this->customer->id,
+            'invoice_no' => 'SL-1006',
+            'sale_date' => now()->toDateString(),
+            'subtotal' => 6300,
+            'discount' => 0,
+            'delivery_charge' => 0,
+            'total' => 6300,
+            'paid_amount' => 6300,
+            'due_amount' => 0,
+            'payment_status' => 'paid',
+        ]);
+
+        $sale->items()->create([
+            'product_id' => $this->product->id,
+            'batch_id' => $this->batch->id,
+            'quantity' => 5,
+            'unit_price' => 1050,
+            'total' => 5250,
+        ]);
+
+        $sale->items()->create([
+            'product_id' => $this->product->id,
+            'batch_id' => $batch2->id,
+            'quantity' => 1,
+            'unit_price' => 1050,
+            'total' => 1050,
+        ]);
+
+        $this->assertCount(1, $sale->grouped_items);
+        $this->assertEquals(6, $sale->grouped_items->first()->quantity);
+        $this->assertEquals(6300, $sale->grouped_items->first()->total);
+
+        $invoiceResponse = $this->actingAs($this->user)->get(route('sales.invoice-modal', $sale));
+        $invoiceResponse->assertOk();
+        $invoiceContent = $invoiceResponse->getContent();
+        $this->assertEquals(1, substr_count($invoiceContent, 'class="product-title"'));
+        // Batch numbers should not appear as barcode on the invoice
+        $invoiceResponse->assertDontSee('BT-TEST-002');
+        $invoiceResponse->assertDontSee('বারকোড : BT-');
+
+        // When SKU is present, it should show SKU
+        $this->product->update(['sku' => 'SKU-COOKER-101']);
+        $invoiceWithSkuResponse = $this->actingAs($this->user)->get(route('sales.invoice-modal', $sale));
+        $invoiceWithSkuResponse->assertOk();
+        $invoiceWithSkuResponse->assertSee('SKU : SKU-COOKER-101');
+
+        $detailResponse = $this->actingAs($this->user)->get(route('sales.show', $sale));
+        $detailResponse->assertOk();
+        $detailResponse->assertSee('6');
+        $detailContent = $detailResponse->getContent();
+        $this->assertEquals(1, substr_count($detailContent, 'class="tx-item"'));
+    }
+
+    public function test_thermal_printer_setting_effects_sale_invoice_modal_and_print(): void
+    {
+        PrinterSetting::updateOrCreate(
+            ['shop_id' => $this->shop->id],
+            [
+                'printer_type' => 'thermal',
+                'paper_width' => 80,
+                'unit' => 'mm',
+                'auto_print' => true,
+            ]
+        );
+
+        $sale = Sale::create([
+            'shop_id' => $this->shop->id,
+            'customer_id' => $this->customer->id,
+            'warehouse_id' => $this->warehouse->id,
+            'sale_date' => now()->toDateString(),
+            'invoice_no' => 'SL-TH-01',
+            'subtotal' => 2100,
+            'discount' => 0,
+            'tax' => 0,
+            'delivery_charge' => 0,
+            'total' => 2100,
+            'paid_amount' => 2000,
+            'due_amount' => 100,
+            'payment_status' => 'partial',
+        ]);
+
+        $sale->items()->create([
+            'product_id' => $this->product->id,
+            'batch_id' => $this->batch->id,
+            'quantity' => 2,
+            'unit_price' => 1050,
+            'total' => 2100,
+        ]);
+
+        $modalResponse = $this->actingAs($this->user)->get(route('sales.invoice-modal', $sale));
+        $modalResponse->assertOk();
+        $modalResponse->assertSee('thermal-receipt-sheet');
+
+        $printResponse = $this->actingAs($this->user)->get(route('sales.print-invoice', $sale));
+        $printResponse->assertOk();
+        $printResponse->assertSee('thermal-receipt-sheet');
+        $printResponse->assertSee('80mm auto');
+        $printResponse->assertSee('window.print()', false);
+    }
+
+    public function test_a5_printer_setting_effects_sale_print_page(): void
+    {
+        PrinterSetting::updateOrCreate(
+            ['shop_id' => $this->shop->id],
+            [
+                'printer_type' => 'a5',
+                'orientation' => 'landscape',
+                'page_margin' => 6,
+            ]
+        );
+
+        $sale = Sale::create([
+            'shop_id' => $this->shop->id,
+            'customer_id' => $this->customer->id,
+            'warehouse_id' => $this->warehouse->id,
+            'sale_date' => now()->toDateString(),
+            'invoice_no' => 'SL-A5-01',
+            'subtotal' => 2100,
+            'discount' => 0,
+            'tax' => 0,
+            'delivery_charge' => 0,
+            'total' => 2100,
+            'paid_amount' => 2100,
+            'due_amount' => 0,
+            'payment_status' => 'paid',
+        ]);
+
+        $sale->items()->create([
+            'product_id' => $this->product->id,
+            'batch_id' => $this->batch->id,
+            'quantity' => 2,
+            'unit_price' => 1050,
+            'total' => 2100,
+        ]);
+
+        $printResponse = $this->actingAs($this->user)->get(route('sales.print-invoice', $sale));
+        $printResponse->assertOk();
+        $printResponse->assertSee('size: A5 landscape', false);
+        $printResponse->assertSee('margin: 6mm', false);
+        $printResponse->assertSee('max-width: 520px', false);
     }
 }

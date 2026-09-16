@@ -18,7 +18,6 @@ use Modules\Sales\Models\Sale;
 use Modules\Sales\Models\SaleItem;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
 use Modules\Shop\Models\Branch;
-use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
 use Modules\Shop\Models\Warehouse;
 use Modules\Supplier\Models\Supplier;
@@ -62,13 +61,8 @@ class UnitConversionStockFeatureTest extends TestCase
             'name' => 'Unit Test Shop',
             'slug' => 'unit-test-shop',
             'status' => 'active',
-            'enabled_features' => Features::keys(),
         ]);
-
-        $standardPlan = Plan::where('slug', 'standard')->first();
-        if ($standardPlan) {
-            $this->shop->subscribe($standardPlan);
-        }
+        $this->subscribeShopToFeatures($this->shop, Features::keys());
 
         $this->user = User::create([
             'name' => 'Unit Admin',

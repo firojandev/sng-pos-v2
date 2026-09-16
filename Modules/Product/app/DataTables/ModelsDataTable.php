@@ -20,13 +20,13 @@ class ModelsDataTable extends BaseDataTable
     {
         return (new EloquentDataTable($query))
             ->editColumn('name', function (ProductModel $model) {
-                return '<div style="font-weight:700; color:var(--ink-900); font-size:13.5px;">'
+                return '<div style="font-weight:700; color:var(--ink-900); font-size:13.5px; max-width:280px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word;" title="'.e($model->name).'">'
                     .e($model->name)
                     .'</div>';
             })
             ->addColumn('brand', function (ProductModel $model) {
                 if ($model->brand) {
-                    return '<span style="font-weight:600; color:var(--ink-800); font-size:13px;">'
+                    return '<span style="font-weight:600; color:var(--ink-800); font-size:13px; max-width:200px; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="'.e($model->brand->name).'">'
                         .e($model->brand->name)
                         .'</span>';
                 }

@@ -59,13 +59,13 @@ class PurchaseDeleteAndRollbackFeatureTest extends TestCase
             'name' => 'Rollback Shop',
             'slug' => 'rollback-shop',
             'status' => 'active',
-            'enabled_features' => Features::keys(),
         ]);
 
         $standardPlan = Plan::where('slug', 'standard')->first();
         if ($standardPlan) {
             $this->shop->subscribe($standardPlan);
         }
+        $this->subscribeShopToFeatures($this->shop, Features::keys());
 
         $this->user = User::create([
             'name' => 'Rollback Admin',
@@ -497,6 +497,12 @@ class PurchaseDeleteAndRollbackFeatureTest extends TestCase
                     'product_id' => $this->product->id,
                     'quantity' => 1,
                     'unit_price' => 130,
+                ],
+            ],
+            'payments' => [
+                [
+                    'method' => 'cash',
+                    'amount' => 130,
                 ],
             ],
         ];

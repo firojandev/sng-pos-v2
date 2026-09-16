@@ -50,10 +50,6 @@ class ModelController extends Controller
 
     public function destroy(ProductModel $model): RedirectResponse
     {
-        if ($model->products()->exists()) {
-            return redirect()->route('models.index')->with('status', 'এই মডেলে পণ্য যুক্ত আছে, মুছে ফেলা যাবে না');
-        }
-
         $model->delete();
 
         return redirect()->route('models.index')->with('status', 'মডেল মুছে ফেলা হয়েছে');

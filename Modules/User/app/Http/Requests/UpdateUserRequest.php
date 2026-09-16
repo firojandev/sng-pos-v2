@@ -14,15 +14,16 @@ class UpdateUserRequest extends FormRequest
 
     public function rules(): array
     {
-        $userId = $this->route('user') instanceof User
-            ? $this->route('user')->id
-            : (int) $this->route('user');
+        $targetUser = $this->route('user');
+        $userModel = $targetUser instanceof User ? $targetUser : User::find($targetUser);
+        $userId = $userModel ? $userModel->id : (int) $targetUser;
+        $isOwner = (bool) $userModel?->isShopOwner();
 
         return [
             'name' => ['required', 'string', 'max:255'],
             'username' => ['nullable', 'string', 'max:50', 'alpha_dash', 'unique:users,username,'.$userId],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email,'.$userId],
-            'phone' => ['nullable', 'string', 'max:30', 'unique:users,phone,'.$userId],
+            'email' => ['nullable', 'email', 'max:255', 'unique:users,email,'.$userId],
+            'phone' => $isOwner ? ['nullable', 'string'] : ['nullable', 'string', 'max:30', 'unique:users,phone,'.$userId],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             'pin' => ['nullable', 'digits:4'],
             'role' => ['required', 'string', 'max:255'],

@@ -39,16 +39,16 @@ class PurchasesDataTable extends BaseDataTable
                 $name = e($purchase->supplier->name ?? '—');
                 $initial = mb_substr($purchase->supplier->name ?? '?', 0, 1);
                 $phone = $purchase->supplier?->phone
-                    ? '<div style="font-size:11.5px; color:var(--ink-500); font-family:var(--font-mono, monospace);">'.e($purchase->supplier->phone).'</div>'
+                    ? '<div style="font-size:11.5px; color:var(--ink-500); font-family:var(--font-mono, monospace); white-space:nowrap;">'.e($purchase->supplier->phone).'</div>'
                     : '';
 
                 return '<div style="display:flex; align-items:center; gap:8px;">'
                     .'<div style="width:28px; height:28px; border-radius:6px; background:var(--teal-100); color:var(--teal-800); display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; flex-shrink:0;">'.e($initial).'</div>'
-                    .'<div><div style="font-weight:700; color:var(--ink-900);">'.$name.'</div>'.$phone.'</div>'
+                    .'<div style="min-width:0; max-width:180px;"><div style="font-weight:700; color:var(--ink-900); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word;" title="'.$name.'">'.$name.'</div>'.$phone.'</div>'
                     .'</div>';
             })
             ->editColumn('invoice_no', function (Purchase $purchase) {
-                return '<span style="font-family:var(--font-mono, monospace); font-weight:700; color:var(--ink-800); background:var(--paper-line); padding:3px 8px; border-radius:6px; border:1px solid var(--border); font-size:12px;">#'.e($purchase->invoice_no).'</span>';
+                return '<span style="font-family:var(--font-mono, monospace); font-weight:700; color:var(--ink-800); background:var(--paper-line); padding:3px 8px; border-radius:6px; border:1px solid var(--border); font-size:12px; white-space:nowrap;">#'.e($purchase->invoice_no).'</span>';
             })
             ->addColumn('batch_no', function (Purchase $purchase) {
                 $batches = $purchase->items->pluck('batch_no')->filter()->unique();
@@ -56,26 +56,77 @@ class PurchasesDataTable extends BaseDataTable
                     return '<span style="color:var(--ink-400);">—</span>';
                 }
 
-                return '<span style="font-family:var(--font-mono, monospace); font-size:12px; color:var(--ink-700);">'.e($batches->implode(', ')).'</span>';
+                $batchList = $batches->implode(', ');
+
+                return '<div style="font-family:var(--font-mono, monospace); font-size:12px; color:var(--ink-700); max-width:140px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word;" title="'.e($batchList).'">'.e($batchList).'</div>';
             })
-            ->addColumn('items_count', function (Purchase $purchase) {
+            ->addColumn('ordered_quantity', function (Purchase $purchase) {
                 $qty = (float) $purchase->items->sum('quantity');
                 $qtyFormatted = rtrim(rtrim(number_format($qty, 2), '0'), '.');
+
+                return '<span style="font-family:var(--font-mono, monospace); color:var(--ink-800); font-weight:600;">'
+                    .'<span class="bn">'.$qtyFormatted.'</span>'
+                    .'<span class="en" style="display:none;">'.$qtyFormatted.'</span>'
+                    .'</span>';
+            })
+            ->addColumn('received_quantity', function (Purchase $purchase) {
+                $received = (float) $purchase->totalReceivedQuantity();
+                $receivedFormatted = rtrim(rtrim(number_format($received, 2), '0'), '.');
 
                 if ($purchase->hasPendingItems()) {
                     $pending = (float) $purchase->totalPendingQuantity();
                     $pendingFormatted = rtrim(rtrim(number_format($pending, 2), '0'), '.');
 
-                    return '<div>'
-                        .'<span style="font-family:var(--font-mono, monospace); color:var(--ink-700); font-weight:600;">'.$qtyFormatted.'</span>'
-                        .'<div style="font-size:11px; color:var(--red-600); font-weight:700; margin-top:2px;">(বাকি: '.$pendingFormatted.')</div>'
+                    return '<div style="white-space:nowrap;">'
+                        .'<span style="font-family:var(--font-mono, monospace); color:var(--teal-700); font-weight:600;">'
+                        .'<span class="bn">'.$receivedFormatted.'</span>'
+                        .'<span class="en" style="display:none;">'.$receivedFormatted.'</span>'
+                        .'</span>'
+                        .'<div style="font-size:11px; color:var(--red-600); font-weight:700; margin-top:2px;">'
+                        .'<span class="bn">(বাকি: '.$pendingFormatted.')</span>'
+                        .'<span class="en" style="display:none;">(Due: '.$pendingFormatted.')</span>'
+                        .'</div>'
                         .'</div>';
                 }
 
-                return '<span style="font-family:var(--font-mono, monospace); color:var(--ink-700); font-weight:600;">'.$qtyFormatted.'</span>';
+                return '<span style="font-family:var(--font-mono, monospace); color:var(--teal-700); font-weight:600;">'
+                    .'<span class="bn">'.$receivedFormatted.'</span>'
+                    .'<span class="en" style="display:none;">'.$receivedFormatted.'</span>'
+                    .'</span>';
+            })
+            ->addColumn('purchase_price', function (Purchase $purchase) {
+                $prices = $purchase->items->map(function ($it) {
+                    return (float) $it->purchase_price;
+                })->filter()->unique()->values();
+
+                if ($prices->isEmpty()) {
+                    return '<span style="color:var(--ink-400);">—</span>';
+                }
+
+                $tooltip = $purchase->items->map(function ($it) {
+                    $name = $it->product->name ?? 'পণ্য';
+                    $rate = '৳'.number_format((float) $it->purchase_price, 2);
+                    $unit = $it->unit ? '/'.$it->unit->name : '';
+
+                    return $name.': '.$rate.$unit;
+                })->implode("\n");
+
+                if ($prices->count() === 1) {
+                    return '<span style="font-family:var(--font-mono, monospace); font-weight:600; color:var(--ink-800); white-space:nowrap;" title="'.e($tooltip).'">৳'.number_format($prices->first(), 2).'</span>';
+                }
+
+                if ($prices->count() <= 2) {
+                    $list = $prices->map(fn ($p) => '৳'.number_format($p, 2))->implode(', ');
+
+                    return '<span style="font-family:var(--font-mono, monospace); font-size:12px; font-weight:600; color:var(--ink-800); white-space:nowrap;" title="'.e($tooltip).'">'.$list.'</span>';
+                }
+
+                return '<span style="font-family:var(--font-mono, monospace); font-size:12px; font-weight:600; color:var(--ink-800); white-space:nowrap;" title="'.e($tooltip).'">'
+                    .'৳'.number_format($prices->min(), 2).' - ৳'.number_format($prices->max(), 2)
+                    .'</span>';
             })
             ->editColumn('total', function (Purchase $purchase) {
-                return '<span style="font-family:var(--font-mono, monospace); font-weight:700; color:var(--ink-900);">৳'.number_format((float) $purchase->total, 2).'</span>';
+                return '<span style="font-family:var(--font-mono, monospace); font-weight:700; color:var(--ink-900); white-space:nowrap;">৳'.number_format((float) $purchase->total, 2).'</span>';
             })
             ->editColumn('purchase_date', function (Purchase $purchase) {
                 if (! $purchase->purchase_date) {
@@ -116,6 +167,12 @@ class PurchasesDataTable extends BaseDataTable
                     $q->where('batch_no', 'like', "%{$keyword}%");
                 });
             })
+            ->filterColumn('purchase_price', function ($query, $keyword) {
+                $clean = str_replace(['৳', ',', ' '], '', $keyword);
+                $query->whereHas('items', function ($q) use ($clean) {
+                    $q->where('purchase_price', 'like', "%{$clean}%");
+                });
+            })
             ->filterColumn('purchase_date', function ($query, $keyword) {
                 $query->where('purchases.purchase_date', 'like', "%{$keyword}%");
             })
@@ -132,7 +189,7 @@ class PurchasesDataTable extends BaseDataTable
                 'class' => 'clickable-purchase-row',
                 'style' => 'cursor:pointer;',
             ])
-            ->rawColumns(['supplier', 'invoice_no', 'batch_no', 'items_count', 'total', 'purchase_date', 'payment_status', 'action'])
+            ->rawColumns(['supplier', 'invoice_no', 'batch_no', 'ordered_quantity', 'received_quantity', 'purchase_price', 'total', 'purchase_date', 'payment_status', 'action'])
             ->setRowId('id');
     }
 
@@ -159,6 +216,11 @@ class PurchasesDataTable extends BaseDataTable
             if (in_array($status, ['paid', 'partial', 'due'], true)) {
                 $query->where('purchases.payment_status', $status);
             }
+        }
+
+        $supplierId = request('supplier_id') ?: request('supplier');
+        if ($supplierId && $supplierId !== 'all') {
+            $query->where('purchases.supplier_id', $supplierId);
         }
 
         if ($search = request('search.value') ?: request('q')) {
@@ -193,11 +255,12 @@ class PurchasesDataTable extends BaseDataTable
     public function html(): HtmlBuilder
     {
         return $this->defaultHtml()
-            ->orderBy([5, 'desc'])
+            ->orderBy([7, 'desc'])
             ->minifiedAjax('', '
                 data.from = $("#filter-from").val();
                 data.to = $("#filter-to").val();
                 data.status = $("#filter-status").val();
+                data.supplier_id = $("#filter-supplier").val();
             ');
     }
 
@@ -210,33 +273,44 @@ class PurchasesDataTable extends BaseDataTable
     {
         return [
             Column::computed('supplier')
-                ->title('<span class="bn">যোগাযোগ</span><span class="en">Contact</span>')
+                ->title('<span class="bn">যোগাযোগ</span><span class="en" style="display:none;">Contact</span>')
                 ->width(180),
             Column::make('invoice_no')
-                ->title('<span class="bn">ইনভয়েস নং</span><span class="en">Invoice No</span>')
-                ->width(130),
-            Column::computed('batch_no')
-                ->title('<span class="bn">ব্যাচ নং</span><span class="en">Batch No</span>')
-                ->orderable(false)
-                ->width(130),
-            Column::computed('items_count')
-                ->title('<span class="bn">আইটেম</span><span class="en">Item</span>')
-                ->orderable(false)
-                ->width(100),
-            Column::make('total')
-                ->title('<span class="bn">টাকার পরিমাণ</span><span class="en">Amount</span>')
-                ->addClass('table-cell-right')
-                ->width(130),
-            Column::make('purchase_date')
-                ->title('<span class="bn">তারিখ</span><span class="en">Date</span>')
-                ->addClass('table-cell-center')
+                ->title('<span class="bn">ইনভয়েস নং</span><span class="en" style="display:none;">Invoice No</span>')
                 ->width(120),
-            Column::make('payment_status')
-                ->title('<span class="bn">পেমেন্ট অবস্থা</span><span class="en">Payment Status</span>')
+            Column::computed('batch_no')
+                ->title('<span class="bn">ব্যাচ নং</span><span class="en" style="display:none;">Batch No</span>')
+                ->orderable(false)
+                ->width(110),
+            Column::computed('ordered_quantity')
+                ->title('<span class="bn">অর্ডার পরিমাণ</span><span class="en" style="display:none;">Order Qty</span>')
+                ->orderable(false)
                 ->addClass('table-cell-center')
-                ->width(130),
+                ->width(110),
+            Column::computed('received_quantity')
+                ->title('<span class="bn">গৃহীত পরিমাণ</span><span class="en" style="display:none;">Received Qty</span>')
+                ->orderable(false)
+                ->addClass('table-cell-center')
+                ->width(115),
+            Column::computed('purchase_price')
+                ->title('<span class="bn">ক্রয় মূল্য</span><span class="en" style="display:none;">Purchase Price</span>')
+                ->orderable(false)
+                ->addClass('table-cell-right')
+                ->width(110),
+            Column::make('total')
+                ->title('<span class="bn">টাকার পরিমাণ</span><span class="en" style="display:none;">Amount</span>')
+                ->addClass('table-cell-right')
+                ->width(120),
+            Column::make('purchase_date')
+                ->title('<span class="bn">তারিখ</span><span class="en" style="display:none;">Date</span>')
+                ->addClass('table-cell-center')
+                ->width(110),
+            Column::make('payment_status')
+                ->title('<span class="bn">পেমেন্ট অবস্থা</span><span class="en" style="display:none;">Payment Status</span>')
+                ->addClass('table-cell-center')
+                ->width(110),
             Column::computed('action')
-                ->title('<span class="bn">অ্যাকশন</span><span class="en">Action</span>')
+                ->title('<span class="bn">অ্যাকশন</span><span class="en" style="display:none;">Action</span>')
                 ->orderable(false)
                 ->searchable(false)
                 ->exportable(false)

@@ -28,7 +28,7 @@ class StockController extends Controller
 
         $totalProducts = Product::count();
         $totalStockQty = (float) Batch::sum('quantity');
-        $totalStockValue = (float) DB::table('batches')
+        $totalStockValue = (float) Batch::query()
             ->join('products', 'batches.product_id', '=', 'products.id')
             ->sum(DB::raw('batches.quantity * products.purchase_price'));
 

@@ -15,6 +15,8 @@ use Modules\Product\Models\Category;
 use Modules\Product\Models\Product;
 use Modules\Product\Models\SubCategory;
 use Modules\Product\Models\Unit;
+use Modules\Purchase\Models\Purchase;
+use Modules\Sales\Models\Sale;
 use Modules\Shop\Support\PlanLimits;
 
 class ProductController extends Controller
@@ -116,10 +118,17 @@ class ProductController extends Controller
 
     public function stockHistory(Product $product): View
     {
+        $product->loadMissing(['category', 'brand', 'units']);
+
         $movements = $product->stockMovements()
-            ->with(['batch', 'creator', 'reference'])
+            ->with(['batch', 'creator'])
             ->latest()
             ->paginate(15);
+
+        $movements->loadMorph('reference', [
+            Purchase::class => ['items'],
+            Sale::class => ['items'],
+        ]);
 
         $totalStock = (float) $product->batches()->sum('quantity');
 

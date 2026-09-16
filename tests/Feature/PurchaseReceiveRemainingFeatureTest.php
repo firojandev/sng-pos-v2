@@ -50,13 +50,13 @@ class PurchaseReceiveRemainingFeatureTest extends TestCase
             'name' => 'Receive Test Shop',
             'slug' => 'receive-test-shop',
             'status' => 'active',
-            'enabled_features' => Features::keys(),
         ]);
 
         $standardPlan = Plan::where('slug', 'standard')->first();
         if ($standardPlan) {
             $this->shop->subscribe($standardPlan);
         }
+        $this->subscribeShopToFeatures($this->shop, Features::keys());
 
         $this->user = User::create([
             'name' => 'Stock Admin',
@@ -378,6 +378,8 @@ class PurchaseReceiveRemainingFeatureTest extends TestCase
 
         $response->assertOk()
             ->assertSee('পণ্য গ্রহণের ইতিহাস')
+            ->assertSee('ক্রয় মূল্য')
+            ->assertSee('৳100.00')
             ->assertSee('DO-HIST-999')
             ->assertSee('TRUCK-777')
             ->assertSee('Driver Rafiq')

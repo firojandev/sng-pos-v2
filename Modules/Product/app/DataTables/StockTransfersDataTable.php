@@ -42,9 +42,9 @@ class StockTransfersDataTable extends BaseDataTable
             })
             ->addColumn('from_warehouse', function (StockTransfer $transfer) {
                 if ($transfer->fromWarehouse) {
-                    $branch = $transfer->fromWarehouse->branch ? '<div style="font-size:11px; color:var(--ink-400); margin-top:2px;">'.e($transfer->fromWarehouse->branch->name).'</div>' : '';
+                    $branch = $transfer->fromWarehouse->branch ? '<div style="font-size:11px; color:var(--ink-400); margin-top:2px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">'.e($transfer->fromWarehouse->branch->name).'</div>' : '';
 
-                    return '<div style="font-weight:600; color:var(--ink-800); font-size:12.5px;">'
+                    return '<div style="font-weight:600; color:var(--ink-800); font-size:12.5px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="'.e($transfer->fromWarehouse->name).'">'
                         .e($transfer->fromWarehouse->name)
                         .'</div>'.$branch;
                 }
@@ -53,9 +53,9 @@ class StockTransfersDataTable extends BaseDataTable
             })
             ->addColumn('to_warehouse', function (StockTransfer $transfer) {
                 if ($transfer->toWarehouse) {
-                    $branch = $transfer->toWarehouse->branch ? '<div style="font-size:11px; color:var(--ink-400); margin-top:2px;">'.e($transfer->toWarehouse->branch->name).'</div>' : '';
+                    $branch = $transfer->toWarehouse->branch ? '<div style="font-size:11px; color:var(--ink-400); margin-top:2px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">'.e($transfer->toWarehouse->branch->name).'</div>' : '';
 
-                    return '<div style="font-weight:600; color:var(--ink-800); font-size:12.5px;">'
+                    return '<div style="font-weight:600; color:var(--ink-800); font-size:12.5px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="'.e($transfer->toWarehouse->name).'">'
                         .e($transfer->toWarehouse->name)
                         .'</div>'.$branch;
                 }
@@ -67,7 +67,7 @@ class StockTransfersDataTable extends BaseDataTable
                 $qty = (float) ($transfer->total_quantity ?? 0);
                 $formattedQty = rtrim(rtrim(number_format($qty, 2), '0'), '.');
 
-                return '<div style="font-size:12px;">'
+                return '<div style="font-size:12px; white-space:nowrap;">'
                     .'<span style="display:inline-block; font-weight:700; font-size:11.5px; padding:2px 8px; border-radius:6px; background:var(--paper-line); color:var(--ink-800); border:1px solid var(--border);">'
                     .$count.' টি আইটেম'
                     .'</span>'

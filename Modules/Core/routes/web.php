@@ -2,13 +2,34 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\Core\Http\Controllers\AuditLogController;
+use Modules\Core\Http\Controllers\BackupController;
 use Modules\Core\Http\Controllers\DueLedgerController;
+use Modules\Core\Http\Controllers\LandingController;
 use Modules\Core\Http\Controllers\PageController;
+use Modules\Core\Models\Setting;
+
+Route::get('/', [LandingController::class, 'index'])->name('home');
+Route::get('/landing', [LandingController::class, 'preview'])->name('landing');
+Route::get('/privacy-policy', [PageController::class, 'privacyPolicy'])->name('privacy-policy');
+Route::get('/privacy', function () {
+    if (! Setting::isTermsAndPolicyEnabled()) {
+        abort(404);
+    }
+
+    return redirect()->route('privacy-policy', [], 301);
+});
+Route::get('/terms-and-conditions', [PageController::class, 'terms'])->name('terms');
+Route::get('/terms', function () {
+    if (! Setting::isTermsAndPolicyEnabled()) {
+        abort(404);
+    }
+
+    return redirect()->route('terms', [], 301);
+});
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/', [PageController::class, 'dashboard'])->name('dashboard');
+    Route::get('/dashboard', [PageController::class, 'dashboard'])->name('dashboard');
     Route::get('/styleguide', [PageController::class, 'styleguide'])->name('styleguide');
-    Route::get('/settings', [PageController::class, 'settings'])->name('settings.index');
     Route::prefix('due-ledger')->name('due-ledger.')->group(function () {
         Route::get('/', [DueLedgerController::class, 'index'])->name('index');
         Route::get('/sales', [DueLedgerController::class, 'sales'])->name('sales')->middleware('permission:customers.view');
@@ -24,9 +45,26 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/suppliers/{supplier}/payment', [DueLedgerController::class, 'storeSupplierPayment'])->name('supplier.payment.store')->middleware('permission:suppliers.payment');
     });
 
-    Route::middleware(['permission:audit.view', 'feature:audit'])->group(function () {
+    Route::middleware(['role_or_permission:Super Admin|audit.view', 'feature:audit'])->group(function () {
         Route::get('/audit-log', [AuditLogController::class, 'index'])->name('audit-log.index');
         Route::get('/audit-log/{auditLog}', [AuditLogController::class, 'show'])->name('audit-log.show');
+    });
+
+    Route::middleware(['role:Super Admin'])->group(function () {
+        Route::get('/backup', [BackupController::class, 'index'])->name('backup.index');
+        Route::post('/backup', [BackupController::class, 'store'])->name('backup.store');
+        Route::get('/backup/{filename}/inspect', [BackupController::class, 'inspect'])
+            ->where('filename', '[A-Za-z0-9_\-\.]+')
+            ->name('backup.inspect');
+        Route::post('/backup/{filename}/restore', [BackupController::class, 'restore'])
+            ->where('filename', '[A-Za-z0-9_\-\.]+')
+            ->name('backup.restore');
+        Route::get('/backup/{filename}/download', [BackupController::class, 'download'])
+            ->where('filename', '[A-Za-z0-9_\-\.]+')
+            ->name('backup.download');
+        Route::delete('/backup/{filename}', [BackupController::class, 'destroy'])
+            ->where('filename', '[A-Za-z0-9_\-\.]+')
+            ->name('backup.destroy');
     });
 
     Route::middleware(['permission:sales.view', 'feature:sales'])
@@ -45,6 +83,4 @@ Route::middleware(['auth'])->group(function () {
         ->get('/expense', [PageController::class, 'expense'])->name('expense.index');
     Route::middleware(['permission:tax.view', 'feature:tax'])
         ->get('/tax', [PageController::class, 'tax'])->name('tax.index');
-    Route::middleware(['permission:reports.view', 'feature:reports'])
-        ->get('/reports', [PageController::class, 'reports'])->name('reports.index');
 });

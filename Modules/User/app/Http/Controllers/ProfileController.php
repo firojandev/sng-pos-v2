@@ -29,7 +29,10 @@ class ProfileController extends Controller
         $user->name = $request->validated('name');
         $user->username = $request->validated('username');
         $user->email = $request->validated('email');
-        $user->phone = $request->validated('phone');
+
+        if (! $user->isShopOwner()) {
+            $user->phone = $request->validated('phone');
+        }
 
         if ($request->boolean('remove_avatar')) {
             if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {

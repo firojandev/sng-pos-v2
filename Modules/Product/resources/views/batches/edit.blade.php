@@ -19,12 +19,12 @@
                 @include('product::batches._form')
 
                 <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button type="submit" class="btn btn-gold" style="flex:1; justify-content:center;">
-                        <span class="bn">হালনাগাদ করুন</span><span class="en">Update</span>
-                    </button>
-                    <a href="{{ route('batches.index') }}" class="btn btn-outline" style="flex:1; justify-content:center;">
-                        <span class="bn">বাতিল</span><span class="en">Cancel</span>
-                    </a>
+                    <x-core::button type="submit" color="primary" size="sm" icon="check" style="flex:1; justify-content:center;">
+                        <span class="bn">হালনাগাদ করুন</span><span class="en" style="display:none;">Update</span>
+                    </x-core::button>
+                    <x-core::button as="a" href="{{ route('batches.index') }}" variant="secondary" size="sm" style="flex:1; justify-content:center;">
+                        <span class="bn">বাতিল</span><span class="en" style="display:none;">Cancel</span>
+                    </x-core::button>
                 </div>
             </form>
         </div>

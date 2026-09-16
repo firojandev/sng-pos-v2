@@ -47,8 +47,8 @@ class SalesDueLedgerDataTable extends BaseDataTable
 
                 return '<div class="row-avatar" style="display:flex; align-items:flex-start; gap:10px;">'
                     .'<div class="av" style="width:34px; height:34px; border-radius:8px; background:var(--teal-700); color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; flex-shrink:0; margin-top:2px;">'.e($initial).'</div>'
-                    .'<div style="min-width:0;">'
-                    .'<div style="font-weight:700; color:var(--ink-900); font-size:13.5px; line-height:1.3;">'.e($customer->name).'</div>'
+                    .'<div style="min-width:0; max-width:200px;">'
+                    .'<div style="font-weight:700; color:var(--ink-900); font-size:13.5px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word;" title="'.e($customer->name).'">'.e($customer->name).'</div>'
                     .$phone
                     .$address
                     .'</div>'
@@ -60,14 +60,14 @@ class SalesDueLedgerDataTable extends BaseDataTable
                 $totalAmount = (float) ($customer->sales_sum_total ?? 0);
 
                 if ($totalCount === 0) {
-                    $dueBadge = '<span style="display:inline-block; font-size:11px; font-weight:600; padding:1px 6px; border-radius:4px; background:var(--paper-line); color:var(--ink-500); margin-left:4px;">কোনো বিক্রয় নেই</span>';
+                    $dueBadge = '<span style="display:inline-block; font-size:11px; font-weight:600; padding:1px 6px; border-radius:4px; background:var(--paper-line); color:var(--ink-500); margin-left:4px; white-space:nowrap;">কোনো বিক্রয় নেই</span>';
                 } elseif ($dueCount > 0) {
-                    $dueBadge = '<span style="display:inline-block; font-size:11px; font-weight:700; padding:1px 6px; border-radius:4px; background:var(--red-100); color:var(--red-600); margin-left:4px;">'.$dueCount.' বাকি</span>';
+                    $dueBadge = '<span style="display:inline-block; font-size:11px; font-weight:700; padding:1px 6px; border-radius:4px; background:var(--red-100); color:var(--red-600); margin-left:4px; white-space:nowrap;">'.$dueCount.' বাকি</span>';
                 } else {
-                    $dueBadge = '<span style="display:inline-block; font-size:11px; font-weight:600; padding:1px 6px; border-radius:4px; background:var(--blue-100); color:var(--blue-ink); margin-left:4px;">চালান পরিশোধিত</span>';
+                    $dueBadge = '<span style="display:inline-block; font-size:11px; font-weight:600; padding:1px 6px; border-radius:4px; background:var(--blue-100); color:var(--blue-ink); margin-left:4px; white-space:nowrap;">চালান পরিশোধিত</span>';
                 }
 
-                return '<div style="font-size:12.5px;">'
+                return '<div style="font-size:12.5px; white-space:nowrap;">'
                     .'<div style="font-weight:600; color:var(--ink-800); display:flex; align-items:center;">'
                     .'<span>'.$totalCount.' টি বিক্রয়</span>'
                     .$dueBadge
@@ -80,36 +80,36 @@ class SalesDueLedgerDataTable extends BaseDataTable
             ->editColumn('opening_due', function (Customer $customer) {
                 $opening = (float) $customer->opening_due;
                 if ($opening > 0) {
-                    return '<span style="font-family:var(--font-mono, monospace); font-weight:600; color:var(--ink-700);">৳'.number_format($opening, 2).'</span>';
+                    return '<span style="font-family:var(--font-mono, monospace); font-weight:600; color:var(--ink-700); white-space:nowrap;">৳'.number_format($opening, 2).'</span>';
                 }
 
-                return '<span style="font-family:var(--font-mono, monospace); color:var(--ink-400);">৳0.00</span>';
+                return '<span style="font-family:var(--font-mono, monospace); color:var(--ink-400); white-space:nowrap;">৳0.00</span>';
             })
             ->addColumn('sales_due', function (Customer $customer) {
                 $salesDue = (float) ($customer->sales_sum_due_amount ?? 0);
                 if ($salesDue > 0) {
-                    return '<span style="font-family:var(--font-mono, monospace); font-weight:700; color:var(--gold-ink, #b45309);">৳'.number_format($salesDue, 2).'</span>';
+                    return '<span style="font-family:var(--font-mono, monospace); font-weight:700; color:var(--gold-ink, #b45309); white-space:nowrap;">৳'.number_format($salesDue, 2).'</span>';
                 }
 
-                return '<span style="font-family:var(--font-mono, monospace); color:var(--ink-400);">৳0.00</span>';
+                return '<span style="font-family:var(--font-mono, monospace); color:var(--ink-400); white-space:nowrap;">৳0.00</span>';
             })
             ->addColumn('total_due', function (Customer $customer) {
                 $total = (float) $customer->opening_due + (float) ($customer->sales_sum_due_amount ?? 0);
 
-                return '<div style="display:inline-flex; align-items:center; background:var(--red-100); border-radius:6px; padding:3px 8px;">'
+                return '<div style="display:inline-flex; align-items:center; background:var(--red-100); border-radius:6px; padding:3px 8px; white-space:nowrap;">'
                     .'<span style="font-family:var(--font-mono, monospace); font-weight:800; font-size:13.5px; color:var(--red-600);">৳'.number_format($total, 2).'</span>'
                     .'</div>';
             })
             ->addColumn('last_sale', function (Customer $customer) {
                 $lastSale = $customer->sales->first();
                 if (! $lastSale) {
-                    return '<span style="color:var(--ink-400); font-size:11.5px;">শুধু ওপেনিং বাকি</span>';
+                    return '<span style="color:var(--ink-400); font-size:11.5px; white-space:nowrap;">শুধু ওপেনিং বাকি</span>';
                 }
 
                 $date = optional($lastSale->sale_date)->format('d M, Y') ?? '—';
                 $inv = e($lastSale->invoice_no);
 
-                return '<div style="font-size:12px;">'
+                return '<div style="font-size:12px; white-space:nowrap;">'
                     .'<div style="font-family:var(--font-mono, monospace); font-weight:700; color:var(--ink-800);">#'.$inv.'</div>'
                     .'<div style="font-size:11px; color:var(--ink-500); margin-top:1px;">'.$date.'</div>'
                     .'</div>';

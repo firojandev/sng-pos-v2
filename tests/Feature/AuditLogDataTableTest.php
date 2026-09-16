@@ -14,6 +14,8 @@ use Modules\Sales\Models\Sale;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
 use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
+use Revoltify\Subscriptionify\Models\Feature;
+use Revoltify\Subscriptionify\Services\FeatureResolver;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -37,20 +39,17 @@ class AuditLogDataTableTest extends TestCase
             Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
         }
 
-        $this->adminRole = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
-        $this->adminRole->syncPermissions(Permission::where('guard_name', 'web')->get());
-
         $this->shop = Shop::create([
             'name' => 'Audit Test Shop',
             'slug' => 'audit-test-shop',
             'status' => 'active',
-            'enabled_features' => Features::keys(),
         ]);
 
-        $standardPlan = Plan::where('slug', 'standard')->first();
-        if ($standardPlan) {
-            $this->shop->subscribe($standardPlan);
-        }
+        $this->subscribeShopToFeatures($this->shop, Features::keys());
+        setPermissionsTeamId($this->shop->id);
+
+        $this->adminRole = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web', 'shop_id' => $this->shop->id]);
+        $this->adminRole->syncPermissions(Permission::where('guard_name', 'web')->get());
 
         $this->adminUser = User::create([
             'name' => 'Audit Admin',
@@ -299,5 +298,28 @@ class AuditLogDataTableTest extends TestCase
         $this->assertNotNull($updatedLog);
         $this->assertEquals('Auto Audit Customer', $updatedLog->old_values['name']);
         $this->assertEquals('Updated Audit Customer', $updatedLog->new_values['name']);
+    }
+
+    public function test_audit_log_topbar_and_sidebar_links_hidden_when_feature_disabled(): void
+    {
+        // 1. With audit feature enabled, topbar and sidebar show the audit-log route
+        $response = $this->actingAs($this->adminUser)->get(route('dashboard'));
+        $response->assertOk();
+        $response->assertSee(route('audit-log.index'));
+
+        // 2. Remove audit feature from shop's active plan
+        $plan = $this->shop->activeSubscription->plan;
+        $auditFeature = Feature::where('slug', 'audit')->first();
+        if ($auditFeature) {
+            $plan->features()->detach($auditFeature->id);
+        }
+        $this->shop->clearSubscriptionCache();
+        resolve(FeatureResolver::class)->flush();
+
+        // 3. Verify topbar and sidebar no longer render audit-log link
+        $this->assertFalse($this->shop->fresh()->hasFeature('audit'));
+        $responseWithoutFeature = $this->actingAs($this->adminUser->fresh())->get(route('dashboard'));
+        $responseWithoutFeature->assertOk();
+        $responseWithoutFeature->assertDontSee(route('audit-log.index'));
     }
 }

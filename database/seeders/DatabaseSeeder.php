@@ -5,9 +5,9 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Modules\Core\Support\Features;
 use Modules\Core\Support\Permissions;
 use Modules\Finance\Database\Seeders\AccountDatabaseSeeder;
+use Modules\Shop\Database\Seeders\ShopDatabaseSeeder;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
 use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
@@ -29,14 +29,28 @@ class DatabaseSeeder extends Seeder
 
         $superAdminRole = Role::firstOrCreate(['name' => 'Super Admin', 'guard_name' => 'web']);
 
-        $superAdmin = User::firstOrCreate(
-            ['email' => 'superadmin@masterpos.test'],
-            [
-                'name' => 'Super Admin',
-                'password' => bcrypt('password'),
-            ]
-        );
-        $superAdmin->syncRoles([$superAdminRole]);
+        $superAdmins = [
+            'softngear@gmail.com' => 'SNGSuperAdmin',
+            'admin@sngpos.com' => 'SNGPosAdmin',
+        ];
+
+        foreach ($superAdmins as $adminEmail => $adminUsername) {
+            $superAdmin = User::firstOrCreate(
+                ['email' => $adminEmail],
+                [
+                    'name' => 'Super Admin',
+                    'username' => $adminUsername,
+                    'password' => bcrypt('SNGAdmin@2026!'),
+                    'email_verified_at' => now(),
+                ]
+            );
+
+            if (! $superAdmin->email_verified_at) {
+                $superAdmin->update(['email_verified_at' => now()]);
+            }
+
+            $superAdmin->syncRoles([$superAdminRole]);
+        }
 
         $demoShop = Shop::firstOrCreate(
             ['slug' => 'rahim-general-store'],
@@ -45,7 +59,6 @@ class DatabaseSeeder extends Seeder
                 'phone' => '+8801700000000',
                 'address' => 'মিরপুর-১০, ঢাকা-১২১৬',
                 'status' => 'active',
-                'enabled_features' => Features::keys(),
             ]
         );
 
@@ -57,21 +70,21 @@ class DatabaseSeeder extends Seeder
         $demoAdminRole->syncPermissions(Permission::where('guard_name', 'web')->get());
 
         $demoAdmin = User::updateOrCreate(
-            ['email' => 'admin@masterpos.test'],
+            ['email' => 'admin@softngear.com'],
             [
                 'shop_id' => $demoShop->id,
                 'name' => 'Admin',
-                'password' => bcrypt('password'),
+                'username' => 'SNGShopAdmin',
+                'password' => bcrypt('SNGAdmin@2026!'),
             ]
         );
         setPermissionsTeamId($demoShop->id);
         $demoAdmin->syncRoles([$demoAdminRole]);
         setPermissionsTeamId(null);
 
+        $this->call(ShopDatabaseSeeder::class);
         $this->call(SubscriptionifySeeder::class);
         $this->call(AccountDatabaseSeeder::class);
-
-        $demoShop->update(['enabled_features' => Features::keys()]);
 
         $standardPlan = Plan::where('slug', 'standard')->first();
         if ($standardPlan && ! $demoShop->subscribed()) {

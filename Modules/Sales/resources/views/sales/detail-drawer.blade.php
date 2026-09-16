@@ -32,8 +32,11 @@
         <span class="val" style="font-family:var(--font-mono, monospace); font-weight:700;">#{{ $sale->invoice_no }}</span>
     </div>
     <div class="tx-row">
-        <span class="lbl bn">মোট আইটেম</span><span class="lbl en" style="display:none;">Total Items</span>
-        <span class="val" style="font-family:var(--font-mono, monospace);">{{ rtrim(rtrim(number_format((float) $sale->items->sum('quantity'), 2), '0'), '.') }} ({{ $sale->items->count() }} টি পণ্য)</span>
+        <span class="lbl bn">মোট পরিমাণ</span><span class="lbl en" style="display:none;">Total Quantity</span>
+        <span class="val" style="font-family:var(--font-mono, monospace);">
+            <span class="bn">{{ rtrim(rtrim(number_format((float) $sale->items->sum('quantity'), 2), '0'), '.') }}</span>
+            <span class="en" style="display:none;">{{ rtrim(rtrim(number_format((float) $sale->items->sum('quantity'), 2), '0'), '.') }}</span>
+        </span>
     </div>
     <div class="tx-row">
         <span class="lbl bn">গ্রাহকের নাম</span><span class="lbl en" style="display:none;">Customer Name</span>
@@ -89,16 +92,36 @@
         <span class="lbl bn">মোট</span><span class="lbl en" style="display:none;">Subtotal</span>
         <span class="val" style="font-family:var(--font-mono, monospace);">৳{{ number_format((float) $sale->subtotal, 2) }}</span>
     </div>
+    @if ((float) ($sale->product_discount ?? 0) > 0)
+        <div class="tx-row">
+            <span class="lbl bn">পণ্য ছাড়</span><span class="lbl en" style="display:none;">Product Discount</span>
+            <span class="val" style="font-family:var(--font-mono, monospace); color:var(--red-600);">-৳{{ number_format((float) $sale->product_discount, 2) }}</span>
+        </div>
+    @endif
     @if ((float) $sale->discount > 0)
         <div class="tx-row">
             <span class="lbl bn">ডিস্কাউন্ট</span><span class="lbl en" style="display:none;">Discount</span>
             <span class="val" style="font-family:var(--font-mono, monospace); color:var(--green-ink);">৳{{ number_format((float) $sale->discount, 2) }}</span>
         </div>
     @endif
+    @if ((float) ($sale->tax ?? 0) > 0)
+        <div class="tx-row">
+            <span class="lbl bn">ভ্যাট</span><span class="lbl en" style="display:none;">Tax / VAT</span>
+            <span class="val" style="font-family:var(--font-mono, monospace);">৳{{ number_format((float) $sale->tax, 2) }}</span>
+        </div>
+    @endif
     @if ((float) $sale->delivery_charge > 0)
         <div class="tx-row">
             <span class="lbl bn">ডেলিভারি চার্জ</span><span class="lbl en" style="display:none;">Delivery Charge</span>
             <span class="val" style="font-family:var(--font-mono, monospace);">৳{{ number_format((float) $sale->delivery_charge, 2) }}</span>
+        </div>
+    @endif
+    @if ((float) ($sale->adjustment ?? 0) != 0)
+        <div class="tx-row">
+            <span class="lbl bn">সমন্বয়</span><span class="lbl en" style="display:none;">Adjustment</span>
+            <span class="val" style="font-family:var(--font-mono, monospace); {{ (float) $sale->adjustment < 0 ? 'color:var(--red-600);' : 'color:var(--teal-700);' }}">
+                {{ (float) $sale->adjustment > 0 ? '+' : '' }}৳{{ number_format((float) $sale->adjustment, 2) }}
+            </span>
         </div>
     @endif
     <div class="tx-row">
@@ -134,12 +157,21 @@
 
 <div class="drawer-title bn" style="font-size:14px; margin-bottom:10px; font-weight:700; color:var(--ink-900);">বিক্রীত পণ্য তালিকা (Products Sold)</div>
 <div class="tx-section">
-    @foreach ($sale->items as $item)
+    @foreach ($sale->grouped_items as $item)
         <div class="tx-item" style="padding:10px 0; border-bottom:1px dashed var(--border);">
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                 <div>
                     <div class="nm" style="font-weight:600; color:var(--ink-900);">{{ $item->product->name ?? '—' }}</div>
-                    @if ($item->batch)
+                    @if ($item->product?->sku)
+                        <div style="font-size:11px; color:var(--ink-500); font-family:var(--font-mono, monospace); margin-top:2px;">
+                            SKU: {{ $item->product->sku }}
+                        </div>
+                    @endif
+                    @if (!empty($item->batch_no_display))
+                        <div style="font-size:11px; color:var(--ink-500); font-family:var(--font-mono, monospace); margin-top:2px;">
+                            ব্যাচ: {{ $item->batch_no_display }}
+                        </div>
+                    @elseif ($item->batch)
                         <div style="font-size:11px; color:var(--ink-500); font-family:var(--font-mono, monospace); margin-top:2px;">
                             ব্যাচ: {{ $item->batch->batch_no }}
                         </div>

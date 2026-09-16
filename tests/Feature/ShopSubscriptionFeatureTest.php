@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -18,8 +19,8 @@ class ShopSubscriptionFeatureTest extends TestCase
             'name' => 'Tech Zone',
             'slug' => 'tech-zone',
             'status' => 'active',
-            'enabled_features' => ['subscription'],
         ]);
+        $this->subscribeShopToFeatures($shop, ['subscription']);
 
         $user = User::factory()->create([
             'shop_id' => $shop->id,
@@ -40,8 +41,8 @@ class ShopSubscriptionFeatureTest extends TestCase
             'name' => 'Fashion House',
             'slug' => 'fashion-house',
             'status' => 'active',
-            'enabled_features' => ['sales'], // subscription not included
         ]);
+        $this->subscribeShopToFeatures($shop, ['sales']); // subscription not included
 
         $user = User::factory()->create([
             'shop_id' => $shop->id,
@@ -56,7 +57,7 @@ class ShopSubscriptionFeatureTest extends TestCase
         $dashboardResponse->assertDontSee(route('subscription.show'));
     }
 
-    public function test_super_admin_can_toggle_subscription_feature_for_shop(): void
+    public function test_reassigning_a_shops_plan_changes_its_feature_access(): void
     {
         $superAdminRole = Role::create(['name' => 'Super Admin', 'guard_name' => 'web']);
         $superAdmin = User::factory()->create();
@@ -66,31 +67,59 @@ class ShopSubscriptionFeatureTest extends TestCase
             'name' => 'Mobile Hub',
             'slug' => 'mobile-hub',
             'status' => 'active',
-            'enabled_features' => ['sales', 'subscription'],
         ]);
+        $this->subscribeShopToFeatures($shop, ['sales', 'subscription']);
+        $plan = $shop->activeSubscription->plan;
 
-        // Super Admin disables subscription feature
-        $response = $this->actingAs($superAdmin)->put(route('shops.update', $shop), [
-            'name' => 'Mobile Hub Updated',
-            'slug' => 'mobile-hub',
+        // Super Admin removes the 'subscription' feature from the shop's plan.
+        $response = $this->actingAs($superAdmin)->put(route('plans.update', $plan), [
+            'name' => $plan->name,
+            'slug' => $plan->slug,
+            'price' => 0,
+            'billing_cycle' => 'monthly',
             'status' => 'active',
-            'features' => ['sales'], // without subscription
+            'features' => ['sales'],
         ]);
 
-        $response->assertRedirect(route('shops.edit', $shop));
-        $shop->refresh();
+        $response->assertRedirect(route('plans.index'));
+        $shop->refresh()->clearSubscriptionCache();
         $this->assertFalse($shop->hasFeature('subscription'));
 
-        // Super Admin re-enables subscription feature
-        $response = $this->actingAs($superAdmin)->put(route('shops.update', $shop), [
-            'name' => 'Mobile Hub Updated',
-            'slug' => 'mobile-hub',
+        // Super Admin re-adds the 'subscription' feature to the plan.
+        $response = $this->actingAs($superAdmin)->put(route('plans.update', $plan), [
+            'name' => $plan->name,
+            'slug' => $plan->slug,
+            'price' => 0,
+            'billing_cycle' => 'monthly',
             'status' => 'active',
             'features' => ['sales', 'subscription'],
         ]);
 
-        $response->assertRedirect(route('shops.edit', $shop));
-        $shop->refresh();
+        $response->assertRedirect(route('plans.index'));
+        $shop->refresh()->clearSubscriptionCache();
         $this->assertTrue($shop->hasFeature('subscription'));
+    }
+
+    public function test_super_admin_can_see_subscription_link_in_settings_and_dashboard(): void
+    {
+        $superAdminRole = Role::create(['name' => 'Super Admin', 'guard_name' => 'web']);
+        $shop = Shop::create([
+            'name' => 'Admin Shop',
+            'slug' => 'admin-shop',
+            'status' => 'active',
+        ]);
+        $this->subscribeShopToFeatures($shop, ['sales']);
+
+        $superAdmin = User::factory()->create();
+        $superAdmin->assignRole($superAdminRole);
+        $superAdmin->update(['shop_id' => $shop->id]);
+
+        $response = $this->actingAs($superAdmin)->get(route('settings.index'));
+        $response->assertStatus(200);
+        $response->assertSee(route('subscription.show'));
+
+        $shopsResponse = $this->actingAs($superAdmin)->get(route('shops.index'));
+        $shopsResponse->assertStatus(200);
+        $shopsResponse->assertSee(route('subscription.show'));
     }
 }

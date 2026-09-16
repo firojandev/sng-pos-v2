@@ -14,6 +14,7 @@ use Modules\Purchase\Models\Purchase;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
 use Modules\Shop\Models\Branch;
 use Modules\Shop\Models\Plan;
+use Modules\Shop\Models\PrinterSetting;
 use Modules\Shop\Models\Shop;
 use Modules\Shop\Models\Warehouse;
 use Modules\Supplier\Models\Supplier;
@@ -53,18 +54,19 @@ class PurchaseInvoiceModalFeatureTest extends TestCase
             'phone' => '01778623121',
             'address' => 'Shihubon Road, Nobinbag',
             'status' => 'active',
-            'enabled_features' => Features::keys(),
         ]);
 
         $standardPlan = Plan::where('slug', 'standard')->first();
         if ($standardPlan) {
             $this->shop->subscribe($standardPlan);
         }
+        $this->subscribeShopToFeatures($this->shop, Features::keys());
 
         $this->user = User::create([
             'name' => 'Admin User',
             'email' => 'admin@gadgetparks.test',
             'password' => bcrypt('password'),
+            'email_verified_at' => now(),
             'shop_id' => $this->shop->id,
         ]);
         $this->user->syncRoles([$adminRole]);
@@ -182,7 +184,7 @@ class PurchaseInvoiceModalFeatureTest extends TestCase
             ->get(route('purchase.create'));
 
         $response->assertOk();
-        $response->assertSee('Successful');
+        $response->assertSee('Purchase Invoice');
         $response->assertSee('ইনভয়েস');
         $response->assertSee('Gadget Parks');
         $response->assertSee('Sagor');
@@ -220,7 +222,7 @@ class PurchaseInvoiceModalFeatureTest extends TestCase
         $response = $this->actingAs($this->user)->get(route('purchase.invoice-modal', $purchase));
 
         $response->assertOk();
-        $response->assertSee('Successful');
+        $response->assertSee('Purchase Invoice');
         $response->assertSee('তেরো হাজার পাঁচ শত টাকা');
         $response->assertSee('প্রিন্ট করুন');
     }
@@ -345,5 +347,140 @@ class PurchaseInvoiceModalFeatureTest extends TestCase
         $printResponse->assertSee(BanglaNumber::toBn(10));
         $printResponse->assertSee(BanglaNumber::toBn(6));
         $printResponse->assertSee(BanglaNumber::toBn(4));
+    }
+
+    public function test_invoice_modal_renders_product_name_cell_with_wrapping_styles_for_long_names(): void
+    {
+        $longNameProduct = Product::create([
+            'shop_id' => $this->shop->id,
+            'category_id' => $this->product->category_id,
+            'name' => 'Hawkins Black Berry Infrared Cooker (Model: ME-IFCH-53 / 54)',
+            'sku' => 'KMCM-113',
+            'barcode' => 'KMCM-113',
+            'purchase_price' => 2750,
+            'sale_price' => 3200,
+            'min_stock' => 2,
+            'status' => 'active',
+        ]);
+
+        $purchase = Purchase::create([
+            'shop_id' => $this->shop->id,
+            'supplier_id' => $this->supplier->id,
+            'warehouse_id' => $this->warehouse->id,
+            'purchase_date' => now()->toDateString(),
+            'invoice_no' => 'PU-0038',
+            'subtotal' => 55000,
+            'discount' => 0,
+            'delivery_charge' => 0,
+            'total' => 55000,
+            'paid_amount' => 55000,
+            'due_amount' => 0,
+            'payment_status' => 'paid',
+        ]);
+
+        $purchase->items()->create([
+            'product_id' => $longNameProduct->id,
+            'quantity' => 20,
+            'received_quantity' => 20,
+            'purchase_price' => 2750,
+            'total' => 55000,
+            'batch_no' => 'KMCM-113',
+        ]);
+
+        $response = $this->actingAs($this->user)->get(route('purchase.invoice-modal', $purchase));
+        $response->assertOk();
+        $response->assertSee('Hawkins Black Berry Infrared Cooker (Model: ME-IFCH-53 / 54)');
+        $response->assertSee('col-product-name');
+        $response->assertSee('white-space:normal !important', false);
+    }
+
+    public function test_thermal_printer_setting_effects_purchase_invoice_modal_and_print(): void
+    {
+        PrinterSetting::updateOrCreate(
+            ['shop_id' => $this->shop->id],
+            [
+                'printer_type' => 'thermal',
+                'paper_width' => 80,
+                'unit' => 'mm',
+                'auto_print' => true,
+            ]
+        );
+
+        $purchase = Purchase::create([
+            'shop_id' => $this->shop->id,
+            'supplier_id' => $this->supplier->id,
+            'warehouse_id' => $this->warehouse->id,
+            'purchase_date' => now()->toDateString(),
+            'invoice_no' => 'PU-TH-01',
+            'subtotal' => 6750,
+            'discount' => 0,
+            'delivery_charge' => 0,
+            'total' => 6750,
+            'paid_amount' => 5000,
+            'due_amount' => 1750,
+            'payment_status' => 'partial',
+        ]);
+
+        $purchase->items()->create([
+            'product_id' => $this->product->id,
+            'quantity' => 1,
+            'received_quantity' => 1,
+            'purchase_price' => 6750,
+            'total' => 6750,
+            'batch_no' => 'KM-20318',
+        ]);
+
+        $modalResponse = $this->actingAs($this->user)->get(route('purchase.invoice-modal', $purchase));
+        $modalResponse->assertOk();
+        $modalResponse->assertSee('purchase-thermal-receipt-sheet');
+        $modalResponse->assertSee('ক্রয় চালান কপি');
+
+        $printResponse = $this->actingAs($this->user)->get(route('purchase.print-invoice', $purchase));
+        $printResponse->assertOk();
+        $printResponse->assertSee('purchase-thermal-receipt-sheet');
+        $printResponse->assertSee('80mm auto');
+        $printResponse->assertSee('window.print()', false);
+    }
+
+    public function test_a5_printer_setting_effects_purchase_print_page(): void
+    {
+        PrinterSetting::updateOrCreate(
+            ['shop_id' => $this->shop->id],
+            [
+                'printer_type' => 'a5',
+                'orientation' => 'landscape',
+                'page_margin' => 6,
+            ]
+        );
+
+        $purchase = Purchase::create([
+            'shop_id' => $this->shop->id,
+            'supplier_id' => $this->supplier->id,
+            'warehouse_id' => $this->warehouse->id,
+            'purchase_date' => now()->toDateString(),
+            'invoice_no' => 'PU-A5-01',
+            'subtotal' => 6750,
+            'discount' => 0,
+            'delivery_charge' => 0,
+            'total' => 6750,
+            'paid_amount' => 6750,
+            'due_amount' => 0,
+            'payment_status' => 'paid',
+        ]);
+
+        $purchase->items()->create([
+            'product_id' => $this->product->id,
+            'quantity' => 1,
+            'received_quantity' => 1,
+            'purchase_price' => 6750,
+            'total' => 6750,
+            'batch_no' => 'KM-20318',
+        ]);
+
+        $printResponse = $this->actingAs($this->user)->get(route('purchase.print-invoice', $purchase));
+        $printResponse->assertOk();
+        $printResponse->assertSee('size: A5 landscape', false);
+        $printResponse->assertSee('margin: 6mm', false);
+        $printResponse->assertSee('max-width: 520px', false);
     }
 }

@@ -16,7 +16,6 @@ use Modules\Sales\Models\Sale;
 use Modules\Sales\Models\SalePayment;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
 use Modules\Shop\Models\Branch;
-use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
 use Modules\Shop\Models\Warehouse;
 use Spatie\Permission\Models\Permission;
@@ -59,13 +58,8 @@ class SalePreviousDuePaymentFeatureTest extends TestCase
             'name' => 'Sale Test Shop',
             'slug' => 'sale-test-shop',
             'status' => 'active',
-            'enabled_features' => Features::keys(),
         ]);
-
-        $standardPlan = Plan::where('slug', 'standard')->first();
-        if ($standardPlan) {
-            $this->shop->subscribe($standardPlan);
-        }
+        $this->subscribeShopToFeatures($this->shop, Features::keys());
 
         $this->user = User::create([
             'name' => 'Sale Admin',

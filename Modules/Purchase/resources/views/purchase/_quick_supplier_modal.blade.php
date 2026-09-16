@@ -31,7 +31,7 @@
                     :no-margin="true"
                 />
 
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="quick-supplier-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                     <x-core::input
                         name="phone"
                         id="quick_supplier_phone"
@@ -55,7 +55,7 @@
                     />
                 </div>
 
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="quick-supplier-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                     <x-core::input
                         name="opening_due"
                         id="quick_supplier_opening_due"

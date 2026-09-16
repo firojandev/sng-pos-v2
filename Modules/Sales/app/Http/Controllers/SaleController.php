@@ -3,12 +3,17 @@
 namespace Modules\Sales\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Kstmostofa\LaravelWhatsApp\Exceptions\SidecarException;
+use Kstmostofa\LaravelWhatsApp\Facades\WhatsApp;
+use Kstmostofa\LaravelWhatsApp\Models\WaMessage;
 use Modules\Customer\Models\Customer;
 use Modules\Employee\Models\Employee;
 use Modules\Finance\Models\Account;
@@ -20,6 +25,7 @@ use Modules\Product\Models\StockMovement;
 use Modules\Sales\DataTables\SalesDataTable;
 use Modules\Sales\Http\Requests\StoreSaleRequest;
 use Modules\Sales\Http\Requests\UpdateSaleRequest;
+use Modules\Sales\Mail\SaleInvoiceMail;
 use Modules\Sales\Models\Sale;
 use Modules\Sales\Models\SalePayment;
 use Modules\Shop\Models\Warehouse;
@@ -149,6 +155,186 @@ class SaleController extends Controller
         return view('sales::sales.print-invoice', compact('sale'));
     }
 
+    /**
+     * Send sale invoice to customer via email.
+     */
+    public function sendInvoiceEmail(Request $request, Sale $sale): JsonResponse
+    {
+        $request->validate([
+            'email' => ['nullable', 'email', 'max:255'],
+        ]);
+
+        $sale->load(['customer', 'shop', 'items.product', 'items.unit']);
+        $recipientEmail = trim((string) ($request->input('email') ?: $sale->customer?->email));
+
+        if (empty($recipientEmail) || ! filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) {
+            throw ValidationException::withMessages([
+                'email' => 'গ্রাহকের কোনো সঠিক ইমেইল ঠিকানা পাওয়া যায়নি। অনুগ্রহ করে একটি ইমেইল ঠিকানা প্রদান করুন।',
+            ]);
+        }
+
+        // If customer exists and has no email, save it for future invoices
+        if ($sale->customer && empty($sale->customer->email) && $request->filled('email')) {
+            $sale->customer->update(['email' => $recipientEmail]);
+        }
+
+        try {
+            Mail::to($recipientEmail)->send(new SaleInvoiceMail($sale, $recipientEmail));
+
+            return response()->json([
+                'success' => true,
+                'message' => "ইনভয়েস সফলভাবে {$recipientEmail} ঠিকানায় পাঠানো হয়েছে।",
+                'email' => $recipientEmail,
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'ইমেইল পাঠাতে সমস্যা হয়েছে: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Send sale invoice link to customer via personal WhatsApp (web sidecar).
+     */
+    public function sendInvoiceWhatsApp(Request $request, Sale $sale): JsonResponse
+    {
+        $request->validate([
+            'phone' => ['nullable', 'string', 'max:20'],
+            'session' => ['nullable', 'string', 'max:50'],
+        ]);
+
+        $sale->load(['customer', 'shop']);
+
+        // Resolve recipient phone
+        $rawPhone = trim((string) ($request->input('phone') ?: $sale->customer?->phone));
+        $rawPhone = preg_replace('/[^0-9]/', '', $rawPhone);
+
+        if (empty($rawPhone)) {
+            throw ValidationException::withMessages([
+                'phone' => 'গ্রাহকের কোনো ফোন নম্বর পাওয়া যায়নি। অনুগ্রহ করে একটি ফোন নম্বর প্রদান করুন।',
+            ]);
+        }
+
+        // Normalize to international format with country code (Bangladesh: 88)
+        if (! str_starts_with($rawPhone, '88')) {
+            $rawPhone = '88'.$rawPhone;
+        }
+
+        // Build the invoice message
+        $shopName = $sale->shop?->name ?? 'ব্যবসা প্রতিষ্ঠান';
+        $publicUrl = $sale->public_url;
+        $message = "প্রিয় গ্রাহক,\n\n"
+            ."আপনার বিক্রয় ইনভয়েস *#{$sale->invoice_no}* প্রস্তুত হয়েছে।\n\n"
+            .'🧾 মোট: ৳'.number_format((float) $sale->total, 2)."\n"
+            .'💰 পরিশোধ: ৳'.number_format((float) $sale->paid_amount, 2)."\n";
+
+        if ((float) $sale->due_amount > 0) {
+            $message .= '📌 বাকি: ৳'.number_format((float) $sale->due_amount, 2)."\n";
+        }
+
+        $message .= "\n📄 অনলাইন ইনভয়েস দেখুন:\n{$publicUrl}\n\n"
+            ."ধন্যবাদান্তে,\n*{$shopName}*";
+
+        $defaultSession = $sale->shop_id ? "shop_{$sale->shop_id}" : config('laravel-whatsapp.ui.default_session', 'main');
+        $sessionId = $request->input('session', $defaultSession);
+
+        // Check if web sidecar is enabled
+        if (! config('laravel-whatsapp.web.enabled')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'হোয়াটসঅ্যাপ ওয়েব সাইডকার সক্রিয় নেই। অনুগ্রহ করে সেটিংসে সক্রিয় করুন।',
+                'fallback_url' => 'https://api.whatsapp.com/send?phone='.$rawPhone.'&text='.urlencode($message),
+            ], 422);
+        }
+
+        try {
+            $whatsapp = WhatsApp::web($sessionId);
+            $state = $whatsapp->state();
+
+            // If specific shop session isn't ready, fallback to 'main' if available
+            if (($state['status'] ?? '') !== 'ready' && $sessionId !== 'main') {
+                try {
+                    $mainWhatsapp = WhatsApp::web('main');
+                    $mainState = $mainWhatsapp->state();
+                    if (($mainState['status'] ?? '') === 'ready') {
+                        $sessionId = 'main';
+                        $whatsapp = $mainWhatsapp;
+                        $state = $mainState;
+                    }
+                } catch (\Throwable) {
+                    // Retain original session state
+                }
+            }
+
+            // Check session state
+            if (($state['status'] ?? '') !== 'ready') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'হোয়াটসঅ্যাপ সেশন প্রস্তুত নেই (স্ট্যাটাস: '.($state['status'] ?? 'unknown').')। অনুগ্রহ করে সেটিংস > হোয়াটসঅ্যাপ সেটিংস থেকে QR কোড স্ক্যান করে পেয়ার করুন।',
+                    'session_status' => $state['status'] ?? 'unknown',
+                    'settings_url' => route('whatsapp-settings.index'),
+                    'fallback_url' => 'https://api.whatsapp.com/send?phone='.$rawPhone.'&text='.urlencode($message),
+                ], 422);
+            }
+
+            // Send the message via web sidecar
+            $result = $whatsapp->messages()->sendText('+'.$rawPhone, $message);
+
+            // Store message in database
+            $waMessageId = is_array($result) ? ($result['id'] ?? null) : null;
+            WaMessage::create([
+                'shop_id' => $sale->shop_id,
+                'sale_id' => $sale->id,
+                'backend' => 'web',
+                'session_id' => $sessionId,
+                'wa_message_id' => $waMessageId,
+                'direction' => 'outbound',
+                'chat_id' => $rawPhone.'@c.us',
+                'from_id' => $sessionId,
+                'to_id' => '+'.$rawPhone,
+                'type' => 'text',
+                'body' => $message,
+                'payload' => [
+                    'sale_id' => $sale->id,
+                    'invoice_no' => $sale->invoice_no,
+                    'shop_id' => $sale->shop_id,
+                    'customer_id' => $sale->customer_id,
+                    'customer_phone' => $rawPhone,
+                    'result' => $result,
+                ],
+                'status' => 'sent',
+                'ack' => 1,
+                'wa_timestamp' => now(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'ইনভয়েস সফলভাবে হোয়াটসঅ্যাপে পাঠানো হয়েছে!',
+                'phone' => $rawPhone,
+                'wa_message_id' => $waMessageId,
+            ]);
+        } catch (SidecarException $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'হোয়াটসঅ্যাপে পাঠাতে সমস্যা হয়েছে: '.$e->getMessage(),
+                'fallback_url' => 'https://api.whatsapp.com/send?phone='.$rawPhone.'&text='.urlencode($message),
+            ], 500);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'হোয়াটসঅ্যাপে পাঠাতে সমস্যা হয়েছে: '.$e->getMessage(),
+                'fallback_url' => 'https://api.whatsapp.com/send?phone='.$rawPhone.'&text='.urlencode($message),
+            ], 500);
+        }
+    }
+
     public function create(Request $request): View
     {
         $customers = Customer::where('status', 'active')
@@ -195,7 +381,7 @@ class SaleController extends Controller
                 ? Customer::where('id', $customerId)->lockForUpdate()->first()
                 : null;
 
-            [$subtotal, $discount, $deliveryCharge, $total] = $this->calculateBaseTotals($items, $data);
+            [$subtotal, $discount, $tax, $deliveryCharge, $total, $productDiscount, $adjustment] = $this->calculateBaseTotals($items, $data);
             $profit = $this->calculateProfit($items, $discount);
 
             $customerPreviousDue = 0.0;
@@ -223,6 +409,12 @@ class SaleController extends Controller
                 ]);
             }
 
+            if (! $customer && $total > 0 && round($total - $totalSubmittedPaid, 2) > 0.01) {
+                throw ValidationException::withMessages([
+                    'payments' => 'ওয়াক-ইন গ্রাহকের ক্ষেত্রে বাকি বিক্রয় সম্ভব নয়। সম্পূর্ণ মূল্য পরিশোধ করতে হবে অথবা গ্রাহক নির্বাচন করুন। / Walk-in customers cannot have due sales. Full payment is required or select a customer.',
+                ]);
+            }
+
             $salePaid = min($totalSubmittedPaid, $total);
             $saleDue = round(max($total - $salePaid, 0), 2);
             $saleStatus = $saleDue <= 0 ? 'paid' : ($salePaid <= 0 ? 'due' : 'partial');
@@ -233,7 +425,10 @@ class SaleController extends Controller
                 'sale_date' => $data['sale_date'],
                 'subtotal' => $subtotal,
                 'discount' => $discount,
+                'product_discount' => $productDiscount,
+                'tax' => $tax,
                 'delivery_charge' => $deliveryCharge,
+                'adjustment' => $adjustment,
                 'total' => $total,
                 'paid_amount' => $salePaid,
                 'due_amount' => $saleDue,
@@ -271,7 +466,7 @@ class SaleController extends Controller
             ->with('units')
             ->orderBy('name')->get();
         $accounts = Account::active()->orderByDesc('is_default')->orderBy('name')->get();
-        $sale->load('items', 'warehouse', 'payments');
+        $sale->load(['items.product.units', 'items.unit', 'items.batch', 'warehouse', 'payments']);
 
         return view('sales::sales.edit', compact('sale', 'customers', 'products', 'employees', 'accounts'));
     }
@@ -289,7 +484,7 @@ class SaleController extends Controller
                 ? Customer::where('id', $customerId)->lockForUpdate()->first()
                 : null;
 
-            [$subtotal, $discount, $deliveryCharge, $total] = $this->calculateBaseTotals($items, $data);
+            [$subtotal, $discount, $tax, $deliveryCharge, $total, $productDiscount, $adjustment] = $this->calculateBaseTotals($items, $data);
             $profit = $this->calculateProfit($items, $discount);
 
             $customerPreviousDue = 0.0;
@@ -317,6 +512,12 @@ class SaleController extends Controller
                 ]);
             }
 
+            if (! $customer && $total > 0 && round($total - $totalSubmittedPaid, 2) > 0.01) {
+                throw ValidationException::withMessages([
+                    'payments' => 'ওয়াক-ইন গ্রাহকের ক্ষেত্রে বাকি বিক্রয় সম্ভব নয়। সম্পূর্ণ মূল্য পরিশোধ করতে হবে অথবা গ্রাহক নির্বাচন করুন। / Walk-in customers cannot have due sales. Full payment is required or select a customer.',
+                ]);
+            }
+
             $salePaid = min($totalSubmittedPaid, $total);
             $saleDue = round(max($total - $salePaid, 0), 2);
             $saleStatus = $saleDue <= 0 ? 'paid' : ($salePaid <= 0 ? 'due' : 'partial');
@@ -327,7 +528,10 @@ class SaleController extends Controller
                 'invoice_no' => $data['invoice_no'] ?? $sale->invoice_no,
                 'subtotal' => $subtotal,
                 'discount' => $discount,
+                'product_discount' => $productDiscount,
+                'tax' => $tax,
                 'delivery_charge' => $deliveryCharge,
+                'adjustment' => $adjustment,
                 'total' => $total,
                 'paid_amount' => $salePaid,
                 'due_amount' => $saleDue,
@@ -401,16 +605,35 @@ class SaleController extends Controller
     }
 
     /**
-     * @return array{0: float, 1: float, 2: float, 3: float}
+     * @return array{0: float, 1: float, 2: float, 3: float, 4: float, 5: float, 6: float}
      */
     private function calculateBaseTotals(array $items, array $data): array
     {
         $subtotal = round((float) collect($items)->sum(fn ($item) => $this->lineAmount($item)), 2);
         $discount = round((float) ($data['discount'] ?? 0), 2);
-        $deliveryCharge = round((float) ($data['delivery_charge'] ?? 0), 2);
-        $total = round(max($subtotal - $discount + $deliveryCharge, 0), 2);
 
-        return [$subtotal, $discount, $deliveryCharge, $total];
+        $productDiscount = round((float) collect($items)->sum(fn ($item) => (float) ($item['discount'] ?? 0)), 2);
+
+        $productVatMap = Product::whereIn('id', collect($items)->pluck('product_id'))
+            ->get(['id', 'is_vat', 'vat_percentage'])
+            ->keyBy('id');
+
+        $tax = round((float) collect($items)->sum(function ($item) use ($productVatMap) {
+            $p = $productVatMap->get($item['product_id']);
+            if ($p && $p->is_vat && (float) $p->vat_percentage > 0) {
+                $lineNet = max(0, $this->lineAmount($item));
+
+                return $lineNet * ((float) $p->vat_percentage / 100);
+            }
+
+            return 0;
+        }), 2);
+
+        $deliveryCharge = round((float) ($data['delivery_charge'] ?? 0), 2);
+        $adjustment = round((float) ($data['adjustment'] ?? 0), 2);
+        $total = round(max($subtotal - $discount + $tax + $deliveryCharge + $adjustment, 0), 2);
+
+        return [$subtotal, $discount, $tax, $deliveryCharge, $total, $productDiscount, $adjustment];
     }
 
     /**

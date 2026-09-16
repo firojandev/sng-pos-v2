@@ -10,5 +10,7 @@
     "Supplier": true,
     "Sales": true,
     "Purchase": true,
-    "Cashbox": true
+    "Cashbox": true,
+    "Report": true,
+    "FinanceManagement": true
 }

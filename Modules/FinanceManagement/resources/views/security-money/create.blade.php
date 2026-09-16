@@ -1,0 +1,31 @@
+<x-core::layout
+    title="নতুন জামানত"
+    title-en="New Security Money"
+    subtitle="একটি নতুন জামানতের লেনদেন যোগ করুন"
+    subtitle-en="Add a new security money transaction"
+    active="security-money"
+>
+    <x-financemanagement::tabbar active="security-money" />
+
+    <div class="panel" style="margin-top:0; max-width:640px;">
+        <div class="panel-head">
+            <div class="panel-title bn">জামানতের তথ্য</div>
+            <div class="panel-title en" style="display:none;">Security Money Details</div>
+        </div>
+        <div class="panel-body">
+            <form method="POST" action="{{ route('security-money.store') }}">
+                @csrf
+                @include('financemanagement::security-money._form')
+
+                <div style="display:flex; gap:10px; margin-top:20px;">
+                    <x-core::button type="submit" color="primary" size="sm" icon="check" style="flex:1; justify-content:center;">
+                        <span class="bn">সংরক্ষণ করুন</span><span class="en">Save</span>
+                    </x-core::button>
+                    <x-core::button variant="secondary" size="sm" :href="route('security-money.index')" style="flex:1; justify-content:center;">
+                        <span class="bn">বাতিল</span><span class="en">Cancel</span>
+                    </x-core::button>
+                </div>
+            </form>
+        </div>
+    </div>
+</x-core::layout>

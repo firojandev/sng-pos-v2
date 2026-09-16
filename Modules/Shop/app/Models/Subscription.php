@@ -28,6 +28,42 @@ class Subscription extends BaseSubscription
     ];
 
     /**
+     * @return array<string, string|class-string>
+     */
+    protected function casts(): array
+    {
+        $casts = parent::casts();
+        unset($casts['status']);
+        $casts['current_period_start'] = 'date:Y-m-d';
+        $casts['current_period_end'] = 'date:Y-m-d';
+
+        return $casts;
+    }
+
+    public function getStatusAttribute(): SubscriptionStatus|string|null
+    {
+        $raw = $this->attributes['status'] ?? null;
+        if ($raw === null) {
+            return null;
+        }
+
+        if ($raw === 'trial') {
+            return SubscriptionStatus::Trialing;
+        }
+
+        return SubscriptionStatus::tryFrom((string) $raw) ?? (string) $raw;
+    }
+
+    public function setStatusAttribute($value): void
+    {
+        if ($value === 'trial') {
+            $value = 'trialing';
+        }
+
+        $this->attributes['status'] = $value instanceof SubscriptionStatus ? $value->value : (string) $value;
+    }
+
+    /**
      * Bengali/English labels for each subscription status.
      *
      * @return array<string, array{bn: string, en: string}>
@@ -36,7 +72,6 @@ class Subscription extends BaseSubscription
     {
         return [
             'trialing' => ['bn' => 'ট্রায়াল', 'en' => 'Trial'],
-            'trial' => ['bn' => 'ট্রায়াল', 'en' => 'Trial'],
             'active' => ['bn' => 'সক্রিয়', 'en' => 'Active'],
             'past_due' => ['bn' => 'বকেয়া', 'en' => 'Past Due'],
             'suspended' => ['bn' => 'স্থগিত', 'en' => 'Suspended'],
@@ -48,6 +83,9 @@ class Subscription extends BaseSubscription
     public function statusLabel(): array
     {
         $statusKey = $this->status instanceof SubscriptionStatus ? $this->status->value : (string) $this->status;
+        if ($statusKey === 'trial') {
+            $statusKey = 'trialing';
+        }
 
         return static::statusLabels()[$statusKey] ?? ['bn' => $statusKey, 'en' => $statusKey];
     }

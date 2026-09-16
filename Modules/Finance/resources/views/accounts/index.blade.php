@@ -6,43 +6,50 @@
     active="accounts"
 >
 
-    {{-- KPI Cards --}}
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:20px;">
-        <div class="panel" style="margin:0; padding:16px; border-left:4px solid #D4AF37;">
-            <div style="font-size:12px; color:var(--text-muted); font-weight:600;">
-                <span class="bn">মোট অ্যাকাউন্টের ব্যালেন্স</span><span class="en" style="display:none;">Total Balance</span>
-            </div>
-            <div style="font-size:22px; font-weight:700; color:var(--text-primary); margin-top:4px;">
-                ৳ {{ number_format($totalBalance, 2) }}
-            </div>
-        </div>
+    {{-- Summary KPI Stat Cards --}}
+    <div class="stat-grid" style="margin-bottom:20px;">
+        <x-core::stat-card
+            icon="wallet"
+            color="teal"
+            :value="'৳ ' . number_format($totalBalance, 2)"
+            label="মোট অ্যাকাউন্টের ব্যালেন্স"
+            label-en="Total Balance"
+            subtext="সকল অ্যাকাউন্টের মোট স্থিতি"
+            subtext-en="Combined accounts balance"
+        />
 
-        <div class="panel" style="margin:0; padding:16px; border-left:4px solid #16a34a;">
-            <div style="font-size:12px; color:var(--text-muted); font-weight:600;">
-                <span class="bn">মোট ক্যাশ ব্যালেন্স</span><span class="en" style="display:none;">Total Cash</span>
-            </div>
-            <div style="font-size:22px; font-weight:700; color:#16a34a; margin-top:4px;">
-                ৳ {{ number_format($totalCash, 2) }}
-            </div>
-        </div>
+        <x-core::stat-card
+            icon="cash"
+            color="green"
+            value-color="green"
+            :value="'৳ ' . number_format($totalCash, 2)"
+            label="মোট ক্যাশ ব্যালেন্স"
+            label-en="Total Cash"
+            subtext="হাতে নগদ ক্যাশ স্থিতি"
+            subtext-en="Physical cash in hand"
+        />
 
-        <div class="panel" style="margin:0; padding:16px; border-left:4px solid #2563eb;">
-            <div style="font-size:12px; color:var(--text-muted); font-weight:600;">
-                <span class="bn">মোট ব্যাংক ব্যালেন্স</span><span class="en" style="display:none;">Total Bank</span>
-            </div>
-            <div style="font-size:22px; font-weight:700; color:#2563eb; margin-top:4px;">
-                ৳ {{ number_format($totalBank, 2) }}
-            </div>
-        </div>
+        <x-core::stat-card
+            icon="landmark"
+            color="blue"
+            value-color="blue"
+            :value="'৳ ' . number_format($totalBank, 2)"
+            label="মোট ব্যাংক ব্যালেন্স"
+            label-en="Total Bank"
+            subtext="সকল ব্যাংক অ্যাকাউন্টের স্থিতি"
+            subtext-en="Across all bank accounts"
+        />
 
-        <div class="panel" style="margin:0; padding:16px; border-left:4px solid #ec4899;">
-            <div style="font-size:12px; color:var(--text-muted); font-weight:600;">
-                <span class="bn">মোট এমএফএস (বিকাশ/নগদ/রকেট)</span><span class="en" style="display:none;">Total MFS</span>
-            </div>
-            <div style="font-size:22px; font-weight:700; color:#db2777; margin-top:4px;">
-                ৳ {{ number_format($totalMfs, 2) }}
-            </div>
-        </div>
+        <x-core::stat-card
+            icon="smartphone"
+            color="gold"
+            value-color="gold"
+            :value="'৳ ' . number_format($totalMfs, 2)"
+            label="মোট এমএফএস (বিকাশ/নগদ/রকেট)"
+            label-en="Total MFS"
+            subtext="মোবাইল ব্যাংকিং স্থিতি"
+            subtext-en="bKash, Nagad, Rocket, etc."
+        />
     </div>
 
     <div class="panel" style="margin-top:0;">
