@@ -81,8 +81,10 @@ class SubscriptionifySeeder extends Seeder
             'audit' => ['name' => 'অ্যাক্টিভিটি লগ (Audit Log)', 'sort_order' => 38],
             'employees' => ['name' => 'কর্মচারী (Employees)', 'sort_order' => 39],
             'users' => ['name' => 'ইউজার (Users)', 'sort_order' => 40],
-            'subscription' => ['name' => 'সাবস্ক্রিপশন ও প্ল্যান (Subscription & Plan)', 'sort_order' => 41],
-            'backup' => ['name' => 'ডাটাবেজ ব্যাকআপ (Database Backup)', 'sort_order' => 42],
+            'printer-settings' => ['name' => 'প্রিন্টার সেটিংস (Printer Settings)', 'sort_order' => 41],
+            'whatsapp-settings' => ['name' => 'হোয়াটসঅ্যাপ সেটিংস (WhatsApp Settings)', 'sort_order' => 42],
+            'subscription' => ['name' => 'সাবস্ক্রিপশন ও প্ল্যান (Subscription & Plan)', 'sort_order' => 43],
+            'backup' => ['name' => 'ডাটাবেজ ব্যাকআপ (Database Backup)', 'sort_order' => 44],
         ];
 
         foreach ($toggleFeatures as $slug => $data) {
@@ -120,7 +122,7 @@ class SubscriptionifySeeder extends Seeder
                     'max-warehouses' => 1,
                     'max-products' => 100,
                 ],
-                'toggles' => ['sales', 'purchase', 'cashbox', 'quick-sale', 'stock', 'products', 'branches', 'customers', 'suppliers', 'subscription'],
+                'toggles' => ['sales', 'purchase', 'cashbox', 'quick-sale', 'stock', 'products', 'branches', 'customers', 'suppliers', 'printer-settings', 'subscription'],
             ],
             [
                 'name' => 'বেসিক (Starter)',
@@ -141,7 +143,7 @@ class SubscriptionifySeeder extends Seeder
                     'max-warehouses' => 1,
                     'max-products' => 200,
                 ],
-                'toggles' => ['sales', 'purchase', 'cashbox', 'quick-sale', 'stock', 'products', 'branches', 'customers', 'suppliers', 'income', 'expense', 'report-sales', 'report-sales-vat', 'subscription'],
+                'toggles' => ['sales', 'purchase', 'cashbox', 'quick-sale', 'stock', 'products', 'branches', 'customers', 'suppliers', 'income', 'expense', 'printer-settings', 'report-sales', 'report-sales-vat', 'subscription'],
             ],
             [
                 'name' => 'স্ট্যান্ডার্ড (Standard)',
@@ -162,7 +164,7 @@ class SubscriptionifySeeder extends Seeder
                     'max-warehouses' => 3,
                     'max-products' => 2000,
                 ],
-                'toggles' => ['sales', 'purchase', 'cashbox', 'quick-sale', 'stock', 'products', 'branches', 'customers', 'suppliers', 'income', 'expense', 'accounts', 'account-transfers', 'assets', 'debts', 'lend', 'security-money', 'tax', 'report-sales', 'report-sales-vat', 'report-purchase', 'report-stock', 'report-products', 'report-profit-loss', 'report-income', 'report-expense', 'report-financial-position', 'report-balance-sheet', 'employees', 'users', 'subscription'],
+                'toggles' => ['sales', 'purchase', 'cashbox', 'quick-sale', 'stock', 'products', 'branches', 'customers', 'suppliers', 'income', 'expense', 'accounts', 'account-transfers', 'assets', 'debts', 'lend', 'security-money', 'tax', 'printer-settings', 'whatsapp-settings', 'report-sales', 'report-sales-vat', 'report-purchase', 'report-stock', 'report-products', 'report-profit-loss', 'report-income', 'report-expense', 'report-financial-position', 'report-balance-sheet', 'employees', 'users', 'subscription'],
             ],
             [
                 'name' => 'প্রিমিয়াম (Enterprise)',

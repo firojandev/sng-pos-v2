@@ -2,7 +2,7 @@
     use Modules\Core\Support\BanglaNumber;
 
     $shop = auth()->user()?->shop ?? $purchase->shop ?? \Modules\Shop\Models\Shop::first();
-    $printerSetting = $shop?->printerSetting ?? \Modules\Shop\Models\PrinterSetting::getDefaultForShop($shop->id ?? 1);
+    $printerSetting = $shop ? $shop->getEffectivePrinterSetting() : \Modules\Shop\Models\PrinterSetting::getDefaultForShop(1);
 
     $previousDue = 0.0;
     if ($purchase->supplier) {

@@ -1,6 +1,6 @@
 @php
     $shop = auth()->user()?->shop ?? $purchase->shop ?? \Modules\Shop\Models\Shop::first();
-    $printerSetting = $shop?->printerSetting ?? \Modules\Shop\Models\PrinterSetting::getDefaultForShop($shop->id ?? 1);
+    $printerSetting = $shop ? $shop->getEffectivePrinterSetting() : \Modules\Shop\Models\PrinterSetting::getDefaultForShop(1);
     $isThermal = $printerSetting->isThermal();
 @endphp
 <!DOCTYPE html>

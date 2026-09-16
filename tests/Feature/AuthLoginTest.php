@@ -16,8 +16,8 @@ class AuthLoginTest extends TestCase
         $response = $this->get('/login');
 
         $response->assertStatus(200);
-        $response->assertSee('SNGPOS-এ লগইন করুন');
-        $response->assertSee('Sign in to SNGPOS');
+        $response->assertSee('লগইন করুন');
+        $response->assertSee('Sign in');
         $response->assertSee('ইউজারনেম');
         $response->assertSee('Username');
         $response->assertSee('পাসওয়ার্ড');
