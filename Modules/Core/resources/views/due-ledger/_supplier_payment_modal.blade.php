@@ -38,7 +38,7 @@
             </div>
             <div>
                 <div style="font-size:11px; color:var(--ink-500);">অবশিষ্ট থাকবে / Balance After</div>
-                <div id="supplier-balance-after" style="font-size:15px; font-weight:800; color:var(--ink-900); font-family:var(--font-mono, monospace); margin-top:2px;">৳{{ number_format($supplier->total_due, 2) }}</div>
+                <div id="supplier-balance-after" style="font-size:15px; font-weight:800; color:{{ $supplier->total_due < 0 ? 'var(--red-600)' : 'var(--ink-900)' }}; font-family:var(--font-mono, monospace); margin-top:2px;">৳{{ number_format($supplier->total_due, 2) }}</div>
             </div>
         </div>
 
