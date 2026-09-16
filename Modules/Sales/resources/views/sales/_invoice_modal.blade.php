@@ -1,6 +1,6 @@
 @php
     $shop = auth()->user()?->shop ?? $sale->shop ?? \Modules\Shop\Models\Shop::first();
-    $printerSetting = $shop?->printerSetting ?? \Modules\Shop\Models\PrinterSetting::getDefaultForShop($shop->id ?? 1);
+    $printerSetting = $shop ? $shop->getEffectivePrinterSetting() : \Modules\Shop\Models\PrinterSetting::getDefaultForShop(1);
 @endphp
 <div class="modal-backdrop" id="saleInvoiceModal" style="z-index:1050;">
     <div class="modal-box" style="width:{{ $printerSetting->isThermal() ? '500px' : ($printerSetting->isA5() ? '600px' : '760px') }}; max-width:96vw; max-height:94vh; padding:0; border-radius:12px; background:var(--card, #ffffff); border:1px solid var(--border, #e2e8f0); box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); display:flex; flex-direction:column; overflow:hidden;">
@@ -63,24 +63,26 @@
                 </x-core::button>
 
                 {{-- WhatsApp Send (via personal WhatsApp sidecar) --}}
-                @php
-                    $rawPhone = preg_replace('/[^0-9]/', '', (string) ($sale->customer?->phone ?? ''));
-                    $customerPhone = $rawPhone ? (str_starts_with($rawPhone, '88') ? $rawPhone : '88' . $rawPhone) : '';
-                @endphp
-                <x-core::button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    icon="share-2"
-                    id="btnShareWhatsApp"
-                    data-url="{{ route('sales.send-whatsapp', $sale) }}"
-                    data-phone="{{ $customerPhone }}"
-                    title="হোয়াটসঅ্যাপ / WhatsApp"
-                    style="white-space:nowrap !important; flex-shrink:0;"
-                >
-                    <span class="bn">হোয়াটসঅ্যাপ</span>
-                    <span class="en">WhatsApp</span>
-                </x-core::button>
+                @if ($shop && $shop->hasFeature('whatsapp-settings'))
+                    @php
+                        $rawPhone = preg_replace('/[^0-9]/', '', (string) ($sale->customer?->phone ?? ''));
+                        $customerPhone = $rawPhone ? (str_starts_with($rawPhone, '88') ? $rawPhone : '88' . $rawPhone) : '';
+                    @endphp
+                    <x-core::button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        icon="share-2"
+                        id="btnShareWhatsApp"
+                        data-url="{{ route('sales.send-whatsapp', $sale) }}"
+                        data-phone="{{ $customerPhone }}"
+                        title="হোয়াটসঅ্যাপ / WhatsApp"
+                        style="white-space:nowrap !important; flex-shrink:0;"
+                    >
+                        <span class="bn">হোয়াটসঅ্যাপ</span>
+                        <span class="en">WhatsApp</span>
+                    </x-core::button>
+                @endif
             </div>
 
             {{-- Print Button --}}

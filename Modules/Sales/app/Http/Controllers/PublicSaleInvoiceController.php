@@ -28,7 +28,7 @@ class PublicSaleInvoiceController extends Controller
             ->firstOrFail();
 
         $shop = $sale->shop ?? Shop::first();
-        $printerSetting = $shop?->printerSetting ?? PrinterSetting::getDefaultForShop($shop->id ?? 1);
+        $printerSetting = $shop ? $shop->getEffectivePrinterSetting() : PrinterSetting::getDefaultForShop(1);
 
         return view('sales::public.invoice', compact('sale', 'shop', 'printerSetting'));
     }
