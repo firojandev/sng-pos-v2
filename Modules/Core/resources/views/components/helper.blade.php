@@ -1,9 +1,12 @@
 @props([
     'variant' => 'default',
     'icon' => null,
+    'helper' => null,
+    'helperEn' => null,
 ])
 
 @php
+    $resolvedHelperEn = $helperEn ?? $attributes->get('helper-en') ?? null;
     $variantClass = match($variant) {
         'info' => 'form-helper-info',
         'success' => 'form-helper-success',
@@ -21,9 +24,20 @@
     $resolvedIcon = $icon ?? $defaultIcon;
 @endphp
 
-<div {{ $attributes->merge(['class' => trim('form-helper ' . $variantClass)]) }}>
+<div {{ $attributes->except(['helper-en'])->merge(['class' => trim('form-helper ' . $variantClass)]) }}>
     @if ($resolvedIcon)
         <x-core::icon :name="$resolvedIcon" size="13" />
     @endif
-    <span>{{ $slot }}</span>
+    <span>
+        @if ($helper && $resolvedHelperEn)
+            <span class="bn">{{ $helper }}</span>
+            <span class="en" style="display:none;">{{ $resolvedHelperEn }}</span>
+        @elseif ($helper)
+            {{ $helper }}
+        @elseif ($resolvedHelperEn)
+            <span class="en">{{ $resolvedHelperEn }}</span>
+        @else
+            {{ $slot }}
+        @endif
+    </span>
 </div>

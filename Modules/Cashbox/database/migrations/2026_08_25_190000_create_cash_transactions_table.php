@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('shop_id')->nullable()->constrained()->cascadeOnDelete();
             $table->enum('type', ['in', 'out']);
-            $table->enum('source', ['manual', 'sale', 'purchase', 'income', 'expense']);
+            $table->enum('source', ['manual', 'sale', 'purchase', 'income', 'expense', 'sale_return', 'purchase_return']);
             $table->nullableMorphs('sourceable');
             $table->decimal('amount', 12, 2);
             $table->text('note')->nullable();

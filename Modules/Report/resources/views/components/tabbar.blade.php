@@ -6,6 +6,7 @@ $shop = $user?->shop;
 
 $allTabs = [
     ['key' => 'sales', 'route' => 'reports.sales', 'feature' => 'report-sales', 'permission' => 'report-sales.view', 'bn' => 'বিক্রয় রিপোর্ট', 'en' => 'Sales Report'],
+    ['key' => 'sales-vat', 'route' => 'reports.sales-vat', 'feature' => 'report-sales-vat', 'permission' => 'report-sales-vat.view', 'bn' => 'বিক্রয় ভ্যাট রিপোর্ট', 'en' => 'Sales VAT Report'],
     ['key' => 'purchase', 'route' => 'reports.purchase', 'feature' => 'report-purchase', 'permission' => 'report-purchase.view', 'bn' => 'ক্রয় রিপোর্ট', 'en' => 'Purchase Report'],
     ['key' => 'stock', 'route' => 'reports.stock', 'feature' => 'report-stock', 'permission' => 'report-stock.view', 'bn' => 'স্টক রিপোর্ট', 'en' => 'Stock Report'],
     ['key' => 'products', 'route' => 'reports.products', 'feature' => 'report-products', 'permission' => 'report-products.view', 'bn' => 'পণ্য রিপোর্ট', 'en' => 'Products Report'],

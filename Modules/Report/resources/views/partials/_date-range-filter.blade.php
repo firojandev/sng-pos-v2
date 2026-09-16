@@ -11,6 +11,7 @@
 
     $reportPermissions = [
         'reports.sales' => 'report-sales.print',
+        'reports.sales-vat' => 'report-sales-vat.print',
         'reports.purchase' => 'report-purchase.print',
         'reports.stock' => 'report-stock.print',
         'reports.products' => 'report-products.print',

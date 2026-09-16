@@ -135,6 +135,7 @@
         'security-money' => ['icon' => 'shield', 'desc_bn' => 'প্রদত্ত ও গৃহীত জামানত', 'desc_en' => 'Security Deposits Paid & Received'],
         'tax' => ['icon' => 'percent', 'desc_bn' => 'ট্যাক্স ও ভ্যাট কনফিগারেশন', 'desc_en' => 'VAT & Tax Settings'],
         'report-sales' => ['icon' => 'bar-chart', 'desc_bn' => 'বিক্রয় প্রতিবেদন', 'desc_en' => 'Sales Report'],
+        'report-sales-vat' => ['icon' => 'bar-chart', 'desc_bn' => 'বিক্রয় ভ্যাট প্রতিবেদন', 'desc_en' => 'Sales VAT Report'],
         'report-purchase' => ['icon' => 'bar-chart', 'desc_bn' => 'ক্রয় প্রতিবেদন', 'desc_en' => 'Purchase Report'],
         'report-stock' => ['icon' => 'bar-chart', 'desc_bn' => 'স্টক প্রতিবেদন', 'desc_en' => 'Stock Report'],
         'report-products' => ['icon' => 'bar-chart', 'desc_bn' => 'পণ্য প্রতিবেদন', 'desc_en' => 'Product Report'],
@@ -201,7 +202,7 @@
             'subtitle_en' => 'Staff, user accounts, business reports and activity audit',
             'icon' => 'shield',
             'badge_color' => 'red',
-            'keys' => ['employees', 'users', 'report-sales', 'report-purchase', 'report-stock', 'report-products', 'report-profit-loss', 'report-income', 'report-expense', 'report-financial-position', 'report-balance-sheet', 'audit'],
+            'keys' => ['employees', 'users', 'report-sales', 'report-sales-vat', 'report-purchase', 'report-stock', 'report-products', 'report-profit-loss', 'report-income', 'report-expense', 'report-financial-position', 'report-balance-sheet', 'audit'],
         ],
     ];
 
@@ -1133,6 +1134,7 @@ $(function () {
                 'cashbox.view', 'cashbox.cash-in', 'cashbox.cash-out',
                 'tax.view', 'tax.edit',
                 'report-sales.view', 'report-sales.print',
+                'report-sales-vat.view', 'report-sales-vat.print',
                 'report-purchase.view', 'report-purchase.print',
                 'report-stock.view', 'report-stock.print',
                 'report-products.view', 'report-products.print',

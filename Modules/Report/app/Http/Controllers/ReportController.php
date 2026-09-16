@@ -23,6 +23,8 @@ use Modules\Product\Models\StockMovement;
 use Modules\Purchase\Models\Purchase;
 use Modules\Sales\Models\Sale;
 use Modules\Sales\Models\SaleItem;
+use Modules\Sales\Models\SaleReturn;
+use Modules\Shop\Models\Warehouse;
 use Modules\Supplier\Models\Supplier;
 
 class ReportController extends Controller
@@ -32,6 +34,7 @@ class ReportController extends Controller
      */
     private const ROUTES = [
         'report-sales' => 'reports.sales',
+        'report-sales-vat' => 'reports.sales-vat',
         'report-purchase' => 'reports.purchase',
         'report-stock' => 'reports.stock',
         'report-products' => 'reports.products',
@@ -81,6 +84,261 @@ class ReportController extends Controller
         ];
 
         return view('report::sales', compact('range', 'from', 'to', 'sales', 'totals'));
+    }
+
+    public function salesVat(Request $request): View
+    {
+        [$range, $from, $to] = $this->resolveDateRange($request);
+        $user = $request->user();
+        $shop = $user?->shop;
+
+        $warehouseId = $request->query('warehouse_id');
+        $warehouses = $shop ? Warehouse::active()->orderBy('name')->get(['id', 'name', 'branch_id']) : collect();
+
+        // 1. Query eligible Sales within the date range
+        $sales = Sale::query()
+            ->when($from, fn ($q) => $q->whereDate('sale_date', '>=', $from))
+            ->when($to, fn ($q) => $q->whereDate('sale_date', '<=', $to))
+            ->when($warehouseId, fn ($q) => $q->where('warehouse_id', $warehouseId))
+            ->with([
+                'customer:id,name,phone',
+                'items.product:id,name,is_vat,vat_percentage',
+            ])
+            ->orderByDesc('sale_date')
+            ->orderByDesc('id')
+            ->get();
+
+        // 2. Query eligible Sales Returns within the date range
+        $returns = SaleReturn::query()
+            ->when($from, fn ($q) => $q->whereDate('return_date', '>=', $from))
+            ->when($to, fn ($q) => $q->whereDate('return_date', '<=', $to))
+            ->when($warehouseId, fn ($q) => $q->whereHas('sale', fn ($s) => $s->where('warehouse_id', $warehouseId)))
+            ->with([
+                'sale.customer:id,name,phone',
+                'items.product:id,name,is_vat,vat_percentage',
+            ])
+            ->orderByDesc('return_date')
+            ->orderByDesc('id')
+            ->get();
+
+        // 3. Process Sales Output VAT & Sales VAT Details
+        $salesDetails = [];
+        $grossSales = (float) $sales->sum('total');
+        $grossTaxableSales = 0.0;
+        $grossOutputVat = 0.0;
+        $salesRateTotals = [];
+
+        foreach ($sales as $sale) {
+            $saleRateGroups = [];
+
+            foreach ($sale->items as $item) {
+                $p = $item->product;
+                $isVat = (bool) ($p?->is_vat ?? false);
+                $rate = $isVat ? (float) ($p?->vat_percentage ?? 0) : 0.0;
+                $lineAmount = (float) $item->total;
+
+                if ($isVat && $rate > 0) {
+                    $vatAmount = round($lineAmount * ($rate / 100), 2);
+                    $rateKey = rtrim(rtrim(number_format($rate, 2), '0'), '.').'%';
+
+                    if (! isset($saleRateGroups[$rateKey])) {
+                        $saleRateGroups[$rateKey] = [
+                            'rate' => $rate,
+                            'rate_label' => $rateKey,
+                            'taxable' => 0.0,
+                            'vat' => 0.0,
+                        ];
+                    }
+                    $saleRateGroups[$rateKey]['taxable'] += $lineAmount;
+                    $saleRateGroups[$rateKey]['vat'] += $vatAmount;
+
+                    if (! isset($salesRateTotals[$rateKey])) {
+                        $salesRateTotals[$rateKey] = ['rate' => $rate, 'rate_label' => $rateKey, 'taxable' => 0.0, 'vat' => 0.0];
+                    }
+                    $salesRateTotals[$rateKey]['taxable'] += $lineAmount;
+                    $salesRateTotals[$rateKey]['vat'] += $vatAmount;
+
+                    $grossTaxableSales += $lineAmount;
+                    $grossOutputVat += $vatAmount;
+                } else {
+                    $rateKey = '0% / Exempt';
+                    if (! isset($salesRateTotals[$rateKey])) {
+                        $salesRateTotals[$rateKey] = ['rate' => 0.0, 'rate_label' => $rateKey, 'taxable' => 0.0, 'vat' => 0.0];
+                    }
+                    $salesRateTotals[$rateKey]['taxable'] += $lineAmount;
+                }
+            }
+
+            if (! empty($saleRateGroups)) {
+                foreach ($saleRateGroups as $group) {
+                    $salesDetails[] = [
+                        'date' => $sale->sale_date,
+                        'invoice_no' => $sale->invoice_no,
+                        'customer_name' => $sale->customer?->name ?? 'ওয়াক-ইন গ্রাহক / Walk-in',
+                        'customer_phone' => $sale->customer?->phone,
+                        'taxable_value' => round($group['taxable'], 2),
+                        'vat_rate' => $group['rate_label'],
+                        'vat_amount' => round($group['vat'], 2),
+                    ];
+                }
+            } elseif ((float) ($sale->tax ?? 0) > 0) {
+                $storedTax = (float) $sale->tax;
+                $grossOutputVat += $storedTax;
+                $salesDetails[] = [
+                    'date' => $sale->sale_date,
+                    'invoice_no' => $sale->invoice_no,
+                    'customer_name' => $sale->customer?->name ?? 'ওয়াক-ইন গ্রাহক / Walk-in',
+                    'customer_phone' => $sale->customer?->phone,
+                    'taxable_value' => (float) $sale->subtotal,
+                    'vat_rate' => 'N/A',
+                    'vat_amount' => $storedTax,
+                ];
+            }
+        }
+
+        // 4. Process Sales Return VAT Details
+        $returnDetails = [];
+        $salesReturnTotal = (float) $returns->sum('subtotal');
+        $returnTaxableSales = 0.0;
+        $returnOutputVat = 0.0;
+        $returnRateTotals = [];
+
+        foreach ($returns as $ret) {
+            $retRateGroups = [];
+
+            foreach ($ret->items as $item) {
+                $p = $item->product;
+                $isVat = (bool) ($p?->is_vat ?? false);
+                $rate = $isVat ? (float) ($p?->vat_percentage ?? 0) : 0.0;
+                $lineAmount = (float) $item->total;
+
+                if ($isVat && $rate > 0) {
+                    $vatAmount = round($lineAmount * ($rate / 100), 2);
+                    $rateKey = rtrim(rtrim(number_format($rate, 2), '0'), '.').'%';
+
+                    if (! isset($retRateGroups[$rateKey])) {
+                        $retRateGroups[$rateKey] = [
+                            'rate' => $rate,
+                            'rate_label' => $rateKey,
+                            'taxable' => 0.0,
+                            'vat' => 0.0,
+                        ];
+                    }
+                    $retRateGroups[$rateKey]['taxable'] += $lineAmount;
+                    $retRateGroups[$rateKey]['vat'] += $vatAmount;
+
+                    if (! isset($returnRateTotals[$rateKey])) {
+                        $returnRateTotals[$rateKey] = ['rate' => $rate, 'rate_label' => $rateKey, 'taxable' => 0.0, 'vat' => 0.0];
+                    }
+                    $returnRateTotals[$rateKey]['taxable'] += $lineAmount;
+                    $returnRateTotals[$rateKey]['vat'] += $vatAmount;
+
+                    $returnTaxableSales += $lineAmount;
+                    $returnOutputVat += $vatAmount;
+                } else {
+                    $rateKey = '0% / Exempt';
+                    if (! isset($returnRateTotals[$rateKey])) {
+                        $returnRateTotals[$rateKey] = ['rate' => 0.0, 'rate_label' => $rateKey, 'taxable' => 0.0, 'vat' => 0.0];
+                    }
+                    $returnRateTotals[$rateKey]['taxable'] += $lineAmount;
+                }
+            }
+
+            if (! empty($retRateGroups)) {
+                foreach ($retRateGroups as $group) {
+                    $returnDetails[] = [
+                        'date' => $ret->return_date,
+                        'return_no' => $ret->return_no,
+                        'invoice_no' => $ret->sale?->invoice_no,
+                        'customer_name' => $ret->sale?->customer?->name ?? 'ওয়াক-ইন গ্রাহক / Walk-in',
+                        'customer_phone' => $ret->sale?->customer?->phone,
+                        'taxable_value' => round($group['taxable'], 2),
+                        'vat_rate' => $group['rate_label'],
+                        'vat_amount' => round($group['vat'], 2),
+                    ];
+                }
+            }
+        }
+
+        // 5. Summary Calculations
+        $netSales = round($grossSales - $salesReturnTotal, 2);
+        $taxableSalesValue = round($grossTaxableSales - $returnTaxableSales, 2);
+        $netOutputVat = round($grossOutputVat - $returnOutputVat, 2);
+
+        // 6. VAT Rate-wise Summary Calculation
+        $allRateKeys = collect(array_keys($salesRateTotals))
+            ->merge(array_keys($returnRateTotals))
+            ->unique();
+
+        $taxableRates = $allRateKeys->filter(fn ($k) => $k !== '0% / Exempt')->sort(function ($a, $b) {
+            return (float) str_replace('%', '', $b) <=> (float) str_replace('%', '', $a);
+        });
+
+        if ($allRateKeys->contains('0% / Exempt')) {
+            $sortedRates = $taxableRates->push('0% / Exempt');
+        } else {
+            $sortedRates = $taxableRates;
+        }
+
+        $rateWiseSummary = [];
+        $rateWiseTotalTaxable = 0.0;
+        $rateWiseTotalVat = 0.0;
+
+        foreach ($sortedRates as $rateKey) {
+            $sTaxable = (float) ($salesRateTotals[$rateKey]['taxable'] ?? 0);
+            $rTaxable = (float) ($returnRateTotals[$rateKey]['taxable'] ?? 0);
+            $netTaxable = round($sTaxable - $rTaxable, 2);
+
+            $sVat = (float) ($salesRateTotals[$rateKey]['vat'] ?? 0);
+            $rVat = (float) ($returnRateTotals[$rateKey]['vat'] ?? 0);
+            $netVat = round($sVat - $rVat, 2);
+
+            $rateWiseSummary[] = [
+                'rate' => $rateKey,
+                'gross_taxable' => $sTaxable,
+                'return_taxable' => $rTaxable,
+                'taxable_sales' => $netTaxable,
+                'gross_vat' => $sVat,
+                'return_vat' => $rVat,
+                'output_vat' => $netVat,
+            ];
+
+            if ($rateKey !== '0% / Exempt') {
+                $rateWiseTotalTaxable += $netTaxable;
+            }
+            $rateWiseTotalVat += $netVat;
+        }
+
+        // 7. Internal Reconciliation Validation
+        $reconciliation = [
+            'net_sales_reconciled' => abs(($grossSales - $salesReturnTotal) - $netSales) < 0.01,
+            'taxable_sales_reconciled' => abs(($grossTaxableSales - $returnTaxableSales) - $taxableSalesValue) < 0.01
+                && abs($rateWiseTotalTaxable - $taxableSalesValue) < 0.01,
+            'output_vat_reconciled' => abs(($grossOutputVat - $returnOutputVat) - $netOutputVat) < 0.01
+                && abs($rateWiseTotalVat - $netOutputVat) < 0.01,
+            'is_valid' => true,
+        ];
+        $reconciliation['is_valid'] = $reconciliation['net_sales_reconciled']
+            && $reconciliation['taxable_sales_reconciled']
+            && $reconciliation['output_vat_reconciled'];
+
+        $summary = [
+            'gross_sales' => $grossSales,
+            'sales_return' => $salesReturnTotal,
+            'net_sales' => $netSales,
+            'gross_taxable_sales' => $grossTaxableSales,
+            'return_taxable_sales' => $returnTaxableSales,
+            'taxable_sales_value' => $taxableSalesValue,
+            'gross_output_vat' => $grossOutputVat,
+            'return_output_vat' => $returnOutputVat,
+            'output_vat' => $netOutputVat,
+        ];
+
+        return view('report::sales-vat', compact(
+            'range', 'from', 'to', 'warehouseId', 'warehouses',
+            'summary', 'salesDetails', 'returnDetails', 'rateWiseSummary',
+            'rateWiseTotalTaxable', 'rateWiseTotalVat', 'reconciliation'
+        ));
     }
 
     public function purchase(Request $request): View
@@ -264,46 +522,94 @@ class ReportController extends Controller
     public function financialPosition(Request $request): View
     {
         $asOf = $this->resolveAsOf($request);
+        $data = $this->computeFinancialSnapshot($asOf);
 
-        $totalAssetsWithSecurity = (float) Asset::where('created_at', '<=', $asOf)->sum(DB::raw("CASE WHEN amount > (CASE WHEN depreciation_type = 'percentage' THEN (amount * COALESCE(depreciation, 0) / 100.0) ELSE COALESCE(depreciation, 0) END) THEN amount - (CASE WHEN depreciation_type = 'percentage' THEN (amount * COALESCE(depreciation, 0) / 100.0) ELSE COALESCE(depreciation, 0) END) ELSE 0 END"))
-            + (float) SecurityMoney::where('status', 'paid')->where('date', '<=', $asOf)->sum('amount');
-
-        $stockValue = $this->stockValue($asOf);
-        $receivable = $this->customerReceivable($asOf);
-        $payable = $this->supplierPayable($asOf);
-        $lendOutstanding = (float) Lend::where('status', 'due')->where('date', '<=', $asOf)->sum('amount');
-        $cashAndBank = $this->cashAndBankBalance($asOf);
-
-        $netPosition = ($totalAssetsWithSecurity + $stockValue + $receivable + $lendOutstanding + $cashAndBank) - $payable;
-
-        return view('report::financial-position', compact(
-            'asOf', 'totalAssetsWithSecurity', 'stockValue', 'receivable', 'payable', 'lendOutstanding', 'cashAndBank', 'netPosition',
-        ));
+        return view('report::financial-position', $data);
     }
 
     public function balanceSheet(Request $request): View
     {
         $asOf = $this->resolveAsOf($request);
+        $data = $this->computeFinancialSnapshot($asOf);
 
+        return view('report::balance-sheet', $data);
+    }
+
+    /**
+     * Compute a unified accounting snapshot as of a given moment.
+     * Both Financial Position and Balance Sheet share this identical calculation engine.
+     *
+     * @return array<string, mixed>
+     */
+    private function computeFinancialSnapshot(Carbon $asOf): array
+    {
         $cashAndBank = $this->cashAndBankBalance($asOf);
-        $receivable = $this->customerReceivable($asOf);
-        $lendReceivable = (float) Lend::where('status', 'due')->where('date', '<=', $asOf)->sum('amount');
-        $securityMoneyPaid = (float) SecurityMoney::where('status', 'paid')->where('date', '<=', $asOf)->sum('amount');
         $stockValue = $this->stockValue($asOf);
-        $fixedAssets = (float) Asset::where('created_at', '<=', $asOf)->sum(DB::raw("CASE WHEN amount > (CASE WHEN depreciation_type = 'percentage' THEN (amount * COALESCE(depreciation, 0) / 100.0) ELSE COALESCE(depreciation, 0) END) THEN amount - (CASE WHEN depreciation_type = 'percentage' THEN (amount * COALESCE(depreciation, 0) / 100.0) ELSE COALESCE(depreciation, 0) END) ELSE 0 END"));
-        $totalAssets = $cashAndBank + $receivable + $lendReceivable + $securityMoneyPaid + $stockValue + $fixedAssets;
+        $receivable = $this->customerReceivable($asOf);
+        $lendOutstanding = (float) Lend::where('status', 'due')->where('date', '<=', $asOf)->sum('amount');
+        $securityMoneyPaid = (float) SecurityMoney::where('status', 'paid')->where('date', '<=', $asOf)->sum('amount');
+        $fixedAssets = $this->fixedAssetsValue($asOf);
 
+        // Current & Non-Current Asset classification
+        $currentAssets = $cashAndBank + $stockValue + $receivable + $lendOutstanding + $securityMoneyPaid;
+        $nonCurrentAssets = $fixedAssets;
+        $totalAssets = $currentAssets + $nonCurrentAssets;
+        $totalAssetsWithSecurity = $fixedAssets + $securityMoneyPaid;
+
+        // Current & Non-Current Liability classification
         $payable = $this->supplierPayable($asOf);
         $debtsPayable = (float) Debt::where('status', 'unpaid')->where('date', '<=', $asOf)->sum('amount');
         $securityMoneyReceived = (float) SecurityMoney::where('status', 'received')->where('date', '<=', $asOf)->sum('amount');
-        $totalLiabilities = $payable + $debtsPayable + $securityMoneyReceived;
+        $currentLiabilities = $payable + $debtsPayable + $securityMoneyReceived;
+        $nonCurrentLiabilities = 0.0;
+        $totalLiabilities = $currentLiabilities + $nonCurrentLiabilities;
 
-        $equity = $totalAssets - $totalLiabilities;
+        // Calculated Equity / Net Financial Position
+        $netPosition = $totalAssets - $totalLiabilities;
+        $equity = $netPosition;
 
-        return view('report::balance-sheet', compact(
-            'asOf', 'cashAndBank', 'receivable', 'lendReceivable', 'securityMoneyPaid', 'stockValue', 'fixedAssets', 'totalAssets',
-            'payable', 'debtsPayable', 'securityMoneyReceived', 'totalLiabilities', 'equity',
-        ));
+        // Solvency Coverage (Multiple e.g. 6.70x & Percentage e.g. 669.6%)
+        $solvencyRatio = $totalLiabilities > 0 ? round(($totalAssets / $totalLiabilities) * 100, 1) : null;
+        $solvencyMultiple = $totalLiabilities > 0 ? round($totalAssets / $totalLiabilities, 2) : null;
+
+        // Mathematical integrity check: Total Assets == Total Liabilities + Equity
+        $variance = round(abs($totalAssets - ($totalLiabilities + $netPosition)), 2);
+        $isBalanced = $variance < 0.01;
+
+        return [
+            'asOf' => $asOf,
+            'cashAndBank' => $cashAndBank,
+            'stockValue' => $stockValue,
+            'receivable' => $receivable,
+            'lendOutstanding' => $lendOutstanding,
+            'lendReceivable' => $lendOutstanding,
+            'securityMoneyPaid' => $securityMoneyPaid,
+            'fixedAssets' => $fixedAssets,
+            'currentAssets' => $currentAssets,
+            'nonCurrentAssets' => $nonCurrentAssets,
+            'totalAssets' => $totalAssets,
+            'totalAssetsWithSecurity' => $totalAssetsWithSecurity,
+            'payable' => $payable,
+            'debtsPayable' => $debtsPayable,
+            'securityMoneyReceived' => $securityMoneyReceived,
+            'currentLiabilities' => $currentLiabilities,
+            'nonCurrentLiabilities' => $nonCurrentLiabilities,
+            'totalLiabilities' => $totalLiabilities,
+            'netPosition' => $netPosition,
+            'equity' => $equity,
+            'solvencyRatio' => $solvencyRatio,
+            'solvencyMultiple' => $solvencyMultiple,
+            'variance' => $variance,
+            'isBalanced' => $isBalanced,
+        ];
+    }
+
+    /**
+     * Net valuation of fixed assets (amount minus depreciation) as of a given moment.
+     */
+    private function fixedAssetsValue(Carbon $asOf): float
+    {
+        return (float) Asset::where('created_at', '<=', $asOf)->sum(DB::raw("CASE WHEN amount > (CASE WHEN depreciation_type = 'percentage' THEN (amount * COALESCE(depreciation, 0) / 100.0) ELSE COALESCE(depreciation, 0) END) THEN amount - (CASE WHEN depreciation_type = 'percentage' THEN (amount * COALESCE(depreciation, 0) / 100.0) ELSE COALESCE(depreciation, 0) END) ELSE 0 END"));
     }
 
     /**

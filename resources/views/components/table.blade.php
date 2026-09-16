@@ -11,7 +11,9 @@
     'stickyHeader' => false,
     'maxHeight' => null,
     'title' => null,
+    'titleEn' => null,
     'subtitle' => null,
+    'subtitleEn' => null,
     'searchable' => false,
     'searchPlaceholder' => 'খুঁজুন / Search...',
     'empty' => false,
@@ -24,6 +26,9 @@
 ])
 
 @php
+    $resolvedTitleEn = $titleEn ?? $attributes->get('title-en') ?? null;
+    $resolvedSubtitleEn = $subtitleEn ?? $attributes->get('subtitle-en') ?? null;
+
     $isCard = $variant === 'card' || $variant === 'default';
     $isFlush = $variant === 'flush';
     $isStriped = $striped || $variant === 'striped';
@@ -47,18 +52,36 @@
     $tableId = $id ?? ($datatable ? 'datatable-' . uniqid() : null);
 @endphp
 
-<div {{ $attributes->merge(['class' => implode(' ', $containerClasses)]) }}>
+<div {{ $attributes->except(['title-en', 'subtitle-en'])->merge(['class' => implode(' ', $containerClasses)]) }}>
     {{-- Top Toolbar / Title Bar --}}
-    @if ($title || $subtitle || $searchable || isset($actions))
+    @if ($title || $resolvedTitleEn || $subtitle || $resolvedSubtitleEn || $searchable || isset($actions))
         <div class="table-toolbar">
             <div class="table-toolbar-start">
-                @if ($title || $subtitle)
+                @if ($title || $resolvedTitleEn || $subtitle || $resolvedSubtitleEn)
                     <div class="table-title-wrap">
-                        @if ($title)
-                            <div class="table-title">{{ $title }}</div>
+                        @if ($title || $resolvedTitleEn)
+                            <div class="table-title">
+                                @if ($title && $resolvedTitleEn)
+                                    <span class="bn">{{ $title }}</span>
+                                    <span class="en" style="display:none;">{{ $resolvedTitleEn }}</span>
+                                @elseif ($title)
+                                    {{ $title }}
+                                @else
+                                    <span class="en">{{ $resolvedTitleEn }}</span>
+                                @endif
+                            </div>
                         @endif
-                        @if ($subtitle)
-                            <div class="table-subtitle">{{ $subtitle }}</div>
+                        @if ($subtitle || $resolvedSubtitleEn)
+                            <div class="table-subtitle">
+                                @if ($subtitle && $resolvedSubtitleEn)
+                                    <span class="bn">{{ $subtitle }}</span>
+                                    <span class="en" style="display:none;">{{ $resolvedSubtitleEn }}</span>
+                                @elseif ($subtitle)
+                                    {{ $subtitle }}
+                                @else
+                                    <span class="en">{{ $resolvedSubtitleEn }}</span>
+                                @endif
+                            </div>
                         @endif
                     </div>
                 @endif

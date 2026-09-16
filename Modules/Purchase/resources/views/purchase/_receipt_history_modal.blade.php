@@ -150,7 +150,7 @@
                     <span class="en" style="display:none;">Items Receiving Status</span>
                 </div>
                 <span style="font-size:12px; color:var(--ink-500);">
-                    {{ $purchase->items->count() }} টি পণ্য
+                    {{ $purchase->items->count() }}
                 </span>
             </div>
 
