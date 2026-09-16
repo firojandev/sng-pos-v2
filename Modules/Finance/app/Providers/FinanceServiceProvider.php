@@ -2,8 +2,10 @@
 
 namespace Modules\Finance\Providers;
 
+use Modules\Cashbox\Models\CashTransaction;
 use Modules\Finance\Models\Expense;
 use Modules\Finance\Models\Income;
+use Modules\Finance\Observers\CashTransactionAccountObserver;
 use Modules\Finance\Observers\ExpenseAccountObserver;
 use Modules\Finance\Observers\IncomeAccountObserver;
 use Modules\Finance\Observers\PurchasePaymentAccountObserver;
@@ -51,5 +53,6 @@ class FinanceServiceProvider extends ModuleServiceProvider
         Income::observe(IncomeAccountObserver::class);
         SaleReturn::observe(SaleReturnAccountObserver::class);
         PurchaseReturn::observe(PurchaseReturnAccountObserver::class);
+        CashTransaction::observe(CashTransactionAccountObserver::class);
     }
 }
