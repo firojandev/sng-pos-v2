@@ -147,6 +147,8 @@
         'audit' => ['icon' => 'activity', 'desc_bn' => 'সিস্টেম অ্যাক্টিভিটি লগ', 'desc_en' => 'System Audit Logs'],
         'employees' => ['icon' => 'user-check', 'desc_bn' => 'কর্মচারী ও বেতন হিসাব', 'desc_en' => 'Staff & Payroll'],
         'users' => ['icon' => 'shield', 'desc_bn' => 'ইউজার অ্যাকাউন্ট ও পারমিশন', 'desc_en' => 'Users & Access Rights'],
+        'printer-settings' => ['icon' => 'printer', 'desc_bn' => 'প্রিন্টার কনফিগারেশন ও পেপার সাইজ', 'desc_en' => 'Printer Configuration & Paper Size'],
+        'whatsapp-settings' => ['icon' => 'message-square', 'desc_bn' => 'হোয়াটসঅ্যাপ মেসেজিং ও কানেকশন', 'desc_en' => 'WhatsApp Messaging & Connection'],
     ];
 
     $domainDefinitions = [
@@ -202,7 +204,7 @@
             'subtitle_en' => 'Staff, user accounts, business reports and activity audit',
             'icon' => 'shield',
             'badge_color' => 'red',
-            'keys' => ['employees', 'users', 'report-sales', 'report-sales-vat', 'report-purchase', 'report-stock', 'report-products', 'report-profit-loss', 'report-income', 'report-expense', 'report-financial-position', 'report-balance-sheet', 'audit'],
+            'keys' => ['employees', 'users', 'printer-settings', 'whatsapp-settings', 'report-sales', 'report-sales-vat', 'report-purchase', 'report-stock', 'report-products', 'report-profit-loss', 'report-income', 'report-expense', 'report-financial-position', 'report-balance-sheet', 'audit'],
         ],
     ];
 

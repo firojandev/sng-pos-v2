@@ -124,6 +124,17 @@ class Shop extends Model implements Subscribable
     }
 
     /**
+     * Get the effective printer setting for the shop.
+     */
+    public function getEffectivePrinterSetting(): PrinterSetting
+    {
+        $setting = $this->printerSetting ?? PrinterSetting::getDefaultForShop($this->id);
+        $setting->setRelation('shop', $this);
+
+        return $setting;
+    }
+
+    /**
      * Branches belonging to this shop.
      */
     public function branches(): HasMany

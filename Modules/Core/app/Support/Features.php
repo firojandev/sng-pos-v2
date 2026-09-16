@@ -44,6 +44,8 @@ class Features
             'audit' => ['bn' => 'অ্যাক্টিভিটি লগ', 'en' => 'Audit Log'],
             'employees' => ['bn' => 'কর্মচারী', 'en' => 'Employees'],
             'users' => ['bn' => 'ইউজার', 'en' => 'Users'],
+            'printer-settings' => ['bn' => 'প্রিন্টার সেটিংস', 'en' => 'Printer Settings'],
+            'whatsapp-settings' => ['bn' => 'হোয়াটসঅ্যাপ সেটিংস', 'en' => 'WhatsApp Settings'],
             'subscription' => ['bn' => 'সাবস্ক্রিপশন ও প্ল্যান', 'en' => 'Subscription & Plan'],
             'backup' => ['bn' => 'ডাটাবেজ ব্যাকআপ', 'en' => 'Database Backup'],
         ];

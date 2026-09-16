@@ -53,11 +53,31 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('feature:subscription');
     Route::get('settings', [ShopSettingsController::class, 'edit'])->name('settings.index');
     Route::put('settings', [ShopSettingsController::class, 'update'])->name('settings.update');
-    Route::get('settings/printer', [PrinterSettingController::class, 'index'])->name('printer-settings.index');
-    Route::put('settings/printer', [PrinterSettingController::class, 'update'])->name('printer-settings.update');
-    Route::get('settings/whatsapp', [WhatsAppSettingController::class, 'index'])->name('whatsapp-settings.index');
-    Route::post('settings/whatsapp/start', [WhatsAppSettingController::class, 'start'])->name('whatsapp-settings.start');
-    Route::get('settings/whatsapp/status', [WhatsAppSettingController::class, 'status'])->name('whatsapp-settings.status');
-    Route::post('settings/whatsapp/disconnect', [WhatsAppSettingController::class, 'disconnect'])->name('whatsapp-settings.disconnect');
-    Route::post('settings/whatsapp/test', [WhatsAppSettingController::class, 'sendTestMessage'])->name('whatsapp-settings.test');
+});
+
+Route::middleware(['auth', 'feature:printer-settings'])->group(function () {
+    Route::get('settings/printer', [PrinterSettingController::class, 'index'])
+        ->name('printer-settings.index')
+        ->middleware('permission:printer-settings.view');
+    Route::put('settings/printer', [PrinterSettingController::class, 'update'])
+        ->name('printer-settings.update')
+        ->middleware('permission:printer-settings.edit');
+});
+
+Route::middleware(['auth', 'feature:whatsapp-settings'])->group(function () {
+    Route::get('settings/whatsapp', [WhatsAppSettingController::class, 'index'])
+        ->name('whatsapp-settings.index')
+        ->middleware('permission:whatsapp-settings.view');
+    Route::post('settings/whatsapp/start', [WhatsAppSettingController::class, 'start'])
+        ->name('whatsapp-settings.start')
+        ->middleware('permission:whatsapp-settings.edit');
+    Route::get('settings/whatsapp/status', [WhatsAppSettingController::class, 'status'])
+        ->name('whatsapp-settings.status')
+        ->middleware('permission:whatsapp-settings.view');
+    Route::post('settings/whatsapp/disconnect', [WhatsAppSettingController::class, 'disconnect'])
+        ->name('whatsapp-settings.disconnect')
+        ->middleware('permission:whatsapp-settings.edit');
+    Route::post('settings/whatsapp/test', [WhatsAppSettingController::class, 'sendTestMessage'])
+        ->name('whatsapp-settings.test')
+        ->middleware('permission:whatsapp-settings.edit');
 });

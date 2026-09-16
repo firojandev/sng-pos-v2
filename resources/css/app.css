@@ -417,8 +417,9 @@ html.sidebar-collapsed-init .side-user-card .av{
   padding:12px 24px; display:flex; align-items:center; gap:16px;
   transition:background .2s ease, border-color .2s ease;
 }
-:root[data-theme="dark"] .topbar,
-:root:not([data-theme="light"]) .topbar{background:rgba(17,24,39,.88);}
+:root[data-theme="dark"] .topbar {
+  background: rgba(17, 24, 39, 0.88);
+}
 
 .sidebar-toggle-btn{
   width:36px; height:36px; border-radius:10px;
@@ -478,8 +479,7 @@ html.sidebar-collapsed-init .side-user-card .av{
   font-weight: 700;
 }
 
-:root[data-theme="dark"] .segmented-switcher .switch-opt.active,
-:root:not([data-theme="light"]) .segmented-switcher .switch-opt.active {
+:root[data-theme="dark"] .segmented-switcher .switch-opt.active {
   color: #2DD4BF;
 }
 
@@ -527,14 +527,12 @@ html.sidebar-collapsed-init .side-user-card .av{
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 
-:root[data-theme="dark"] .segmented-switch-slider,
-:root:not([data-theme="light"]) .segmented-switch-slider {
+:root[data-theme="dark"] .segmented-switch-slider {
   background-color: #334155;
   border-color: #475569;
 }
 
-:root[data-theme="dark"] .segmented-switch-slider::before,
-:root:not([data-theme="light"]) .segmented-switch-slider::before {
+:root[data-theme="dark"] .segmented-switch-slider::before {
   background-color: #F8FAFC;
 }
 
@@ -676,8 +674,7 @@ html:not(.lang-en) .lang-segmented-switcher .segmented-switch-slider::before {
   font-weight: 700;
 }
 
-:root[data-theme="dark"] .status-segmented-switcher .switch-opt-active.active,
-:root:not([data-theme="light"]) .status-segmented-switcher .switch-opt-active.active {
+:root[data-theme="dark"] .status-segmented-switcher .switch-opt-active.active {
   color: #2DD4BF;
   background: rgba(13, 148, 136, 0.2);
 }
@@ -689,8 +686,7 @@ html:not(.lang-en) .lang-segmented-switcher .segmented-switch-slider::before {
   font-weight: 700;
 }
 
-:root[data-theme="dark"] .status-segmented-switcher .switch-opt-inactive.active,
-:root:not([data-theme="light"]) .status-segmented-switcher .switch-opt-inactive.active {
+:root[data-theme="dark"] .status-segmented-switcher .switch-opt-inactive.active {
   color: #FDA4AF;
   background: rgba(225, 29, 72, 0.2);
 }
