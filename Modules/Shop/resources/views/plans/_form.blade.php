@@ -26,6 +26,8 @@
         'audit' => 'shield',
         'employees' => 'user',
         'users' => 'lock',
+        'printer-settings' => 'printer',
+        'whatsapp-settings' => 'message-square',
     ];
 @endphp
 

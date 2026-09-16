@@ -19,7 +19,7 @@
 @endphp
 
 <!DOCTYPE html>
-<html lang="{{ $isEn ? 'en' : 'bn' }}" @if ($cookieTheme) data-theme="{{ $cookieTheme }}" @endif
+<html lang="{{ $isEn ? 'en' : 'bn' }}" data-theme="{{ $cookieTheme ?: 'light' }}"
     class="{{ $isEn ? 'lang-en' : '' }}">
 
 <head>
@@ -38,6 +38,8 @@
                     if (!document.cookie.includes('theme=' + t)) {
                         document.cookie = "theme=" + t + ";path=/;max-age=31536000;SameSite=Lax";
                     }
+                } else {
+                    document.documentElement.setAttribute('data-theme', 'light');
                 }
                 var l = localStorage.getItem('lang');
                 if (l === 'en' || l === 'bn') {
