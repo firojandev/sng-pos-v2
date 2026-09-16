@@ -173,7 +173,7 @@ class CashTransactionsDataTable extends BaseDataTable
 
         $this->applyFilters($query);
 
-        return $query;
+        return $query->latest('cash_transactions.occurred_at')->latest('cash_transactions.id');
     }
 
     /**

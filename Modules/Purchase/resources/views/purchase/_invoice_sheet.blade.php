@@ -248,83 +248,91 @@
     </table>
 
     {{-- Lower Summary Section (2 Columns) --}}
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; font-size:12px; line-height:1.5; color:var(--ink-900, #0f172a);">
-        {{-- Left Column: Dues, Words & Signatures --}}
-        <div style="width:48%;">
-            @if ($printerSetting->show_customer_due && $purchase->supplier)
-                <div style="display:flex; justify-content:space-between; max-width:210px; margin-bottom:2px;">
-                    <span><b>পূর্বের বাকি:</b></span>
-                    <span>৳ {{ BanglaNumber::toBnMoney($previousDue) }}</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; max-width:210px; margin-bottom:2px;">
-                    <span><b>বর্তমান বাকি:</b></span>
-                    <span>৳ {{ BanglaNumber::toBnMoney($currentDue) }}</span>
-                </div>
-                <div style="border-top:1px solid var(--border, #94a3b8); max-width:210px; margin:4px 0 6px 0;"></div>
-                <div style="display:flex; justify-content:space-between; max-width:210px; margin-bottom:8px;">
-                    <span><b>টোটাল বাকি:</b></span>
-                    <span>৳ {{ BanglaNumber::toBnMoney($totalSupplierDue) }}</span>
-                </div>
-            @endif
+    <table style="width:100%; border-collapse:collapse; margin-top:12px; font-size:12px; color:var(--ink-900, #0f172a);">
+        <tr>
+            {{-- Left Column: Dues, Words & Signatures --}}
+            <td style="width:50%; vertical-align:top; padding-right:16px;">
+                @if ($printerSetting->show_customer_due && $purchase->supplier)
+                    <table style="width:100%; max-width:230px; border-collapse:collapse; margin-bottom:12px; font-size:12px; line-height:1.5;">
+                        <tr>
+                            <td style="padding:2px 0; text-align:left;"><b>পূর্বের বাকি:</b></td>
+                            <td style="padding:2px 0; text-align:right; white-space:nowrap;">৳ {{ BanglaNumber::toBnMoney($previousDue) }}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:2px 0; text-align:left;"><b>বর্তমান বাকি:</b></td>
+                            <td style="padding:2px 0; text-align:right; white-space:nowrap;">৳ {{ BanglaNumber::toBnMoney($currentDue) }}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="border-top:1px solid var(--border, #94a3b8); padding:0; height:1px;"></td>
+                        </tr>
+                        <tr>
+                            <td style="padding:3px 0; text-align:left;"><b>টোটাল বাকি:</b></td>
+                            <td style="padding:3px 0; text-align:right; white-space:nowrap;">৳ {{ BanglaNumber::toBnMoney($totalSupplierDue) }}</td>
+                        </tr>
+                    </table>
+                @endif
 
-            <div style="margin-top:14px;">
-                <div style="font-weight:700; margin-bottom:2px; color:var(--ink-900, #0f172a);">অ্যামাউন্ট (কথায়):</div>
-                <div style="color:var(--ink-700, #1e293b); font-size:11.5px; line-height:1.4;">
-                    {{ BanglaNumber::toBnWords($purchase->total) }}
+                <div style="margin-top:6px;">
+                    <div style="font-weight:700; margin-bottom:2px; color:var(--ink-900, #0f172a);">অ্যামাউন্ট (কথায়):</div>
+                    <div style="color:var(--ink-700, #1e293b); font-size:11.5px; line-height:1.4;">
+                        {{ BanglaNumber::toBnWords($purchase->total) }}
+                    </div>
                 </div>
-            </div>
 
-            <div style="margin-top:42px;">
-                <div style="border-top:1px solid var(--border, #94a3b8); width:135px; text-align:center; padding-top:4px; font-size:11px; font-weight:600; color:var(--ink-700, #334155);">
-                    ক্রেতার স্বাক্ষর
+                <div style="margin-top:40px;">
+                    <div style="border-top:1px solid var(--border, #94a3b8); width:135px; text-align:center; padding-top:4px; font-size:11px; font-weight:600; color:var(--ink-700, #334155);">
+                        ক্রেতার স্বাক্ষর
+                    </div>
+                    <div style="font-size:9.5px; color:var(--ink-400, #64748b); margin-top:3px;">
+                        প্রিন্ট করার সময়: {{ $printTime }}
+                    </div>
                 </div>
-                <div style="font-size:9.5px; color:var(--ink-400, #64748b); margin-top:3px;">
-                    প্রিন্ট করার সময়: {{ $printTime }}
-                </div>
-            </div>
-        </div>
+            </td>
 
-        {{-- Right Column: Financial Totals --}}
-        <div style="width:44%;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                <span style="color:var(--ink-700, #334155);">সাব টোটাল</span>
-                <span style="font-weight:600; color:var(--ink-900, #0f172a);">{{ BanglaNumber::toBnMoney($purchase->subtotal) }}</span>
-            </div>
-            @if((float) $purchase->transportation_cost > 0)
-                <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                    <span style="color:var(--ink-700, #334155);">পরিবহন খরচ</span>
-                    <span style="color:var(--ink-900, #0f172a);">৳ {{ BanglaNumber::toBnMoney($purchase->transportation_cost) }}</span>
-                </div>
-            @endif
-            @if((float) $purchase->adjustment_cost != 0)
-                <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                    <span style="color:var(--ink-700, #334155);">অ্যাডজাস্টমেন্ট</span>
-                    <span style="color:var(--ink-900, #0f172a);">৳ {{ BanglaNumber::toBnMoney($purchase->adjustment_cost) }}</span>
-                </div>
-            @endif
+            {{-- Right Column: Financial Totals --}}
+            <td style="width:50%; vertical-align:top; padding-left:16px;">
+                <table style="width:100%; border-collapse:collapse; font-size:12px; line-height:1.5;">
+                    <tr>
+                        <td style="padding:2px 0; text-align:left; color:var(--ink-700, #334155);">সাব টোটাল</td>
+                        <td style="padding:2px 0; text-align:right; font-weight:600; color:var(--ink-900, #0f172a); white-space:nowrap;">{{ BanglaNumber::toBnMoney($purchase->subtotal) }}</td>
+                    </tr>
+                    @if((float) $purchase->transportation_cost > 0)
+                        <tr>
+                            <td style="padding:2px 0; text-align:left; color:var(--ink-700, #334155);">পরিবহন খরচ</td>
+                            <td style="padding:2px 0; text-align:right; color:var(--ink-900, #0f172a); white-space:nowrap;">৳ {{ BanglaNumber::toBnMoney($purchase->transportation_cost) }}</td>
+                        </tr>
+                    @endif
+                    @if((float) $purchase->adjustment_cost != 0)
+                        <tr>
+                            <td style="padding:2px 0; text-align:left; color:var(--ink-700, #334155);">অ্যাডজাস্টমেন্ট</td>
+                            <td style="padding:2px 0; text-align:right; color:var(--ink-900, #0f172a); white-space:nowrap;">৳ {{ BanglaNumber::toBnMoney($purchase->adjustment_cost) }}</td>
+                        </tr>
+                    @endif
+                    <tr>
+                        <td colspan="2" style="border-top:1px solid var(--border, #94a3b8); padding:0; height:1px;"></td>
+                    </tr>
+                    <tr>
+                        <td style="padding:3px 0; text-align:left; font-weight:700; color:var(--ink-900, #0f172a);">মোট</td>
+                        <td style="padding:3px 0; text-align:right; font-weight:700; color:var(--ink-900, #0f172a); white-space:nowrap;">{{ BanglaNumber::toBnMoney($purchase->total) }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:2px 0; text-align:left; color:var(--ink-700, #334155);">পরিশোধিত</td>
+                        <td style="padding:2px 0; text-align:right; font-weight:600; color:var(--ink-900, #0f172a); white-space:nowrap;">{{ BanglaNumber::toBnMoney($purchase->paid_amount) }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:2px 0; text-align:left; color:var(--ink-700, #334155);">বাকি আছে</td>
+                        <td style="padding:2px 0; text-align:right; font-weight:600; {{ (float)$purchase->due_amount > 0 ? 'color:var(--red-ink, #dc2626);' : 'color:var(--ink-900, #0f172a);' }} white-space:nowrap;">৳ {{ BanglaNumber::toBnMoney($purchase->due_amount) }}</td>
+                    </tr>
+                </table>
 
-            <div style="border-top:1px solid var(--border, #94a3b8); margin:4px 0 6px 0;"></div>
-
-            <div style="display:flex; justify-content:space-between; margin-bottom:2px; font-weight:700; color:var(--ink-900, #0f172a);">
-                <span>মোট</span>
-                <span>{{ BanglaNumber::toBnMoney($purchase->total) }}</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                <span style="color:var(--ink-700, #334155);">পরিশোধিত</span>
-                <span style="font-weight:600; color:var(--ink-900, #0f172a);">{{ BanglaNumber::toBnMoney($purchase->paid_amount) }}</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                <span style="color:var(--ink-700, #334155);">বাকি আছে</span>
-                <span style="font-weight:600; {{ (float)$purchase->due_amount > 0 ? 'color:var(--red-ink, #dc2626);' : 'color:var(--ink-900, #0f172a);' }}">৳ {{ BanglaNumber::toBnMoney($purchase->due_amount) }}</span>
-            </div>
-
-            <div style="margin-top:54px; display:flex; justify-content:flex-end;">
-                <div style="border-top:1px solid var(--border, #94a3b8); width:135px; text-align:center; padding-top:4px; font-size:11px; font-weight:600; color:var(--ink-700, #334155);">
-                    বিক্রেতার স্বাক্ষর
+                <div style="margin-top:40px; display:flex; justify-content:flex-end;">
+                    <div style="border-top:1px solid var(--border, #94a3b8); width:135px; text-align:center; padding-top:4px; font-size:11px; font-weight:600; color:var(--ink-700, #334155);">
+                        বিক্রেতার স্বাক্ষর
+                    </div>
                 </div>
-            </div>
-        </div>
-    </div>
+            </td>
+        </tr>
+    </table>
 
     @if($printerSetting->show_footer_note && !empty($shop?->invoice_footer))
         <div style="margin-top:16px; border-top:1px dashed var(--border, #cbd5e1); padding-top:8px; font-size:11px; color:var(--ink-600, #475569); text-align:center;">

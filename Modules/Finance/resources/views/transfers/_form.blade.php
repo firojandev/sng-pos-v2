@@ -130,7 +130,13 @@
                 var selected = $('#from_account_id option:selected');
                 var balance = selected.data('balance');
                 if (balance !== undefined) {
-                    $('#from_balance_val').text('৳ ' + parseFloat(balance).toFixed(2));
+                    var numBal = parseFloat(balance);
+                    $('#from_balance_val').text('৳ ' + numBal.toFixed(2));
+                    if (numBal < 0) {
+                        $('#from_balance_hint').css('color', 'var(--red-600)');
+                    } else {
+                        $('#from_balance_hint').css('color', '#16a34a');
+                    }
                     $('#from_balance_hint').show();
                 } else {
                     $('#from_balance_hint').hide();

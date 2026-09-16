@@ -238,7 +238,7 @@ class SalesDataTable extends BaseDataTable
             });
         }
 
-        return $query;
+        return $query->latest('sales.sale_date')->latest('sales.id');
     }
 
     /**

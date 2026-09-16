@@ -166,7 +166,7 @@ class ProductsDataTable extends BaseDataTable
             }
         }
 
-        return $query;
+        return $query->latest('products.id');
     }
 
     /**

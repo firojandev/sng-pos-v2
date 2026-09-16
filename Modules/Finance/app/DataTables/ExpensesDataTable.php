@@ -219,7 +219,7 @@ class ExpensesDataTable extends BaseDataTable
             $query->whereDate('expenses.expense_date', '<=', $dateTo);
         }
 
-        return $query;
+        return $query->latest('expenses.expense_date')->latest('expenses.id');
     }
 
     /**

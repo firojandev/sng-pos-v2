@@ -132,7 +132,8 @@ class ShopsDataTable extends BaseDataTable
                 'shops.status',
                 'shops.created_at',
             ])
-            ->withCount('admins');
+            ->withCount('admins')
+            ->latest('shops.id');
     }
 
     /**

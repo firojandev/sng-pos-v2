@@ -16,7 +16,14 @@
 
         <div class="stat-grid" style="grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); margin-bottom:16px;">
             <x-core::stat-card icon="shopping-cart" color="teal" :value="'৳' . number_format($totals['total'], 2)" label="মোট বিক্রয়" label-en="Total Sales" />
-            <x-core::stat-card icon="trending-up" color="green" :value="'৳' . number_format($totals['profit'], 2)" label="মোট মুনাফা" label-en="Total Profit" />
+            <x-core::stat-card
+                icon="trending-up"
+                :color="$totals['profit'] < 0 ? 'red' : 'green'"
+                :value-color="$totals['profit'] < 0 ? 'red' : 'green'"
+                :value="($totals['profit'] < 0 ? '-৳' : '৳') . number_format(abs($totals['profit']), 2)"
+                label="মোট মুনাফা"
+                label-en="Total Profit"
+            />
             <x-core::stat-card icon="alert-circle" color="gold" :value="'৳' . number_format($totals['due'], 2)" label="মোট বাকি" label-en="Total Due" />
             <x-core::stat-card icon="receipt" color="grey" :value="$totals['count']" label="মোট ইনভয়েস" label-en="Total Invoices" />
         </div>
@@ -51,9 +58,11 @@
                                 <td class="cell-main">{{ $sale->invoice_no }}</td>
                                 <td>{{ $sale->sale_date?->format('d M, Y') }}</td>
                                 <td>{{ $sale->customer?->name ?? '—' }}</td>
-                                <td style="text-align:right;">৳{{ number_format((float) $sale->total, 2) }}</td>
-                                <td style="text-align:right;">৳{{ number_format((float) $sale->profit, 2) }}</td>
-                                <td style="text-align:right;">৳{{ number_format((float) $sale->due_amount, 2) }}</td>
+                                <td style="text-align:right; font-family:var(--font-mono, monospace);">৳{{ number_format((float) $sale->total, 2) }}</td>
+                                <td style="text-align:right; font-family:var(--font-mono, monospace); font-weight:600; {{ (float) $sale->profit < 0 ? 'color:var(--red-600);' : '' }}">
+                                    {{ (float) $sale->profit < 0 ? '-৳' . number_format(abs((float) $sale->profit), 2) : '৳' . number_format((float) $sale->profit, 2) }}
+                                </td>
+                                <td style="text-align:right; font-family:var(--font-mono, monospace); {{ (float) $sale->due_amount > 0 ? 'color:var(--red-600); font-weight:600;' : '' }}">৳{{ number_format((float) $sale->due_amount, 2) }}</td>
                                 <td style="text-align:center;">
                                     <x-core::badge
                                         :color="$sale->payment_status === 'paid' ? 'green' : ($sale->payment_status === 'due' ? 'gold' : 'grey')"
