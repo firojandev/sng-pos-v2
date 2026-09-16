@@ -99,9 +99,7 @@ class BackupDataTable extends BaseDataTable
     {
         return $this->defaultHtml()
             ->setTableId('backup-data-table')
-            ->parameters([
-                'order' => [[3, 'desc']],
-            ])
+            ->orderBy([3, 'desc'])
             ->buttons([
                 Button::make('reload')->text('Reload')->addClass('btn btn-soft-teal btn-xs'),
             ]);

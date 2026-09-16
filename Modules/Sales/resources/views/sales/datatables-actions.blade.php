@@ -27,17 +27,6 @@
             title="ইনভয়েস ও প্রিন্ট / Invoice & Print"
         />
     @endcan
-    @can('sales.return')
-        <x-core::button
-            :href="route('sale-returns.create', $sale)"
-            variant="soft"
-            color="secondary"
-            icon="rotate-ccw"
-            icon-only
-            size="xs"
-            title="বিক্রয় ফেরত / Sale Return"
-        />
-    @endcan
     @can('sales.edit')
         @if ($sale->canBeEdited())
             <x-core::button

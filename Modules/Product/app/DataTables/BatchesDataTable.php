@@ -137,7 +137,7 @@ class BatchesDataTable extends BaseDataTable
             $query->where('batches.product_id', request('product_id'));
         }
 
-        return $query;
+        return $query->latest('batches.id');
     }
 
     /**

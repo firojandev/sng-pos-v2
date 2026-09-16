@@ -114,6 +114,14 @@ class CustomersDataTable extends BaseDataTable
                     return '<div style="text-align:right; white-space:nowrap;">'.$badge.$subHtml.'</div>';
                 }
 
+                if ($totalDue < 0) {
+                    $badge = '<div style="display:inline-flex; align-items:center; background:var(--red-100); border-radius:6px; padding:2px 8px; white-space:nowrap;">'
+                        .'<span style="font-family:var(--font-mono, monospace); font-weight:800; font-size:13px; color:var(--red-600);">-৳'.number_format(abs($totalDue), 2).'</span>'
+                        .'</div>';
+
+                    return '<div style="text-align:right; white-space:nowrap;">'.$badge.'</div>';
+                }
+
                 return '<div style="text-align:right; white-space:nowrap;"><span style="font-family:var(--font-mono, monospace); font-weight:600; color:var(--green-ink); font-size:12px;">৳0.00</span></div>';
             })
             ->addColumn('total_due', function (Customer $customer) {
@@ -243,7 +251,7 @@ class CustomersDataTable extends BaseDataTable
             });
         }
 
-        return $query;
+        return $query->latest('customers.id');
     }
 
     /**

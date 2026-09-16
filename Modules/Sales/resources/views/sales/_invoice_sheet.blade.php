@@ -217,100 +217,111 @@
     </table>
 
     {{-- Lower Summary Section (2 Columns) --}}
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; font-size:12px; line-height:1.6; color:#0f172a;">
-        {{-- Left Column: Dues, Words & Signatures --}}
-        <div style="width:48%;">
-            @if ($printerSetting->show_customer_due && $customer)
-                <div style="display:flex; justify-content:space-between; max-width:210px; margin-bottom:2px;">
-                    <span>পূর্বের বাকি :</span>
-                    <span>৳{{ BanglaNumber::toBn(number_format($previousDue, 2)) }}</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; max-width:210px; margin-bottom:2px;">
-                    <span>বর্তমান বাকি :</span>
-                    <span>৳{{ BanglaNumber::toBn(number_format($currentDue, 2)) }}</span>
-                </div>
-                <div style="border-top:1px solid #94a3b8; max-width:210px; margin:4px 0 6px 0;"></div>
-                <div style="display:flex; justify-content:space-between; max-width:210px; margin-bottom:8px; font-weight:700;">
-                    <span>টোটাল বাকি :</span>
-                    <span>৳{{ BanglaNumber::toBn(number_format($totalCustomerDue, 2)) }}</span>
-                </div>
-            @endif
+    <table style="width:100%; border-collapse:collapse; margin-top:12px; font-size:12px; color:#0f172a;">
+        <tr>
+            {{-- Left Column: Dues, Words & Signatures --}}
+            <td style="width:50%; vertical-align:top; padding-right:16px;">
+                @if ($printerSetting->show_customer_due && $customer)
+                    <table style="width:100%; max-width:230px; border-collapse:collapse; margin-bottom:12px; font-size:12px; line-height:1.5;">
+                        <tr>
+                            <td style="padding:2px 0; text-align:left;"><b>পূর্বের বাকি:</b></td>
+                            <td style="padding:2px 0; text-align:right; white-space:nowrap;">৳{{ BanglaNumber::toBn(number_format($previousDue, 2)) }}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:2px 0; text-align:left;"><b>বর্তমান বাকি:</b></td>
+                            <td style="padding:2px 0; text-align:right; white-space:nowrap;">৳{{ BanglaNumber::toBn(number_format($currentDue, 2)) }}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="border-top:1px solid #94a3b8; padding:0; height:1px;"></td>
+                        </tr>
+                        <tr>
+                            <td style="padding:3px 0; text-align:left; font-weight:700;"><b>টোটাল বাকি:</b></td>
+                            <td style="padding:3px 0; text-align:right; font-weight:700; white-space:nowrap;">৳{{ BanglaNumber::toBn(number_format($totalCustomerDue, 2)) }}</td>
+                        </tr>
+                    </table>
+                @endif
 
-            <div style="margin-top:16px;">
-                <div style="font-weight:700; margin-bottom:2px; font-size:12px;">অ্যামাউন্ট (কথায়):</div>
-                <div style="color:#1e293b; font-size:11.5px; line-height:1.4;">
-                    {{ BanglaNumber::toBnWords($sale->total) }}
+                <div style="margin-top:6px;">
+                    <div style="font-weight:700; margin-bottom:2px; font-size:12px;">অ্যামাউন্ট (কথায়):</div>
+                    <div style="color:#1e293b; font-size:11.5px; line-height:1.4;">
+                        {{ BanglaNumber::toBnWords($sale->total) }}
+                    </div>
                 </div>
-            </div>
 
-            <div style="margin-top:42px;">
-                <div style="border-top:1px solid #94a3b8; width:135px; text-align:center; padding-top:4px; font-size:11px; font-weight:600;">
-                    ক্রেতার স্বাক্ষর
+                <div style="margin-top:40px;">
+                    <div style="border-top:1px solid #94a3b8; width:135px; text-align:center; padding-top:4px; font-size:11px; font-weight:600;">
+                        ক্রেতার স্বাক্ষর
+                    </div>
+                    <div style="font-size:9.5px; color:#64748b; margin-top:3px;">
+                        প্রিন্ট করার সময়: {{ $printTime }}
+                    </div>
                 </div>
-                <div style="font-size:9.5px; color:#64748b; margin-top:3px;">
-                    প্রিন্ট করার সময়: {{ $printTime }}
+            </td>
+
+            {{-- Right Column: Financial Totals --}}
+            <td style="width:50%; vertical-align:top; padding-left:16px;">
+                <table style="width:100%; border-collapse:collapse; font-size:12px; line-height:1.5;">
+                    <tr>
+                        <td style="padding:2px 0; text-align:left; color:#334155;">সাব টোটাল</td>
+                        <td style="padding:2px 0; text-align:right; font-weight:600; white-space:nowrap;">৳{{ BanglaNumber::toBn(number_format((float) $sale->subtotal, 2)) }}</td>
+                    </tr>
+                    @if ((float) ($sale->product_discount ?? 0) > 0)
+                        <tr>
+                            <td style="padding:2px 0; text-align:left; color:#334155;">(-) পণ্য ছাড়</td>
+                            <td style="padding:2px 0; text-align:right; white-space:nowrap;">৳{{ BanglaNumber::toBn(number_format((float) $sale->product_discount, 2)) }}</td>
+                        </tr>
+                    @endif
+                    @if ((float) ($sale->discount ?? 0) > 0)
+                        <tr>
+                            <td style="padding:2px 0; text-align:left; color:#334155;">(-) ছাড়</td>
+                            <td style="padding:2px 0; text-align:right; white-space:nowrap;">৳{{ BanglaNumber::toBn(number_format((float) $sale->discount, 2)) }}</td>
+                        </tr>
+                    @endif
+                    @if ((float) ($sale->tax ?? 0) > 0)
+                        <tr>
+                            <td style="padding:2px 0; text-align:left; color:#334155;">ভ্যাট</td>
+                            <td style="padding:2px 0; text-align:right; white-space:nowrap;">৳{{ BanglaNumber::toBn(number_format((float) ($sale->tax ?? 0), 2)) }}</td>
+                        </tr>
+                    @endif
+                    @if ((float) ($sale->delivery_charge ?? 0) > 0)
+                        <tr>
+                            <td style="padding:2px 0; text-align:left; color:#334155;">ডেলিভারি</td>
+                            <td style="padding:2px 0; text-align:right; white-space:nowrap;">৳{{ BanglaNumber::toBn(number_format((float) ($sale->delivery_charge ?? 0), 2)) }}</td>
+                        </tr>
+                    @endif
+                    @if ((float) ($sale->adjustment ?? 0) != 0)
+                        <tr>
+                            <td style="padding:2px 0; text-align:left; color:#334155;">{{ (float) $sale->adjustment > 0 ? '(+) সমন্বয়' : '(-) সমন্বয়' }}</td>
+                            <td style="padding:2px 0; text-align:right; white-space:nowrap;">৳{{ BanglaNumber::toBn(number_format(abs((float) $sale->adjustment), 2)) }}</td>
+                        </tr>
+                    @endif
+                    <tr>
+                        <td colspan="2" style="border-top:1px solid #94a3b8; padding:0; height:1px;"></td>
+                    </tr>
+                    <tr>
+                        <td style="padding:3px 0; text-align:left; font-weight:700;">মোট</td>
+                        <td style="padding:3px 0; text-align:right; font-weight:700; white-space:nowrap;">৳{{ BanglaNumber::toBn(number_format((float) $sale->total, 2)) }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:2px 0; text-align:left; color:#334155;">পরিশোধিত</td>
+                        <td style="padding:2px 0; text-align:right; font-weight:600; white-space:nowrap;">৳{{ BanglaNumber::toBn(number_format((float) $sale->paid_amount, 2)) }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:2px 0; text-align:left; color:#334155;">বাকি আছে</td>
+                        <td style="padding:2px 0; text-align:right; font-weight:600; {{ (float)$sale->due_amount > 0 ? 'color:#dc2626;' : '' }} white-space:nowrap;">
+                            ৳{{ BanglaNumber::toBn(number_format((float) $sale->due_amount, 2)) }}
+                        </td>
+                    </tr>
+                </table>
+
+                <div style="margin-top:40px; display:flex; justify-content:flex-end;">
+                    <div style="border-top:1px solid #94a3b8; width:135px; text-align:center; padding-top:4px; font-size:11px; font-weight:600;">
+                        বিক্রেতার স্বাক্ষর
+                    </div>
                 </div>
-            </div>
-        </div>
-
-        {{-- Right Column: Financial Totals --}}
-        <div style="width:44%;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                <span style="color:#334155;">সাব টোটাল</span>
-                <span style="font-weight:600;">৳{{ BanglaNumber::toBn(number_format((float) $sale->subtotal, 2)) }}</span>
-            </div>
-            @if ((float) ($sale->product_discount ?? 0) > 0)
-                <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                    <span style="color:#334155;">(-) পণ্য ছাড়</span>
-                    <span>৳{{ BanglaNumber::toBn(number_format((float) $sale->product_discount, 2)) }}</span>
-                </div>
-            @endif
-            <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                <span style="color:#334155;">(-) ছাড়</span>
-                <span>৳{{ BanglaNumber::toBn(number_format((float) $sale->discount, 2)) }}</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                <span style="color:#334155;">ভ্যাট</span>
-                <span>৳{{ BanglaNumber::toBn(number_format((float) ($sale->tax ?? 0), 2)) }}</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                <span style="color:#334155;">ডেলিভারি</span>
-                <span>৳{{ BanglaNumber::toBn(number_format((float) ($sale->delivery_charge ?? 0), 2)) }}</span>
-            </div>
-            @if ((float) ($sale->adjustment ?? 0) != 0)
-                <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                    <span style="color:#334155;">{{ (float) $sale->adjustment > 0 ? '(+) সমন্বয়' : '(-) সমন্বয়' }}</span>
-                    <span>৳{{ BanglaNumber::toBn(number_format(abs((float) $sale->adjustment), 2)) }}</span>
-                </div>
-            @endif
-
-            <div style="border-top:1px solid #94a3b8; margin:4px 0 6px 0;"></div>
-
-            <div style="display:flex; justify-content:space-between; margin-bottom:2px; font-weight:700;">
-                <span>মোট</span>
-                <span>৳{{ BanglaNumber::toBn(number_format((float) $sale->total, 2)) }}</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                <span style="color:#334155;">পরিশোধিত</span>
-                <span style="font-weight:600;">৳{{ BanglaNumber::toBn(number_format((float) $sale->paid_amount, 2)) }}</span>
-            </div>
-
-            <div style="border-top:1px solid #94a3b8; margin:4px 0 6px 0;"></div>
-
-            <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                <span style="color:#334155;">বাকি আছে</span>
-                <span style="font-weight:600; {{ (float)$sale->due_amount > 0 ? 'color:#dc2626;' : '' }}">
-                    ৳{{ BanglaNumber::toBn(number_format((float) $sale->due_amount, 2)) }}
-                </span>
-            </div>
-
-            <div style="margin-top:54px; display:flex; justify-content:flex-end;">
-                <div style="border-top:1px solid #94a3b8; width:135px; text-align:center; padding-top:4px; font-size:11px; font-weight:600;">
-                    বিক্রেতার স্বাক্ষর
-                </div>
-            </div>
-        </div>
-    </div>
+            </td>
+        </tr>
+    </table>
 
     @if($printerSetting->show_footer_note && !empty($shop?->invoice_footer))
         <div style="margin-top:16px; border-top:1px dashed #cbd5e1; padding-top:8px; font-size:11px; color:#475569; text-align:center;">

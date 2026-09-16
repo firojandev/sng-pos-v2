@@ -48,7 +48,7 @@
                         <span class="en" style="display:none;">Assets</span>
                     </div>
                     <div style="flex-shrink:0;">
-                        <x-core::badge color="green" size="sm">
+                        <x-core::badge :color="$totalAssets < 0 ? 'danger' : 'green'" size="sm">
                             ৳{{ number_format($totalAssets, 2) }}
                         </x-core::badge>
                     </div>
@@ -72,7 +72,7 @@
                                     <span class="bn">ক্যাশ ও ব্যাংক ব্যালেন্স</span>
                                     <span class="en" style="display:none;">Cash & Bank Balance</span>
                                 </td>
-                                <td style="text-align:right; font-weight:700; white-space:nowrap;">৳{{ number_format($cashAndBank, 2) }}</td>
+                                <td style="text-align:right; font-weight:700; white-space:nowrap; color:{{ $cashAndBank < 0 ? 'var(--red-600)' : 'inherit' }};">৳{{ number_format($cashAndBank, 2) }}</td>
                             </tr>
                             <tr>
                                 <td class="cell-main" style="padding-left:18px;">
@@ -86,28 +86,28 @@
                                     <span class="bn">গ্রাহকের কাছে পাওনা</span>
                                     <span class="en" style="display:none;">Accounts Receivable (Customers)</span>
                                 </td>
-                                <td style="text-align:right; font-weight:700; white-space:nowrap;">৳{{ number_format($receivable, 2) }}</td>
+                                <td style="text-align:right; font-weight:700; white-space:nowrap; color:{{ $receivable < 0 ? 'var(--red-600)' : 'inherit' }};">৳{{ number_format($receivable, 2) }}</td>
                             </tr>
                             <tr>
                                 <td class="cell-main" style="padding-left:18px;">
                                     <span class="bn">প্রদত্ত ধার (বকেয়া)</span>
                                     <span class="en" style="display:none;">Loan Receivable (Lend)</span>
                                 </td>
-                                <td style="text-align:right; font-weight:700; white-space:nowrap;">৳{{ number_format($lendReceivable, 2) }}</td>
+                                <td style="text-align:right; font-weight:700; white-space:nowrap; color:{{ $lendReceivable < 0 ? 'var(--red-600)' : 'inherit' }};">৳{{ number_format($lendReceivable, 2) }}</td>
                             </tr>
                             <tr>
                                 <td class="cell-main" style="padding-left:18px;">
                                     <span class="bn">প্রদত্ত জামানত (ফেরতযোগ্য)</span>
                                     <span class="en" style="display:none;">Security Money Paid</span>
                                 </td>
-                                <td style="text-align:right; font-weight:700; white-space:nowrap;">৳{{ number_format($securityMoneyPaid, 2) }}</td>
+                                <td style="text-align:right; font-weight:700; white-space:nowrap; color:{{ $securityMoneyPaid < 0 ? 'var(--red-600)' : 'inherit' }};">৳{{ number_format($securityMoneyPaid, 2) }}</td>
                             </tr>
                             <tr style="border-top:1px solid var(--border); background:var(--paper);">
                                 <td class="cell-main" style="font-weight:700; padding-left:18px; color:var(--ink-800);">
                                     <span class="bn">মোট চলতি সম্পদ</span>
                                     <span class="en" style="display:none;">Total Current Assets</span>
                                 </td>
-                                <td style="text-align:right; font-weight:700; white-space:nowrap; color:var(--ink-800);">৳{{ number_format($currentAssets, 2) }}</td>
+                                <td style="text-align:right; font-weight:700; white-space:nowrap; color:{{ $currentAssets < 0 ? 'var(--red-600)' : 'var(--ink-800)' }};">৳{{ number_format($currentAssets, 2) }}</td>
                             </tr>
 
                             {{-- 2. Non-Current Assets --}}
@@ -129,7 +129,7 @@
                                     <span class="bn">মোট অচলতি সম্পদ</span>
                                     <span class="en" style="display:none;">Total Non-Current Assets</span>
                                 </td>
-                                <td style="text-align:right; font-weight:700; white-space:nowrap; color:var(--ink-800);">৳{{ number_format($nonCurrentAssets, 2) }}</td>
+                                <td style="text-align:right; font-weight:700; white-space:nowrap; color:{{ $nonCurrentAssets < 0 ? 'var(--red-600)' : 'var(--ink-800)' }};">৳{{ number_format($nonCurrentAssets, 2) }}</td>
                             </tr>
 
                             {{-- Total Assets --}}
@@ -138,7 +138,7 @@
                                     <span class="bn">সর্বমোট সম্পদ (Total Assets)</span>
                                     <span class="en" style="display:none;">TOTAL ASSETS</span>
                                 </td>
-                                <td style="text-align:right; font-weight:800; font-size:15px; color:var(--green-ink, #059669); white-space:nowrap;">
+                                <td style="text-align:right; font-weight:800; font-size:15px; color:{{ $totalAssets < 0 ? 'var(--red-600)' : 'var(--green-ink, #059669)' }}; white-space:nowrap;">
                                     ৳{{ number_format($totalAssets, 2) }}
                                 </td>
                             </tr>
@@ -232,7 +232,7 @@
                                         <span class="en" style="display:none;">Total Assets − Total Liabilities (calculated)</span>
                                     </div>
                                 </td>
-                                <td style="text-align:right; font-weight:700; color:{{ $equity >= 0 ? 'var(--green-ink, #059669)' : 'var(--red-ink, #dc2626)' }}; font-size:14px; white-space:nowrap;">
+                                <td style="text-align:right; font-weight:700; color:{{ $equity >= 0 ? 'var(--green-ink, #059669)' : 'var(--red-600)' }}; font-size:14px; white-space:nowrap;">
                                     ৳{{ number_format($equity, 2) }}
                                 </td>
                             </tr>
@@ -243,7 +243,7 @@
                                     <span class="bn">মোট দায় + হিসাবকৃত মূলধন</span>
                                     <span class="en" style="display:none;">TOTAL LIABILITIES + EQUITY</span>
                                 </td>
-                                <td style="text-align:right; font-weight:800; font-size:15px; color:var(--ink-900); white-space:nowrap;">
+                                <td style="text-align:right; font-weight:800; font-size:15px; color:{{ ($totalLiabilities + $equity) < 0 ? 'var(--red-600)' : 'var(--ink-900)' }}; white-space:nowrap;">
                                     ৳{{ number_format($totalLiabilities + $equity, 2) }}
                                 </td>
                             </tr>
@@ -257,7 +257,7 @@
         <div class="table-container fin-analysis-card" style="padding:14px 18px; margin-bottom:16px; background:var(--card); border:1px solid var(--border); border-radius:8px;">
             <div class="fin-analysis-header" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:10px;">
                 <div style="display:flex; align-items:center; gap:10px;">
-                    <div class="fin-analysis-icon" style="width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; background:{{ $isBalanced ? 'var(--green-100)' : 'var(--red-100)' }}; color:{{ $isBalanced ? 'var(--green-ink, #059669)' : 'var(--red-ink, #dc2626)' }}; flex-shrink:0;">
+                    <div class="fin-analysis-icon" style="width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; background:{{ $isBalanced ? 'var(--green-100)' : 'var(--red-100)' }}; color:{{ $isBalanced ? 'var(--green-ink, #059669)' : 'var(--red-600)' }}; flex-shrink:0;">
                         <x-core::icon :name="$isBalanced ? 'check-circle' : 'alert-triangle'" :size="20" />
                     </div>
                     <div>
@@ -281,15 +281,15 @@
             </div>
 
             <div class="fin-equation-box" style="background:var(--paper); padding:10px 14px; border-radius:8px; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap; font-size:12.5px; font-weight:700;">
-                <div style="color:var(--green-ink, #059669); display:flex; align-items:center; gap:6px;">
+                <div style="color:{{ $totalAssets < 0 ? 'var(--red-600)' : 'var(--green-ink, #059669)' }}; display:flex; align-items:center; gap:6px;">
                     <span><span class="bn">মোট সম্পদ:</span><span class="en" style="display:none;">Total Assets:</span> ৳{{ number_format($totalAssets, 2) }}</span>
                 </div>
                 <div style="color:var(--ink-400); font-size:15px; font-weight:800;">=</div>
-                <div style="color:var(--red-ink, #dc2626); display:flex; align-items:center; gap:6px;">
+                <div style="color:{{ $totalLiabilities < 0 ? 'var(--green-ink, #059669)' : 'var(--red-600)' }}; display:flex; align-items:center; gap:6px;">
                     <span><span class="bn">মোট দায়:</span><span class="en" style="display:none;">Total Liabilities:</span> ৳{{ number_format($totalLiabilities, 2) }}</span>
                 </div>
                 <div style="color:var(--ink-400); font-size:15px; font-weight:800;">+</div>
-                <div style="color:{{ $equity >= 0 ? 'var(--green-ink, #059669)' : 'var(--red-ink, #dc2626)' }}; display:flex; align-items:center; gap:6px;">
+                <div style="color:{{ $equity >= 0 ? 'var(--green-ink, #059669)' : 'var(--red-600)' }}; display:flex; align-items:center; gap:6px;">
                     <span><span class="bn">হিসাবকৃত মূলধন:</span><span class="en" style="display:none;">Calculated Equity:</span> ৳{{ number_format($equity, 2) }}</span>
                 </div>
             </div>

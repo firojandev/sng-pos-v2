@@ -128,6 +128,7 @@
                 label-en="Current Balance (৳)"
                 :value="'৳ ' . number_format($account->current_balance, 2)"
                 :disabled="true"
+                :style="$account->current_balance < 0 ? 'color: var(--red-600);' : ''"
             />
         </div>
     @endif

@@ -89,7 +89,7 @@ class SecurityMoneysDataTable extends BaseDataTable
             $query->where('security_money.status', $status);
         }
 
-        return $query;
+        return $query->latest('security_money.date')->latest('security_money.id');
     }
 
     /**

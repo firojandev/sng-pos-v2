@@ -95,7 +95,7 @@
                         <span class="en" style="display:none;">Assets</span>
                     </div>
                     <div style="flex-shrink:0;">
-                        <x-core::badge color="green" size="sm">
+                        <x-core::badge :color="$totalAssets < 0 ? 'danger' : 'green'" size="sm">
                             ৳{{ number_format($totalAssets, 2) }}
                         </x-core::badge>
                     </div>
@@ -117,7 +117,7 @@
                                         </a>
                                     @endif
                                 </td>
-                                <td style="text-align:right; font-weight:700; white-space:nowrap;">৳{{ number_format($cashAndBank, 2) }}</td>
+                                <td style="text-align:right; font-weight:700; white-space:nowrap; {{ $cashAndBank < 0 ? 'color:var(--red-600);' : '' }}">৳{{ number_format($cashAndBank, 2) }}</td>
                             </tr>
                             <tr>
                                 <td class="cell-main">
@@ -184,7 +184,7 @@
                                     <span class="bn">সর্বমোট সম্পদ (Total Assets)</span>
                                     <span class="en" style="display:none;">Total Assets</span>
                                 </td>
-                                <td style="text-align:right; font-weight:800; font-size:15px; color:var(--green-ink, #059669); white-space:nowrap;">
+                                <td style="text-align:right; font-weight:800; font-size:15px; color:{{ $totalAssets < 0 ? 'var(--red-600)' : 'var(--green-ink, #059669)' }}; white-space:nowrap;">
                                     ৳{{ number_format($totalAssets, 2) }}
                                 </td>
                             </tr>
@@ -288,7 +288,7 @@
                         <span class="bn">নিট আর্থিক স্থিতি</span>
                         <span class="en" style="display:none;">Net Financial Position</span>
                     </div>
-                    <div class="fin-net-val" style="font-size:22px; font-weight:800; color:{{ $isSolvent ? 'var(--green-ink, #059669)' : 'var(--red-ink, #dc2626)' }}; line-height:1.2;">
+                    <div class="fin-net-val" style="font-size:22px; font-weight:800; color:{{ $isSolvent ? 'var(--green-ink, #059669)' : 'var(--red-600)' }}; line-height:1.2;">
                         ৳{{ number_format($netPosition, 2) }}
                     </div>
                 </div>
@@ -301,7 +301,7 @@
                     <span style="color:var(--ink-500); font-size:11px; margin-right:4px;">
                         <span class="bn">সমীকরণ ১:</span><span class="en" style="display:none;">Eq 1:</span>
                     </span>
-                    <div style="color:var(--green-ink, #059669); display:flex; align-items:center; gap:4px;">
+                    <div style="color:{{ $totalAssets < 0 ? 'var(--red-600)' : 'var(--green-ink, #059669)' }}; display:flex; align-items:center; gap:4px;">
                         <span><span class="bn">মোট সম্পদ</span><span class="en" style="display:none;">Total Assets</span> (৳{{ number_format($totalAssets, 2) }})</span>
                     </div>
                     <div style="color:var(--ink-400); font-size:15px; font-weight:800;">&minus;</div>
@@ -309,7 +309,7 @@
                         <span><span class="bn">মোট দায়</span><span class="en" style="display:none;">Total Liabilities</span> (৳{{ number_format($totalLiabilities, 2) }})</span>
                     </div>
                     <div style="color:var(--ink-400); font-size:15px; font-weight:800;">=</div>
-                    <div style="color:{{ $isSolvent ? 'var(--green-ink, #059669)' : 'var(--red-ink, #dc2626)' }}; display:flex; align-items:center; gap:4px;">
+                    <div style="color:{{ $isSolvent ? 'var(--green-ink, #059669)' : 'var(--red-600)' }}; display:flex; align-items:center; gap:4px;">
                         <span><span class="bn">নিট অবস্থান</span><span class="en" style="display:none;">Net Position</span> (৳{{ number_format($netPosition, 2) }})</span>
                     </div>
                 </div>
@@ -323,11 +323,11 @@
                         <span><span class="bn">মোট দায়</span><span class="en" style="display:none;">Total Liabilities</span> (৳{{ number_format($totalLiabilities, 2) }})</span>
                     </div>
                     <div style="color:var(--ink-400); font-size:15px; font-weight:800;">+</div>
-                    <div style="color:{{ $isSolvent ? 'var(--green-ink, #059669)' : 'var(--red-ink, #dc2626)' }}; display:flex; align-items:center; gap:4px;">
+                    <div style="color:{{ $isSolvent ? 'var(--green-ink, #059669)' : 'var(--red-600)' }}; display:flex; align-items:center; gap:4px;">
                         <span><span class="bn">নিট অবস্থান</span><span class="en" style="display:none;">Net Position</span> (৳{{ number_format($netPosition, 2) }})</span>
                     </div>
                     <div style="color:var(--ink-400); font-size:15px; font-weight:800;">=</div>
-                    <div style="color:var(--green-ink, #059669); display:flex; align-items:center; gap:4px;">
+                    <div style="color:{{ $totalAssets < 0 ? 'var(--red-600)' : 'var(--green-ink, #059669)' }}; display:flex; align-items:center; gap:4px;">
                         <span><span class="bn">মোট সম্পদ</span><span class="en" style="display:none;">Total Assets</span> (৳{{ number_format($totalAssets, 2) }})</span>
                     </div>
                 </div>
