@@ -186,7 +186,7 @@
             <x-core::stat-card
                 icon="trending-up"
                 :color="$totals['profit'] >= 0 ? 'green' : 'red'"
-                :value="'৳' . number_format($totals['profit'], 2)"
+                :value="($totals['profit'] < 0 ? '-৳' . number_format(abs($totals['profit']), 2) : '৳' . number_format($totals['profit'], 2))"
                 label="মোট লাভ / ক্ষতি"
                 label-en="Total Profit / Loss"
             />
@@ -276,8 +276,12 @@
                                         ৳{{ number_format($batch['sale_revenue'], 2) }}
                                     </td>
 
-                                    <td style="text-align:right; font-weight:700; vertical-align:middle; font-size:13px; color:{{ $batch['profit'] < 0 ? 'var(--red-600)' : 'var(--green-ink, #059669)' }};">
-                                        ৳{{ number_format($batch['profit'], 2) }}
+                                    <td style="text-align:right; font-weight:700; vertical-align:middle; font-size:13px;" class="{{ $batch['profit'] < 0 ? 'text-loss' : 'text-profit' }}">
+                                        @if ($batch['profit'] < 0)
+                                            -৳{{ number_format(abs($batch['profit']), 2) }}
+                                        @else
+                                            ৳{{ number_format($batch['profit'], 2) }}
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach
@@ -303,8 +307,12 @@
                                 <td style="text-align:right; font-size:13.5px; font-weight:800; color:var(--ink-900); padding:10px 12px;">
                                     ৳{{ number_format($totals['sale_revenue'], 2) }}
                                 </td>
-                                <td style="text-align:right; font-size:14px; font-weight:800; color:{{ $totals['profit'] < 0 ? 'var(--red-600)' : 'var(--green-ink, #059669)' }}; padding:10px 12px;">
-                                    ৳{{ number_format($totals['profit'], 2) }}
+                                <td style="text-align:right; font-size:14px; font-weight:800; padding:10px 12px;" class="{{ $totals['profit'] < 0 ? 'text-loss' : 'text-profit' }}">
+                                    @if ($totals['profit'] < 0)
+                                        -৳{{ number_format(abs($totals['profit']), 2) }}
+                                    @else
+                                        ৳{{ number_format($totals['profit'], 2) }}
+                                    @endif
                                 </td>
                             </tr>
                         </tfoot>
@@ -328,6 +336,16 @@
     </div>
 
     <style>
+    /* Loss and Profit text colors */
+    .text-loss {
+        color: var(--red-600, #dc2626) !important;
+        font-weight: 700;
+    }
+    .text-profit {
+        color: var(--green-ink, #059669) !important;
+        font-weight: 700;
+    }
+
     /* Strictly hidden on screen */
     .report-print-header,
     .report-print-footer,
@@ -535,6 +553,18 @@
                 border: 1px solid #e2e8f0 !important;
                 padding: 6px 8px !important;
                 color: #0f172a !important;
+            }
+            .app-table td.text-loss,
+            .text-loss {
+                color: #dc2626 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .app-table td.text-profit,
+            .text-profit {
+                color: #059669 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
             .app-table tr {
                 page-break-inside: avoid !important;
