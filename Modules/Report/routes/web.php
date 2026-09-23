@@ -21,6 +21,9 @@ Route::middleware(['auth'])->prefix('reports')->name('reports.')->group(function
     Route::middleware(['permission:report-products.view', 'feature:report-products'])
         ->get('/products', [ReportController::class, 'products'])->name('products');
 
+    Route::middleware(['permission:report-product-profit-loss.view', 'feature:report-product-profit-loss'])
+        ->get('/product-profit-loss', [ReportController::class, 'productProfitLoss'])->name('product-profit-loss');
+
     Route::middleware(['permission:report-profit-loss.view', 'feature:report-profit-loss'])
         ->get('/profit-loss', [ReportController::class, 'profitLoss'])->name('profit-loss');
 

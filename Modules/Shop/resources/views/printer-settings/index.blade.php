@@ -459,11 +459,11 @@
 
                         {{-- PREVIEW TEMPLATE 1: A4 & A5 Exact Formal Invoice Sheet --}}
                         <div id="previewA4A5Box" style="background:#ffffff; color:#0f172a; box-shadow:0 8px 24px rgba(0,0,0,0.12); border-radius:4px; padding:24px 28px; font-family:'Noto Sans Bengali',sans-serif; font-size:12px; line-height:1.4; width:100%; max-width:680px; transition:all 0.2s ease; box-sizing:border-box; overflow:hidden;">
-                            {{-- Top Header with Shop Info --}}
-                            <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:10px;">
-                                <div id="previewA4Logo" style="flex-shrink:0; width:46px; height:46px; border-radius:6px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+                            {{-- Top Header with Shop Info (Logo on Left Side) --}}
+                            <div style="display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:12px;">
+                                <div id="previewA4Logo" style="flex-shrink:0; width:48px; height:48px; border-radius:6px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
                                     @if(!empty($shop?->logo))
-                                        <img src="{{ $shop->logo_url ?? asset($shop->logo) }}" alt="Shop Logo" style="max-width:46px; max-height:46px; object-fit:contain;">
+                                        <img src="{{ $shop->logo_url ?? asset($shop->logo) }}" alt="Shop Logo" style="max-width:48px; max-height:48px; object-fit:contain;">
                                     @else
                                         <div style="width:46px; height:46px; border-radius:6px; background:#0d9488; color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px;">
                                             {{ mb_substr($shop->name ?? 'S', 0, 1) }}
@@ -472,7 +472,7 @@
                                 </div>
 
                                 <div>
-                                    <div style="font-size:18px; font-weight:800; color:#0f172a; line-height:1.2;">
+                                    <div style="font-size:18px; font-weight:800; color:#0f172a; line-height:1.25;">
                                         {{ $shop->name ?? 'ব্যবসা প্রতিষ্ঠান' }}
                                     </div>
                                     <div id="previewA4ShopInfo">
@@ -491,9 +491,9 @@
                             </div>
 
                             {{-- Centered Title with Horizontal Accent Lines --}}
-                            <div style="display:flex; align-items:center; justify-content:center; gap:16px; margin:12px 0 14px 0;">
+                            <div style="display:flex; align-items:center; justify-content:center; gap:16px; margin:10px 0 14px 0;">
                                 <div style="flex:1; height:1px; background:#94a3b8;"></div>
-                                <div style="font-size:20px; font-weight:800; color:#0f172a; letter-spacing:1px; padding:0 8px;">
+                                <div style="font-size:14px; font-weight:600; color:#334155; letter-spacing:0.5px; padding:0 8px;">
                                     ইনভয়েস
                                 </div>
                                 <div style="flex:1; height:1px; background:#94a3b8;"></div>
