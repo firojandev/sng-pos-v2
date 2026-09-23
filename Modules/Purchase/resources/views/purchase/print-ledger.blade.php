@@ -253,11 +253,11 @@
     @endphp
 
     <div class="report-card">
-        {{-- Top Header with Shop Info --}}
-        <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:10px;">
-            <div style="flex-shrink:0; width:48px; height:48px; border-radius:6px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+        {{-- Top Header with Shop Info (Logo on Left Side) --}}
+        <div style="display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:12px;">
+            <div style="flex-shrink:0; width:52px; height:52px; border-radius:6px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
                 @if(!empty($shop?->logo))
-                    <img src="{{ $shop->logo_url ?? asset($shop->logo) }}" alt="Shop Logo" style="max-width:48px; max-height:48px; object-fit:contain;">
+                    <img src="{{ $shop->logo_url ?? asset($shop->logo) }}" alt="Shop Logo" style="max-width:52px; max-height:52px; object-fit:contain;">
                 @else
                     <svg width="46" height="46" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <rect x="7" y="19" width="34" height="23" rx="2" fill="#38bdf8" stroke="#0f172a" stroke-width="2"/>
@@ -271,7 +271,7 @@
             </div>
 
             <div>
-                <div style="font-size:18px; font-weight:800; color:#0f172a; line-height:1.2;">
+                <div style="font-size:18px; font-weight:800; color:#0f172a; line-height:1.25;">
                     {{ $shop->name ?? 'ব্যবসা প্রতিষ্ঠান' }}
                 </div>
                 @if(!empty($shop?->address))
@@ -288,9 +288,9 @@
         </div>
 
         {{-- Centered Title with Horizontal Accent Lines --}}
-        <div style="display:flex; align-items:center; justify-content:center; gap:16px; margin:12px 0 14px 0;">
+        <div style="display:flex; align-items:center; justify-content:center; gap:16px; margin:10px 0 14px 0;">
             <div style="flex:1; height:1px; background:#94a3b8;"></div>
-            <div style="font-size:22px; font-weight:800; color:#0f172a; letter-spacing:1px; padding:0 8px;">
+            <div style="font-size:14px; font-weight:600; color:#334155; letter-spacing:0.5px; padding:0 8px;">
                 ক্রয় খাতা প্রতিবেদন
             </div>
             <div style="flex:1; height:1px; background:#94a3b8;"></div>

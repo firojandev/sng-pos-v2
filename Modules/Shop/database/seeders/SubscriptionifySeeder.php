@@ -73,7 +73,8 @@ class SubscriptionifySeeder extends Seeder
             'report-purchase' => ['name' => 'ক্রয় রিপোর্ট (Purchase Report)', 'sort_order' => 30],
             'report-stock' => ['name' => 'স্টক রিপোর্ট (Stock Report)', 'sort_order' => 31],
             'report-products' => ['name' => 'পণ্য রিপোর্ট (Product Report)', 'sort_order' => 32],
-            'report-profit-loss' => ['name' => 'লাভ-ক্ষতি রিপোর্ট (Profit & Loss Report)', 'sort_order' => 33],
+            'report-product-profit-loss' => ['name' => 'পণ্যভিত্তিক লাভ-ক্ষতি রিপোর্ট (Product Wise Profit & Loss Report)', 'sort_order' => 33],
+            'report-profit-loss' => ['name' => 'লাভ-ক্ষতি রিপোর্ট (Profit & Loss Report)', 'sort_order' => 34],
             'report-income' => ['name' => 'আয় রিপোর্ট (Income Report)', 'sort_order' => 34],
             'report-expense' => ['name' => 'ব্যয় রিপোর্ট (Expense Report)', 'sort_order' => 35],
             'report-financial-position' => ['name' => 'আর্থিক অবস্থান রিপোর্ট (Financial Position Report)', 'sort_order' => 36],
@@ -164,7 +165,7 @@ class SubscriptionifySeeder extends Seeder
                     'max-warehouses' => 3,
                     'max-products' => 2000,
                 ],
-                'toggles' => ['sales', 'purchase', 'cashbox', 'quick-sale', 'stock', 'products', 'branches', 'customers', 'suppliers', 'income', 'expense', 'accounts', 'account-transfers', 'assets', 'debts', 'lend', 'security-money', 'tax', 'printer-settings', 'whatsapp-settings', 'report-sales', 'report-sales-vat', 'report-purchase', 'report-stock', 'report-products', 'report-profit-loss', 'report-income', 'report-expense', 'report-financial-position', 'report-balance-sheet', 'employees', 'users', 'subscription'],
+                'toggles' => ['sales', 'purchase', 'cashbox', 'quick-sale', 'stock', 'products', 'branches', 'customers', 'suppliers', 'income', 'expense', 'accounts', 'account-transfers', 'assets', 'debts', 'lend', 'security-money', 'tax', 'printer-settings', 'whatsapp-settings', 'report-sales', 'report-sales-vat', 'report-purchase', 'report-stock', 'report-products', 'report-product-profit-loss', 'report-profit-loss', 'report-income', 'report-expense', 'report-financial-position', 'report-balance-sheet', 'employees', 'users', 'subscription'],
             ],
             [
                 'name' => 'প্রিমিয়াম (Enterprise)',

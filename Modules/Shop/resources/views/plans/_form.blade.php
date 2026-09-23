@@ -18,6 +18,7 @@
         'report-purchase' => 'file-text',
         'report-stock' => 'file-text',
         'report-products' => 'file-text',
+        'report-product-profit-loss' => 'file-text',
         'report-profit-loss' => 'file-text',
         'report-income' => 'file-text',
         'report-expense' => 'file-text',
