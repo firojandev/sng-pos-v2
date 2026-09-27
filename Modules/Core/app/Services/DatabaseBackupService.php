@@ -8,6 +8,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use PDO;
 use ZipArchive;
 
@@ -39,7 +40,7 @@ class DatabaseBackupService
         @ini_set('memory_limit', '512M');
 
         $dir = $this->getBackupDirectory();
-        $cleanPrefix = $prefix ? preg_replace('/[^a-zA-Z0-9_-]/', '', $prefix) : 'sngpos';
+        $cleanPrefix = $prefix ? preg_replace('/[^a-zA-Z0-9_-]/', '', $prefix) : 'sngerp';
         $timestamp = now()->format('Y-m-d_H-i-s');
         $zipFilename = "{$cleanPrefix}_backup_{$timestamp}.zip";
         $zipPath = $dir.DIRECTORY_SEPARATOR.$zipFilename;
@@ -64,7 +65,10 @@ class DatabaseBackupService
             $shops = [];
             if ($this->tableExists('shops')) {
                 $shops = DB::table('shops')
-                    ->select('id', 'name', 'slug', 'phone')
+                    ->select(array_values(array_filter(
+                        ['id', 'company_id', 'name', 'slug', 'phone'],
+                        fn (string $column) => $column !== 'company_id' || Schema::hasColumn('shops', 'company_id'),
+                    )))
                     ->get()
                     ->map(fn ($s) => (array) $s)
                     ->toArray();
@@ -79,7 +83,7 @@ class DatabaseBackupService
 
             // 4. Generate manifest.json
             $manifest = [
-                'app' => 'SNG POS',
+                'app' => 'SNG ERP',
                 'version' => $appVersion,
                 'created_at' => now()->toDateTimeString(),
                 'database' => $databaseName,
@@ -146,7 +150,7 @@ class DatabaseBackupService
 
         // Header
         $header = "-- ========================================================\n"
-            ."-- SNG POS Full Database Backup\n"
+            ."-- SNG ERP Full Database Backup\n"
             ."-- Database: `{$databaseName}`\n"
             .'-- Generated at: '.now()->toDateTimeString()."\n"
             ."-- Driver: {$driver} ({$serverVersion})\n"
@@ -260,6 +264,26 @@ class DatabaseBackupService
     }
 
     /**
+     * Company rows restored together with a single-shop company's shop, in
+     * delete order (children first, the company row last).
+     *
+     * @return array<string, string> table => WHERE clause
+     */
+    protected function companyScopedRows(int $companyId): array
+    {
+        $companyMorph = "`subscribable_type` = 'Modules\\\\Company\\\\Models\\\\Company' AND `subscribable_id` = {$companyId}";
+
+        return [
+            'subscription_payments' => "`subscription_id` IN (SELECT `id` FROM `subscriptions` WHERE {$companyMorph})",
+            'feature_usages' => $companyMorph,
+            'feature_subscribable' => $companyMorph,
+            'subscriptions' => $companyMorph,
+            'company_user' => "`company_id` = {$companyId}",
+            'companies' => "`id` = {$companyId}",
+        ];
+    }
+
+    /**
      * Dump shop-isolated data into a standalone SQL file.
      *
      * @param  array{id: int|string, name: string, slug: string}  $shop
@@ -273,9 +297,17 @@ class DatabaseBackupService
 
         $shopId = (int) $shop['id'];
         $shopName = $shop['name'];
+        $companyId = (int) ($shop['company_id'] ?? 0);
+
+        // A company that runs only this shop is backed up and restored with
+        // it. Billing of a multi-shop company is company-wide, so it is left
+        // out of any single shop's backup.
+        $companyRows = $companyId > 0 && $this->tableExists('companies') && DB::table('shops')->where('company_id', $companyId)->count() === 1
+            ? $this->companyScopedRows($companyId)
+            : [];
 
         $header = "-- ========================================================\n"
-            ."-- SNG POS Shop Scoped Backup\n"
+            ."-- SNG ERP Shop Scoped Backup\n"
             ."-- Shop: {$shopName} (ID: #{$shopId})\n"
             ."-- Database: `{$databaseName}`\n"
             .'-- Generated at: '.now()->toDateTimeString()."\n"
@@ -306,9 +338,6 @@ class DatabaseBackupService
             'purchase_delivery_receipt_items' => "DELETE FROM `purchase_delivery_receipt_items` WHERE `purchase_delivery_receipt_id` IN (SELECT `id` FROM `purchase_delivery_receipts` WHERE `shop_id` = {$shopId});",
             'stock_transfer_items' => "DELETE FROM `stock_transfer_items` WHERE `stock_transfer_id` IN (SELECT `id` FROM `stock_transfers` WHERE `shop_id` = {$shopId});",
             'product_units' => "DELETE FROM `product_units` WHERE `product_id` IN (SELECT `id` FROM `products` WHERE `shop_id` = {$shopId});",
-            'subscription_payments' => "DELETE FROM `subscription_payments` WHERE `subscription_id` IN (SELECT `id` FROM `subscriptions` WHERE `shop_id` = {$shopId});",
-            'feature_usages' => "DELETE FROM `feature_usages` WHERE `subscribable_type` = 'Modules\\\\Shop\\\\Models\\\\Shop' AND `subscribable_id` = {$shopId};",
-            'feature_subscribable' => "DELETE FROM `feature_subscribable` WHERE `subscribable_type` = 'Modules\\\\Shop\\\\Models\\\\Shop' AND `subscribable_id` = {$shopId};",
         ];
 
         foreach ($indirectDeletes as $table => $sql) {
@@ -326,7 +355,7 @@ class DatabaseBackupService
             'sale_returns', 'sales', 'customers',
             'purchase_delivery_receipts', 'purchase_delivery_orders', 'purchase_receipt_items', 'purchase_returns', 'purchases', 'suppliers',
             'employees', 'warehouses', 'branches',
-            'subscriptions', 'shop_user', 'model_has_permissions', 'model_has_roles', 'roles',
+            'shop_user', 'model_has_permissions', 'model_has_roles', 'roles',
             'users', 'audit_logs', 'shops',
         ];
 
@@ -343,9 +372,20 @@ class DatabaseBackupService
             }
         }
 
+        // Company-level rows go last: the shop row references the company.
+        foreach ($companyRows as $table => $whereClause) {
+            if ($this->tableExists($table)) {
+                fwrite($handle, "DELETE FROM `{$table}` WHERE {$whereClause};\n");
+            }
+        }
+
         fwrite($handle, "\n--\n-- Step 2: Insert backup records for Shop #{$shopId}\n--\n");
 
-        // 2. INSERT statements for shop row
+        // 2. INSERT statements for the company (when owned by this shop alone) and shop rows
+        if (isset($companyRows['companies'])) {
+            $this->dumpTableDataWhere($pdo, $handle, 'companies', $companyRows['companies']);
+        }
+
         $this->dumpTableDataWhere($pdo, $handle, 'shops', "`id` = {$shopId}");
 
         // 3. INSERT direct tables
@@ -374,12 +414,16 @@ class DatabaseBackupService
             'purchase_delivery_order_items' => "`purchase_delivery_order_id` IN (SELECT `id` FROM `purchase_delivery_orders` WHERE `shop_id` = {$shopId})",
             'purchase_delivery_receipt_items' => "`purchase_delivery_receipt_id` IN (SELECT `id` FROM `purchase_delivery_receipts` WHERE `shop_id` = {$shopId})",
             'stock_transfer_items' => "`stock_transfer_id` IN (SELECT `id` FROM `stock_transfers` WHERE `shop_id` = {$shopId})",
-            'subscription_payments' => "`subscription_id` IN (SELECT `id` FROM `subscriptions` WHERE `shop_id` = {$shopId})",
-            'feature_subscribable' => "`subscribable_type` = 'Modules\\\\Shop\\\\Models\\\\Shop' AND `subscribable_id` = {$shopId}",
-            'feature_usages' => "`subscribable_type` = 'Modules\\\\Shop\\\\Models\\\\Shop' AND `subscribable_id` = {$shopId}",
         ];
 
         foreach ($indirectSelects as $table => $whereClause) {
+            if ($this->tableExists($table)) {
+                $this->dumpTableDataWhere($pdo, $handle, $table, $whereClause);
+            }
+        }
+
+        // 5. INSERT the company's members and billing (they reference users and subscriptions)
+        foreach (array_reverse(array_diff_key($companyRows, ['companies' => true]), true) as $table => $whereClause) {
             if ($this->tableExists($table)) {
                 $this->dumpTableDataWhere($pdo, $handle, $table, $whereClause);
             }

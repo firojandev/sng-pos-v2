@@ -131,7 +131,7 @@ class WhatsAppSettingsFeatureTest extends TestCase
         $mockMessagesResource = Mockery::mock(MessagesResource::class);
         $mockMessagesResource->shouldReceive('sendText')
             ->once()
-            ->with('+8801712345678', Mockery::pattern('/SNG POS/'))
+            ->with('+8801712345678', Mockery::pattern('/SNG ERP/'))
             ->andReturn(['id' => 'test-wa-msg-999']);
 
         $mockWebSession = Mockery::mock(WebSession::class);

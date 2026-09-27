@@ -54,6 +54,7 @@ class AccountFeatureTest extends TestCase
         $this->user = User::create([
             'name' => 'Test Admin',
             'email' => 'admin@test.com',
+            'email_verified_at' => now(),
             'password' => Hash::make('password'),
             'shop_id' => $this->shop->id,
         ]);
@@ -425,6 +426,7 @@ class AccountFeatureTest extends TestCase
         $accountsUser = User::create([
             'name' => 'Accounts Manager',
             'email' => 'accounts@test.com',
+            'email_verified_at' => now(),
             'password' => Hash::make('password'),
             'shop_id' => $this->shop->id,
         ]);
@@ -437,6 +439,7 @@ class AccountFeatureTest extends TestCase
         $transferUser = User::create([
             'name' => 'Transfer Manager',
             'email' => 'transfer@test.com',
+            'email_verified_at' => now(),
             'password' => Hash::make('password'),
             'shop_id' => $this->shop->id,
         ]);

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Modules\Company\Models\Company;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
 use Modules\Shop\DataTables\ShopsDataTable;
 use Modules\Shop\Models\Plan;
@@ -292,8 +293,8 @@ class ShopDataTableTest extends TestCase
 
         $response->assertRedirect(route('shops.edit', $shop));
         $this->assertDatabaseHas('subscriptions', [
-            'subscribable_type' => Shop::class,
-            'subscribable_id' => $shop->id,
+            'subscribable_type' => Company::class,
+            'subscribable_id' => $shop->company_id,
             'plan_id' => $plan->id,
             'status' => 'active',
         ]);

@@ -345,7 +345,7 @@
                                 <div>
                                     <x-core::input name="site_title" label="ওয়েবসাইট / সফটওয়্যারের নাম (Site Name)"
                                         size="sm" :value="old('site_title', $settings['site_title'])"
-                                        placeholder="{{ config('app.name', 'SNGPOS') }}" />
+                                        placeholder="{{ config('app.name', 'SNG ERP') }}" />
                                 </div>
                                 <div>
                                     <x-core::input name="brand_tag" label="ব্র্যান্ড ট্যাগলাইন (Brand Tagline)"

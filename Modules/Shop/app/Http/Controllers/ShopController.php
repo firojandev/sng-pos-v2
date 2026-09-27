@@ -120,8 +120,16 @@ class ShopController extends Controller
     {
         DB::transaction(function () use ($request) {
             $storeCode = $request->validated('store_code') ?: Shop::generateNextStoreCode();
+            $ownerType = $request->input('owner_type', 'new');
 
+            $existingOwner = $ownerType === 'existing' && $request->filled('existing_user_id')
+                ? User::findOrFail($request->validated('existing_user_id'))
+                : null;
+
+            // A new shop for an existing owner joins that owner's company;
+            // otherwise the shop gets its own (hidden) company automatically.
             $shop = Shop::create([
+                'company_id' => $existingOwner?->primaryCompany()?->id,
                 'name' => $request->validated('name'),
                 'slug' => $request->validated('slug'),
                 'store_code' => $storeCode,
@@ -130,10 +138,8 @@ class ShopController extends Controller
                 'status' => $request->validated('status'),
             ]);
 
-            $ownerType = $request->input('owner_type', 'new');
-
-            if ($ownerType === 'existing' && $request->filled('existing_user_id')) {
-                $admin = User::findOrFail($request->validated('existing_user_id'));
+            if ($existingOwner) {
+                $admin = $existingOwner;
                 if (! $admin->shop_id) {
                     $admin->shop_id = $shop->id;
                     $admin->save();
@@ -172,7 +178,16 @@ class ShopController extends Controller
                 ],
             ]);
 
-            if ($request->filled('plan_id')) {
+            $shop->company->users()->syncWithoutDetaching([
+                $admin->id => [
+                    'role' => $roleName,
+                    'is_owner' => true,
+                ],
+            ]);
+
+            // Billing is per company: a shop joining a company that is already
+            // subscribed shares that subscription instead of starting a new one.
+            if ($request->filled('plan_id') && ! $shop->company->subscriptions()->exists()) {
                 $plan = Plan::find($request->validated('plan_id'));
                 if ($plan) {
                     $billingCycle = $plan->billing_cycle ?? ($plan->billing_interval?->value ?? 'month');
@@ -197,9 +212,7 @@ class ShopController extends Controller
                         $subStatus = 'trialing';
                     }
 
-                    $shop->subscriptions()->create([
-                        'subscribable_type' => Shop::class,
-                        'subscribable_id' => $shop->id,
+                    $shop->company->subscriptions()->create([
                         'plan_id' => $plan->id,
                         'status' => $subStatus,
                         'trial_ends_at' => $trialEndsAt,
@@ -285,11 +298,8 @@ class ShopController extends Controller
                 $subStatus = 'trialing';
             }
 
-            $shop->subscriptions()->updateOrCreate(
-                [
-                    'subscribable_type' => Shop::class,
-                    'subscribable_id' => $shop->id,
-                ],
+            $shop->company->subscriptions()->updateOrCreate(
+                [],
                 [
                     'plan_id' => $plan->id,
                     'status' => $subStatus,

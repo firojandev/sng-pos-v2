@@ -64,6 +64,7 @@ class SalePreviousDuePaymentFeatureTest extends TestCase
         $this->user = User::create([
             'name' => 'Sale Admin',
             'email' => 'admin@saletest.test',
+            'email_verified_at' => now(),
             'password' => bcrypt('password'),
             'shop_id' => $this->shop->id,
         ]);

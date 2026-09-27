@@ -43,7 +43,7 @@ class LandingPageTest extends TestCase
         $response = $this->get('/');
 
         $response->assertOk();
-        $response->assertSee('SNGPOS');
+        $response->assertSee('SNG ERP');
         $response->assertSee('Registration');
         $response->assertSee('Demo Simulator');
         $response->assertSee(route('register'));
@@ -69,7 +69,7 @@ class LandingPageTest extends TestCase
         $response = $this->get(route('landing'));
 
         $response->assertOk();
-        $response->assertSee('SNGPOS');
+        $response->assertSee('SNG ERP');
         $response->assertSee('Registration');
         $response->assertSee('Preview Mode');
     }

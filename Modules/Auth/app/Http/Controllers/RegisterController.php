@@ -149,6 +149,13 @@ class RegisterController extends Controller
                 ],
             ]);
 
+            $shop->company->users()->syncWithoutDetaching([
+                $owner->id => [
+                    'role' => 'Admin',
+                    'is_owner' => true,
+                ],
+            ]);
+
             // 4. Create Default Branch
             $branchName = ! empty($validated['branch_name']) ? trim($validated['branch_name']) : 'প্রধান শাখা';
             $branch = Branch::create([
@@ -209,9 +216,7 @@ class RegisterController extends Controller
                 ->first() ?? Plan::where('slug', 'free')->first();
 
             if ($freePlan) {
-                $shop->subscriptions()->create([
-                    'subscribable_type' => Shop::class,
-                    'subscribable_id' => $shop->id,
+                $shop->company->subscriptions()->create([
                     'plan_id' => $freePlan->id,
                     'status' => 'active',
                     'trial_ends_at' => null,

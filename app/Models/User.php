@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 use Modules\Auth\Mail\ShopVerificationMail;
+use Modules\Company\Models\Company;
 use Modules\Core\Models\Setting;
 use Modules\Core\Observers\AuditObserver;
 use Modules\Employee\Models\Employee;
@@ -186,6 +187,25 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Shop::class, 'shop_user')
             ->withPivot('role', 'is_owner')
             ->withTimestamps();
+    }
+
+    /**
+     * Companies this user belongs to (as owner or company-level staff).
+     */
+    public function companies(): BelongsToMany
+    {
+        return $this->belongsToMany(Company::class, 'company_user')
+            ->withPivot('role', 'is_owner')
+            ->withTimestamps();
+    }
+
+    /**
+     * The company the user owns, falling back to the company of their current shop.
+     */
+    public function primaryCompany(): ?Company
+    {
+        return $this->companies()->wherePivot('is_owner', true)->oldest('company_user.id')->first()
+            ?? $this->shop?->company;
     }
 
     /**

@@ -43,6 +43,7 @@ class MultiShopOwnerTest extends TestCase
         $user = User::create([
             'name' => 'Shop Owner',
             'email' => 'owner@multishop.test',
+            'email_verified_at' => now(),
             'password' => Hash::make('password'),
             'shop_id' => $shop1->id,
         ]);
@@ -69,6 +70,7 @@ class MultiShopOwnerTest extends TestCase
         $user = User::create([
             'name' => 'Single Owner',
             'email' => 'single@owner.test',
+            'email_verified_at' => now(),
             'password' => Hash::make('password123'),
             'shop_id' => $shop->id,
         ]);
@@ -101,6 +103,7 @@ class MultiShopOwnerTest extends TestCase
         $user = User::create([
             'name' => 'Multi Owner',
             'email' => 'multi@owner.test',
+            'email_verified_at' => now(),
             'password' => Hash::make('password123'),
             'shop_id' => $shop1->id,
         ]);
@@ -125,6 +128,7 @@ class MultiShopOwnerTest extends TestCase
         $superAdmin = User::create([
             'name' => 'Master Super Admin',
             'email' => 'super@SNGPOS.test',
+            'email_verified_at' => now(),
             'password' => Hash::make('password123'),
         ]);
         $superAdmin->assignRole('Super Admin');
@@ -157,6 +161,7 @@ class MultiShopOwnerTest extends TestCase
         $user = User::create([
             'name' => 'City Owner',
             'email' => 'city@owner.test',
+            'email_verified_at' => now(),
             'password' => Hash::make('password123'),
             'shop_id' => $shop1->id,
         ]);
@@ -194,6 +199,7 @@ class MultiShopOwnerTest extends TestCase
         $user = User::create([
             'name' => 'North South Owner',
             'email' => 'northsouth@owner.test',
+            'email_verified_at' => now(),
             'password' => Hash::make('password123'),
             'shop_id' => $shop1->id,
         ]);
@@ -227,6 +233,7 @@ class MultiShopOwnerTest extends TestCase
         $user = User::create([
             'name' => 'Private Owner',
             'email' => 'private@owner.test',
+            'email_verified_at' => now(),
             'password' => Hash::make('password123'),
             'shop_id' => $shop1->id,
         ]);
@@ -247,6 +254,7 @@ class MultiShopOwnerTest extends TestCase
         $superAdmin = User::create([
             'name' => 'Super Admin',
             'email' => 'superadmin@pos.test',
+            'email_verified_at' => now(),
             'password' => Hash::make('password123'),
         ]);
         $superAdmin->assignRole('Super Admin');
@@ -290,6 +298,7 @@ class MultiShopOwnerTest extends TestCase
         $superAdmin = User::create([
             'name' => 'Super Admin',
             'email' => 'superadmin2@pos.test',
+            'email_verified_at' => now(),
             'password' => Hash::make('password123'),
         ]);
         $superAdmin->assignRole('Super Admin');
@@ -309,6 +318,7 @@ class MultiShopOwnerTest extends TestCase
         $owner = User::create([
             'name' => 'Dual Owner',
             'email' => 'dual@owner.test',
+            'email_verified_at' => now(),
             'password' => Hash::make('password123'),
             'shop_id' => $shop1->id,
         ]);
@@ -332,6 +342,7 @@ class MultiShopOwnerTest extends TestCase
         $superAdmin = User::create([
             'name' => 'Super Admin',
             'email' => 'superadmin3@pos.test',
+            'email_verified_at' => now(),
             'password' => Hash::make('password123'),
         ]);
         $superAdmin->assignRole('Super Admin');
@@ -339,6 +350,7 @@ class MultiShopOwnerTest extends TestCase
         $existingOwner = User::create([
             'name' => 'Selected Owner',
             'email' => 'selected@owner.test',
+            'email_verified_at' => now(),
             'password' => Hash::make('password123'),
         ]);
         $existingOwner->assignRole('Owner');
@@ -365,6 +377,7 @@ class MultiShopOwnerTest extends TestCase
         $superAdmin = User::create([
             'name' => 'Super Admin',
             'email' => 'superadmin_pkg@pos.test',
+            'email_verified_at' => now(),
             'password' => Hash::make('password123'),
         ]);
         $superAdmin->assignRole('Super Admin');
@@ -409,6 +422,7 @@ class MultiShopOwnerTest extends TestCase
         $superAdmin = User::create([
             'name' => 'Super Admin',
             'email' => 'superadmin_pkg2@pos.test',
+            'email_verified_at' => now(),
             'password' => Hash::make('password123'),
         ]);
         $superAdmin->assignRole('Super Admin');
@@ -453,6 +467,7 @@ class MultiShopOwnerTest extends TestCase
         $superAdmin = User::create([
             'name' => 'Super Admin',
             'email' => 'superadmin_edit@pos.test',
+            'email_verified_at' => now(),
             'password' => Hash::make('password123'),
         ]);
         $superAdmin->assignRole('Super Admin');

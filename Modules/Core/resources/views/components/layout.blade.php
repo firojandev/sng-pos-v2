@@ -13,7 +13,7 @@
     $isEn = $cookieLang === 'en';
 
     $siteTitle = $siteTitle ?? \Modules\Core\Models\Setting::getSiteTitle();
-    $siteTitleBn = $siteTitleBn ?? ($siteTitle === 'SNGPOS' ? 'SNGPOS' : $siteTitle);
+    $siteTitleBn = $siteTitleBn ?? ($siteTitle === 'SNG ERP' ? 'SNG ERP' : $siteTitle);
     $currentSiteTitle = $isEn ? $siteTitle : $siteTitleBn;
     $pageHeading = $isEn ? ($titleEn ?: $title) : $title;
 @endphp

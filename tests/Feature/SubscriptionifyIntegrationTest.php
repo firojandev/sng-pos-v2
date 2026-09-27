@@ -106,6 +106,7 @@ class SubscriptionifyIntegrationTest extends TestCase
 
         $user = User::create([
             'email' => 'shopadmin@test.com',
+            'email_verified_at' => now(),
             'name' => 'Shop Admin',
             'password' => bcrypt('password'),
             'shop_id' => $shop->id,

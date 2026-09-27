@@ -4,6 +4,8 @@ namespace Modules\Shop\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
+use Modules\Company\Models\Company;
 use Revoltify\Subscriptionify\Enums\SubscriptionStatus;
 use Revoltify\Subscriptionify\Models\Subscription as BaseSubscription;
 
@@ -22,7 +24,6 @@ class Subscription extends BaseSubscription
         'trial_ends_at',
         'cancelled_at',
         'renewed_at',
-        'shop_id',
         'current_period_start',
         'current_period_end',
     ];
@@ -95,6 +96,12 @@ class Subscription extends BaseSubscription
      */
     public function isUsable(): bool
     {
+        // App-only statuses such as 'suspended' are not package enum cases
+        // and always block access.
+        if (! $this->status instanceof SubscriptionStatus) {
+            return false;
+        }
+
         if ($this->status === SubscriptionStatus::Cancelled || $this->status === SubscriptionStatus::Expired) {
             return $this->onGracePeriod();
         }
@@ -110,9 +117,22 @@ class Subscription extends BaseSubscription
         return $this->valid();
     }
 
-    public function shop(): BelongsTo
+    /**
+     * The company that owns this subscription.
+     */
+    public function company(): BelongsTo
     {
-        return $this->belongsTo(Shop::class, 'subscribable_id');
+        return $this->belongsTo(Company::class, 'subscribable_id');
+    }
+
+    /**
+     * The first (primary) shop of the subscribing company, used where the
+     * super-admin screens link a subscription to a shop.
+     */
+    public function shop(): HasOneThrough
+    {
+        return $this->hasOneThrough(Shop::class, Company::class, 'id', 'company_id', 'subscribable_id', 'id')
+            ->oldest('shops.id');
     }
 
     public function payments(): HasMany

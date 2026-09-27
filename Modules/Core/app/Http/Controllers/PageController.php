@@ -262,7 +262,7 @@ class PageController extends Controller
         }
 
         $siteTitle = Setting::getSiteTitle();
-        $siteTitleBn = $siteTitle === 'SNGPOS' ? 'SNGPOS' : $siteTitle;
+        $siteTitleBn = $siteTitle === 'SNG ERP' ? 'SNG ERP' : $siteTitle;
 
         return view('core::pages.privacy-policy', compact('siteTitle', 'siteTitleBn'));
     }
@@ -274,7 +274,7 @@ class PageController extends Controller
         }
 
         $siteTitle = Setting::getSiteTitle();
-        $siteTitleBn = $siteTitle === 'SNGPOS' ? 'SNGPOS' : $siteTitle;
+        $siteTitleBn = $siteTitle === 'SNG ERP' ? 'SNG ERP' : $siteTitle;
 
         return view('core::pages.terms', compact('siteTitle', 'siteTitleBn'));
     }
@@ -358,7 +358,7 @@ class PageController extends Controller
         }])->orderBy('sort_order')->get();
 
         // Expiring Soon Subscriptions (within 14 days)
-        $expiringSubscriptions = Subscription::with(['shop', 'plan'])
+        $expiringSubscriptions = Subscription::with(['shop', 'company', 'plan'])
             ->whereIn('status', ['active', 'trial', 'trialing'])
             ->where(function ($q) {
                 $q->whereBetween('ends_at', [now(), now()->addDays(14)])
@@ -369,7 +369,7 @@ class PageController extends Controller
             ->get();
 
         // Recent Shops
-        $recentShops = Shop::with(['activeSubscription.plan', 'users'])
+        $recentShops = Shop::with(['company.activeSubscription.plan', 'users'])
             ->latest()
             ->limit(5)
             ->get();

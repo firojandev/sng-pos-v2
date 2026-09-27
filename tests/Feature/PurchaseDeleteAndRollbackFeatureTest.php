@@ -70,6 +70,7 @@ class PurchaseDeleteAndRollbackFeatureTest extends TestCase
         $this->user = User::create([
             'name' => 'Rollback Admin',
             'email' => 'admin@rollback.test',
+            'email_verified_at' => now(),
             'password' => bcrypt('password'),
             'shop_id' => $this->shop->id,
         ]);

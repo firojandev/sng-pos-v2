@@ -1,8 +1,6 @@
 <x-core::auth-layout
     title="ভেরিফিকেশন লিংক মেয়াদোত্তীর্ণ"
     title-en="Verification Link Expired"
-    card-title="SNG Pos"
-    card-title-en="SNG Pos"
     cardSubtitle=""
     cardSubtitleEn=""
     max-width="500px"

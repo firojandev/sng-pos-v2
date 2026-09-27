@@ -36,9 +36,7 @@ abstract class TestCase extends BaseTestCase
 
         $plan->features()->sync($ids->mapWithKeys(fn ($id) => [$id => ['value' => '0']]));
 
-        $shop->subscriptions()->create([
-            'subscribable_type' => Shop::class,
-            'subscribable_id' => $shop->id,
+        $shop->company->subscriptions()->create([
             'plan_id' => $plan->id,
             'status' => 'active',
             'starts_at' => now(),

@@ -578,9 +578,9 @@
     };
 
     $siteTitle = $siteTitle ?? \Modules\Core\Models\Setting::getSiteTitle();
-    $siteTitleBn = $siteTitleBn ?? ($siteTitle === 'SNGPOS' ? 'SNGPOS' : $siteTitle);
+    $siteTitleBn = $siteTitleBn ?? ($siteTitle === 'SNG ERP' ? 'SNG ERP' : $siteTitle);
     $siteMark = mb_strtoupper(mb_substr($siteTitle, 0, 1));
-    $siteMarkBn = $siteTitle === 'SNGPOS' ? 'S' : $siteMark;
+    $siteMarkBn = $siteTitle === 'SNG ERP' ? 'S' : $siteMark;
     $brandTag = $brandTag ?? \Modules\Core\Models\Setting::get('brand_tag', 'Cloud POS & ERP');
 @endphp
 
@@ -591,9 +591,9 @@
             <span class="en">{{ $siteMark }}</span>
         </div>
         <div class="nm">
-            @if ($siteTitle === 'SNGPOS')
-                <span class="brand-title bn">SNG<span class="brand-accent">POS</span></span>
-                <span class="brand-title en">SNG<span class="brand-accent">POS</span></span>
+            @if ($siteTitle === 'SNG ERP')
+                <span class="brand-title bn">SNG<span class="brand-accent">ERP</span></span>
+                <span class="brand-title en">SNG<span class="brand-accent">ERP</span></span>
                 <span class="brand-tagline bn">ব্যবসা ব্যবস্থাপনা</span>
                 <span class="brand-tagline en">Business Management</span>
             @else
