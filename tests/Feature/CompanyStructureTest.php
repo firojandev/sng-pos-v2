@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Company\Models\Company;
 use Modules\Core\Support\Features;
@@ -43,7 +44,8 @@ class CompanyStructureTest extends TestCase
         $company = $dhaka->company;
         $owner = User::where('phone', '01711000101')->firstOrFail();
         $this->assertSame('Karim Group', $company->name);
-        $this->assertTrue($company->isAdministeredBy($owner), 'The first admin of a new company owns it.');
+        $this->assertTrue($owner->isShopAdmin($dhaka));
+        $this->assertFalse($company->isAdministeredBy($owner), 'A shop admin is a shop-level (POS) login, not the company owner.');
         $this->assertTrue(Branch::withoutGlobalScopes()->where('shop_id', $dhaka->id)->exists());
         $this->assertTrue(Warehouse::withoutGlobalScopes()->where('shop_id', $dhaka->id)->exists());
         $this->assertTrue(Account::withoutGlobalScopes()->where('shop_id', $dhaka->id)->where('type', 'cash')->exists());
@@ -82,8 +84,7 @@ class CompanyStructureTest extends TestCase
         $this->post(route('company.shops.store'), ['name' => 'Karim Sylhet', 'phone' => '01733000000', 'opening_cash' => 5000])->assertRedirect()->assertSessionHasNoErrors();
         $sylhet = Shop::where('name', 'Karim Sylhet')->firstOrFail();
         $this->assertSame($company->id, $sylhet->company_id);
-        $this->assertTrue($owner->fresh()->belongsToShop($sylhet), 'The owner can switch to the new shop.');
-        $this->assertTrue($owner->fresh()->isShopAdmin($sylhet));
+        $this->assertFalse(DB::table('shop_user')->where('shop_id', $sylhet->id)->where('user_id', $owner->id)->exists(), 'A company owner is not put into the shop: its POS is for shop admins.');
         $this->assertSame('5000.00', Account::withoutGlobalScopes()->where('shop_id', $sylhet->id)->where('type', 'cash')->value('current_balance'));
         $this->assertTrue($sylhet->hasFeature('sales'));
 
@@ -171,7 +172,7 @@ class CompanyStructureTest extends TestCase
             $this->assertSame('enterprise', $shop->subscription()->getPlan()->slug, 'The company plan, not the one picked on the shop form.');
         }
         $this->assertSame(1, $company->subscriptions()->count());
-        $this->assertTrue($company->isAdministeredBy(User::where('phone', '01711000101')->firstOrFail()), 'The first shop admin owns the company.');
+        $this->assertFalse($company->isAdministeredBy(User::where('phone', '01711000101')->firstOrFail()), 'Shop admins are shop-level logins.');
     }
 
     public function test_registration_as_a_company_or_as_a_shop_owner(): void

@@ -35,7 +35,7 @@ class CompanyShopAdminController extends Controller
             'admin_type' => ['required', 'in:new,existing'],
             'shop_ids' => ['required', 'array', 'min:1'],
             'shop_ids.*' => ['integer', Rule::in($shopIds)],
-            'user_id' => [Rule::requiredIf($isExisting), 'nullable', 'integer', Rule::in($company->users()->pluck('users.id')->all())],
+            'user_id' => [Rule::requiredIf($isExisting), 'nullable', 'integer', Rule::in(CompanySettingsController::shopUsers($company)->pluck('id')->all())],
             'name' => [Rule::requiredIf(! $isExisting), 'nullable', 'string', 'max:255'],
             'phone' => [Rule::requiredIf(! $isExisting), 'nullable', 'string', 'max:30', Rule::unique('users', 'phone')],
             'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')],

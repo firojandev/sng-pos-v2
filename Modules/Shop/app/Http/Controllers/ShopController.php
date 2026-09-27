@@ -205,13 +205,12 @@ class ShopController extends Controller
 
             $shop->categories()->sync($request->validated('category_ids') ?? []);
 
-            // The shop's first admin owns the company only when it has no owner yet.
-            $ownsCompany = ! $shop->company->hasOwner();
-            $shop->company->users()->syncWithoutDetaching([
-                $admin->id => $ownsCompany
-                    ? ['role' => Company::ROLE_OWNER, 'is_owner' => true]
-                    : ['role' => Company::ROLE_MEMBER, 'is_owner' => false],
-            ]);
+            // A standalone shop's admin owns its private company record; a
+            // company's shop admin stays a shop-level login (the company's
+            // owner and admins are added on the company's page).
+            if ($shop->company->isStandalone()) {
+                $shop->company->users()->syncWithoutDetaching([$admin->id => ['role' => Company::ROLE_OWNER, 'is_owner' => true]]);
+            }
 
             // Billing is per company: a shop joining a company that is already
             // subscribed shares that subscription instead of starting a new one.

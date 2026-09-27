@@ -243,13 +243,30 @@ class Company extends Model implements Subscribable
      * than one shop; a single-shop company is presented as "just a shop".
      */
     /**
-     * Company roles: the owner, company admins, and members (shop staff).
+     * Company-level roles: the owner, company admins and company employees
+     * log in to the company workspace (no shop, no POS). "Member" marks a
+     * shop user linked to the company (not a company-level login).
      */
     public const ROLE_OWNER = 'Owner';
 
     public const ROLE_ADMIN = 'Admin';
 
+    public const ROLE_EMPLOYEE = 'Employee';
+
     public const ROLE_MEMBER = 'Member';
+
+    /**
+     * @var list<string>
+     */
+    public const COMPANY_LEVEL_ROLES = [self::ROLE_OWNER, self::ROLE_ADMIN, self::ROLE_EMPLOYEE];
+
+    /**
+     * The company's company-level users (owner, admins, employees).
+     */
+    public function companyUsers(): BelongsToMany
+    {
+        return $this->users()->where(fn ($query) => $query->where('company_user.is_owner', true)->orWhereIn('company_user.role', self::COMPANY_LEVEL_ROLES));
+    }
 
     /**
      * Whether the user runs this company (its owner or a company admin).

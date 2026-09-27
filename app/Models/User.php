@@ -209,13 +209,46 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * The company the user logs in to at company level (owner, admin or
+     * employee of a company, or of the Default Company); null for shop
+     * users. A real company comes before the Default Company.
+     */
+    public function companyLevelCompany(): ?Company
+    {
+        if ($this->isSuperAdmin()) {
+            return null;
+        }
+
+        return $this->companies()
+            ->whereIn('companies.type', [Company::TYPE_COMPANY, Company::TYPE_DEFAULT])
+            ->where(fn ($query) => $query->where('company_user.is_owner', true)->orWhereIn('company_user.role', Company::COMPANY_LEVEL_ROLES))
+            ->orderByRaw("CASE companies.type WHEN 'company' THEN 0 ELSE 1 END")
+            ->orderBy('companies.id')
+            ->first();
+    }
+
+    public function isCompanyLevelUser(): bool
+    {
+        return $this->companyLevelCompany() !== null;
+    }
+
+    /**
+     * Working in the company workspace: a company-level user with no shop
+     * open (the Default Company admin may open a standalone shop).
+     */
+    public function inCompanyWorkspace(): bool
+    {
+        return ! $this->shop_id && $this->isCompanyLevelUser();
+    }
+
+    /**
      * Whether the user is the owner or an admin of a company (by default the
-     * company of their current shop). A standalone shop's owner runs just
-     * their shop, not a company.
+     * company they work in). A standalone shop's owner runs just their
+     * shop, not a company.
      */
     public function isCompanyAdmin(?Company $company = null): bool
     {
-        $company ??= $this->shop?->company;
+        $company ??= $this->shop?->company?->isBusiness() ? $this->shop->company : $this->companyLevelCompany();
 
         return $company !== null && $company->isBusiness() && $company->isAdministeredBy($this);
     }

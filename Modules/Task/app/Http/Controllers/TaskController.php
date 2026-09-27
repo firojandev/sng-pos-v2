@@ -64,7 +64,7 @@ class TaskController extends Controller implements HasMiddleware
             ->paginate(25)
             ->withQueryString();
 
-        $counts = Task::query()->where('assigned_to', $user->id)->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
+        $counts = Task::query()->where('company_id', $this->companyId())->where('assigned_to', $user->id)->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
 
         return view('task::tasks.index', [
             'tasks' => $tasks,
@@ -83,7 +83,8 @@ class TaskController extends Controller implements HasMiddleware
 
         Task::create($validated + [
             'company_id' => $this->companyId(),
-            'shop_id' => app(TenantContext::class)->shopId(),
+            // The shop only when it belongs to the task's company.
+            'shop_id' => (int) Auth::user()->shop?->company_id === $this->companyId() ? app(TenantContext::class)->shopId() : null,
             'status' => 'todo',
             'reported_by' => Auth::id(),
         ]);
@@ -93,6 +94,7 @@ class TaskController extends Controller implements HasMiddleware
 
     public function edit(Task $task): View
     {
+        $this->ensureOwnCompany($task);
         abort_unless($task->canBeEditedBy(Auth::user()), 403);
 
         return view('task::tasks.edit', [
@@ -104,6 +106,7 @@ class TaskController extends Controller implements HasMiddleware
 
     public function update(Request $request, Task $task): RedirectResponse
     {
+        $this->ensureOwnCompany($task);
         abort_unless($task->canBeEditedBy(Auth::user()), 403);
 
         $task->update($this->validated($request, $task));
@@ -113,6 +116,7 @@ class TaskController extends Controller implements HasMiddleware
 
     public function status(Request $request, Task $task): RedirectResponse
     {
+        $this->ensureOwnCompany($task);
         abort_unless($task->canChangeStatusBy(Auth::user()), 403);
 
         $validated = $request->validate(['status' => ['required', Rule::in(Task::STATUSES)]]);
@@ -123,6 +127,7 @@ class TaskController extends Controller implements HasMiddleware
 
     public function destroy(Task $task): RedirectResponse
     {
+        $this->ensureOwnCompany($task);
         abort_unless($task->canBeEditedBy(Auth::user()), 403);
 
         $task->delete();
@@ -155,9 +160,11 @@ class TaskController extends Controller implements HasMiddleware
 
     private function companyId(): int
     {
-        $companyId = app(TenantContext::class)->companyId();
-        abort_unless($companyId, 403, 'কোনো দোকান নির্বাচন করা নেই (No shop selected)।');
+        return (int) Task::companyFor(Auth::user())?->id;
+    }
 
-        return (int) $companyId;
+    private function ensureOwnCompany(Task $task): void
+    {
+        abort_unless((int) $task->company_id === $this->companyId(), 404);
     }
 }

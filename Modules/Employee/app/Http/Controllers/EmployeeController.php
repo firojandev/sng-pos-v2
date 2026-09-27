@@ -7,7 +7,9 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
+use Modules\Core\Support\TenantContext;
 use Modules\Employee\DataTables\EmployeesDataTable;
 use Modules\Employee\Http\Requests\StoreEmployeeRequest;
 use Modules\Employee\Http\Requests\UpdateEmployeeRequest;
@@ -19,10 +21,10 @@ class EmployeeController extends Controller
     {
         $shopId = auth()->user()->shop_id;
 
-        $totalEmployees = Employee::where('shop_id', $shopId)->count();
-        $activeEmployees = Employee::where('shop_id', $shopId)->where('status', 'active')->count();
-        $totalSalary = (float) Employee::where('shop_id', $shopId)->where('status', 'active')->sum('salary');
-        $departmentsCount = Employee::where('shop_id', $shopId)->whereNotNull('department')->where('department', '!=', '')->distinct()->count('department');
+        $totalEmployees = Employee::workingAtShop()->count();
+        $activeEmployees = Employee::workingAtShop()->where('status', 'active')->count();
+        $totalSalary = (float) Employee::workingAtShop()->where('status', 'active')->sum('salary');
+        $departmentsCount = Employee::workingAtShop()->whereNotNull('department')->where('department', '!=', '')->distinct()->count('department');
 
         $metrics = [
             'totalEmployees' => $totalEmployees,
@@ -31,21 +33,21 @@ class EmployeeController extends Controller
             'departmentsCount' => $departmentsCount,
         ];
 
-        $departments = Employee::where('shop_id', $shopId)
+        $departments = Employee::workingAtShop()
             ->whereNotNull('department')
             ->where('department', '!=', '')
             ->distinct()
             ->orderBy('department')
             ->pluck('department');
 
-        $designations = Employee::where('shop_id', $shopId)
+        $designations = Employee::workingAtShop()
             ->whereNotNull('designation')
             ->where('designation', '!=', '')
             ->distinct()
             ->orderBy('designation')
             ->pluck('designation');
 
-        $users = User::where('shop_id', $shopId)->orderBy('name')->get();
+        $users = $this->linkableUsers();
 
         return $dataTable->render('employee::index', compact('metrics', 'departments', 'designations', 'users'));
     }
@@ -53,7 +55,7 @@ class EmployeeController extends Controller
     public function create(): View
     {
         $shopId = auth()->user()->shop_id;
-        $users = User::where('shop_id', $shopId)->orderBy('name')->get();
+        $users = $this->linkableUsers();
 
         return view('employee::create', [
             'employee' => new Employee,
@@ -84,7 +86,7 @@ class EmployeeController extends Controller
     public function edit(Request $request, Employee $employee): View|JsonResponse
     {
         $shopId = auth()->user()->shop_id;
-        $users = User::where('shop_id', $shopId)->orderBy('name')->get();
+        $users = $this->linkableUsers();
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
@@ -148,5 +150,28 @@ class EmployeeController extends Controller
         return redirect()
             ->route('employees.index')
             ->with('status', 'কর্মচারী মুছে ফেলা হয়েছে');
+    }
+
+    /**
+     * Login users that can be linked to an employee: the shop's users, or in
+     * the company workspace the company's users and its shops' users.
+     *
+     * @return Collection<int, User>
+     */
+    private function linkableUsers(): Collection
+    {
+        $shopId = auth()->user()->shop_id;
+
+        if ($shopId) {
+            return User::where('shop_id', $shopId)->orderBy('name')->get();
+        }
+
+        $companyId = app(TenantContext::class)->companyId();
+        $shopIds = app(TenantContext::class)->visibleShopIds();
+
+        return User::query()
+            ->where(fn ($query) => $query->whereIn('shop_id', $shopIds ?: [0])->orWhereHas('companies', fn ($companies) => $companies->where('companies.id', $companyId ?? 0)))
+            ->orderBy('name')
+            ->get();
     }
 }

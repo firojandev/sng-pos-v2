@@ -2,7 +2,9 @@
 
 namespace Modules\Company\Providers;
 
+use App\Models\User;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Gate;
 use Nwidart\Modules\Support\ModuleServiceProvider;
 
 class CompanyServiceProvider extends ModuleServiceProvider
@@ -33,6 +35,31 @@ class CompanyServiceProvider extends ModuleServiceProvider
         EventServiceProvider::class,
         RouteServiceProvider::class,
     ];
+
+    /**
+     * Permissions of the company workspace's modules, given to a company's
+     * owner and admins while they work at company level (no shop).
+     *
+     * @var list<string>
+     */
+    private const COMPANY_WORKSPACE_FEATURES = [
+        'dashboard', 'employees', 'attendance', 'leave', 'hr-setup', 'payroll', 'payroll-setup', 'accounting', 'tasks',
+    ];
+
+    public function boot(): void
+    {
+        parent::boot();
+
+        Gate::before(function (User $user, string $ability) {
+            if ($user->shop_id || ! $user->isCompanyAdmin()) {
+                return null;
+            }
+
+            $feature = explode('.', $ability)[0];
+
+            return in_array($feature, self::COMPANY_WORKSPACE_FEATURES, true) || str_starts_with($feature, 'report-') ? true : null;
+        });
+    }
 
     /**
      * Define module schedules.

@@ -133,12 +133,19 @@ class Employee extends Model
     }
 
     /**
-     * Employees working at the given shop (defaults to the current shop).
+     * Employees working at the given shop (defaults to the current shop; the
+     * whole company in the company workspace).
      */
     #[Scope]
     protected function workingAtShop(Builder $query, ?int $shopId = null): void
     {
-        $query->where('employees.shop_id', $shopId ?? app(TenantContext::class)->shopId());
+        $shopId ??= app(TenantContext::class)->shopId();
+
+        // In the company workspace (no shop): every shop of the company, which
+        // the company scope already limits to.
+        if ($shopId) {
+            $query->where('employees.shop_id', $shopId);
+        }
     }
 
     /**

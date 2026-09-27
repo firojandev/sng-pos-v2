@@ -163,7 +163,10 @@ class AccountTransactionService
     ): AccountTransfer {
         return DB::transaction(function () use ($fromAccount, $toAccount, $amount, $charge, $transferDate, $note, $userId) {
             $transferDate = $transferDate ?? now()->toDateString();
-            $transferNo = 'TRF-'.now()->format('ymd').'-'.str_pad((string) random_int(100, 999), 3, '0', STR_PAD_LEFT);
+            // A random suffix can repeat within a day; pick again until unused.
+            do {
+                $transferNo = 'TRF-'.now()->format('ymd').'-'.str_pad((string) random_int(100, 9999), 4, '0', STR_PAD_LEFT);
+            } while (AccountTransfer::withoutGlobalScopes()->where('transfer_no', $transferNo)->exists());
 
             $transfer = AccountTransfer::withoutGlobalScopes()->create([
                 'shop_id' => $fromAccount->shop_id,

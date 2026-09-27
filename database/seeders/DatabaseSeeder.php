@@ -56,11 +56,12 @@ class DatabaseSeeder extends Seeder
 
         // The Default Company groups every standalone shop; its admin sees them all.
         $defaultCompany = Company::defaultCompany();
+        // Its own account (not a super admin: a super admin always gets the
+        // super admin dashboard), found by its username.
         $defaultAdmin = User::firstOrCreate(
-            ['email' => 'softngear@gmail.com'],
+            ['username' => 'SNGCompanyAdmin'],
             [
                 'name' => 'Soft N Gear',
-                'username' => 'SNGCompanyAdmin',
                 'phone' => '+8801886861430',
                 'password' => bcrypt('SNGAdmin@2026!'),
                 'email_verified_at' => now(),

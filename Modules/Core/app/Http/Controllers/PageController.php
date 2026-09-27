@@ -38,6 +38,11 @@ class PageController extends Controller
             return redirect()->route('default-company.index');
         }
 
+        // Without a shop only the company workspace has a dashboard.
+        if (! $user->shop && ! $user->inCompanyWorkspace()) {
+            return redirect()->route('shops.select');
+        }
+
         $isOwnerOrAdmin = $user->isShopAdmin();
 
         $can = fn (string $perm): bool => $isOwnerOrAdmin || $user->can($perm);

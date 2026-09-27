@@ -8,6 +8,7 @@ use Modules\Company\Models\Company;
 use Modules\Core\Support\Features;
 use Modules\Core\Support\Permissions;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
+use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
 use Modules\Task\Models\Task;
 use Revoltify\Subscriptionify\Models\Feature;
@@ -127,6 +128,49 @@ class TaskManagementTest extends TestCase
         app(FeatureResolver::class)->flush();
         $this->shop->refresh()->clearSubscriptionCache();
         $this->actingAs($this->rahim->fresh())->get(route('tasks.index'))->assertForbidden();
+    }
+
+    public function test_the_default_company_gets_tasks_through_its_own_plan(): void
+    {
+        $default = Company::defaultCompany();
+        $superAdmin = User::factory()->create();
+        $superAdmin->assignRole(Role::firstOrCreate(['name' => 'Super Admin', 'guard_name' => 'web']));
+        $defaultAdmin = User::factory()->create();
+        $staff = User::factory()->create();
+        $default->users()->attach($defaultAdmin->id, ['role' => Company::ROLE_ADMIN, 'is_owner' => false]);
+        $default->users()->attach($staff->id, ['role' => Company::ROLE_EMPLOYEE, 'is_owner' => false]);
+
+        // No plan on the Default Company: no tasks.
+        $this->actingAs($defaultAdmin)->get(route('tasks.index'))->assertForbidden();
+        $this->get(route('default-company.index'))->assertOk()->assertDontSee(route('tasks.index'));
+
+        $this->actingAs($superAdmin)->put(route('companies.plan.update', $default), ['plan_id' => Plan::where('slug', 'standard')->value('id'), 'subscription_status' => 'active'])
+            ->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->actingAs($defaultAdmin->fresh())->get(route('default-company.index'))->assertOk()->assertSee(route('tasks.index'));
+        $this->post(route('tasks.store'), ['title' => 'Call new shop owners', 'assigned_to' => $staff->id])->assertRedirect()->assertSessionHasNoErrors();
+        $task = Task::firstOrFail();
+        $this->assertSame($default->id, (int) $task->company_id);
+
+        auth()->logout();
+        $this->post(route('login.store'), ['login' => $staff->email, 'password' => 'password'])->assertRedirect(route('dashboard'));
+        $this->actingAs($staff->fresh())->get(route('tasks.index'))->assertOk()->assertSee('Call new shop owners');
+        $this->patch(route('tasks.status', $task), ['status' => 'completed'])->assertRedirect();
+
+        // The Default Company's tasks stay with its admin inside a standalone shop.
+        $standalone = Shop::create(['name' => 'Rahim Store', 'slug' => 'rahim-store', 'status' => 'active']);
+        $this->subscribeShopToFeatures($standalone, Features::keys());
+        $this->actingAs($defaultAdmin->fresh())->post(route('default-company.shops.open', $standalone))->assertRedirect();
+        $this->actingAs($defaultAdmin->fresh())->get(route('tasks.index', ['tab' => 'reported', 'status' => '']))->assertOk()->assertSee('Call new shop owners');
+
+        // Other companies' tasks are not visible.
+        $this->actingAs($this->leader)->get(route('tasks.edit', $task))->assertNotFound();
+        $this->actingAs($this->admin)->get(route('tasks.index', ['tab' => 'all', 'status' => '']))->assertOk()->assertDontSee('Call new shop owners');
+
+        // Take Tasks off the plan: gone.
+        Plan::where('slug', 'standard')->firstOrFail()->features()->detach(Feature::where('slug', 'tasks')->value('id'));
+        app(FeatureResolver::class)->flush();
+        $this->actingAs($defaultAdmin->fresh())->get(route('tasks.index'))->assertForbidden();
     }
 
     /**

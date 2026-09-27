@@ -120,6 +120,7 @@ class EmployeesDataTable extends BaseDataTable
      */
     public function query(Employee $model): QueryBuilder
     {
+        // The current shop; in the company workspace, the whole company.
         $shopId = auth()->user()?->shop_id;
 
         $query = $model->newQuery()

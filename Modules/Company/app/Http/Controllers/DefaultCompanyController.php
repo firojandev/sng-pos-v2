@@ -20,6 +20,13 @@ class DefaultCompanyController extends Controller
     {
         $company = $this->defaultCompany();
 
+        // Coming back from a standalone shop: leave it for the company level.
+        $user = $request->user();
+        if ($user->shop_id && ! $user->isSuperAdmin()) {
+            $user->forceFill(['shop_id' => null])->save();
+            $request->session()->forget('current_shop_id');
+        }
+
         $shops = $company->standaloneShops()
             ->with(['company.activeSubscription.plan', 'users' => fn ($users) => $users->wherePivot('is_owner', true)])
             ->when($request->filled('q'), fn ($query) => $query->where(fn ($search) => $search

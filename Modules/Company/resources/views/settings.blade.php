@@ -121,7 +121,7 @@
                     @csrf
                     <div style="grid-column:1 / -1;">
                         <x-core::select size="sm" name="admin_type" id="company-admin-type" label="এডমিন" label-en="Admin" :value="$adminType"
-                            :options="['new' => 'নতুন ইউজার তৈরি (Create a new user)', 'existing' => 'কোম্পানির বিদ্যমান ইউজার (Existing company user)']" />
+                            :options="['new' => 'নতুন ইউজার তৈরি (Create a new user)', 'existing' => 'বিদ্যমান দোকান ইউজার (Existing shop user)']" />
                     </div>
                     <div style="grid-column:1 / -1;" class="company-admin-existing" @if ($adminType !== 'existing') hidden @endif>
                         <x-core::select size="sm" name="user_id" label="ইউজার" label-en="User" :value="old('user_id')" placeholder="--" placeholder-en="--"
@@ -142,6 +142,48 @@
                         </div>
                     </div>
                     <div><x-core::button type="submit" size="sm" variant="solid" color="primary" icon="user-plus"><span class="bn">এডমিন করুন</span><span class="en" style="display:none;">Make Admin</span></x-core::button></div>
+                </form>
+            </div>
+        </div>
+
+        <div class="panel" style="margin-top:0;">
+            <div class="panel-head"><div class="panel-title"><span class="bn">কোম্পানি ইউজার</span><span class="en" style="display:none;">Company Users</span></div></div>
+            <div class="panel-body" style="font-size:12px; color:var(--ink-500); padding-bottom:0;">
+                <span class="bn">কোম্পানি ইউজাররা কোম্পানি ওয়ার্কস্পেসে লগইন করেন (এইচআর, পে-রোল, হিসাব, টাস্ক, রিপোর্ট) — বিক্রয়/ক্রয় (POS) নয়। POS এর জন্য দোকান এডমিন দিন।</span>
+                <span class="en" style="display:none;">Company users log in to the company workspace (HR, payroll, accounting, tasks, reports) — not the POS. For the POS, add shop admins.</span>
+            </div>
+            <div class="table-responsive">
+                <table class="app-table">
+                    <tbody>
+                        @foreach ($companyUsers as $companyUser)
+                            @php $companyRole = $companyUser->pivot->is_owner ? 'Owner' : ($companyUser->pivot->role === 'Employee' ? 'Employee' : 'Admin'); @endphp
+                            <tr>
+                                <td>{{ $companyUser->name }} <div style="font-size:11.5px; color:var(--ink-500);">{{ $companyUser->phone }}{{ $companyUser->email ? ' · '.$companyUser->email : '' }}</div></td>
+                                <td><x-core::badge :color="['Owner' => 'gold', 'Admin' => 'blue', 'Employee' => 'grey'][$companyRole]" size="xs">{{ $companyRole }}</x-core::badge></td>
+                                <td class="table-cell-right">
+                                    @if ($companyRole !== 'Owner' && $companyUser->id !== auth()->id())
+                                        <form method="POST" action="{{ route('company.users.destroy', $companyUser) }}" class="delete-form" data-title="{{ $companyUser->name }} কে সরাবেন?">
+                                            @csrf
+                                            @method('DELETE')
+                                            <x-core::button type="submit" size="sm" variant="soft" color="danger" icon="trash-2" icon-only title="সরান / Remove" />
+                                        </form>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <div class="panel-body">
+                <form method="POST" action="{{ route('company.users.store') }}" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    @csrf
+                    <x-core::select size="sm" name="role" label="ভূমিকা" label-en="Role" value="Employee" :options="['Employee' => 'কর্মচারী (Employee)', 'Admin' => 'কোম্পানি এডমিন (Company Admin)']" />
+                    <x-core::input size="sm" name="name" label="নাম" label-en="Name" :required="true" />
+                    <x-core::input size="sm" name="phone" label="মোবাইল" label-en="Phone" :required="true" />
+                    <x-core::input size="sm" type="email" name="email" label="ইমেইল (ঐচ্ছিক)" label-en="Email (optional)" />
+                    <x-core::input size="sm" type="password" name="password" label="পাসওয়ার্ড" label-en="Password" :required="true" />
+                    <x-core::input size="sm" type="password" name="password_confirmation" label="পাসওয়ার্ড নিশ্চিত" label-en="Confirm Password" :required="true" />
+                    <div><x-core::button type="submit" size="sm" variant="solid" color="primary" icon="user-plus"><span class="bn">যোগ করুন</span><span class="en" style="display:none;">Add User</span></x-core::button></div>
                 </form>
             </div>
         </div>

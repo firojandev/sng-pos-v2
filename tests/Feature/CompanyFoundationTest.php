@@ -234,7 +234,8 @@ class CompanyFoundationTest extends TestCase
         $manager = User::where('phone', '01888999001')->firstOrFail();
 
         $this->assertSame('Grand Market', $shop->company->name);
-        $this->assertTrue((bool) $shop->company->owners()->whereKey($manager->id)->exists());
+        $this->assertFalse((bool) $shop->company->owners()->whereKey($manager->id)->exists(), 'A shop admin is a shop-level login, not the company owner.');
+        $this->assertTrue($manager->isShopAdmin($shop));
         $this->assertSame('standard', $shop->subscription()->getPlan()->slug);
     }
 

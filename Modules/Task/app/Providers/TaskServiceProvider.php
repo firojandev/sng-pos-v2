@@ -50,7 +50,7 @@ class TaskServiceProvider extends ModuleServiceProvider
                 return;
             }
 
-            $open = Task::query()->where('assigned_to', $user->id)->whereIn('status', Task::OPEN_STATUSES);
+            $open = Task::query()->where('company_id', Task::companyFor($user)->id)->where('assigned_to', $user->id)->whereIn('status', Task::OPEN_STATUSES);
 
             $view->with('myTasks', [
                 'open' => (clone $open)->count(),

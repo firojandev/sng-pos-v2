@@ -1,4 +1,4 @@
-<x-core::layout title="ডিফল্ট কোম্পানি" title-en="Default Company" subtitle="কোম্পানি ছাড়া নিবন্ধিত সব দোকান" subtitle-en="Every shop registered without a company" active="default-company">
+<x-core::layout title="ডিফল্ট কোম্পানি" title-en="Default Company" subtitle="কোম্পানি ছাড়া নিবন্ধিত সব দোকান" subtitle-en="Every shop registered without a company" active="dashboard">
     @if ($errors->any())
         <div style="color:var(--red-600); font-size:12.5px; margin-bottom:12px;">{{ $errors->first() }}</div>
     @endif

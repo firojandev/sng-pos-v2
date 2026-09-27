@@ -71,9 +71,16 @@ class AuthController extends Controller
             return redirect()->intended(route('dashboard'));
         }
 
-        // Default Company admins start from the list of standalone shops.
-        if ($user->isDefaultCompanyAdmin()) {
-            return redirect()->route('default-company.index');
+        // Company owners, admins and employees work at company level: no
+        // shop, no POS. The Default Company admin starts from the list of
+        // standalone shops.
+        if ($user->isCompanyLevelUser()) {
+            $user->forceFill(['shop_id' => null])->save();
+            session()->forget('current_shop_id');
+
+            return $user->isDefaultCompanyAdmin()
+                ? redirect()->route('default-company.index')
+                : redirect()->intended(route('dashboard'));
         }
 
         if (! empty($user->email) && $user->isShopOwner() && ! $user->hasVerifiedEmail()) {

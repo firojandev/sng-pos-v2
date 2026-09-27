@@ -45,13 +45,10 @@ class CompanyShopController extends Controller
             $provisioner->provision($shop, (float) ($validated['opening_cash'] ?? 0));
             $shop->categories()->sync($validated['category_ids'] ?? []);
 
-            // The company owner/admin who opens it can run it and switch to it.
-            $provisioner->assignAdmin($shop, auth()->user(), isOwner: $company->isAdministeredBy(auth()->user()));
-
             return $shop;
         });
 
-        return redirect()->route('company-settings.edit')->with('status', "\"{$shop->name}\" দোকান খোলা হয়েছে");
+        return redirect()->route('company-settings.edit')->with('status', "\"{$shop->name}\" দোকান খোলা হয়েছে; এখন এর দোকান এডমিন দিন (now add its shop admin)");
     }
 
     private function uniqueSlug(string $name): string

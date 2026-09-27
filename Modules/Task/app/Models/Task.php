@@ -7,18 +7,19 @@ use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Modules\Core\Concerns\BelongsToCompany;
+use Modules\Company\Models\Company;
 use Modules\Core\Observers\AuditObserver;
 
 /**
  * A task reported by one user and assigned to another (or to themself: a
- * personal to-do). Completing it records when it was finished. Only for
- * companies (see isAvailableTo).
+ * personal to-do). Completing it records when it was finished.
+ *
+ * Tasks belong to a company (see companyFor): a real company, or the
+ * Default Company for its admins and staff. The company's plan must
+ * include Tasks. Standalone shops and the super admin don't get them.
  */
 class Task extends Model
 {
-    use BelongsToCompany;
-
     public const STATUSES = ['todo', 'in_progress', 'completed', 'canceled'];
 
     public const OPEN_STATUSES = ['todo', 'in_progress'];
@@ -68,41 +69,67 @@ class Task extends Model
     }
 
     /**
-     * Tasks the user may see: assigned to or reported by them, or all with
-     * the "manage" permission.
+     * Tasks of the user's task company they may see: assigned to or
+     * reported by them, or all of them when they manage tasks.
      */
     #[Scope]
     protected function visibleTo(Builder $query, User $user): void
     {
-        if (static::canManage($user)) {
-            return;
-        }
+        $query->where('tasks.company_id', static::companyFor($user)?->id ?? 0);
 
-        $query->where(fn ($inner) => $inner->where('tasks.assigned_to', $user->id)->orWhere('tasks.reported_by', $user->id));
+        if (! static::canManage($user)) {
+            $query->where(fn ($inner) => $inner->where('tasks.assigned_to', $user->id)->orWhere('tasks.reported_by', $user->id));
+        }
     }
 
     /**
-     * Task management is for companies: the company owner and admins and the
-     * company's staff, when the company's plan includes it. Standalone shop
-     * owners and the super admin don't get it.
+     * The company whose tasks the user works with: the company of their
+     * current shop when it is a real company; otherwise the company they
+     * work for at company level (a company, or the Default Company — even
+     * while its admin is inside a standalone shop).
      */
+    public static function companyFor(?User $user): ?Company
+    {
+        if (! $user || $user->isSuperAdmin()) {
+            return null;
+        }
+
+        $shopCompany = $user->shop?->company;
+        if ($shopCompany?->isBusiness()) {
+            return $shopCompany;
+        }
+
+        return $user->companyLevelCompany();
+    }
+
     public static function isAvailableTo(?User $user): bool
     {
-        if (! $user || $user->isSuperAdmin() || ! $user->shop) {
+        return (bool) static::companyFor($user)?->hasFeature('tasks');
+    }
+
+    /**
+     * The company's owner and admins, and shop admins or users with the
+     * "manage" permission in one of the company's shops, see and manage
+     * every task of the company.
+     */
+    public static function canManage(User $user): bool
+    {
+        $company = static::companyFor($user);
+
+        if (! $company) {
             return false;
         }
 
-        return (bool) $user->shop->company?->isBusiness() && $user->shop->hasFeature('tasks');
-    }
+        if ($company->isAdministeredBy($user)) {
+            return true;
+        }
 
-    public static function canManage(User $user): bool
-    {
-        return $user->isShopAdmin() || $user->can('tasks.manage');
+        return (int) $user->shop?->company_id === (int) $company->id && ($user->isShopAdmin() || $user->can('tasks.manage'));
     }
 
     public static function canAssign(User $user): bool
     {
-        return static::canManage($user) || $user->can('tasks.assign');
+        return static::canManage($user) || ((int) $user->shop?->company_id === (int) static::companyFor($user)?->id && $user->can('tasks.assign'));
     }
 
     public function isOpen(): bool

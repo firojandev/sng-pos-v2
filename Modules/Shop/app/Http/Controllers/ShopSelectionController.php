@@ -62,6 +62,11 @@ class ShopSelectionController extends Controller
             abort(403, 'এই দোকানে প্রবেশের অনুমতি আপনার নেই।');
         }
 
+        // Company users work at company level; the POS is for shop logins.
+        if (! $user->isSuperAdmin() && $user->isCompanyLevelUser()) {
+            abort(403, 'কোম্পানি ইউজার দোকানের POS ব্যবহার করেন না; দোকান এডমিন হিসেবে লগইন করুন (Company users do not use a shop POS; log in as a shop admin)।');
+        }
+
         if ($shop->status !== 'active') {
             return back()->with('error', 'এই দোকানটি বর্তমানে নিষ্ক্রিয় রয়েছে।');
         }

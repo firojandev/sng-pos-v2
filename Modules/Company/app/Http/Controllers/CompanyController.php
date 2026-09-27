@@ -16,6 +16,7 @@ use Modules\Company\Http\Requests\UpdateCompanyRequest;
 use Modules\Company\Models\Company;
 use Modules\Core\Support\BanglaNumber;
 use Modules\Shop\Models\Plan;
+use Revoltify\Subscriptionify\Services\FeatureResolver;
 
 /**
  * Super-admin management of companies: a company gets a plan that all its
@@ -81,7 +82,8 @@ class CompanyController extends Controller
         return view('company::edit', [
             'company' => $company,
             'subscription' => $company->billingSubscription()?->loadMissing('plan'),
-            'admins' => $company->users()->where(fn ($query) => $query->where('company_user.is_owner', true)->orWhereIn('company_user.role', [Company::ROLE_OWNER, Company::ROLE_ADMIN]))->orderBy('name')->get(),
+            'admins' => $company->companyUsers()->orderByDesc('company_user.is_owner')->orderBy('name')->get(),
+            'plans' => Plan::where('status', 'active')->orderBy('sort_order')->orderBy('price')->get(),
             'standaloneShops' => $company->isDefault() ? $company->standaloneShops()->latest('shops.id')->limit(20)->get() : collect(),
             'standaloneCount' => $company->isDefault() ? $company->standaloneShops()->count() : 0,
         ]);
@@ -92,6 +94,40 @@ class CompanyController extends Controller
         $company->update($request->validated());
 
         return redirect()->route('companies.edit', $company)->with('status', 'কোম্পানির তথ্য হালনাগাদ করা হয়েছে');
+    }
+
+    /**
+     * Give the company a plan (or change it). For a company it covers all
+     * its shops; for the Default Company it only sets the Default Company's
+     * own features (e.g. Tasks), standalone shops keep their own plans.
+     */
+    public function updatePlan(Request $request, Company $company): RedirectResponse
+    {
+        abort_if($company->isStandalone(), 404);
+
+        $validated = $request->validate([
+            'plan_id' => ['required', 'integer', Rule::exists('plans', 'id')],
+            'subscription_status' => ['required', 'in:active,trialing'],
+            'current_period_end' => ['nullable', 'date', 'after:today'],
+        ]);
+
+        $plan = Plan::findOrFail($validated['plan_id']);
+        $isYearly = in_array(strtolower((string) ($plan->billing_cycle ?? $plan->billing_interval?->value ?? 'month')), ['yearly', 'year', 'annual'], true);
+        $endsAt = ! empty($validated['current_period_end'])
+            ? Carbon::parse($validated['current_period_end'])
+            : ($plan->is_free || $company->isDefault() ? null : now()->addDays($isYearly ? 365 : 30));
+
+        $company->subscriptions()->updateOrCreate([], [
+            'plan_id' => $plan->id,
+            'status' => $validated['subscription_status'],
+            'starts_at' => now(),
+            'ends_at' => $endsAt,
+            'current_period_start' => now(),
+            'current_period_end' => $endsAt,
+        ]);
+        app(FeatureResolver::class)->flush();
+
+        return back()->with('status', "{$company->name} — প্ল্যান \"{$plan->name}\" দেওয়া হয়েছে");
     }
 
     /**
@@ -113,7 +149,7 @@ class CompanyController extends Controller
             ->first();
 
         $validated = $request->validate([
-            'role' => ['required', Rule::in([Company::ROLE_OWNER, Company::ROLE_ADMIN])],
+            'role' => ['required', Rule::in([Company::ROLE_OWNER, Company::ROLE_ADMIN, Company::ROLE_EMPLOYEE])],
             'name' => [Rule::requiredIf(! $existing), 'nullable', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:30'],
             'email' => ['nullable', 'email', 'max:255', $existing ? Rule::unique('users', 'email')->ignore($existing->id) : Rule::unique('users', 'email')],
@@ -130,13 +166,21 @@ class CompanyController extends Controller
 
         $company->users()->syncWithoutDetaching([$user->id => ['role' => $validated['role'], 'is_owner' => $validated['role'] === Company::ROLE_OWNER]]);
 
-        return back()->with('status', "{$user->name} — {$company->name} এর এডমিন করা হয়েছে");
+        return back()->with('status', "{$user->name} — {$company->name} এ যুক্ত করা হয়েছে");
     }
 
+    /**
+     * Take the user off the company (an admin of a company with shops stays
+     * a member of those shops; this only removes the company role).
+     */
     public function destroyAdmin(Company $company, User $user): RedirectResponse
     {
-        $company->users()->updateExistingPivot($user->id, ['role' => Company::ROLE_MEMBER, 'is_owner' => false]);
+        if ($company->isDefault() || $company->shops()->doesntExist()) {
+            $company->users()->detach($user->id);
+        } else {
+            $company->users()->updateExistingPivot($user->id, ['role' => Company::ROLE_MEMBER, 'is_owner' => false]);
+        }
 
-        return back()->with('status', "{$user->name} আর এই কোম্পানির এডমিন নন");
+        return back()->with('status', "{$user->name} কে সরানো হয়েছে");
     }
 }

@@ -151,36 +151,43 @@ class RegisterController extends Controller
                 'status' => 'active',
             ]);
 
-            // 3. Link User to Shop
-            $owner->shop_id = $shop->id;
-            $owner->save();
+            // 4. A shop owner runs the shop (shop admin, POS); a company owner
+            //    works at company level and adds the shop's admin later.
+            if ($company) {
+                $company->users()->syncWithoutDetaching([$owner->id => ['role' => Company::ROLE_OWNER, 'is_owner' => true]]);
+                $shop->categories()->sync($validated['category_ids'] ?? []);
+            } else {
+                // 3. Link User to Shop
+                $owner->shop_id = $shop->id;
+                $owner->save();
 
-            // Set Spatie Team Scope for the Shop & Assign Admin Role
-            setPermissionsTeamId($shop->id);
-            $adminRole = Role::firstOrCreate([
-                'shop_id' => $shop->id,
-                'name' => 'Admin',
-                'guard_name' => 'web',
-            ]);
-            $owner->assignRole($adminRole);
-            setPermissionsTeamId(null);
+                // Set Spatie Team Scope for the Shop & Assign Admin Role
+                setPermissionsTeamId($shop->id);
+                $adminRole = Role::firstOrCreate([
+                    'shop_id' => $shop->id,
+                    'name' => 'Admin',
+                    'guard_name' => 'web',
+                ]);
+                $owner->assignRole($adminRole);
+                setPermissionsTeamId(null);
 
-            // Sync Pivot Table
-            $shop->users()->syncWithoutDetaching([
-                $owner->id => [
-                    'role' => 'Admin',
-                    'is_owner' => true,
-                ],
-            ]);
+                // Sync Pivot Table
+                $shop->users()->syncWithoutDetaching([
+                    $owner->id => [
+                        'role' => 'Admin',
+                        'is_owner' => true,
+                    ],
+                ]);
 
-            $shop->categories()->sync($validated['category_ids'] ?? []);
+                $shop->categories()->sync($validated['category_ids'] ?? []);
 
-            $shop->company->users()->syncWithoutDetaching([
-                $owner->id => [
-                    'role' => Company::ROLE_OWNER,
-                    'is_owner' => true,
-                ],
-            ]);
+                $shop->company->users()->syncWithoutDetaching([
+                    $owner->id => [
+                        'role' => Company::ROLE_OWNER,
+                        'is_owner' => true,
+                    ],
+                ]);
+            }
 
             // 4. Create Default Branch
             $branchName = ! empty($validated['branch_name']) ? trim($validated['branch_name']) : 'প্রধান শাখা';

@@ -28,7 +28,10 @@ class PayrollRunController extends Controller
     {
         $this->settings();
 
-        $runs = PayrollRun::where('shop_id', $this->shopId())
+        // The current shop's runs; in the company workspace, every shop's.
+        $runs = PayrollRun::query()
+            ->when($this->shopId(), fn ($query) => $query->where('shop_id', $this->shopId()))
+            ->with('shop:id,name')
             ->when($request->filled('year'), fn ($query) => $query->whereYear('month', $request->integer('year')))
             ->latest('month')
             ->latest('id')
@@ -37,6 +40,7 @@ class PayrollRunController extends Controller
 
         return view('payroll::runs.index', [
             'runs' => $runs,
+            'shops' => $this->shopId() ? collect() : Shop::where('company_id', $this->companyId())->orderBy('name')->pluck('name', 'id'),
             'nextMonth' => now()->subMonthNoOverflow()->format('Y-m'),
         ]);
     }
@@ -48,10 +52,11 @@ class PayrollRunController extends Controller
             'type' => ['required', Rule::in(['salary', 'bonus'])],
             'title' => ['nullable', 'required_if:type,bonus', 'string', 'max:255'],
             'note' => ['nullable', 'string', 'max:255'],
+            'shop_id' => [$this->shopId() ? 'nullable' : 'required', 'integer', Rule::in(Shop::where('company_id', $this->companyId())->pluck('id')->all())],
         ]);
 
         $run = $this->payroll->create(
-            $this->shopId(),
+            $this->shopId() ?: (int) $validated['shop_id'],
             Carbon::createFromFormat('Y-m-d', $validated['month'].'-01'),
             $validated['type'],
             $validated['title'] ?? null,

@@ -16,6 +16,9 @@
                         <x-core::select size="sm" name="type" label="ধরন" label-en="Type" :required="true" :value="old('type', 'salary')"
                             :options="['salary' => 'মাসিক বেতন (Monthly Salary)', 'bonus' => 'উৎসব ভাতা (Festival Bonus)']" />
                         <x-core::input size="sm" type="month" name="month" label="মাস" label-en="Month" :value="old('month', $nextMonth)" :required="true" />
+                        @if ($shops->isNotEmpty())
+                            <x-core::select size="sm" name="shop_id" label="দোকান" label-en="Shop" :options="$shops->all()" :value="old('shop_id')" :required="true" placeholder="--" placeholder-en="--" />
+                        @endif
                         <x-core::input size="sm" name="title" label="উৎসবের নাম (বোনাসের জন্য)" label-en="Festival (for a bonus)" placeholder="যেমন: ঈদুল ফিতর" placeholder-en="e.g. Eid-ul-Fitr" :value="old('title')" />
                         <x-core::input size="sm" name="note" label="নোট" label-en="Note" :value="old('note')" />
                         <p style="font-size:12px; color:var(--ink-500); margin:0;">
@@ -49,7 +52,7 @@
                             <tr>
                                 <td style="font-weight:600;">
                                     {{ $run->label() }}
-                                    <div style="font-size:11.5px; color:var(--ink-500); font-weight:400;">{{ $run->isBonus() ? 'উৎসব ভাতা / Bonus' : 'মাসিক বেতন / Salary' }}</div>
+                                    <div style="font-size:11.5px; color:var(--ink-500); font-weight:400;">{{ $run->isBonus() ? 'উৎসব ভাতা / Bonus' : 'মাসিক বেতন / Salary' }}{{ $shops->isNotEmpty() ? ' · '.$run->shop?->name : '' }}</div>
                                 </td>
                                 <td class="table-cell-center">{{ $run->employees_count }}</td>
                                 <td class="table-cell-right">{{ number_format((float) $run->earnings_total, 2) }}</td>

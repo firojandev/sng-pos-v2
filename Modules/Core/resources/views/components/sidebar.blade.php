@@ -634,7 +634,14 @@
         ],
     ];
 
-    $isNavItemVisible = function (array $item, bool $groupGated, $user) {
+    // The company workspace (company owner, admins, employees with no shop
+    // open) shows only company-level sections — no POS (sales, purchase,
+    // inventory, parties, money, finance management).
+    $companyWorkspace = $user && ! $isSuperAdmin && $user->inCompanyWorkspace();
+    $workspaceCompany = $companyWorkspace ? $user->companyLevelCompany() : null;
+    $workspaceItems = ['dashboard', 'tasks', 'employees', 'attendance', 'leave', 'payroll', 'payroll-setup', 'hr-setup', 'ledger-accounts', 'journal-entries', 'accounting-reports', 'accounting-setup', 'company-settings'];
+
+    $isNavItemVisible = function (array $item, bool $groupGated, $user) use ($companyWorkspace, $workspaceCompany, $workspaceItems) {
         if (isset($item['enabled']) && !$item['enabled']) {
             return false;
         }
@@ -642,6 +649,20 @@
         // not standalone shops, not the super admin.
         if ($item['key'] === 'tasks') {
             return \Modules\Task\Models\Task::isAvailableTo($user);
+        }
+        if ($companyWorkspace) {
+            if (! in_array($item['key'], $workspaceItems, true) && ! str_starts_with($item['key'], 'report-')) {
+                return false;
+            }
+            if ($item['key'] === 'dashboard') {
+                return true;
+            }
+            if ($item['key'] === 'company-settings') {
+                return $user->isCompanyAdmin();
+            }
+            $permissionKey = $item['permission'] ?? $item['key'];
+
+            return (bool) ($workspaceCompany?->hasFeature($permissionKey) && ($user->can("{$permissionKey}.view") || $user->can($permissionKey)));
         }
         if ($user && $user->isSuperAdmin()) {
             return true;
@@ -653,7 +674,9 @@
             return (bool) ($user && $user->isShopAdmin());
         }
         if ($item['key'] === 'default-company') {
-            return (bool) ($user && $user->isDefaultCompanyAdmin());
+            // The way back to the standalone shop list, for a Default Company
+            // admin working inside a shop (the list is their dashboard).
+            return (bool) ($user && $user->shop_id && $user->isDefaultCompanyAdmin());
         }
         if ($item['key'] === 'company-settings') {
             // The company's owner and admins run it: details, shops, shop admins.

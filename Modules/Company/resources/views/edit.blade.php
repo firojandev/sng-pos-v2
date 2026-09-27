@@ -50,8 +50,13 @@
                             </x-core::badge>
                         </div>
                         <div style="font-size:12px; color:var(--ink-600); margin-top:6px;">
-                            <span class="bn">কোম্পানির সকল দোকান এই সাবস্ক্রিপশন ব্যবহার করে। পরিবর্তন করতে যেকোনো দোকানের সম্পাদনা পেজে যান।</span>
-                            <span class="en" style="display:none;">All shops of the company share this subscription. Change it from any of its shops' edit page.</span>
+                            @if ($company->isDefault())
+                                <span class="bn">এই প্ল্যান শুধু ডিফল্ট কোম্পানির নিজের ফিচার (যেমন টাস্ক) নির্ধারণ করে; একক দোকানগুলো তাদের নিজস্ব প্ল্যান ব্যবহার করে।</span>
+                                <span class="en" style="display:none;">This plan only sets the Default Company's own features (e.g. Tasks); standalone shops keep their own plans.</span>
+                            @else
+                                <span class="bn">কোম্পানির সকল দোকান এই সাবস্ক্রিপশন ব্যবহার করে।</span>
+                                <span class="en" style="display:none;">All shops of the company share this subscription.</span>
+                            @endif
                         </div>
                     @else
                         <span style="font-size:12.5px; color:var(--ink-500);">
@@ -59,14 +64,26 @@
                             <span class="en" style="display:none;">No subscription</span>
                         </span>
                     @endif
+
+                    <form method="POST" action="{{ route('companies.plan.update', $company) }}" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; padding-top:12px; border-top:1px solid var(--border);">
+                        @csrf
+                        @method('PUT')
+                        <div style="grid-column:1 / -1;">
+                            <x-core::select size="sm" name="plan_id" label="প্ল্যান দিন / পরিবর্তন" label-en="Assign / Change Plan" :value="$subscription?->plan_id" :required="true" placeholder="--" placeholder-en="--"
+                                :options="$plans->mapWithKeys(fn ($plan) => [$plan->id => $plan->name.' — ৳'.number_format((float) $plan->price, 0)])->all()" />
+                        </div>
+                        <x-core::select size="sm" name="subscription_status" label="অবস্থা" label-en="Status" value="active" :options="['active' => 'সক্রিয় (Active)', 'trialing' => 'ট্রায়াল (Trial)']" />
+                        <x-core::input size="sm" type="date" name="current_period_end" label="মেয়াদ শেষ (ঐচ্ছিক)" label-en="Ends (optional)" />
+                        <div><x-core::button type="submit" size="sm" variant="solid" color="primary" icon="check"><span class="bn">সংরক্ষণ</span><span class="en" style="display:none;">Save Plan</span></x-core::button></div>
+                    </form>
                 </div>
             </div>
 
             <div class="panel" style="margin-top:0;">
                 <div class="panel-head">
                     <div class="panel-title">
-                        <span class="bn">{{ $company->isDefault() ? 'ডিফল্ট কোম্পানির এডমিন' : 'কোম্পানির মালিক ও এডমিন' }}</span>
-                        <span class="en" style="display:none;">{{ $company->isDefault() ? 'Default Company Admins' : 'Company Owner & Admins' }}</span>
+                        <span class="bn">{{ $company->isDefault() ? 'ডিফল্ট কোম্পানির ইউজার' : 'কোম্পানির ইউজার (মালিক, এডমিন, কর্মচারী)' }}</span>
+                        <span class="en" style="display:none;">{{ $company->isDefault() ? 'Default Company Users' : 'Company Users (Owner, Admins, Employees)' }}</span>
                     </div>
                 </div>
                 @if ($company->isDefault())
@@ -81,9 +98,10 @@
                             @forelse ($admins as $admin)
                                 <tr>
                                     <td>{{ $admin->name }} <div style="font-size:11.5px; color:var(--ink-500);">{{ $admin->phone }}{{ $admin->email ? ' · '.$admin->email : '' }}</div></td>
-                                    <td><x-core::badge :color="$admin->pivot->is_owner ? 'gold' : 'blue'" size="xs">{{ $admin->pivot->is_owner ? 'Owner' : 'Admin' }}</x-core::badge></td>
+                                    @php $memberRole = $admin->pivot->is_owner ? 'Owner' : (in_array($admin->pivot->role, ['Owner', 'Admin'], true) ? 'Admin' : 'Employee'); @endphp
+                                    <td><x-core::badge :color="['Owner' => 'gold', 'Admin' => 'blue', 'Employee' => 'grey'][$memberRole]" size="xs">{{ $memberRole }}</x-core::badge></td>
                                     <td class="table-cell-right">
-                                        <form method="POST" action="{{ route('companies.admins.destroy', [$company, $admin]) }}" class="delete-form" data-title="{{ $admin->name }} কে এডমিন থেকে সরাবেন?">
+                                        <form method="POST" action="{{ route('companies.admins.destroy', [$company, $admin]) }}" class="delete-form" data-title="{{ $admin->name }} কে সরাবেন?">
                                             @csrf
                                             @method('DELETE')
                                             <x-core::button type="submit" size="sm" variant="soft" color="danger" icon="x" icon-only title="সরান / Remove" />
@@ -103,7 +121,7 @@
                     <form method="POST" action="{{ route('companies.admins.store', $company) }}" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                         @csrf
                         <x-core::input size="sm" name="phone" label="মোবাইল" label-en="Phone" :required="true" />
-                        <x-core::select size="sm" name="role" label="ভূমিকা" label-en="Role" value="Admin" :options="['Admin' => 'এডমিন (Admin)', 'Owner' => 'মালিক (Owner)']" />
+                        <x-core::select size="sm" name="role" label="ভূমিকা" label-en="Role" value="Admin" :options="['Admin' => 'এডমিন (Admin)', 'Employee' => 'কর্মচারী (Employee)', 'Owner' => 'মালিক (Owner)']" />
                         <x-core::input size="sm" name="name" label="নাম (নতুন ইউজার)" label-en="Name (new user)" />
                         <x-core::input size="sm" type="email" name="email" label="ইমেইল" label-en="Email" />
                         <x-core::input size="sm" type="password" name="password" label="পাসওয়ার্ড (নতুন ইউজার)" label-en="Password (new user)" />

@@ -58,7 +58,7 @@ class ShopProvisioner
     }
 
     /**
-     * Make the user an admin of the shop (and a member of its company).
+     * Make the user an admin of the shop (a shop-level login, for POS).
      */
     public function assignAdmin(Shop $shop, User $user, bool $isOwner = false): void
     {
@@ -74,9 +74,6 @@ class ShopProvisioner
                 $user->forceFill(['shop_id' => $shop->id])->save();
             }
 
-            if (! $shop->company->users()->where('users.id', $user->id)->exists()) {
-                $shop->company->users()->attach($user->id, ['role' => 'Member', 'is_owner' => false]);
-            }
         });
     }
 
