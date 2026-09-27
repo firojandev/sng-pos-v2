@@ -14,7 +14,7 @@ class UpdateAssetRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $merge = [];
-        if (! $this->has('depreciation_type') || ! in_array($this->depreciation_type, ['flat', 'percentage'], true)) {
+        if (! $this->has('depreciation_type') || ! in_array($this->depreciation_type, ['flat', 'percentage', 'straight_line'], true)) {
             $merge['depreciation_type'] = 'flat';
         }
         if ($this->has('depreciation') && ($this->depreciation === null || $this->depreciation === '')) {
@@ -40,7 +40,9 @@ class UpdateAssetRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'min:0'],
-            'depreciation_type' => ['required', 'in:flat,percentage'],
+            'depreciation_type' => ['required', 'in:flat,percentage,straight_line'],
+            'purchase_date' => ['nullable', 'date', 'required_if:depreciation_type,straight_line'],
+            'residual_value' => ['nullable', 'numeric', 'min:0', 'lte:amount'],
             'depreciation' => [
                 'nullable',
                 'numeric',
@@ -50,6 +52,9 @@ class UpdateAssetRequest extends FormRequest
                         return;
                     }
                     $type = $this->input('depreciation_type', 'flat');
+                    if ($type === 'straight_line') {
+                        return;
+                    }
                     if ($type === 'percentage') {
                         if ((float) $value > 100) {
                             $fail('অবচয় শতকরা ১০০% এর বেশি হতে পারে না / Depreciation percentage cannot exceed 100%.');
@@ -62,7 +67,7 @@ class UpdateAssetRequest extends FormRequest
                     }
                 },
             ],
-            'validity' => ['nullable', 'numeric', 'min:0'],
+            'validity' => ['nullable', 'numeric', 'min:0', 'required_if:depreciation_type,straight_line'],
             'validity_unit' => ['nullable', 'in:year,month,day'],
             'useful_life' => ['nullable', 'numeric', 'min:0'],
             'useful_life_unit' => ['nullable', 'in:year,month,day'],

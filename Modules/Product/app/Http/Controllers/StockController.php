@@ -35,7 +35,7 @@ class StockController extends Controller
         $outOfStockCount = Product::whereRaw('COALESCE((SELECT SUM(quantity) FROM batches WHERE batches.product_id = products.id), 0) <= 0')
             ->count();
 
-        $lowStockCount = Product::where('alert_qty', '>', 0)
+        $lowStockCount = Product::listedInShop()->where('alert_qty', '>', 0)
             ->whereRaw('COALESCE((SELECT SUM(quantity) FROM batches WHERE batches.product_id = products.id), 0) > 0')
             ->whereRaw('COALESCE((SELECT SUM(quantity) FROM batches WHERE batches.product_id = products.id), 0) <= products.alert_qty')
             ->count();
@@ -48,7 +48,7 @@ class StockController extends Controller
             'outCount' => $outOfStockCount,
         ];
 
-        $allProducts = Product::orderBy('name')->get(['id', 'name']);
+        $allProducts = Product::listedInShop()->orderBy('name')->get(['id', 'name']);
         $batches = Batch::whereIn('product_id', $allProducts->pluck('id'))
             ->orderByDesc('quantity')
             ->get(['id', 'product_id', 'batch_no', 'quantity']);

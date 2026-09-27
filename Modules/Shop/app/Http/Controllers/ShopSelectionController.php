@@ -36,8 +36,16 @@ class ShopSelectionController extends Controller
 
         $currentShopId = $user->shop_id ?? session('current_shop_id');
 
+        // Group by company only when some company runs several shops; a list of
+        // single-shop companies stays a plain list of shops.
+        $shops->loadMissing(['company', 'activeSubscription.plan']);
+        $shopGroups = $shops->groupBy('company_id');
+        $showCompanies = $shopGroups->contains(fn ($group) => $group->count() > 1);
+
         return view('shop::select', [
             'shops' => $shops,
+            'shopGroups' => $showCompanies ? $shopGroups : collect([$shops]),
+            'showCompanies' => $showCompanies,
             'currentShopId' => $currentShopId,
             'user' => $user,
         ]);

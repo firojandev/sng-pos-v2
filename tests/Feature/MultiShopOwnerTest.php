@@ -261,6 +261,8 @@ class MultiShopOwnerTest extends TestCase
 
         // Create first shop with a new owner
         $this->actingAs($superAdmin)->post(route('shops.store'), [
+            'company_mode' => 'new',
+            'new_company_name' => 'Test Company 263',
             'name' => 'Chain Branch 1',
             'slug' => 'chain-branch-1',
             'store_code' => 'CHAIN-01',
@@ -279,6 +281,8 @@ class MultiShopOwnerTest extends TestCase
 
         // Create second shop selecting the existing owner
         $this->actingAs($superAdmin)->post(route('shops.store'), [
+            'company_mode' => 'existing',
+            'company_id' => $existingOwner->primaryCompany()->id,
             'name' => 'Chain Branch 2',
             'slug' => 'chain-branch-2',
             'store_code' => 'CHAIN-02',
@@ -356,6 +360,8 @@ class MultiShopOwnerTest extends TestCase
         $existingOwner->assignRole('Owner');
 
         $response = $this->actingAs($superAdmin)->post(route('shops.store'), [
+            'company_mode' => 'new',
+            'new_company_name' => 'Test Company 358',
             'name' => 'Shop for Selected Owner',
             'slug' => 'shop-selected-owner',
             'store_code' => 'SEL-01',
@@ -390,6 +396,8 @@ class MultiShopOwnerTest extends TestCase
         ]);
 
         $response = $this->actingAs($superAdmin)->post(route('shops.store'), [
+            'company_mode' => 'new',
+            'new_company_name' => 'Test Company 392',
             'name' => 'Monthly Shop',
             'slug' => 'monthly-shop',
             'store_code' => 'MON-01',
@@ -435,6 +443,8 @@ class MultiShopOwnerTest extends TestCase
         ]);
 
         $response = $this->actingAs($superAdmin)->post(route('shops.store'), [
+            'company_mode' => 'new',
+            'new_company_name' => 'Test Company 437',
             'name' => 'Yearly Shop',
             'slug' => 'yearly-shop',
             'store_code' => 'YR-01',

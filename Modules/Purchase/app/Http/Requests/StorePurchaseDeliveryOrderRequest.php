@@ -3,6 +3,7 @@
 namespace Modules\Purchase\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Modules\Core\Support\TenantRules;
 
 class StorePurchaseDeliveryOrderRequest extends FormRequest
 {
@@ -17,7 +18,7 @@ class StorePurchaseDeliveryOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'supplier_id' => ['nullable', 'exists:suppliers,id'],
+            'supplier_id' => ['nullable', TenantRules::companyExists('suppliers')],
             'supplier_name' => ['nullable', 'string', 'max:255'],
             'supplier_phone' => ['nullable', 'string', 'max:30'],
             'supplier_address' => ['nullable', 'string', 'max:255'],
@@ -31,8 +32,8 @@ class StorePurchaseDeliveryOrderRequest extends FormRequest
             'delivery_person_phone' => ['nullable', 'string', 'max:30'],
             'note' => ['nullable', 'string'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.product_id' => ['required', 'exists:products,id'],
-            'items.*.unit_id' => ['nullable', 'exists:units,id'],
+            'items.*.product_id' => ['required', TenantRules::catalogExists('products')],
+            'items.*.unit_id' => ['nullable', TenantRules::catalogExists('units')],
             'items.*.quantity' => ['required', 'numeric', 'min:0.01'],
             'items.*.purchase_price' => ['required', 'numeric', 'min:0'],
         ];

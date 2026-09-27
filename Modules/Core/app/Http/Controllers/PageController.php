@@ -11,6 +11,7 @@ use Illuminate\View\View;
 use Modules\Cashbox\Models\CashTransaction;
 use Modules\Core\Models\AuditLog;
 use Modules\Core\Models\Setting;
+use Modules\Core\Support\TenantContext;
 use Modules\Customer\Models\Customer;
 use Modules\Finance\Models\Account;
 use Modules\Finance\Models\Expense;
@@ -31,6 +32,10 @@ class PageController extends Controller
         $user = auth()->user();
         if ($user->isSuperAdmin()) {
             return $this->superAdminDashboard($request);
+        }
+
+        if (! $user->shop && $user->isDefaultCompanyAdmin()) {
+            return redirect()->route('default-company.index');
         }
 
         $isOwnerOrAdmin = $user->isShopAdmin();
@@ -107,17 +112,17 @@ class PageController extends Controller
         if ($canViewStockValue) {
             $totalStockValue = (float) Batch::query()
                 ->join('products', 'batches.product_id', '=', 'products.id')
-                ->sum(DB::raw('batches.quantity * products.purchase_price'));
+                ->sum(DB::raw('batches.quantity * COALESCE(batches.unit_cost, products.purchase_price)'));
         }
 
         $totalReceivable = 0.0;
         if ($canViewReceivable) {
-            $totalReceivable = (float) Customer::sum('opening_due') + (float) Sale::sum('due_amount');
+            $totalReceivable = (float) Customer::createdAtShop(app(TenantContext::class)->shopId())->sum('opening_due') + (float) Sale::sum('due_amount');
         }
 
         $totalPayable = 0.0;
         if ($canViewPayable) {
-            $totalPayable = (float) Supplier::sum('opening_due') + (float) Purchase::sum('due_amount');
+            $totalPayable = (float) Supplier::createdAtShop(app(TenantContext::class)->shopId())->sum('opening_due') + (float) Purchase::sum('due_amount');
         }
 
         $totalCash = 0.0;

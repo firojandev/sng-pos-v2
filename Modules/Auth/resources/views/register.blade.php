@@ -1,10 +1,10 @@
 <x-core::auth-layout
     title="নতুন দোকান রেজিস্টার"
     title-en="Register Shop"
-    card-title="নতুন দোকান রেজিস্টার করুন"
-    card-title-en="Register Your Shop"
-    card-subtitle="সহজে ৩টি ধাপে আপনার অ্যাকাউন্ট, দোকান এবং ফ্রি প্যাকেজ চালু করুন"
-    card-subtitle-en="Quickly set up your account, shop, and free package in 3 simple steps"
+    :card-title="old('account_type') === 'company' ? 'কোম্পানি হিসেবে রেজিস্টার করুন' : 'নতুন দোকান রেজিস্টার করুন'"
+    :card-title-en="old('account_type') === 'company' ? 'Register as Company' : 'Register Your Shop'"
+    :card-subtitle="old('account_type') === 'company' ? 'সহজে ৩টি ধাপে আপনার অ্যাকাউন্ট, কোম্পানি, প্রথম দোকান এবং ফ্রি প্যাকেজ চালু করুন' : 'সহজে ৩টি ধাপে আপনার অ্যাকাউন্ট, দোকান এবং ফ্রি প্যাকেজ চালু করুন'"
+    :card-subtitle-en="old('account_type') === 'company' ? 'Quickly set up your account, company, first shop and free package in 3 simple steps' : 'Quickly set up your account, shop, and free package in 3 simple steps'"
     max-width="660px"
     :show-theme-switcher="false"
     default-theme="dark"
@@ -309,10 +309,30 @@
         {{-- STEP 1: OWNER ACCOUNT INFORMATION                         --}}
         {{-- ======================================================== --}}
         <div class="step-pane active" id="step-pane-1">
+            @php $accountType = old('account_type', 'shop'); @endphp
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px;">
+                @foreach (['shop' => ['shopping-bag', 'দোকান মালিক হিসেবে', 'As a Shop Owner', 'একটি দোকান, দোকানের নিজস্ব প্ল্যান', 'One shop with its own plan'], 'company' => ['building', 'কোম্পানি হিসেবে', 'As a Company', 'একাধিক দোকান, কোম্পানির এক প্ল্যান', 'Many shops on one company plan']] as $type => [$icon, $titleBn, $titleEn, $hintBn, $hintEn])
+                    <label class="form-radio-card account-type-card {{ $accountType === $type ? 'active' : '' }}" style="padding:10px 14px; cursor:pointer; border-radius:10px; margin:0;">
+                        <input type="radio" name="account_type" value="{{ $type }}" class="account-type-radio" {{ $accountType === $type ? 'checked' : '' }} style="display:none;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <div style="width:26px; height:26px; border-radius:6px; background:var(--teal-50); color:var(--teal-800); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                <x-core::icon :name="$icon" size="15" />
+                            </div>
+                            <div>
+                                <div style="font-weight:700; font-size:13px; color:var(--ink-900);"><span class="bn">{{ $titleBn }}</span><span class="en" style="display:none;">{{ $titleEn }}</span></div>
+                                <div style="font-size:11px; color:var(--ink-500);"><span class="bn">{{ $hintBn }}</span><span class="en" style="display:none;">{{ $hintEn }}</span></div>
+                            </div>
+                        </div>
+                    </label>
+                @endforeach
+            </div>
+            <div id="reg-company-name-wrap" style="margin-bottom:14px; {{ $accountType === 'company' ? '' : 'display:none;' }}">
+                <x-core::input name="company_name" id="reg-company-name" label="কোম্পানির নাম" label-en="Company Name" placeholder="যেমন: করিম গ্রুপ" placeholder-en="e.g. Karim Group" icon="building" size="sm" :value="old('company_name')" :disabled="$accountType !== 'company'" />
+            </div>
             <div style="font-size:13px; font-weight:700; color:var(--ink-900); margin-bottom:25px; display:flex; align-items:center; gap:8px;">
                 <x-core::icon name="contact" size="16" style="color:var(--teal-800);" />
-                <span class="bn">ধাপ ১: দোকান মালিকের লগইন ও ব্যক্তিগত তথ্য</span>
-                <span class="en" style="display:none;">Step 1: Shop Owner Credentials & Personal Info</span>
+                <span class="bn" id="reg-step1-title-bn">{{ old('account_type') === 'company' ? 'ধাপ ১: কোম্পানি মালিকের লগইন ও ব্যক্তিগত তথ্য' : 'ধাপ ১: দোকান মালিকের লগইন ও ব্যক্তিগত তথ্য' }}</span>
+                <span class="en" id="reg-step1-title-en" style="display:none;">{{ old('account_type') === 'company' ? 'Step 1: Company Owner Credentials & Personal Info' : 'Step 1: Shop Owner Credentials & Personal Info' }}</span>
             </div>
 
             <div class="reg-grid reg-grid-2">
@@ -553,6 +573,30 @@
                         size="sm"
                         :value="old('shop_address')"
                     />
+                </div>
+
+                <div class="reg-field-item" style="grid-column:1 / -1;">
+                    <div style="font-size:12.5px; font-weight:600; color:var(--ink-700); margin-bottom:6px;">
+                        <span class="bn">আপনার দোকানে কী ধরনের পণ্য বিক্রি হয়? (একাধিক নির্বাচন করা যাবে)</span>
+                        <span class="en" style="display:none;">What kinds of products does your shop sell? (choose any)</span>
+                    </div>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:6px;">
+                        @forelse ($sharedCategories as $category)
+                            <x-core::checkbox
+                                size="sm"
+                                name="category_ids[]"
+                                :value="$category->id"
+                                :checked="in_array($category->id, old('category_ids', []))"
+                            >
+                                <span style="font-size:12.5px;">{{ $category->name }}</span>
+                            </x-core::checkbox>
+                        @empty
+                            <span style="font-size:12px; color:var(--ink-500);">
+                                <span class="bn">পরে ক্যাটালগ থেকে ক্যাটাগরি নির্বাচন করতে পারবেন।</span>
+                                <span class="en" style="display:none;">You can choose categories later from the Catalogue.</span>
+                            </span>
+                        @endforelse
+                    </div>
                 </div>
             </div>
 
@@ -1088,7 +1132,7 @@
         });
 
         // Auto jump to step with error on server-side validation failure
-        @if ($errors->has('shop_name') || $errors->has('shop_slug') || $errors->has('shop_phone') || $errors->has('shop_address'))
+        @if ($errors->has('shop_name') || $errors->has('shop_slug') || $errors->has('shop_phone') || $errors->has('shop_address') || $errors->has('category_ids') || $errors->has('category_ids.*'))
             updateStepperUI(2);
         @elseif ($errors->has('branch_name') || $errors->has('warehouse_name') || $errors->has('opening_cash_balance'))
             updateStepperUI(3);
@@ -1123,6 +1167,25 @@
             updateStepperProgress(currentStep);
         }, 100);
     });
-    </script>
+    
+    $(document).on('change', '.account-type-radio', function () {
+        var isCompany = $(this).val() === 'company';
+        $('.account-type-card').removeClass('active');
+        $(this).closest('.account-type-card').addClass('active');
+        $('#reg-company-name-wrap').toggle(isCompany);
+        $('#reg-company-name').prop('disabled', !isCompany).prop('required', isCompany);
+
+        // The card heading follows the registration type.
+        var texts = isCompany
+            ? { titleBn: 'কোম্পানি হিসেবে রেজিস্টার করুন', titleEn: 'Register as Company', subBn: 'সহজে ৩টি ধাপে আপনার অ্যাকাউন্ট, কোম্পানি, প্রথম দোকান এবং ফ্রি প্যাকেজ চালু করুন', subEn: 'Quickly set up your account, company, first shop and free package in 3 simple steps', stepBn: 'ধাপ ১: কোম্পানি মালিকের লগইন ও ব্যক্তিগত তথ্য', stepEn: 'Step 1: Company Owner Credentials & Personal Info' }
+            : { titleBn: 'নতুন দোকান রেজিস্টার করুন', titleEn: 'Register Your Shop', subBn: 'সহজে ৩টি ধাপে আপনার অ্যাকাউন্ট, দোকান এবং ফ্রি প্যাকেজ চালু করুন', subEn: 'Quickly set up your account, shop, and free package in 3 simple steps', stepBn: 'ধাপ ১: দোকান মালিকের লগইন ও ব্যক্তিগত তথ্য', stepEn: 'Step 1: Shop Owner Credentials & Personal Info' };
+        $('.auth-title .bn').text(texts.titleBn);
+        $('.auth-title .en').text(texts.titleEn);
+        $('.auth-sub .bn').text(texts.subBn);
+        $('.auth-sub .en').text(texts.subEn);
+        $('#reg-step1-title-bn').text(texts.stepBn);
+        $('#reg-step1-title-en').text(texts.stepEn);
+    });
+</script>
     @endpush
 </x-core::auth-layout>

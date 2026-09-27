@@ -15,6 +15,7 @@ use Kstmostofa\LaravelWhatsApp\Exceptions\SidecarException;
 use Kstmostofa\LaravelWhatsApp\Facades\WhatsApp;
 use Kstmostofa\LaravelWhatsApp\Models\WaMessage;
 use Modules\Customer\Models\Customer;
+use Modules\Customer\Services\LoyaltyService;
 use Modules\Employee\Models\Employee;
 use Modules\Finance\Models\Account;
 use Modules\Finance\Models\AccountTransaction;
@@ -22,6 +23,7 @@ use Modules\Finance\Services\AccountTransactionService;
 use Modules\Product\Models\Batch;
 use Modules\Product\Models\Product;
 use Modules\Product\Models\StockMovement;
+use Modules\Product\Services\ProductPricing;
 use Modules\Sales\DataTables\SalesDataTable;
 use Modules\Sales\Http\Requests\StoreSaleRequest;
 use Modules\Sales\Http\Requests\UpdateSaleRequest;
@@ -351,8 +353,8 @@ class SaleController extends Controller
         $warehouses = Warehouse::where('status', 'active')->with('branch')->orderBy('name')->get();
         $defaultWarehouse = $warehouses->firstWhere('is_default', true);
         $warehouseId = $request->query('warehouse_id', $defaultWarehouse?->id ?? optional($warehouses->first())->id);
-        $employees = Employee::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);
-        $products = Product::where('status', 'active')
+        $employees = Employee::workingAtShop()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);
+        $products = Product::listedInShop()->where('status', 'active')
             ->withSum(['batches as batches_sum_quantity' => fn ($q) => $q->where('warehouse_id', $warehouseId)], 'quantity')
             ->with('units')
             ->orderBy('name')->get();
@@ -389,7 +391,11 @@ class SaleController extends Controller
                 : null;
 
             [$subtotal, $discount, $tax, $deliveryCharge, $total, $productDiscount, $adjustment] = $this->calculateBaseTotals($items, $data);
-            $profit = $this->calculateProfit($items, $discount);
+
+            // Points a member redeems are a discount on the bill.
+            $loyaltyPoints = (int) ($data['loyalty_points'] ?? 0);
+            $loyaltyDiscount = app(LoyaltyService::class)->redemptionDiscount($customer, $loyaltyPoints, $total, Auth::user()->shop);
+            $total = round(max($total - $loyaltyDiscount, 0), 2);
 
             $customerPreviousDue = 0.0;
             if ($customer) {
@@ -432,6 +438,8 @@ class SaleController extends Controller
                 'sale_date' => $data['sale_date'],
                 'subtotal' => $subtotal,
                 'discount' => $discount,
+                'loyalty_points_redeemed' => $loyaltyPoints,
+                'loyalty_discount' => $loyaltyDiscount,
                 'product_discount' => $productDiscount,
                 'tax' => $tax,
                 'delivery_charge' => $deliveryCharge,
@@ -439,7 +447,7 @@ class SaleController extends Controller
                 'total' => $total,
                 'paid_amount' => $salePaid,
                 'due_amount' => $saleDue,
-                'profit' => $profit,
+                'profit' => 0,
                 'payment_status' => $saleStatus,
                 'note' => $data['note'] ?? null,
                 'employee_name' => $data['employee_name'] ?? null,
@@ -451,6 +459,8 @@ class SaleController extends Controller
             ]);
 
             $this->applyItems($sale, $items);
+            $sale->update(['profit' => $this->calculateProfit($sale, $discount + $loyaltyDiscount)]);
+            app(LoyaltyService::class)->syncSale($sale);
             $this->applyPaymentsAndPreviousDue($sale, $customer, $submittedPayments, $total, $salePaid);
 
             return $sale;
@@ -467,8 +477,8 @@ class SaleController extends Controller
             ->withSum(['sales as sales_sum_due_amount' => fn ($q) => $q->where('id', '!=', $sale->id)], 'due_amount')
             ->orderBy('name')
             ->get(['id', 'name', 'phone', 'address', 'opening_due']);
-        $employees = Employee::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);
-        $products = Product::where('status', 'active')
+        $employees = Employee::workingAtShop()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);
+        $products = Product::listedInShop()->where('status', 'active')
             ->withSum(['batches as batches_sum_quantity' => fn ($q) => $q->where('warehouse_id', $sale->warehouse_id)], 'quantity')
             ->with('units')
             ->orderBy('name')->get();
@@ -492,7 +502,11 @@ class SaleController extends Controller
                 : null;
 
             [$subtotal, $discount, $tax, $deliveryCharge, $total, $productDiscount, $adjustment] = $this->calculateBaseTotals($items, $data);
-            $profit = $this->calculateProfit($items, $discount);
+
+            // Points a member redeems are a discount on the bill.
+            $loyaltyPoints = (int) ($data['loyalty_points'] ?? 0);
+            $loyaltyDiscount = app(LoyaltyService::class)->redemptionDiscount($customer, $loyaltyPoints, $total, Auth::user()->shop, $sale);
+            $total = round(max($total - $loyaltyDiscount, 0), 2);
 
             $customerPreviousDue = 0.0;
             if ($customer) {
@@ -535,6 +549,8 @@ class SaleController extends Controller
                 'invoice_no' => $data['invoice_no'] ?? $sale->invoice_no,
                 'subtotal' => $subtotal,
                 'discount' => $discount,
+                'loyalty_points_redeemed' => $loyaltyPoints,
+                'loyalty_discount' => $loyaltyDiscount,
                 'product_discount' => $productDiscount,
                 'tax' => $tax,
                 'delivery_charge' => $deliveryCharge,
@@ -542,7 +558,7 @@ class SaleController extends Controller
                 'total' => $total,
                 'paid_amount' => $salePaid,
                 'due_amount' => $saleDue,
-                'profit' => $profit,
+                'profit' => 0,
                 'payment_status' => $saleStatus,
                 'note' => $data['note'] ?? null,
                 'employee_name' => $data['employee_name'] ?? null,
@@ -550,6 +566,8 @@ class SaleController extends Controller
             ]);
 
             $this->applyItems($sale, $items);
+            $sale->update(['profit' => $this->calculateProfit($sale, $discount + $loyaltyDiscount)]);
+            app(LoyaltyService::class)->syncSale($sale);
 
             $this->revertExcessPreviousDuePayments($sale);
 
@@ -574,6 +592,7 @@ class SaleController extends Controller
             }
 
             $sale->delete();
+            app(LoyaltyService::class)->syncSale($sale);
         });
 
         return redirect()->route('sales.index')->with('status', 'বিক্রয় বাতিল করা হয়েছে');
@@ -654,23 +673,16 @@ class SaleController extends Controller
     }
 
     /**
-     * Gross profit for the sale: each line's amount (already net of its own
-     * per-item discount) minus the true cost of goods sold for that line --
-     * quantity converted to the product's base unit x its purchase price --
-     * summed across items, less the invoice-level discount. Delivery charge is
-     * a pass-through cost, so it isn't counted as margin.
+     * Gross profit for the sale: the lines' amounts (already net of their own
+     * discounts) minus what the sold stock actually cost -- each line records
+     * the cost of the batch it was taken from -- less the invoice-level
+     * discount. Delivery charge is a pass-through cost, so it isn't margin.
      */
-    private function calculateProfit(array $items, string|float $discount): float
+    private function calculateProfit(Sale $sale, string|float $discount): float
     {
-        $productCosts = Product::whereIn('id', collect($items)->pluck('product_id'))->pluck('purchase_price', 'id');
+        $lines = $sale->items()->get(['total', 'cost_total']);
 
-        $grossProfit = collect($items)->sum(function ($item) use ($productCosts) {
-            $cost = (float) ($productCosts[$item['product_id']] ?? 0);
-            $conversionFactor = $this->unitConversionFactor((int) $item['product_id'], $item['unit_id'] ?? null);
-            $baseQuantity = (float) $item['quantity'] * $conversionFactor;
-
-            return $this->lineAmount($item) - ($baseQuantity * $cost);
-        });
+        $grossProfit = $lines->sum(fn ($line) => (float) $line->total - (float) $line->cost_total);
 
         return round($grossProfit - (float) $discount, 2);
     }
@@ -800,8 +812,8 @@ class SaleController extends Controller
 
             // (b) Second, earlier sales with remaining due
             if ($remainingToAllocate > 0) {
-                $previousSales = Sale::where('customer_id', $customer->id)
-                    ->where('id', '!=', $sale->id)
+                $previousSales = $customer->sales()
+                    ->where('sales.id', '!=', $sale->id)
                     ->where('due_amount', '>', 0)
                     ->orderBy('sale_date', 'asc')
                     ->orderBy('id', 'asc')
@@ -941,6 +953,7 @@ class SaleController extends Controller
                     'unit_price' => round($enteredUnitPrice, 4),
                     'discount' => round($discountShare, 2),
                     'total' => round(($itemQuantity * $enteredUnitPrice) - $discountShare, 2),
+                    'cost_total' => round($take * (float) $batch->unit_cost, 2),
                     'warranty_expires_at' => $item['warranty_expires_at'] ?? null,
                 ]);
 
@@ -963,13 +976,7 @@ class SaleController extends Controller
 
     private function applyBarcode(int $productId, string $barcode): void
     {
-        if (Product::where('barcode', $barcode)->where('id', '!=', $productId)->exists()) {
-            return;
-        }
-
-        Product::where('id', $productId)
-            ->where(fn ($q) => $q->whereNull('barcode')->orWhere('barcode', '!=', $barcode))
-            ->update(['has_barcode' => true, 'barcode' => $barcode]);
+        app(ProductPricing::class)->assignBarcode($productId, $barcode);
     }
 
     private function revertItems(Sale $sale): void

@@ -69,6 +69,8 @@ class ProductController extends Controller
 
     public function edit(Product $product): View
     {
+        $this->ensureCompanyCanEdit($product);
+
         $product->load('units');
 
         return view('product::products.edit', [
@@ -79,6 +81,8 @@ class ProductController extends Controller
 
     public function update(UpdateProductRequest $request, Product $product): RedirectResponse
     {
+        $this->ensureCompanyCanEdit($product);
+
         $data = $request->safe()->except(['image', 'units']);
         $data['is_vat'] = $request->boolean('is_vat');
         $data['has_warranty'] = $request->boolean('has_warranty');
@@ -107,6 +111,8 @@ class ProductController extends Controller
 
     public function destroy(Product $product): RedirectResponse
     {
+        $this->ensureCompanyCanEdit($product);
+
         if ($product->image_url) {
             Storage::disk('public')->delete(str_replace('/storage/', '', $product->image_url));
         }
@@ -154,5 +160,18 @@ class ProductController extends Controller
             'units' => Unit::orderBy('name')->get(),
             'subCategories' => SubCategory::orderBy('name')->get(),
         ];
+    }
+
+    /**
+     * Shared catalogue products belong to every company; only a Super Admin
+     * may change or delete them.
+     */
+    private function ensureCompanyCanEdit(Product $product): void
+    {
+        abort_if(
+            $product->isShared() && ! auth()->user()?->isSuperAdmin(),
+            403,
+            'শেয়ার্ড ক্যাটালগের পণ্য শুধুমাত্র সুপার এডমিন পরিবর্তন করতে পারেন (Only a Super Admin can change shared catalogue products)।'
+        );
     }
 }

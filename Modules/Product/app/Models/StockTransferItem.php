@@ -10,10 +10,11 @@ class StockTransferItem extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['stock_transfer_id', 'product_id', 'batch_id', 'batch_no', 'quantity'];
+    protected $fillable = ['stock_transfer_id', 'product_id', 'batch_id', 'batch_no', 'quantity', 'unit_cost'];
 
     protected $casts = [
         'quantity' => 'decimal:2',
+        'unit_cost' => 'decimal:4',
     ];
 
     public function transfer(): BelongsTo
@@ -26,8 +27,12 @@ class StockTransferItem extends Model
         return $this->belongsTo(Product::class);
     }
 
+    /**
+     * The source batch, which belongs to the sending shop (so the receiving
+     * shop can read it too).
+     */
     public function batch(): BelongsTo
     {
-        return $this->belongsTo(Batch::class);
+        return $this->belongsTo(Batch::class)->withoutGlobalScope('shop');
     }
 }

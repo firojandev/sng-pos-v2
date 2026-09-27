@@ -12,9 +12,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 use Modules\Auth\Http\Requests\RegisterShopOwnerRequest;
+use Modules\Company\Models\Company;
 use Modules\Core\Models\Setting;
 use Modules\Finance\Models\Account;
 use Modules\Finance\Models\AccountTransaction;
+use Modules\Product\Models\Category;
 use Modules\Shop\Models\Branch;
 use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
@@ -40,6 +42,12 @@ class RegisterController extends Controller
 
         return view('auth::register', [
             'freePlan' => $freePlan,
+            'sharedCategories' => Category::withoutGlobalScopes()
+                ->whereNull('company_id')
+                ->where('type', 'product')
+                ->whereNull('parent_id')
+                ->orderBy('name')
+                ->get(['id', 'name']),
             'nextStoreCode' => Shop::generateNextStoreCode(),
         ]);
     }
@@ -111,19 +119,35 @@ class RegisterController extends Controller
                 'name' => $validated['name'],
                 'phone' => $validated['phone'],
                 'email' => $validated['email'],
-                'username' => $validated['username'] ?: null,
+                'username' => ($validated['username'] ?? null) ?: null,
                 'password' => Hash::make($validated['password']),
             ]);
 
-            // 2. Generate Store Code & Create Shop
+            // 2. A company registration creates the company (its plan covers
+            //    all its shops); a shop owner's shop is standalone (its own
+            //    plan, listed under the Default Company).
+            $company = ($validated['account_type'] ?? 'shop') === 'company'
+                ? Company::create([
+                    'name' => $validated['company_name'],
+                    'slug' => Company::generateUniqueSlug($validated['company_name']),
+                    'type' => Company::TYPE_COMPANY,
+                    'phone' => $validated['phone'],
+                    'email' => $validated['email'],
+                    'address' => ($validated['shop_address'] ?? null) ?: null,
+                    'status' => 'active',
+                ])
+                : null;
+
+            // 3. Generate Store Code & Create Shop
             $storeCode = Shop::generateNextStoreCode();
             $shop = Shop::create([
+                'company_id' => $company?->id,
                 'name' => $validated['shop_name'],
                 'slug' => $validated['shop_slug'],
                 'store_code' => $storeCode,
-                'phone' => $validated['shop_phone'] ?: $validated['phone'],
-                'address' => $validated['shop_address'] ?: null,
-                'currency_symbol' => $validated['currency_symbol'] ?: '৳',
+                'phone' => ($validated['shop_phone'] ?? null) ?: $validated['phone'],
+                'address' => ($validated['shop_address'] ?? null) ?: null,
+                'currency_symbol' => ($validated['currency_symbol'] ?? null) ?: '৳',
                 'status' => 'active',
             ]);
 
@@ -149,9 +173,11 @@ class RegisterController extends Controller
                 ],
             ]);
 
+            $shop->categories()->sync($validated['category_ids'] ?? []);
+
             $shop->company->users()->syncWithoutDetaching([
                 $owner->id => [
-                    'role' => 'Admin',
+                    'role' => Company::ROLE_OWNER,
                     'is_owner' => true,
                 ],
             ]);

@@ -4,6 +4,7 @@ namespace Modules\Product\Http\Requests;
 
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Modules\Core\Support\TenantRules;
 
 class UpdateProductRequest extends FormRequest
 {
@@ -23,9 +24,9 @@ class UpdateProductRequest extends FormRequest
             'purchase_price' => ['required', 'numeric', 'min:0'],
             'sale_price' => ['required', 'numeric', 'min:0'],
             'image' => ['nullable', 'image', 'max:2048'],
-            'category_id' => ['required', 'exists:categories,id'],
-            'sub_category_id' => ['nullable', 'exists:categories,id'],
-            'brand_id' => ['nullable', 'exists:brands,id'],
+            'category_id' => ['required', TenantRules::catalogExists('categories')],
+            'sub_category_id' => ['nullable', TenantRules::catalogExists('categories')],
+            'brand_id' => ['nullable', TenantRules::catalogExists('brands')],
             'short_description' => ['nullable', 'string'],
             'alert_qty' => ['required', 'integer', 'min:0'],
             'is_vat' => ['nullable', 'boolean'],
@@ -46,7 +47,7 @@ class UpdateProductRequest extends FormRequest
             'barcode' => ['nullable', 'string', 'max:255', 'unique:products,barcode,'.$productId, 'required_if:has_barcode,1'],
 
             'units' => ['required', 'array', 'min:1'],
-            'units.*.unit_id' => ['required', 'distinct', 'exists:units,id'],
+            'units.*.unit_id' => ['required', 'distinct', TenantRules::catalogExists('units')],
             'units.*.is_base' => ['nullable', 'boolean'],
             'units.*.conversion_factor' => ['required', 'numeric', 'min:0.0001'],
             'units.*.is_smaller_unit' => ['nullable', 'boolean'],

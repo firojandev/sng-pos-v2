@@ -209,6 +209,26 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Whether the user is the owner or an admin of a company (by default the
+     * company of their current shop). A standalone shop's owner runs just
+     * their shop, not a company.
+     */
+    public function isCompanyAdmin(?Company $company = null): bool
+    {
+        $company ??= $this->shop?->company;
+
+        return $company !== null && $company->isBusiness() && $company->isAdministeredBy($this);
+    }
+
+    /**
+     * Whether the user administers the Default Company (every standalone shop).
+     */
+    public function isDefaultCompanyAdmin(): bool
+    {
+        return ! $this->isSuperAdmin() && Company::defaultCompany()->isAdministeredBy($this);
+    }
+
+    /**
      * All active shops accessible by this user.
      */
     public function activeShops(): BelongsToMany

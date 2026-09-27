@@ -248,6 +248,15 @@
                     />
                 </div>
 
+                {{-- Existing products that look like this one (same barcode or similar name) --}}
+                <div id="product-duplicate-warning" style="display:none; border:1px solid var(--gold-200, #fde68a); background:var(--gold-50, #fffbeb); border-radius:10px; padding:10px 12px; font-size:12.5px; color:var(--ink-800);">
+                    <div style="font-weight:700; margin-bottom:6px;">
+                        <span class="bn">একই ধরনের পণ্য ইতিমধ্যে রয়েছে — নতুন তৈরির আগে দেখে নিন:</span>
+                        <span class="en" style="display:none;">Similar products already exist — check before creating a new one:</span>
+                    </div>
+                    <ul id="product-duplicate-list" style="margin:0; padding-left:18px; display:flex; flex-direction:column; gap:4px;"></ul>
+                </div>
+
                 <x-core::input
                     name="size"
                     id="product_size"
@@ -725,6 +734,44 @@
 @push('scripts')
 <script>
 $(function () {
+    // Warn about existing products with the same barcode or a similar name
+    var DUPLICATES_URL = @json(route('catalogue.duplicates'));
+    var CURRENT_PRODUCT_ID = @json($product->id);
+    var duplicateTimer = null;
+
+    function checkDuplicates() {
+        var name = $('#product_name').val() || '';
+        var barcode = $('#product_barcode').val() || '';
+        $.getJSON(DUPLICATES_URL, { name: name, barcode: barcode, ignore_id: CURRENT_PRODUCT_ID || '' }, function (data) {
+            var $list = $('#product-duplicate-list').empty();
+            if (!data.matches || data.matches.length === 0) {
+                $('#product-duplicate-warning').hide();
+                return;
+            }
+            $.each(data.matches, function (i, match) {
+                var $item = $('<li>').text(match.name + (match.barcode ? ' (' + match.barcode + ')' : ''));
+                if (match.shared) {
+                    $item.append(' <span class="badge b-blue badge-blue badge-xs">শেয়ার্ড / Shared</span>');
+                }
+                if (match.listed) {
+                    $item.append(' <span class="badge b-green badge-green badge-xs">এই দোকানে আছে / In this shop</span>');
+                } else {
+                    var $form = $('<form method="POST" style="display:inline; margin-left:6px;">').attr('action', match.list_url)
+                        .append($('<input type="hidden" name="_token">').val($('meta[name="csrf-token"]').attr('content')))
+                        .append('<button type="submit" class="btn btn-soft btn-soft-primary btn-xs">দোকানে যোগ করুন / Add to shop</button>');
+                    $item.append($form);
+                }
+                $list.append($item);
+            });
+            $('#product-duplicate-warning').show();
+        });
+    }
+
+    $('#product_name, #product_barcode').on('input', function () {
+        clearTimeout(duplicateTimer);
+        duplicateTimer = setTimeout(checkDuplicates, 400);
+    });
+
     var ALL_UNITS = @json($units->map(fn ($u) => ['id' => $u->id, 'name' => $u->name, 'code' => $u->short_code]));
     var SUBCATS_BY_CATEGORY = @json($subCategoriesByCategory);
     var SELECTED_SUBCATEGORY = @json(old('sub_category_id', $product->sub_category_id));

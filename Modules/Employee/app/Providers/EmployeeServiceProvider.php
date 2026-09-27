@@ -3,6 +3,8 @@
 namespace Modules\Employee\Providers;
 
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\View;
+use Modules\Employee\Services\SelfService;
 use Nwidart\Modules\Support\ModuleServiceProvider;
 
 class EmployeeServiceProvider extends ModuleServiceProvider
@@ -33,6 +35,21 @@ class EmployeeServiceProvider extends ModuleServiceProvider
         EventServiceProvider::class,
         RouteServiceProvider::class,
     ];
+
+    public function boot(): void
+    {
+        parent::boot();
+
+        // Employee self-service on the dashboard, for a user linked to an employee.
+        View::composer('core::dashboard', function ($view) {
+            $user = auth()->user();
+            $shop = $user?->shop;
+
+            $data = $shop && ($shop->hasFeature('attendance') || $shop->hasFeature('leave')) ? app(SelfService::class)->dashboard($user) : null;
+
+            $view->with('selfService', $data ? $data + ['canClock' => $shop->hasFeature('attendance'), 'canApplyLeave' => $shop->hasFeature('leave')] : null);
+        });
+    }
 
     /**
      * Define module schedules.

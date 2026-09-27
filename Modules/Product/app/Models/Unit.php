@@ -4,13 +4,13 @@ namespace Modules\Product\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Modules\Core\Concerns\BelongsToShop;
+use Modules\Core\Concerns\BelongsToCatalog;
 
 class Unit extends Model
 {
-    use BelongsToShop;
+    use BelongsToCatalog;
 
-    protected $fillable = ['shop_id', 'name', 'short_code'];
+    protected $fillable = ['company_id', 'shop_id', 'name', 'short_code'];
 
     public function products(): BelongsToMany
     {

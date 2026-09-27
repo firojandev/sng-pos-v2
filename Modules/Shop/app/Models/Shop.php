@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Support\Collection;
 use Modules\Company\Models\Company;
 use Modules\Finance\Models\Account;
+use Modules\Product\Models\Category;
 use Revoltify\Subscriptionify\DTOs\FeatureInfo;
 use Revoltify\Subscriptionify\DTOs\SubscriptionInfo;
 use Revoltify\Subscriptionify\Enums\Interval;
@@ -44,7 +45,16 @@ class Shop extends Model
         'currency_symbol',
         'status',
         'business_type',
+        'loyalty_enabled',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return ['loyalty_enabled' => 'boolean'];
+    }
 
     /**
      * Get the shop's logo URL.
@@ -165,6 +175,14 @@ class Shop extends Model
     public function warehouses(): HasMany
     {
         return $this->hasMany(Warehouse::class, 'shop_id');
+    }
+
+    /**
+     * The product categories this shop sells.
+     */
+    public function categories(): BelongsToMany
+    {
+        return $this->belongsToMany(Category::class, 'shop_category')->withTimestamps();
     }
 
     public function company(): BelongsTo

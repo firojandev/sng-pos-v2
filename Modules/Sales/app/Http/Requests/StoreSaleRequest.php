@@ -4,6 +4,7 @@ namespace Modules\Sales\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Modules\Core\Support\PaymentMethods;
+use Modules\Core\Support\TenantRules;
 
 class StoreSaleRequest extends FormRequest
 {
@@ -15,7 +16,8 @@ class StoreSaleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'customer_id' => ['nullable', 'exists:customers,id'],
+            'loyalty_points' => ['nullable', 'integer', 'min:0'],
+            'customer_id' => ['nullable', TenantRules::companyExists('customers')],
             'customer_name' => ['nullable', 'string', 'max:255'],
             'customer_phone' => ['nullable', 'string', 'max:30'],
             'customer_address' => ['nullable', 'string', 'max:255'],
@@ -34,10 +36,10 @@ class StoreSaleRequest extends FormRequest
             'payments.*.amount' => ['required', 'numeric', 'min:0.01'],
             'note' => ['nullable', 'string'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.product_id' => ['required', 'exists:products,id'],
+            'items.*.product_id' => ['required', TenantRules::catalogExists('products')],
             'items.*.barcode' => ['nullable', 'string', 'max:64'],
             'items.*.quantity' => ['required', 'numeric', 'min:0.01'],
-            'items.*.unit_id' => ['nullable', 'exists:units,id'],
+            'items.*.unit_id' => ['nullable', TenantRules::catalogExists('units')],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'items.*.discount' => ['nullable', 'numeric', 'min:0'],
             'items.*.warranty_expires_at' => ['nullable', 'date', 'after:sale_date'],

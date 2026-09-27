@@ -71,6 +71,11 @@ class AuthController extends Controller
             return redirect()->intended(route('dashboard'));
         }
 
+        // Default Company admins start from the list of standalone shops.
+        if ($user->isDefaultCompanyAdmin()) {
+            return redirect()->route('default-company.index');
+        }
+
         if (! empty($user->email) && $user->isShopOwner() && ! $user->hasVerifiedEmail()) {
             return redirect()->route('verification.notice')
                 ->with('warning', 'দোকান অ্যাক্সেস করার পূর্বে আপনার ইমেইল ভেরিফাই করা আবশ্যক।');

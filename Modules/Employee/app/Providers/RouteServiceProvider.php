@@ -26,6 +26,16 @@ class RouteServiceProvider extends ServiceProvider
     {
         $this->mapApiRoutes();
         $this->mapWebRoutes();
+        $this->mapDeviceRoutes();
+    }
+
+    /**
+     * Routes called by attendance machines: no session, cookies or CSRF,
+     * only rate limiting.
+     */
+    protected function mapDeviceRoutes(): void
+    {
+        Route::middleware('throttle:600,1')->group(module_path($this->name, '/routes/device.php'));
     }
 
     /**

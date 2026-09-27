@@ -31,6 +31,15 @@ class StoreShopRequest extends FormRequest
             'address' => ['nullable', 'string', 'max:255'],
             'status' => ['required', 'in:active,inactive'],
 
+            // A standalone shop (its own plan, under the Default Company), or a
+            // shop under an existing company or one created here.
+            'company_mode' => ['required', 'in:standalone,existing,new'],
+            'company_id' => ['nullable', 'required_if:company_mode,existing', Rule::exists('companies', 'id')->whereNull('deleted_at')->where('type', 'company')],
+            'new_company_name' => ['nullable', 'required_if:company_mode,new', 'string', 'max:255'],
+            'new_company_phone' => ['nullable', 'string', 'max:30'],
+            'new_company_email' => ['nullable', 'email', 'max:255'],
+            'new_company_address' => ['nullable', 'string', 'max:255'],
+
             'owner_type' => ['nullable', 'in:new,existing'],
             'existing_user_id' => [
                 Rule::requiredIf($isExisting),
@@ -71,6 +80,8 @@ class StoreShopRequest extends FormRequest
                 'min:8',
                 'confirmed',
             ],
+            'category_ids' => ['nullable', 'array'],
+            'category_ids.*' => ['integer', Rule::exists('categories', 'id')->whereNull('company_id')->where('type', 'product')],
             'plan_id' => ['nullable', 'exists:plans,id'],
             'subscription_status' => ['nullable', 'string', 'in:active,trialing,trial,past_due,suspended,cancelled,expired'],
             'current_period_start' => ['nullable', 'date'],

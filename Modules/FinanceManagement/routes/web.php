@@ -7,6 +7,8 @@ use Modules\FinanceManagement\Http\Controllers\LendController;
 use Modules\FinanceManagement\Http\Controllers\SecurityMoneyController;
 
 Route::middleware(['auth', 'feature:assets'])->group(function () {
+    Route::post('assets/depreciate', [AssetController::class, 'depreciate'])->name('assets.depreciate')->middleware('permission:assets.edit');
+    Route::get('assets/{asset}/schedule', [AssetController::class, 'schedule'])->name('assets.schedule')->middleware('permission:assets.view');
     Route::resource('assets', AssetController::class)->except(['show'])
         ->middlewareFor(['index'], 'permission:assets.view')
         ->middlewareFor(['create', 'store'], 'permission:assets.create')

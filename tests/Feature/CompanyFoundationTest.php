@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Modules\Company\Models\Company;
 use Modules\Core\Concerns\BelongsToCompany;
+use Modules\Product\Models\Category;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
 use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
@@ -54,7 +55,7 @@ class CompanyFoundationTest extends TestCase
         $first = Shop::create(['company_id' => $company->id, 'name' => 'Branch One', 'slug' => 'branch-one', 'status' => 'active']);
         $second = Shop::create(['company_id' => $company->id, 'name' => 'Branch Two', 'slug' => 'branch-two', 'status' => 'active']);
 
-        $this->assertSame(1, Company::count());
+        $this->assertSame(1, Company::where('type', Company::TYPE_COMPANY)->count());
         $this->assertTrue($first->company->is($second->company));
         $this->assertTrue($company->hasMultipleShops());
     }
@@ -155,14 +156,49 @@ class CompanyFoundationTest extends TestCase
         ]);
     }
 
+    public function test_registration_lets_the_owner_choose_the_shops_categories(): void
+    {
+        Mail::fake();
+        $grocery = Category::create(['name' => 'Grocery', 'type' => 'product']);
+        $pharmacy = Category::create(['name' => 'Pharmacy', 'type' => 'product']);
+        Category::create(['name' => 'Cosmetics', 'type' => 'product']);
+
+        $this->get(route('register'))->assertOk()->assertSee('Grocery')->assertSee('Pharmacy');
+
+        $this->post(route('register.store'), [
+            'name' => 'Kamal Hossain',
+            'phone' => '01812345678',
+            'email' => 'kamal@shop.com',
+            'username' => 'kamal_store',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'shop_name' => 'Kamal Super Shop',
+            'shop_slug' => 'kamal-super-shop',
+            'shop_phone' => '01812345678',
+            'shop_address' => 'Dhanmondi, Dhaka',
+            'currency_symbol' => '৳',
+            'category_ids' => [$grocery->id, $pharmacy->id],
+            'branch_name' => 'Main Branch',
+            'warehouse_name' => 'Main Warehouse',
+            'opening_cash_balance' => 0,
+        ])->assertRedirect(route('verification.notice'));
+
+        $shop = Shop::where('slug', 'kamal-super-shop')->firstOrFail();
+        $this->assertEqualsCanonicalizing([$grocery->id, $pharmacy->id], $shop->categories()->pluck('categories.id')->all());
+    }
+
     public function test_new_shop_for_an_existing_owner_joins_the_owners_company_and_shares_its_subscription(): void
     {
         $existingShop = Shop::create(['name' => 'Karim Traders', 'slug' => 'karim-traders', 'status' => 'active']);
+        // A company (not a standalone shop) can have more shops.
+        $existingShop->company->update(['type' => Company::TYPE_COMPANY, 'parent_id' => null]);
         $owner = User::factory()->create(['shop_id' => $existingShop->id]);
         $existingShop->company->users()->attach($owner->id, ['role' => 'Admin', 'is_owner' => true]);
         $existingShop->subscribe(Plan::where('slug', 'standard')->firstOrFail());
 
         $this->actingAs($this->createSuperAdmin())->post(route('shops.store'), [
+            'company_mode' => 'existing',
+            'company_id' => $owner->primaryCompany()->id,
             'name' => 'Karim Traders Chattogram',
             'slug' => 'karim-traders-ctg',
             'status' => 'active',
@@ -181,6 +217,8 @@ class CompanyFoundationTest extends TestCase
     public function test_new_shop_for_a_new_owner_gets_its_own_subscribed_company(): void
     {
         $this->actingAs($this->createSuperAdmin())->post(route('shops.store'), [
+            'company_mode' => 'new',
+            'new_company_name' => 'Grand Market',
             'name' => 'Grand Market',
             'slug' => 'grand-market',
             'phone' => '01888999000',

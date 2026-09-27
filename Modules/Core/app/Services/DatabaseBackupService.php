@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Modules\Core\Support\TenantTables;
 use PDO;
 use ZipArchive;
 
@@ -264,29 +265,22 @@ class DatabaseBackupService
     }
 
     /**
-     * Company rows restored together with a single-shop company's shop, in
-     * delete order (children first, the company row last).
+     * Super admins are never part of a shop's data.
      *
-     * @return array<string, string> table => WHERE clause
+     * @var array<string, string>
      */
-    protected function companyScopedRows(int $companyId): array
-    {
-        $companyMorph = "`subscribable_type` = 'Modules\\\\Company\\\\Models\\\\Company' AND `subscribable_id` = {$companyId}";
-
-        return [
-            'subscription_payments' => "`subscription_id` IN (SELECT `id` FROM `subscriptions` WHERE {$companyMorph})",
-            'feature_usages' => $companyMorph,
-            'feature_subscribable' => $companyMorph,
-            'subscriptions' => $companyMorph,
-            'company_user' => "`company_id` = {$companyId}",
-            'companies' => "`id` = {$companyId}",
-        ];
-    }
+    protected array $shopBackupExclusions = [
+        'users' => "`email` NOT IN ('softngear@gmail.com')",
+    ];
 
     /**
-     * Dump shop-isolated data into a standalone SQL file.
+     * Dump a shop's data into a standalone SQL file: every tenant table the
+     * schema links to the shop (see TenantTables), plus its company's data
+     * when the company runs only this shop. A multi-shop company's shared
+     * data (customers, catalogue, ledger, HR rules, billing) is left out, so
+     * restoring one shop never rewrites the others'.
      *
-     * @param  array{id: int|string, name: string, slug: string}  $shop
+     * @param  array{id: int|string, name: string, slug: string, company_id?: int|string|null}  $shop
      */
     protected function dumpShopData(PDO $pdo, string $driver, string $databaseName, array $shop, string $filePath): void
     {
@@ -297,20 +291,17 @@ class DatabaseBackupService
 
         $shopId = (int) $shop['id'];
         $shopName = $shop['name'];
-        $companyId = (int) ($shop['company_id'] ?? 0);
+        $companyId = (int) ($shop['company_id'] ?? 0) ?: null;
+        $includeCompany = $companyId && $this->tableExists('companies') && DB::table('shops')->where('company_id', $companyId)->count() === 1;
 
-        // A company that runs only this shop is backed up and restored with
-        // it. Billing of a multi-shop company is company-wide, so it is left
-        // out of any single shop's backup.
-        $companyRows = $companyId > 0 && $this->tableExists('companies') && DB::table('shops')->where('company_id', $companyId)->count() === 1
-            ? $this->companyScopedRows($companyId)
-            : [];
+        $plan = app(TenantTables::class)->plan($shopId, $companyId, (bool) $includeCompany, $this->shopBackupExclusions);
 
         $header = "-- ========================================================\n"
             ."-- SNG ERP Shop Scoped Backup\n"
             ."-- Shop: {$shopName} (ID: #{$shopId})\n"
             ."-- Database: `{$databaseName}`\n"
             .'-- Generated at: '.now()->toDateTimeString()."\n"
+            .'-- Tables: '.count($plan).($includeCompany ? ' (with its company)' : ' (shop data only; company shared)')."\n"
             ."-- ========================================================\n\n";
 
         if ($driver === 'sqlite') {
@@ -324,112 +315,19 @@ class DatabaseBackupService
 
         fwrite($handle, $header);
 
-        // 1. DELETE statements for this shop (in reverse dependency order)
+        // 1. Wipe the shop's current rows, children before parents (their
+        //    conditions look up the parents).
         fwrite($handle, "--\n-- Step 1: Wipe existing records for Shop #{$shopId}\n--\n");
-
-        $indirectDeletes = [
-            'sale_items' => "DELETE FROM `sale_items` WHERE `sale_id` IN (SELECT `id` FROM `sales` WHERE `shop_id` = {$shopId});",
-            'sale_payments' => "DELETE FROM `sale_payments` WHERE `sale_id` IN (SELECT `id` FROM `sales` WHERE `shop_id` = {$shopId});",
-            'sale_return_items' => "DELETE FROM `sale_return_items` WHERE `sale_return_id` IN (SELECT `id` FROM `sale_returns` WHERE `shop_id` = {$shopId});",
-            'purchase_items' => "DELETE FROM `purchase_items` WHERE `purchase_id` IN (SELECT `id` FROM `purchases` WHERE `shop_id` = {$shopId});",
-            'purchase_payments' => "DELETE FROM `purchase_payments` WHERE `purchase_id` IN (SELECT `id` FROM `purchases` WHERE `shop_id` = {$shopId});",
-            'purchase_return_items' => "DELETE FROM `purchase_return_items` WHERE `purchase_return_id` IN (SELECT `id` FROM `purchase_returns` WHERE `shop_id` = {$shopId});",
-            'purchase_delivery_order_items' => "DELETE FROM `purchase_delivery_order_items` WHERE `purchase_delivery_order_id` IN (SELECT `id` FROM `purchase_delivery_orders` WHERE `shop_id` = {$shopId});",
-            'purchase_delivery_receipt_items' => "DELETE FROM `purchase_delivery_receipt_items` WHERE `purchase_delivery_receipt_id` IN (SELECT `id` FROM `purchase_delivery_receipts` WHERE `shop_id` = {$shopId});",
-            'stock_transfer_items' => "DELETE FROM `stock_transfer_items` WHERE `stock_transfer_id` IN (SELECT `id` FROM `stock_transfers` WHERE `shop_id` = {$shopId});",
-            'product_units' => "DELETE FROM `product_units` WHERE `product_id` IN (SELECT `id` FROM `products` WHERE `shop_id` = {$shopId});",
-        ];
-
-        foreach ($indirectDeletes as $table => $sql) {
-            if ($this->tableExists($table)) {
-                fwrite($handle, $sql."\n");
-            }
+        foreach (array_reverse($plan, true) as $table => $whereClause) {
+            fwrite($handle, "DELETE FROM `{$table}` WHERE {$whereClause};\n");
         }
 
-        // Direct tables with shop_id
-        $directTables = [
-            'account_transactions', 'account_transfers', 'cash_transactions', 'accounts',
-            'assets', 'debts', 'lends', 'security_money', 'expenses', 'incomes',
-            'stock_adjustments', 'stock_movements', 'stock_transfers',
-            'batches', 'products', 'product_models', 'brands', 'categories', 'units',
-            'sale_returns', 'sales', 'customers',
-            'purchase_delivery_receipts', 'purchase_delivery_orders', 'purchase_receipt_items', 'purchase_returns', 'purchases', 'suppliers',
-            'employees', 'warehouses', 'branches',
-            'shop_user', 'model_has_permissions', 'model_has_roles', 'roles',
-            'users', 'audit_logs', 'shops',
-        ];
-
-        foreach ($directTables as $table) {
-            if ($this->tableExists($table)) {
-                if ($table === 'shops') {
-                    fwrite($handle, "DELETE FROM `shops` WHERE `id` = {$shopId};\n");
-                } elseif ($table === 'users') {
-                    // Do not delete Super Admin users
-                    fwrite($handle, "DELETE FROM `users` WHERE `shop_id` = {$shopId} AND `email` NOT IN ('softngear@gmail.com');\n");
-                } else {
-                    fwrite($handle, "DELETE FROM `{$table}` WHERE `shop_id` = {$shopId};\n");
-                }
-            }
-        }
-
-        // Company-level rows go last: the shop row references the company.
-        foreach ($companyRows as $table => $whereClause) {
-            if ($this->tableExists($table)) {
-                fwrite($handle, "DELETE FROM `{$table}` WHERE {$whereClause};\n");
-            }
-        }
-
+        // 2. Insert the backed-up rows, parents before children.
         fwrite($handle, "\n--\n-- Step 2: Insert backup records for Shop #{$shopId}\n--\n");
-
-        // 2. INSERT statements for the company (when owned by this shop alone) and shop rows
-        if (isset($companyRows['companies'])) {
-            $this->dumpTableDataWhere($pdo, $handle, 'companies', $companyRows['companies']);
+        foreach ($plan as $table => $whereClause) {
+            $this->dumpTableDataWhere($pdo, $handle, $table, $whereClause);
         }
 
-        $this->dumpTableDataWhere($pdo, $handle, 'shops', "`id` = {$shopId}");
-
-        // 3. INSERT direct tables
-        $tablesToInsert = array_reverse($directTables);
-        foreach ($tablesToInsert as $table) {
-            if ($table === 'shops' || ! $this->tableExists($table)) {
-                continue;
-            }
-
-            if ($table === 'users') {
-                $this->dumpTableDataWhere($pdo, $handle, 'users', "`shop_id` = {$shopId} AND `email` NOT IN ('softngear@gmail.com')");
-            } else {
-                $this->dumpTableDataWhere($pdo, $handle, $table, "`shop_id` = {$shopId}");
-            }
-        }
-
-        // 4. INSERT indirect tables
-        $indirectSelects = [
-            'product_units' => "`product_id` IN (SELECT `id` FROM `products` WHERE `shop_id` = {$shopId})",
-            'sale_items' => "`sale_id` IN (SELECT `id` FROM `sales` WHERE `shop_id` = {$shopId})",
-            'sale_payments' => "`sale_id` IN (SELECT `id` FROM `sales` WHERE `shop_id` = {$shopId})",
-            'sale_return_items' => "`sale_return_id` IN (SELECT `id` FROM `sale_returns` WHERE `shop_id` = {$shopId})",
-            'purchase_items' => "`purchase_id` IN (SELECT `id` FROM `purchases` WHERE `shop_id` = {$shopId})",
-            'purchase_payments' => "`purchase_id` IN (SELECT `id` FROM `purchases` WHERE `shop_id` = {$shopId})",
-            'purchase_return_items' => "`purchase_return_id` IN (SELECT `id` FROM `purchase_returns` WHERE `shop_id` = {$shopId})",
-            'purchase_delivery_order_items' => "`purchase_delivery_order_id` IN (SELECT `id` FROM `purchase_delivery_orders` WHERE `shop_id` = {$shopId})",
-            'purchase_delivery_receipt_items' => "`purchase_delivery_receipt_id` IN (SELECT `id` FROM `purchase_delivery_receipts` WHERE `shop_id` = {$shopId})",
-            'stock_transfer_items' => "`stock_transfer_id` IN (SELECT `id` FROM `stock_transfers` WHERE `shop_id` = {$shopId})",
-        ];
-
-        foreach ($indirectSelects as $table => $whereClause) {
-            if ($this->tableExists($table)) {
-                $this->dumpTableDataWhere($pdo, $handle, $table, $whereClause);
-            }
-        }
-
-        // 5. INSERT the company's members and billing (they reference users and subscriptions)
-        foreach (array_reverse(array_diff_key($companyRows, ['companies' => true]), true) as $table => $whereClause) {
-            if ($this->tableExists($table)) {
-                $this->dumpTableDataWhere($pdo, $handle, $table, $whereClause);
-            }
-        }
-
-        // Footer
         if ($driver === 'sqlite') {
             $footer = "PRAGMA foreign_keys = ON;\n"
                 ."-- Shop #{$shopId} restore completed on: ".now()->toDateTimeString()."\n";

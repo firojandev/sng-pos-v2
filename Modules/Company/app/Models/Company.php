@@ -3,9 +3,11 @@
 namespace Modules\Company\Models;
 
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
@@ -22,8 +24,13 @@ use Revoltify\Subscriptionify\Contracts\Subscribable;
  * and plan features) belongs to the company, and company-wide ERP data
  * (HR, payroll, accounting, customers, suppliers) is scoped to it.
  *
- * Every shop has a company. A company with a single shop is created
- * automatically and stays hidden from the shop owner.
+ * Types: a "company" (its plan covers all its shops); the "default" company
+ * grouping every standalone shop (no plan of its own); and a "standalone"
+ * company, the private record behind one standalone shop under the default
+ * company, holding that shop's own plan and keeping its data apart.
+ *
+ * Every shop has a company. The owner and admins of a "company" run it: its
+ * details, its shops and their admins.
  */
 class Company extends Model implements Subscribable
 {
@@ -36,6 +43,8 @@ class Company extends Model implements Subscribable
     protected $fillable = [
         'name',
         'slug',
+        'type',
+        'parent_id',
         'legal_name',
         'trade_license_no',
         'tin',
@@ -64,15 +73,86 @@ class Company extends Model implements Subscribable
         return CompanyFactory::new();
     }
 
+    public const TYPE_COMPANY = 'company';
+
+    public const TYPE_DEFAULT = 'default';
+
+    public const TYPE_STANDALONE = 'standalone';
+
     /**
-     * Create the hidden single-shop company for a shop that is being created
-     * without one, copying the shop's identity details.
+     * The Default Company that groups every standalone shop (created the
+     * first time it's needed; id 1 on a fresh install).
+     */
+    public static function defaultCompany(): self
+    {
+        return static::withTrashed()->where('type', self::TYPE_DEFAULT)->oldest('id')->first()
+            ?? static::create([
+                'name' => 'ডিফল্ট কোম্পানি (Default Company)',
+                'slug' => static::generateUniqueSlug('default-company'),
+                'type' => self::TYPE_DEFAULT,
+                'status' => 'active',
+            ]);
+    }
+
+    public function isDefault(): bool
+    {
+        return $this->type === self::TYPE_DEFAULT;
+    }
+
+    public function isStandalone(): bool
+    {
+        return $this->type === self::TYPE_STANDALONE;
+    }
+
+    /**
+     * A real company (not the default grouping, not a standalone shop).
+     */
+    public function isBusiness(): bool
+    {
+        return ($this->type ?? self::TYPE_COMPANY) === self::TYPE_COMPANY;
+    }
+
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_id');
+    }
+
+    public function children(): HasMany
+    {
+        return $this->hasMany(self::class, 'parent_id');
+    }
+
+    /**
+     * The name shown for the company a shop belongs to: a standalone shop
+     * shows the Default Company.
+     */
+    public function displayName(): string
+    {
+        return $this->isStandalone() ? ($this->parent?->name ?? static::defaultCompany()->name) : $this->name;
+    }
+
+    /**
+     * The standalone shops grouped under this (default) company.
+     *
+     * @return Builder<Shop>
+     */
+    public function standaloneShops(): Builder
+    {
+        return Shop::query()->whereHas('company', fn ($company) => $company->where('type', self::TYPE_STANDALONE)->where('parent_id', $this->id));
+    }
+
+    /**
+     * Create the private company for a shop that is being created
+     * without one (a standalone shop under the Default Company), copying the
+     * shop's identity details.
      */
     public static function createForShop(Shop $shop): self
     {
         return static::create([
             'name' => $shop->name,
             'slug' => static::generateUniqueSlug((string) ($shop->slug ?: $shop->name)),
+            'type' => self::TYPE_STANDALONE,
+            'parent_id' => static::defaultCompany()->id,
             'phone' => $shop->phone,
             'email' => $shop->email,
             'address' => $shop->address,
@@ -162,6 +242,36 @@ class Company extends Model implements Subscribable
      * Company screens and labels are only shown once a company runs more
      * than one shop; a single-shop company is presented as "just a shop".
      */
+    /**
+     * Company roles: the owner, company admins, and members (shop staff).
+     */
+    public const ROLE_OWNER = 'Owner';
+
+    public const ROLE_ADMIN = 'Admin';
+
+    public const ROLE_MEMBER = 'Member';
+
+    /**
+     * Whether the user runs this company (its owner or a company admin).
+     */
+    public function isAdministeredBy(User $user): bool
+    {
+        return $this->users()
+            ->where('users.id', $user->id)
+            ->where(fn ($query) => $query->where('company_user.is_owner', true)->orWhereIn('company_user.role', [self::ROLE_OWNER, self::ROLE_ADMIN]))
+            ->exists();
+    }
+
+    public function hasOwner(): bool
+    {
+        return $this->users()->wherePivot('is_owner', true)->exists();
+    }
+
+    public function owner(): ?User
+    {
+        return $this->users()->wherePivot('is_owner', true)->oldest('company_user.id')->first();
+    }
+
     public function hasMultipleShops(): bool
     {
         return $this->shops()->count() > 1;

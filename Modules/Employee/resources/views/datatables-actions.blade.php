@@ -1,4 +1,15 @@
 <div class="row-actions" style="display:flex; align-items:center; justify-content:flex-end; gap:6px;">
+    @can('employees.view')
+        <x-core::button
+            size="sm"
+            variant="soft"
+            color="teal"
+            icon="user"
+            :href="route('employees.profile.edit', $employee)"
+            title="পূর্ণ প্রোফাইল / Full Profile"
+        />
+    @endcan
+
     @can('employees.edit')
         <x-core::button
             size="sm"

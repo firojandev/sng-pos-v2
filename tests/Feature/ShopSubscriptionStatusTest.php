@@ -165,6 +165,8 @@ class ShopSubscriptionStatusTest extends TestCase
         $plan = Plan::first();
 
         $response = $this->actingAs($superAdmin)->post(route('shops.store'), [
+            'company_mode' => 'new',
+            'new_company_name' => 'Test Company 167',
             'name' => 'Existing Owner Shop',
             'slug' => 'existing-owner-shop',
             'phone' => '01711223344', // shop phone matching owner phone

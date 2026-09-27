@@ -11,8 +11,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
+use Modules\Company\Models\Company;
 use Modules\Finance\Models\Account;
 use Modules\Finance\Models\AccountTransaction;
+use Modules\Product\Models\Category;
 use Modules\Shop\DataTables\ShopsDataTable;
 use Modules\Shop\Http\Requests\StoreShopAdminRequest;
 use Modules\Shop\Http\Requests\StoreShopRequest;
@@ -20,6 +22,7 @@ use Modules\Shop\Http\Requests\UpdateShopRequest;
 use Modules\Shop\Http\Requests\UpdateShopSubscriptionRequest;
 use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
+use Modules\Shop\Services\ShopProvisioner;
 use Revoltify\Subscriptionify\Enums\SubscriptionStatus;
 use Spatie\Permission\Models\Role;
 
@@ -107,8 +110,15 @@ class ShopController extends Controller
     {
         return view('shop::create', [
             'shop' => new Shop,
+            'sharedCategories' => Category::withoutGlobalScopes()
+                ->whereNull('company_id')
+                ->where('type', 'product')
+                ->whereNull('parent_id')
+                ->orderBy('name')
+                ->get(['id', 'name']),
             'nextStoreCode' => Shop::generateNextStoreCode(),
             'plans' => Plan::where('is_active', true)->orWhere('status', 'active')->orderBy('sort_order')->orderBy('price')->get(),
+            'companies' => Company::where('type', Company::TYPE_COMPANY)->withCount('shops')->orderBy('name')->get(['id', 'name']),
             'existingOwners' => User::whereDoesntHave('roles', fn ($q) => $q->where('name', 'Super Admin'))
                 ->with(['shop', 'roles'])
                 ->orderBy('name')
@@ -116,9 +126,9 @@ class ShopController extends Controller
         ]);
     }
 
-    public function store(StoreShopRequest $request): RedirectResponse
+    public function store(StoreShopRequest $request, ShopProvisioner $provisioner): RedirectResponse
     {
-        DB::transaction(function () use ($request) {
+        DB::transaction(function () use ($request, $provisioner) {
             $storeCode = $request->validated('store_code') ?: Shop::generateNextStoreCode();
             $ownerType = $request->input('owner_type', 'new');
 
@@ -126,10 +136,25 @@ class ShopController extends Controller
                 ? User::findOrFail($request->validated('existing_user_id'))
                 : null;
 
-            // A new shop for an existing owner joins that owner's company;
-            // otherwise the shop gets its own (hidden) company automatically.
+            // The company comes first: none (a standalone shop gets its own
+            // private record under the Default Company, carrying its plan), an
+            // existing company, or a new one created now.
+            $company = match ($request->validated('company_mode')) {
+                'new' => Company::create([
+                    'name' => $request->validated('new_company_name'),
+                    'slug' => Company::generateUniqueSlug($request->validated('new_company_name')),
+                    'type' => Company::TYPE_COMPANY,
+                    'phone' => $request->validated('new_company_phone') ?: $request->validated('phone'),
+                    'email' => $request->validated('new_company_email'),
+                    'address' => $request->validated('new_company_address') ?: $request->validated('address'),
+                    'status' => 'active',
+                ]),
+                'existing' => Company::findOrFail($request->validated('company_id')),
+                default => null,
+            };
+
             $shop = Shop::create([
-                'company_id' => $existingOwner?->primaryCompany()?->id,
+                'company_id' => $company?->id,
                 'name' => $request->validated('name'),
                 'slug' => $request->validated('slug'),
                 'store_code' => $storeCode,
@@ -178,11 +203,14 @@ class ShopController extends Controller
                 ],
             ]);
 
+            $shop->categories()->sync($request->validated('category_ids') ?? []);
+
+            // The shop's first admin owns the company only when it has no owner yet.
+            $ownsCompany = ! $shop->company->hasOwner();
             $shop->company->users()->syncWithoutDetaching([
-                $admin->id => [
-                    'role' => $roleName,
-                    'is_owner' => true,
-                ],
+                $admin->id => $ownsCompany
+                    ? ['role' => Company::ROLE_OWNER, 'is_owner' => true]
+                    : ['role' => Company::ROLE_MEMBER, 'is_owner' => false],
             ]);
 
             // Billing is per company: a shop joining a company that is already
@@ -257,6 +285,9 @@ class ShopController extends Controller
                     'created_by' => auth()->id() ?? $admin->id,
                 ]);
             }
+
+            // Main branch and warehouse (the cash account above is kept).
+            $provisioner->provision($shop);
         });
 
         return redirect()->route('shops.index')->with('status', 'দোকান ও এডমিন সফলভাবে তৈরি করা হয়েছে');
@@ -265,9 +296,10 @@ class ShopController extends Controller
     public function edit(Shop $shop): View
     {
         return view('shop::edit', [
-            'shop' => $shop,
+            'shop' => $shop->load('company'),
             'admins' => $shop->admins()->with('roles')->get(),
-            'subscription' => $shop->subscription(),
+            'subscription' => $shop->billingSubscription(),
+            'companies' => Company::where('type', Company::TYPE_COMPANY)->orderBy('name')->get(['id', 'name', 'slug']),
             'plans' => Plan::where('is_active', true)->orWhere('status', 'active')->orderBy('price')->get(),
         ]);
     }

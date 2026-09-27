@@ -4,6 +4,7 @@ namespace Modules\Purchase\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Modules\Core\Support\PaymentMethods;
+use Modules\Core\Support\TenantRules;
 
 class StorePurchaseRequest extends FormRequest
 {
@@ -15,7 +16,7 @@ class StorePurchaseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'supplier_id' => ['nullable', 'exists:suppliers,id'],
+            'supplier_id' => ['nullable', TenantRules::companyExists('suppliers')],
             'supplier_name' => ['nullable', 'string', 'max:255'],
             'supplier_phone' => ['nullable', 'string', 'max:30'],
             'supplier_address' => ['nullable', 'string', 'max:255'],
@@ -38,14 +39,14 @@ class StorePurchaseRequest extends FormRequest
             'payments.*.amount' => ['required', 'numeric', 'min:0.01'],
             'note' => ['nullable', 'string'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.product_id' => ['required', 'exists:products,id'],
+            'items.*.product_id' => ['required', TenantRules::catalogExists('products')],
             'items.*.batch_no' => ['nullable', 'string', 'max:255'],
             'items.*.barcode' => ['nullable', 'string', 'max:64'],
             'items.*.mfg_date' => ['nullable', 'date'],
             'items.*.expiry_date' => ['nullable', 'date', 'after_or_equal:items.*.mfg_date'],
             'items.*.quantity' => ['required', 'numeric', 'min:0.01'],
             'items.*.received_qty' => ['nullable', 'numeric', 'min:0'],
-            'items.*.unit_id' => ['nullable', 'exists:units,id'],
+            'items.*.unit_id' => ['nullable', TenantRules::catalogExists('units')],
             'items.*.purchase_price' => ['required', 'numeric', 'min:0'],
             'items.*.sale_price' => ['required', 'numeric', 'min:0'],
         ];

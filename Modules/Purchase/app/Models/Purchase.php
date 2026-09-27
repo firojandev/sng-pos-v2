@@ -12,6 +12,7 @@ use Modules\Core\Observers\AuditObserver;
 use Modules\Product\Models\Batch;
 use Modules\Product\Models\StockMovement;
 use Modules\Sales\Models\SaleItem;
+use Modules\Shop\Models\Shop;
 use Modules\Shop\Models\Warehouse;
 use Modules\Supplier\Models\Supplier;
 
@@ -43,6 +44,11 @@ class Purchase extends Model
         'paid_amount' => 'decimal:2',
         'due_amount' => 'decimal:2',
     ];
+
+    public function shop(): BelongsTo
+    {
+        return $this->belongsTo(Shop::class);
+    }
 
     public function supplier(): BelongsTo
     {

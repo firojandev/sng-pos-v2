@@ -15,7 +15,7 @@ class SaleItem extends Model
 
     protected $fillable = [
         'sale_id', 'product_id', 'batch_id', 'unit_id', 'quantity', 'unit_price',
-        'discount', 'total', 'warranty_expires_at',
+        'discount', 'total', 'cost_total', 'warranty_expires_at',
     ];
 
     protected $casts = [
@@ -23,6 +23,7 @@ class SaleItem extends Model
         'unit_price' => 'decimal:2',
         'discount' => 'decimal:2',
         'total' => 'decimal:2',
+        'cost_total' => 'decimal:2',
         'warranty_expires_at' => 'date',
     ];
 

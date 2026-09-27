@@ -16,6 +16,7 @@
                     'icon' =>
                         '<path d="M4 11.5 12 4l8 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-9" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
                 ],
+
                 [
                     'key' => 'shops',
                     'route' => 'shops.index',
@@ -23,6 +24,22 @@
                     'en' => 'Shops',
                     'icon' =>
                         '<path d="M3 9.5 12 4l9 5.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>',
+                ],
+                [
+                    'key' => 'companies',
+                    'route' => 'companies.index',
+                    'bn' => 'কোম্পানিসমূহ',
+                    'en' => 'Companies',
+                    'icon' =>
+                        '<rect x="3" y="7" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="1.7"/><path d="M3 12h18" stroke="currentColor" stroke-width="1.5"/>',
+                ],
+                [
+                    'key' => 'catalogue-review',
+                    'route' => 'catalogue-review.index',
+                    'bn' => 'ক্যাটালগ রিভিউ',
+                    'en' => 'Catalogue Review',
+                    'icon' =>
+                        '<path d="M4 7h11M4 12h8M4 17h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="m14 16 2.5 2.5L21 14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
                 ],
                 [
                     'key' => 'plans',
@@ -72,6 +89,14 @@
                     'en' => 'Dashboard',
                     'icon' =>
                         '<path d="M4 11.5 12 4l8 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-9" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+                ],
+                [
+                    'key' => 'tasks',
+                    'route' => 'tasks.index',
+                    'bn' => 'টাস্ক',
+                    'en' => 'Tasks',
+                    'icon' =>
+                        '<rect x="4" y="3.5" width="16" height="17" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="m8 9 1.5 1.5L12 8M8 15l1.5 1.5L12 14M14.5 9.5H17M14.5 15.5H17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
                 ],
             ],
         ],
@@ -225,6 +250,14 @@
                         '<circle cx="9" cy="8" r="3.2" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 19c.7-3 2.8-4.6 5.5-4.6s4.8 1.6 5.5 4.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="17" cy="9" r="2.3" stroke="currentColor" stroke-width="1.5"/><path d="M15 19c.3-1.7 1.3-2.9 2.8-3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
                 ],
                 [
+                    'key' => 'loyalty',
+                    'route' => 'loyalty.index',
+                    'bn' => 'লয়্যালটি পয়েন্ট',
+                    'en' => 'Loyalty Points',
+                    'icon' =>
+                        '<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8-4.3-4.1 5.9-.9L12 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+                ],
+                [
                     'key' => 'suppliers',
                     'route' => 'suppliers.index',
                     'bn' => 'সরবরাহকারী',
@@ -311,6 +344,102 @@
             ],
         ],
         [
+            'label' => ['bn' => 'মানবসম্পদ', 'en' => 'HR'],
+            'gated' => true,
+            'items' => [
+                [
+                    'key' => 'employees',
+                    'route' => 'employees.index',
+                    'bn' => 'কর্মচারী',
+                    'en' => 'Employees',
+                    'icon' =>
+                        '<path d="M17 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="7" r="3.2" stroke="currentColor" stroke-width="1.6"/><path d="M19 20v-2a3.6 3.6 0 0 0-2.5-3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14.5 3.6a3.2 3.2 0 0 1 0 6.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
+                ],
+                [
+                    'key' => 'attendance',
+                    'route' => 'attendance.sheet',
+                    'bn' => 'হাজিরা',
+                    'en' => 'Attendance',
+                    'icon' =>
+                        '<rect x="3.5" y="5" width="17" height="15" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="m9 15 2 2 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+                ],
+                [
+                    'key' => 'leave',
+                    'route' => 'leave-requests.index',
+                    'bn' => 'ছুটি',
+                    'en' => 'Leave',
+                    'icon' =>
+                        '<path d="M4 19c5 0 9-3 10-9 1 4 3 6 6 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M14 10c-1-3-3-5-6-6 4 0 7 2 8 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+                ],
+                [
+                    'key' => 'payroll',
+                    'route' => 'payroll.runs.index',
+                    'bn' => 'বেতন (পে-রোল)',
+                    'en' => 'Payroll',
+                    'icon' =>
+                        '<rect x="2.5" y="6" width="19" height="12" rx="2" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.6"/><path d="M6 9.5v5M18 9.5v5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+                ],
+                [
+                    'key' => 'payroll-setup',
+                    'route' => 'payroll-setup.index',
+                    'bn' => 'পে-রোল সেটআপ',
+                    'en' => 'Payroll Setup',
+                    'icon' =>
+                        '<path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="9" cy="6" r="2" fill="currentColor"/><circle cx="15" cy="12" r="2" fill="currentColor"/><circle cx="7" cy="18" r="2" fill="currentColor"/>',
+                ],
+                [
+                    'key' => 'hr-setup',
+                    'route' => 'hr-setup.index',
+                    'bn' => 'এইচআর সেটআপ',
+                    'en' => 'HR Setup',
+                    'icon' =>
+                        '<circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+                ],
+            ],
+        ],
+        [
+            'label' => ['bn' => 'হিসাববিজ্ঞান', 'en' => 'Accounting'],
+            'gated' => true,
+            'items' => [
+                [
+                    'key' => 'ledger-accounts',
+                    'permission' => 'accounting',
+                    'route' => 'ledger-accounts.index',
+                    'bn' => 'হিসাবের তালিকা',
+                    'en' => 'Chart of Accounts',
+                    'icon' =>
+                        '<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M5 17a3 3 0 0 1 3-3h11" stroke="currentColor" stroke-width="1.6"/>',
+                ],
+                [
+                    'key' => 'journal-entries',
+                    'permission' => 'accounting',
+                    'route' => 'journal-entries.index',
+                    'bn' => 'জার্নাল এন্ট্রি',
+                    'en' => 'Journal Entries',
+                    'icon' =>
+                        '<path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+                ],
+                [
+                    'key' => 'accounting-reports',
+                    'permission' => 'accounting',
+                    'route' => 'accounting-reports.trial-balance',
+                    'bn' => 'হিসাবের রিপোর্ট',
+                    'en' => 'Accounting Reports',
+                    'icon' =>
+                        '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+                ],
+                [
+                    'key' => 'accounting-setup',
+                    'permission' => 'accounting',
+                    'route' => 'accounting-setup.index',
+                    'bn' => 'হিসাব সেটআপ',
+                    'en' => 'Accounting Setup',
+                    'icon' =>
+                        '<circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+                ],
+            ],
+        ],
+        [
             'label' => ['bn' => 'প্রশাসন', 'en' => 'Administration'],
             'gated' => true,
             'items' => [
@@ -321,14 +450,6 @@
                     'en' => 'Branches & Warehouses',
                     'icon' =>
                         '<path d="M3 9.5 12 4l9 5.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>',
-                ],
-                [
-                    'key' => 'employees',
-                    'route' => 'employees.index',
-                    'bn' => 'কর্মচারী',
-                    'en' => 'Employees',
-                    'icon' =>
-                        '<path d="M17 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="7" r="3.2" stroke="currentColor" stroke-width="1.6"/><path d="M19 20v-2a3.6 3.6 0 0 0-2.5-3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14.5 3.6a3.2 3.2 0 0 1 0 6.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
                 ],
                 [
                     'key' => 'users',
@@ -355,6 +476,24 @@
                     'gated' => false,
                     'icon' =>
                         '<circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/><path d="M19 12a7 7 0 0 0-.14-1.4l2-1.5-2-3.5-2.3.9a7 7 0 0 0-2.4-1.4L14 2h-4l-.16 2.1a7 7 0 0 0-2.4 1.4l-2.3-.9-2 3.5 2 1.5A7 7 0 0 0 5 12a7 7 0 0 0 .14 1.4l-2 1.5 2 3.5 2.3-.9a7 7 0 0 0 2.4 1.4L10 22h4l.16-2.1a7 7 0 0 0 2.4-1.4l2.3.9 2-3.5-2-1.5c.09-.46.14-.93.14-1.4Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>',
+                ],
+                [
+                    'key' => 'default-company',
+                    'route' => 'default-company.index',
+                    'bn' => 'ডিফল্ট কোম্পানি',
+                    'en' => 'Default Company',
+                    'gated' => false,
+                    'icon' =>
+                        '<path d="M3 21h18M5 21V8l7-5 7 5v13" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 21v-5h6v5M9 11h.01M15 11h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+                ],
+                [
+                    'key' => 'company-settings',
+                    'route' => 'company-settings.edit',
+                    'bn' => 'আমার কোম্পানি',
+                    'en' => 'My Company',
+                    'gated' => false,
+                    'icon' =>
+                        '<rect x="3" y="7" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="1.7"/><path d="M3 12h18" stroke="currentColor" stroke-width="1.5"/>',
                 ],
                 [
                     'key' => 'printer-settings',
@@ -499,6 +638,11 @@
         if (isset($item['enabled']) && !$item['enabled']) {
             return false;
         }
+        // Tasks are for a company's owner, admins and staff (on its plan) —
+        // not standalone shops, not the super admin.
+        if ($item['key'] === 'tasks') {
+            return \Modules\Task\Models\Task::isAvailableTo($user);
+        }
         if ($user && $user->isSuperAdmin()) {
             return true;
         }
@@ -507,6 +651,13 @@
         }
         if ($item['key'] === 'settings') {
             return (bool) ($user && $user->isShopAdmin());
+        }
+        if ($item['key'] === 'default-company') {
+            return (bool) ($user && $user->isDefaultCompanyAdmin());
+        }
+        if ($item['key'] === 'company-settings') {
+            // The company's owner and admins run it: details, shops, shop admins.
+            return (bool) ($user && $user->isCompanyAdmin());
         }
         if ($item['key'] === 'backup') {
             return (bool) ($user && $user->isSuperAdmin());
@@ -693,21 +844,25 @@
             @endif
             <div class="user-info">
                 <div class="nm" title="{{ $user->name ?? '' }}">{{ $user->name ?? 'User' }}</div>
-                <div class="role" title="{{ $isSuperAdmin ? 'Super Admin' : $user->shop->name ?? '' }}">
+                @php
+                    $footerCompany = !$isSuperAdmin && $user?->shop?->company?->hasMultipleShops() ? $user->shop->company : null;
+                    $footerShopLabel = ($footerCompany ? $footerCompany->name . ' › ' : '') . ($user?->shop?->name ?? '');
+                @endphp
+                <div class="role" title="{{ $isSuperAdmin ? 'Super Admin' : $footerShopLabel }}">
                     @if ($isSuperAdmin)
                         Super Admin
                     @elseif ($user && $user->activeShops()->count() > 1)
                         <a href="{{ route('shops.select') }}"
                             style="color:inherit; text-decoration:none; display:inline-flex; align-items:center; gap:4px;"
                             title="দোকান পরিবর্তন করুন / Switch Shop">
-                            <span>{{ $user->shop->name ?? 'দোকান' }}</span>
+                            <span>{{ $footerShopLabel ?: 'দোকান' }}</span>
                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="m6 9 6 6 6-6" />
                             </svg>
                         </a>
                     @else
-                        {{ $user->shop->name ?? 'Staff' }}
+                        {{ $footerShopLabel ?: 'Staff' }}
                     @endif
                 </div>
             </div>

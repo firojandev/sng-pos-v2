@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Modules\Customer\Models\Customer;
+use Modules\Customer\Services\LoyaltyService;
 use Modules\Finance\Models\Account;
 use Modules\Sales\Http\Requests\StoreQuickSaleRequest;
 use Modules\Sales\Models\Sale;
@@ -103,6 +104,8 @@ class QuickSaleController extends Controller
                     'payment_date' => $sale->sale_date ?? now()->toDateString(),
                 ]);
             }
+
+            app(LoyaltyService::class)->syncSale($sale);
 
             return $sale;
         });

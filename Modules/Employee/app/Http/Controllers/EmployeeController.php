@@ -128,6 +128,14 @@ class EmployeeController extends Controller
 
     public function destroy(Request $request, Employee $employee): RedirectResponse|JsonResponse
     {
+        if ($employee->hasPayrollHistory()) {
+            $message = 'এই কর্মচারীর বেতন/অগ্রিমের রেকর্ড আছে, মুছে ফেলা যাবে না; অবস্থা "নিষ্ক্রিয়" করুন (The employee has payroll records; set them inactive instead)।';
+
+            return $request->ajax() || $request->wantsJson()
+                ? response()->json(['success' => false, 'message' => $message], 422)
+                : back()->withErrors(['employee' => $message]);
+        }
+
         $employee->delete();
 
         if ($request->ajax() || $request->wantsJson()) {

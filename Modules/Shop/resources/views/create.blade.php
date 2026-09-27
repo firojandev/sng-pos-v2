@@ -73,6 +73,59 @@
                 <div class="shop-form-grid">
                     {{-- Left Column: Shop Details, Admin Info & Feature Toggles --}}
                     <div style="display:flex; flex-direction:column; gap:20px;">
+                        {{-- Card 0: Company (every shop belongs to a company) --}}
+                        @php $companyMode = old('company_mode', 'standalone'); @endphp
+                        <div class="panel" style="margin-top:0;">
+                            <div class="panel-head" style="padding:14px 18px;">
+                                <div class="panel-title" style="display:flex; align-items:center; gap:8px; font-size:15px;">
+                                    <x-core::icon name="building" size="18" style="color:var(--teal-800);" />
+                                    <span class="bn">কোম্পানি</span>
+                                    <span class="en" style="display:none;">Company</span>
+                                </div>
+                            </div>
+                            <div class="panel-body" style="padding:18px;">
+                                <div class="helper" style="background:var(--blue-100); color:var(--ink-800); border:1px solid var(--border); margin-top:0; margin-bottom:14px; padding:10px 14px; border-radius:8px; font-size:12.5px;">
+                                    <span class="bn">কোম্পানি ছাড়া দোকান হলে "একক দোকান" বেছে নিন — দোকানটি নিজস্ব প্ল্যান পাবে এবং ডিফল্ট কোম্পানির তালিকায় দেখাবে। একই কোম্পানির দোকানগুলো কোম্পানির প্ল্যান, গ্রাহক, পণ্য তালিকা, হিসাব ও এইচআর একসাথে ব্যবহার করে।</span>
+                                    <span class="en" style="display:none;">For a shop without a company choose "Standalone Shop" — it gets its own plan and is listed under the Default Company. Shops of one company share the company's plan, customers, catalogue, accounts and HR.</span>
+                                </div>
+                                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:14px;">
+                                    @foreach (['standalone' => ['shopping-bag', 'একক দোকান', 'Standalone Shop', 'নিজস্ব প্ল্যান, ডিফল্ট কোম্পানির অধীনে', 'Own plan, under Default Company'], 'existing' => ['building', 'বিদ্যমান কোম্পানি', 'Existing Company', 'কোম্পানির প্ল্যান প্রযোজ্য', 'Uses the company plan'], 'new' => ['plus', 'নতুন কোম্পানি', 'New Company', 'এখনই তৈরি করুন', 'Create it now']] as $mode => [$icon, $titleBn, $titleEn, $hintBn, $hintEn])
+                                        <label class="form-radio-card company-mode-card {{ $companyMode === $mode ? 'active' : '' }}" style="padding:10px 14px; cursor:pointer; border-radius:10px; margin:0;">
+                                            <input type="radio" name="company_mode" value="{{ $mode }}" class="company-mode-radio" {{ $companyMode === $mode ? 'checked' : '' }} style="display:none;">
+                                            <div style="display:flex; align-items:center; gap:8px;">
+                                                <div style="width:26px; height:26px; border-radius:6px; background:var(--teal-50); color:var(--teal-800); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                                    <x-core::icon :name="$icon" size="15" />
+                                                </div>
+                                                <div>
+                                                    <div style="font-weight:700; font-size:13px; color:var(--ink-900);"><span class="bn">{{ $titleBn }}</span><span class="en" style="display:none;">{{ $titleEn }}</span></div>
+                                                    <div style="font-size:11px; color:var(--ink-500);"><span class="bn">{{ $hintBn }}</span><span class="en" style="display:none;">{{ $hintEn }}</span></div>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    @endforeach
+                                </div>
+
+                                <div id="section-existing-company" style="{{ $companyMode === 'existing' ? '' : 'display:none;' }}">
+                                    <x-core::select size="sm" name="company_id" id="shop-company-select" label="কোম্পানি" label-en="Company" :value="old('company_id')"
+                                        placeholder="-- কোম্পানি বেছে নিন --" placeholder-en="-- Choose a company --" :required="$companyMode === 'existing'"
+                                        :options="$companies->mapWithKeys(fn ($company) => [$company->id => $company->name.' ('.$company->shops_count.' shop'.($company->shops_count === 1 ? '' : 's').')'])->all()" />
+                                </div>
+
+                                <div id="section-new-company" style="{{ $companyMode === 'new' ? '' : 'display:none;' }}">
+                                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
+                                        <x-core::input size="sm" name="new_company_name" label="কোম্পানির নাম" label-en="Company Name" :value="old('new_company_name')" :required="$companyMode === 'new'" :disabled="$companyMode !== 'new'" />
+                                        <x-core::input size="sm" name="new_company_phone" label="ফোন" label-en="Phone" :value="old('new_company_phone')" :disabled="$companyMode !== 'new'" />
+                                        <x-core::input size="sm" type="email" name="new_company_email" label="ইমেইল" label-en="Email" :value="old('new_company_email')" :disabled="$companyMode !== 'new'" />
+                                        <x-core::input size="sm" name="new_company_address" label="ঠিকানা" label-en="Address" :value="old('new_company_address')" :disabled="$companyMode !== 'new'" />
+                                    </div>
+                                    <p style="font-size:12px; color:var(--ink-500); margin:8px 0 0;">
+                                        <span class="bn">নিচের মালিক/এডমিন এই নতুন কোম্পানির মালিক হবেন।</span>
+                                        <span class="en" style="display:none;">The owner/admin below becomes this new company's owner.</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
                         {{-- Card 1: Shop Basic Information --}}
                         <div class="panel" style="margin-top:0;">
                             <div class="panel-head" style="padding:14px 18px;">
@@ -382,6 +435,40 @@
                             </div>
                         </div>
 
+                        {{-- Product categories the new shop sells (shared catalogue) --}}
+                        <div class="panel" style="margin-top:0;">
+                            <div class="panel-head" style="padding:14px 18px;">
+                                <div class="panel-title" style="display:flex; align-items:center; gap:8px; font-size:15px;">
+                                    <x-core::icon name="tag" size="18" style="color:var(--teal-800);" />
+                                    <span class="bn">পণ্যের ক্যাটাগরি</span>
+                                    <span class="en" style="display:none;">Product Categories</span>
+                                </div>
+                            </div>
+                            <div class="panel-body" style="padding:18px;">
+                                <p style="font-size:12.5px; color:var(--ink-600); margin:0 0 10px;">
+                                    <span class="bn">দোকানটি কোন ধরনের পণ্য বিক্রি করবে তা নির্বাচন করুন। দোকানের মালিক পরে ক্যাটালগ থেকে পরিবর্তন করতে পারবেন।</span>
+                                    <span class="en" style="display:none;">Choose what kinds of products the shop sells. The owner can change this later from the Catalogue tab.</span>
+                                </p>
+                                <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:8px;">
+                                    @forelse ($sharedCategories as $category)
+                                        <x-core::checkbox
+                                            size="sm"
+                                            name="category_ids[]"
+                                            :value="$category->id"
+                                            :checked="in_array($category->id, old('category_ids', []))"
+                                        >
+                                            <span style="font-size:13px;">{{ $category->name }}</span>
+                                        </x-core::checkbox>
+                                    @empty
+                                        <span style="font-size:12.5px; color:var(--ink-500);">
+                                            <span class="bn">শেয়ার্ড ক্যাটালগে এখনো কোনো ক্যাটাগরি নেই।</span>
+                                            <span class="en" style="display:none;">The shared catalogue has no categories yet.</span>
+                                        </span>
+                                    @endforelse
+                                </div>
+                            </div>
+                        </div>
+
                         {{-- Card 4: Subscription Package & Duration --}}
                         <div class="panel" style="margin-top:0;">
                             <div class="panel-head" style="padding:14px 18px;">
@@ -392,6 +479,10 @@
                                 </div>
                             </div>
                             <div class="panel-body" style="padding:18px;">
+                                <div id="plan-uses-company-note" class="helper" style="{{ $companyMode === 'existing' ? '' : 'display:none;' }} background:var(--blue-100); color:var(--ink-800); border:1px solid var(--border); margin-top:0; margin-bottom:12px; padding:8px 12px; border-radius:8px; font-size:12.5px;">
+                                    <span class="bn">কোম্পানির দোকান কোম্পানির প্ল্যান ব্যবহার করে; কোম্পানির প্ল্যান না থাকলে এখানে বেছে নেওয়া প্ল্যান কোম্পানিতে যুক্ত হবে।</span>
+                                    <span class="en" style="display:none;">A company's shop uses the company plan; if the company has none yet, the plan chosen here is given to the company.</span>
+                                </div>
                                 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:12px;">
                                     <div>
                                         <x-core::form-group name="plan_id" label="প্যাকেজ / প্ল্যান নির্বাচন" label-en="Select Package / Plan" icon="tag">
@@ -838,6 +929,19 @@
                     updateNewOwnerPreview();
                 }
             }
+
+            $(document).on('change', '.company-mode-radio', function () {
+                var isNew = $(this).val() === 'new';
+                $('.company-mode-card').removeClass('active');
+                $(this).closest('.company-mode-card').addClass('active');
+
+                var isExisting = $(this).val() === 'existing';
+                $('#section-new-company').toggle(isNew).find('input').prop('disabled', !isNew);
+                $('#section-new-company').find('input[name="new_company_name"]').prop('required', isNew);
+                $('#section-existing-company').toggle(isExisting);
+                $('#shop-company-select').prop('disabled', !isExisting).prop('required', isExisting);
+                $('#plan-uses-company-note').toggle(isExisting);
+            });
 
             $(document).on('change', '.owner-type-radio', function () {
                 var val = $(this).val();
