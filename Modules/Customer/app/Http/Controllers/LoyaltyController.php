@@ -90,7 +90,8 @@ class LoyaltyController extends Controller
         $editing = $request->integer('sale_id') ? Sale::find($request->integer('sale_id')) : null;
 
         return response()->json([
-            'active' => $this->loyalty->isActiveAt(auth()->user()->shop),
+            // The shop's plan includes loyalty and its programme is running.
+            'active' => (bool) auth()->user()->shop?->hasFeature('loyalty') && $this->loyalty->isActiveAt(auth()->user()->shop),
             ...$this->loyalty->summary($customer, $editing),
         ]);
     }

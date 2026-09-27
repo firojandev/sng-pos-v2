@@ -53,12 +53,14 @@ class JournalEntryController extends Controller
                 ->where('allow_manual_posting', true)
                 ->orderBy('code')
                 ->get(),
+            // In the company workspace the entry may be for one of the shops.
+            'shops' => app(TenantContext::class)->shopId() ? collect() : $this->companyShops()->pluck('name', 'id'),
         ]);
     }
 
     public function store(StoreJournalEntryRequest $request, LedgerService $ledger): RedirectResponse
     {
-        $shopId = app(TenantContext::class)->shopId();
+        $shopId = app(TenantContext::class)->shopId() ?? $request->validated('shop_id');
 
         $entry = $ledger->post(
             $this->companyId(),

@@ -46,8 +46,10 @@ class AccountingScreensTest extends TestCase
         $this->ctg = Shop::create(['company_id' => $company->id, 'name' => 'Ctg Outlet', 'slug' => 'ctg-outlet', 'status' => 'active']);
         $this->subscribeShopToFeatures($this->dhaka, Features::keys());
 
-        $this->admin = User::factory()->create(['shop_id' => $this->dhaka->id]);
-        $this->admin->syncRoles(['Admin']);
+        // Accounting is run at company level, by the company's owner.
+        $company->update(['type' => Company::TYPE_COMPANY]);
+        $this->admin = User::factory()->create();
+        $company->users()->attach($this->admin->id, ['role' => Company::ROLE_OWNER, 'is_owner' => true]);
         $this->actingAs($this->admin);
         $this->chart = app(ChartOfAccounts::class);
     }
@@ -109,6 +111,7 @@ class AccountingScreensTest extends TestCase
         $this->post(route('journal-entries.store'), [
             'entry_date' => now()->toDateString(),
             'narration' => 'Owner brings cash',
+            'shop_id' => $this->dhaka->id,
             'lines' => [['ledger_account_id' => $cash->id, 'debit' => 5000], ['ledger_account_id' => $capital->id, 'credit' => 5000]],
         ])->assertRedirect();
 

@@ -56,6 +56,10 @@ class ErpPlanFeaturesTest extends TestCase
         $plan = $shop->activeSubscription->plan;
         $owner = User::factory()->create(['shop_id' => $shop->id]);
         $owner->syncRoles(['Admin']);
+        // Accounting is company level: the company's owner, not the shop admin.
+        $companyOwner = User::factory()->create();
+        $company->users()->attach($companyOwner->id, ['role' => Company::ROLE_OWNER, 'is_owner' => true]);
+        $userFor = fn (string $feature) => $feature === 'accounting' ? $companyOwner->fresh() : $owner->fresh();
 
         $pages = [
             'accounting' => route('ledger-accounts.index'),
@@ -68,8 +72,8 @@ class ErpPlanFeaturesTest extends TestCase
             'tasks' => route('tasks.index'),
         ];
 
-        foreach ($pages as $url) {
-            $this->actingAs($owner)->get($url)->assertOk();
+        foreach ($pages as $feature => $url) {
+            $this->actingAs($userFor($feature))->get($url)->assertOk();
         }
 
         $this->updatePlan($superAdmin, $plan, array_values(array_diff(Features::keys(), self::ERP_FEATURES)));
@@ -77,7 +81,7 @@ class ErpPlanFeaturesTest extends TestCase
 
         foreach ($pages as $feature => $url) {
             $this->assertFalse($shop->hasFeature($feature));
-            $this->actingAs($owner->fresh())->get($url)->assertForbidden();
+            $this->actingAs($userFor($feature))->get($url)->assertForbidden();
         }
 
         $this->actingAs($owner->fresh())->get(route('dashboard'))->assertOk()
@@ -88,8 +92,8 @@ class ErpPlanFeaturesTest extends TestCase
         $this->updatePlan($superAdmin, $plan, Features::keys());
         $shop->refresh()->clearSubscriptionCache();
 
-        foreach ($pages as $url) {
-            $this->actingAs($owner->fresh())->get($url)->assertOk();
+        foreach ($pages as $feature => $url) {
+            $this->actingAs($userFor($feature))->get($url)->assertOk();
         }
     }
 

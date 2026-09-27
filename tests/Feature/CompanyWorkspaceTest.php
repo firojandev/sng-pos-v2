@@ -4,10 +4,14 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Modules\Company\Models\Company;
 use Modules\Core\Support\Features;
 use Modules\Core\Support\Permissions;
 use Modules\Employee\Models\Employee;
+use Modules\Employee\Models\LeaveRequest;
+use Modules\Employee\Models\LeaveType;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
 use Modules\Shop\Models\Shop;
 use Modules\Shop\Services\ShopProvisioner;
@@ -69,10 +73,10 @@ class CompanyWorkspaceTest extends TestCase
         $this->assertNull($this->owner->fresh()->shop_id);
 
         $dashboard = $this->actingAs($this->owner->fresh())->get(route('dashboard'))->assertOk();
-        foreach (['employees.index', 'attendance.sheet', 'payroll.runs.index', 'ledger-accounts.index', 'reports.sales', 'tasks.index', 'company-settings.edit'] as $route) {
+        foreach (['employees.index', 'attendance.sheet', 'payroll.runs.index', 'ledger-accounts.index', 'tasks.index', 'company-settings.edit'] as $route) {
             $dashboard->assertSee(route($route), false);
         }
-        foreach (['sales.index', 'quick-sale.create', 'purchase.index', 'stock.index', 'products.index', 'accounts.index', 'income.index', 'assets.index', 'debts.index', 'default-company.index'] as $route) {
+        foreach (['sales.index', 'quick-sale.create', 'purchase.index', 'stock.index', 'products.index', 'accounts.index', 'income.index', 'assets.index', 'debts.index', 'default-company.index', 'reports.sales', 'reports.stock', 'reports.profit-loss'] as $route) {
             $dashboard->assertDontSee('href="'.route($route).'"', false);
         }
 
@@ -80,8 +84,14 @@ class CompanyWorkspaceTest extends TestCase
         $this->get(route('attendance.sheet'))->assertOk()->assertSee('Dhaka Cashier')->assertSee('Ctg Cashier')->assertDontSee('Stranger');
         $this->get(route('payroll.runs.index'))->assertOk();
         $this->get(route('ledger-accounts.index'))->assertOk();
-        $this->get(route('reports.sales'))->assertOk();
+        $this->get(route('reports.sales'))->assertForbidden();
         $this->get(route('sales.index'))->assertForbidden();
+
+        // Company-level forms save from the workspace too.
+        $cashier = Employee::withoutGlobalScopes()->where('name', 'Ctg Cashier')->firstOrFail();
+        $sick = LeaveType::withoutGlobalScopes()->where('company_id', $this->company->id)->where('code', 'SL')->firstOrFail();
+        $this->post(route('leave-requests.store'), ['employee_id' => $cashier->id, 'leave_type_id' => $sick->id, 'from_date' => '2026-10-05', 'to_date' => '2026-10-05'])
+            ->assertRedirect()->assertSessionHasNoErrors();
         $this->post(route('shops.switch', $this->dhaka))->assertForbidden();
     }
 
@@ -99,10 +109,18 @@ class CompanyWorkspaceTest extends TestCase
     public function test_a_shop_admin_works_the_pos_of_their_shop(): void
     {
         $dashboard = $this->actingAs($this->shopAdmin)->get(route('dashboard'))->assertOk();
-        $dashboard->assertSee(route('sales.index'), false)->assertDontSee('href="'.route('company-settings.edit').'"', false);
+        $dashboard->assertSee(route('sales.index'), false)->assertSee(route('reports.sales'), false)
+            ->assertDontSee('href="'.route('company-settings.edit').'"', false)
+            ->assertDontSee('href="'.route('ledger-accounts.index').'"', false);
 
         $this->get(route('sales.index'))->assertOk();
+        $this->get(route('reports.sales'))->assertOk();
         $this->get(route('company-settings.edit'))->assertForbidden();
+        $this->get(route('ledger-accounts.index'))->assertForbidden();
+
+        // A company employee doesn't get accounting either; the owner does.
+        $this->actingAs($this->employee)->get(route('ledger-accounts.index'))->assertForbidden();
+        $this->actingAs($this->owner)->get(route('ledger-accounts.index'))->assertOk();
     }
 
     public function test_the_company_owner_adds_company_users_and_shop_admins(): void
@@ -126,6 +144,33 @@ class CompanyWorkspaceTest extends TestCase
 
         $this->delete(route('company.users.destroy', $officer))->assertRedirect();
         $this->assertFalse($officer->fresh()->isCompanyLevelUser());
+    }
+
+    public function test_a_company_user_applies_for_leave_and_sees_the_status_and_balance(): void
+    {
+        Storage::fake('local');
+
+        $dashboard = $this->actingAs($this->employee)->get(route('dashboard'))->assertOk();
+        $dashboard->assertSee('My Workspace')->assertSee('Leave Balance')->assertSee('href="'.route('my.leave.index').'"', false);
+
+        $record = Employee::withoutGlobalScopes()->where('user_id', $this->employee->id)->firstOrFail();
+        $this->assertSame($this->company->id, (int) $record->company_id, 'A company user gets an employee record in their company.');
+        $this->assertNull($record->shop_id);
+
+        $casual = LeaveType::withoutGlobalScopes()->where('company_id', $this->company->id)->where('code', 'CL')->firstOrFail();
+        $this->get(route('my.leave.index'))->assertOk()->assertSee($casual->name)->assertSee('No leave applications');
+
+        $this->post(route('my.leave.store'), [
+            'leave_type_id' => $casual->id, 'from_date' => '2026-10-04', 'to_date' => '2026-10-05', 'reason' => 'Family wedding',
+            'attachment' => UploadedFile::fake()->create('card.pdf', 50, 'application/pdf'),
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $this->get(route('my.leave.index'))->assertOk()->assertSee('Family wedding')->assertSee('Pending')->assertSee('card.pdf');
+
+        $leave = LeaveRequest::withoutGlobalScopes()->firstOrFail();
+        $this->actingAs($this->owner)->get(route('leave-requests.index'))->assertOk()->assertSee('Family wedding');
+        $this->post(route('leave-requests.approve', $leave))->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->actingAs($this->employee->fresh())->get(route('my.leave.index'))->assertOk()->assertSee('Approved');
     }
 
     public function test_the_default_company_admins_dashboard_is_the_standalone_shop_list(): void

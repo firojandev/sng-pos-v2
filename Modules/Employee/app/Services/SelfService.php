@@ -3,6 +3,7 @@
 namespace Modules\Employee\Services;
 
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Modules\Core\Support\TenantContext;
 use Modules\Employee\Models\Attendance;
 use Modules\Employee\Models\Employee;
@@ -20,6 +21,8 @@ class SelfService
 
     /**
      * The active employee record linked to the user in the current company.
+     * A company-level user (owner, admin, employee) always has one: it is
+     * created (or found by phone and linked) the first time it's needed.
      */
     public function employeeFor(?User $user): ?Employee
     {
@@ -29,11 +32,57 @@ class SelfService
             return null;
         }
 
-        return Employee::withoutGlobalScopes()
+        $employee = Employee::withoutGlobalScopes()
             ->where('company_id', $companyId)
             ->where('user_id', $user->id)
             ->where('status', 'active')
             ->first();
+
+        if (! $employee && ! $user->shop_id && (int) $user->companyLevelCompany()?->id === (int) $companyId) {
+            $employee = $this->ensureEmployeeRecord($user, $companyId);
+        }
+
+        return $employee;
+    }
+
+    /**
+     * Link the company user to the company's employee with their phone, or
+     * create their employee record (no shop: they work at company level).
+     */
+    public function ensureEmployeeRecord(User $user, int $companyId): Employee
+    {
+        $existing = Employee::withoutGlobalScopes()->where('company_id', $companyId)->where('user_id', $user->id)->first();
+        if ($existing) {
+            return $existing;
+        }
+
+        $byPhone = $user->phone ? Employee::withoutGlobalScopes()->where('company_id', $companyId)->where('phone', $user->phone)->whereNull('user_id')->first() : null;
+        if ($byPhone) {
+            $byPhone->forceFill(['user_id' => $user->id])->save();
+
+            return $byPhone;
+        }
+
+        $role = DB::table('company_user')->where('company_id', $companyId)->where('user_id', $user->id)->first(['role', 'is_owner']);
+        $phoneTaken = ! $user->phone || Employee::withoutGlobalScopes()->where('phone', $user->phone)->exists();
+        $emailTaken = ! $user->email || Employee::withoutGlobalScopes()->where('email', $user->email)->exists();
+
+        return Employee::withoutGlobalScopes()->create([
+            'company_id' => $companyId,
+            'shop_id' => null,
+            'user_id' => $user->id,
+            'name' => $user->name,
+            'phone' => $phoneTaken ? 'U-'.$user->id : $user->phone,
+            'email' => $emailTaken ? null : $user->email,
+            'designation' => match (true) {
+                (bool) $role?->is_owner => 'মালিক (Owner)',
+                $role?->role === 'Admin' => 'কোম্পানি এডমিন (Company Admin)',
+                default => 'কোম্পানি কর্মচারী (Company Employee)',
+            },
+            'salary' => 0,
+            'status' => 'active',
+            'joining_date' => now()->toDateString(),
+        ]);
     }
 
     /**

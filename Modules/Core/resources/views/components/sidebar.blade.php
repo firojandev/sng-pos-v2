@@ -364,6 +364,15 @@
                         '<rect x="3.5" y="5" width="17" height="15" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="m9 15 2 2 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
                 ],
                 [
+                    'key' => 'my-leave',
+                    'route' => 'my.leave.index',
+                    'bn' => 'আমার ছুটি',
+                    'en' => 'My Leave',
+                    'gated' => false,
+                    'icon' =>
+                        '<rect x="3.5" y="5" width="17" height="15" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="15" r="2" stroke="currentColor" stroke-width="1.6"/>',
+                ],
+                [
                     'key' => 'leave',
                     'route' => 'leave-requests.index',
                     'bn' => 'ছুটি',
@@ -650,8 +659,23 @@
         if ($item['key'] === 'tasks') {
             return \Modules\Task\Models\Task::isAvailableTo($user);
         }
+        // My Leave: anyone who is (or, at company level, becomes) an employee,
+        // when the plan has Leave.
+        if ($item['key'] === 'my-leave') {
+            $subscriber = $user?->shop ?? $user?->companyLevelCompany();
+
+            if (! $user || $user->isSuperAdmin() || ! $subscriber?->hasFeature('leave')) {
+                return false;
+            }
+
+            // In a shop: an employee of that shop's company; at company level:
+            // any company user (their employee record is made when needed).
+            return $user->shop_id
+                ? \Modules\Employee\Models\Employee::withoutGlobalScopes()->where('user_id', $user->id)->where('company_id', $user->shop?->company_id)->where('status', 'active')->exists()
+                : $user->isCompanyLevelUser();
+        }
         if ($companyWorkspace) {
-            if (! in_array($item['key'], $workspaceItems, true) && ! str_starts_with($item['key'], 'report-')) {
+            if (! in_array($item['key'], $workspaceItems, true)) {
                 return false;
             }
             if ($item['key'] === 'dashboard') {
@@ -666,6 +690,11 @@
         }
         if ($user && $user->isSuperAdmin()) {
             return true;
+        }
+        // Accounting is company level: not for the shop logins of a company's
+        // shops (a standalone shop's owner is their own company and keeps it).
+        if (($item['permission'] ?? null) === 'accounting' && $user?->shop_id && ! $user->shop?->company?->isStandalone()) {
+            return false;
         }
         if ($item['key'] === 'subscription') {
             return (bool) ($user && $user->shop && $user->shop->hasFeature('subscription'));

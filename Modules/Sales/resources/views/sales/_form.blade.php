@@ -397,6 +397,17 @@
                     style="height: 32px; width: 32px; padding: 0; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"
                 />
             </div>
+            @if ($loyaltyActive)
+                {{-- A loyalty member's points, shown as soon as they are chosen. --}}
+                <div id="loyalty-member-badge" style="display:none; margin-top:8px; padding:8px 10px; border-radius:8px; background:var(--gold-100); border:1px solid var(--border); font-size:12.5px; color:var(--gold-ink);">
+                    <div style="display:flex; align-items:center; gap:6px; font-weight:700;">
+                        <x-core::icon name="sparkles" size="sm" />
+                        <span class="bn">লয়্যালটি সদস্য</span><span class="en" style="display:none;">Loyalty member</span>
+                        <span style="margin-left:auto;"><span id="loyalty-badge-points">0</span> <span class="bn">পয়েন্ট</span><span class="en" style="display:none;">pts</span> ≈ ৳<span id="loyalty-badge-value">0.00</span></span>
+                    </div>
+                    <div id="loyalty-badge-rule" style="font-size:11.5px; color:var(--ink-600); margin-top:2px;"></div>
+                </div>
+            @endif
         </div>
 
         <input type="hidden" name="customer_name" id="customer-name-input" value="{{ $initialCustomerName }}">
@@ -1046,7 +1057,7 @@
         const cid = parseInt(customerId, 10);
         const hide = function () {
             loyaltyInfo = null;
-            $('#loyalty-redeem-row, #loyalty-discount-row').hide();
+            $('#loyalty-member-badge, #loyalty-redeem-row, #loyalty-discount-row').hide();
             $('#loyalty-points-input').val(0);
             recalcGrand();
         };
@@ -1055,8 +1066,24 @@
             return;
         }
         $.getJSON(LOYALTY_URL.replace('__ID__', cid), { sale_id: EDITING_SALE_ID || '' }, function (data) {
-            if (!data.active || !data.member || data.available <= 0) {
+            if (!data.active || !data.member) {
                 hide();
+                return;
+            }
+
+            // Every member sees their points; redeeming needs some to spend.
+            $('#loyalty-badge-points').text(data.balance);
+            $('#loyalty-badge-value').text(fmt(data.value));
+            $('#loyalty-badge-rule').text(data.spend_amount > 0
+                ? 'প্রতি ৳' + data.spend_amount + ' কেনাকাটায় ' + data.points_per_spend + ' পয়েন্ট / ' + data.points_per_spend + ' pts per ৳' + data.spend_amount + ' spent'
+                : '');
+            $('#loyalty-member-badge').show();
+
+            if (data.available <= 0) {
+                loyaltyInfo = null;
+                $('#loyalty-redeem-row, #loyalty-discount-row').hide();
+                $('#loyalty-points-input').val(0);
+                recalcGrand();
                 return;
             }
             loyaltyInfo = data;

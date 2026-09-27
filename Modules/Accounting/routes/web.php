@@ -5,8 +5,9 @@ use Modules\Accounting\Http\Controllers\AccountingReportController;
 use Modules\Accounting\Http\Controllers\AccountingSetupController;
 use Modules\Accounting\Http\Controllers\JournalEntryController;
 use Modules\Accounting\Http\Controllers\LedgerAccountController;
+use Modules\Accounting\Http\Middleware\EnsureAccountingLevel;
 
-Route::middleware(['auth', 'feature:accounting'])->prefix('accounting')->group(function () {
+Route::middleware(['auth', 'feature:accounting', EnsureAccountingLevel::class])->prefix('accounting')->group(function () {
     Route::resource('ledger-accounts', LedgerAccountController::class)->except(['show', 'destroy'])
         ->middlewareFor(['index'], 'permission:accounting.view')
         ->middlewareFor(['create', 'store', 'edit', 'update'], 'permission:accounting.edit');

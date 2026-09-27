@@ -19,6 +19,7 @@ class StoreJournalEntryRequest extends FormRequest
             'entry_date' => ['required', 'date'],
             'narration' => ['required', 'string', 'max:255'],
             'reference' => ['nullable', 'string', 'max:100'],
+            'shop_id' => ['nullable', 'integer', Rule::exists('shops', 'id')->where('company_id', $companyId)],
             'lines' => ['required', 'array', 'min:2'],
             'lines.*.ledger_account_id' => [
                 'required', 'integer',
@@ -43,6 +44,7 @@ class StoreJournalEntryRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return (bool) $this->user()?->shop_id;
+        // A shop login, or a company user in the company workspace.
+        return (bool) ($this->user()?->shop_id || $this->user()?->inCompanyWorkspace());
     }
 }

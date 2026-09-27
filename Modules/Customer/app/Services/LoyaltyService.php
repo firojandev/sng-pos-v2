@@ -99,6 +99,9 @@ class LoyaltyService
             'balance' => $balance,
             'available' => max($balance + $alreadyOnSale, 0),
             'point_value' => (float) ($program->point_value ?? 0),
+            'value' => round($balance * (float) ($program->point_value ?? 0), 2),
+            'spend_amount' => (float) ($program->spend_amount ?? 0),
+            'points_per_spend' => (int) ($program->points_per_spend ?? 0),
             'min_redeem_points' => (int) ($program->min_redeem_points ?? 0),
             'max_redeem_percent' => (int) ($program->max_redeem_percent ?? 100),
         ];

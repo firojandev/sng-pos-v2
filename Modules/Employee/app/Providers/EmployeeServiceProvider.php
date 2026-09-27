@@ -43,11 +43,12 @@ class EmployeeServiceProvider extends ModuleServiceProvider
         // Employee self-service on the dashboard, for a user linked to an employee.
         View::composer('core::dashboard', function ($view) {
             $user = auth()->user();
-            $shop = $user?->shop;
+            // The shop's plan, or in the company workspace the company's.
+            $subscriber = $user?->shop ?? $user?->companyLevelCompany();
 
-            $data = $shop && ($shop->hasFeature('attendance') || $shop->hasFeature('leave')) ? app(SelfService::class)->dashboard($user) : null;
+            $data = $subscriber && ($subscriber->hasFeature('attendance') || $subscriber->hasFeature('leave')) ? app(SelfService::class)->dashboard($user) : null;
 
-            $view->with('selfService', $data ? $data + ['canClock' => $shop->hasFeature('attendance'), 'canApplyLeave' => $shop->hasFeature('leave')] : null);
+            $view->with('selfService', $data ? $data + ['canClock' => $subscriber->hasFeature('attendance'), 'canApplyLeave' => $subscriber->hasFeature('leave')] : null);
         });
     }
 

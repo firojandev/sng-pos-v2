@@ -21,6 +21,8 @@ use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
 use Modules\Shop\Models\Branch;
 use Modules\Shop\Models\Shop;
 use Modules\Shop\Models\Warehouse;
+use Revoltify\Subscriptionify\Models\Feature;
+use Revoltify\Subscriptionify\Services\FeatureResolver;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -266,6 +268,32 @@ class LoyaltyPointsTest extends TestCase
             ->assertJson(['active' => true, 'member' => true, 'balance' => 75, 'available' => 75, 'point_value' => 1]);
 
         $this->get(route('sales.create'))->assertOk()->assertSee('loyalty-points-input', false);
+    }
+
+    public function test_the_sale_form_shows_a_members_points_when_they_are_chosen(): void
+    {
+        // A member with no points yet is still shown as a member.
+        $this->getJson(route('loyalty.customers.show', $this->member))
+            ->assertOk()
+            ->assertJson(['active' => true, 'member' => true, 'balance' => 0, 'value' => 0]);
+
+        $this->givePoints($this->member, 40);
+        $this->getJson(route('loyalty.customers.show', $this->member))->assertJson(['balance' => 40, 'value' => 40]);
+
+        $walkIn = Customer::create(['name' => 'Karim', 'phone' => '01711000009', 'status' => 'active']);
+        $this->getJson(route('loyalty.customers.show', $walkIn))->assertJson(['member' => false]);
+
+        $this->get(route('sales.create'))->assertOk()->assertSee('id="loyalty-member-badge"', false);
+
+        // A plan without loyalty: no badge, and the lookup is refused.
+        $plan = $this->shop->billingSubscription()->plan;
+        $plan->features()->detach(Feature::where('slug', 'loyalty')->value('id'));
+        app(FeatureResolver::class)->flush();
+        $this->shop->refresh()->clearSubscriptionCache();
+        $this->actingAs(auth()->user()->fresh());
+
+        $this->get(route('sales.create'))->assertOk()->assertDontSee('id="loyalty-member-badge"', false);
+        $this->getJson(route('loyalty.customers.show', $this->member))->assertForbidden();
     }
 
     private function givePoints(Customer $customer, int $points, ?Carbon $expiresAt = null): LoyaltyPointTransaction

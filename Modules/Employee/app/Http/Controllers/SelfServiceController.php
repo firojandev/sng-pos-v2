@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 use Modules\Employee\Models\Employee;
 use Modules\Employee\Models\LeaveRequest;
 use Modules\Employee\Services\AttendanceService;
@@ -20,6 +21,25 @@ use Modules\Employee\Services\SelfService;
 class SelfServiceController extends Controller
 {
     public function __construct(private SelfService $selfService) {}
+
+    /**
+     * My Leave: the user's leave balance by type, their applications with
+     * their status, and a new application.
+     */
+    public function leave(): View
+    {
+        $data = $this->selfService->dashboard(Auth::user());
+        abort_unless($data, 403, 'আপনার ইউজার কোনো কর্মচারীর সাথে যুক্ত নয় (Your user is not linked to an employee)।');
+
+        $data['leaveRequests'] = LeaveRequest::withoutGlobalScopes()
+            ->where('employee_id', $data['employee']->id)
+            ->with(['leaveType' => fn ($query) => $query->withoutGlobalScopes(), 'decider:id,name'])
+            ->latest('from_date')
+            ->latest('id')
+            ->get();
+
+        return view('employee::self-service.leave', ['selfService' => $data]);
+    }
 
     public function clock(Request $request, AttendanceService $attendance): RedirectResponse
     {

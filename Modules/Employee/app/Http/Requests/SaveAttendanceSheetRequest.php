@@ -27,6 +27,7 @@ class SaveAttendanceSheetRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return (bool) $this->user()?->shop_id;
+        // A shop login, or a company user in the company workspace.
+        return (bool) ($this->user()?->shop_id || $this->user()?->inCompanyWorkspace());
     }
 }

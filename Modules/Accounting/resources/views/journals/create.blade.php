@@ -21,6 +21,9 @@
                     <x-core::input size="sm" type="date" name="entry_date" label="তারিখ" label-en="Date" :value="old('entry_date', now()->toDateString())" :required="true" />
                     <x-core::input size="sm" name="narration" label="বিবরণ" label-en="Narration" :value="old('narration')" :required="true" />
                     <x-core::input size="sm" name="reference" label="রেফারেন্স" label-en="Reference" :value="old('reference')" />
+                    @if ($shops->isNotEmpty())
+                        <x-core::select size="sm" name="shop_id" label="দোকান (ঐচ্ছিক)" label-en="Shop (optional)" :options="$shops->all()" :value="old('shop_id')" placeholder="সমগ্র কোম্পানি" placeholder-en="Whole company" />
+                    @endif
                 </div>
 
                 <div class="table-responsive">

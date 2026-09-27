@@ -69,6 +69,7 @@ Route::middleware(['auth', 'feature:hr-setup'])->prefix('hr/setup')->name('hr-se
 // Employee self-service: a user linked to an employee.
 Route::middleware('auth')->prefix('my')->name('my.')->group(function () {
     Route::post('clock', [SelfServiceController::class, 'clock'])->name('clock')->middleware('feature:attendance');
+    Route::get('leave', [SelfServiceController::class, 'leave'])->name('leave.index')->middleware('feature:leave');
     Route::post('leave', [SelfServiceController::class, 'applyLeave'])->name('leave.store')->middleware('feature:leave');
     Route::post('leave/{leaveRequest}/cancel', [SelfServiceController::class, 'cancelLeave'])->name('leave.cancel')->middleware('feature:leave');
 });

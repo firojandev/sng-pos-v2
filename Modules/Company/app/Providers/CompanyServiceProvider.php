@@ -43,7 +43,7 @@ class CompanyServiceProvider extends ModuleServiceProvider
      * @var list<string>
      */
     private const COMPANY_WORKSPACE_FEATURES = [
-        'dashboard', 'employees', 'attendance', 'leave', 'hr-setup', 'payroll', 'payroll-setup', 'accounting', 'tasks',
+        'employees', 'attendance', 'leave', 'hr-setup', 'payroll', 'payroll-setup', 'accounting', 'tasks',
     ];
 
     public function boot(): void
@@ -57,7 +57,9 @@ class CompanyServiceProvider extends ModuleServiceProvider
 
             $feature = explode('.', $ability)[0];
 
-            return in_array($feature, self::COMPANY_WORKSPACE_FEATURES, true) || str_starts_with($feature, 'report-') ? true : null;
+            // Reports and the dashboard's sales/purchase/stock figures belong to
+            // the POS: shop logins only.
+            return in_array($feature, self::COMPANY_WORKSPACE_FEATURES, true) ? true : null;
         });
     }
 
