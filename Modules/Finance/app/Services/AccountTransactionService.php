@@ -12,6 +12,33 @@ use Modules\Finance\Models\AccountTransfer;
 class AccountTransactionService
 {
     /**
+     * Get or create a cash account for a given shop.
+     */
+    public function getCashAccount(int $shopId): Account
+    {
+        $account = Account::withoutGlobalScopes()
+            ->where('shop_id', $shopId)
+            ->where('type', 'cash')
+            ->where('status', 'active')
+            ->first();
+
+        if (! $account) {
+            $account = Account::withoutGlobalScopes()->create([
+                'shop_id' => $shopId,
+                'name' => 'নগদ টাকা (Cash)',
+                'type' => 'cash',
+                'opening_balance' => 0,
+                'current_balance' => 0,
+                'is_default' => false,
+                'status' => 'active',
+                'note' => 'প্রধান ক্যাশ অ্যাকাউন্ট (সিস্টেম নির্ধারিত)',
+            ]);
+        }
+
+        return $account;
+    }
+
+    /**
      * Get or create a default account for a given shop.
      */
     public function getDefaultAccount(int $shopId): Account

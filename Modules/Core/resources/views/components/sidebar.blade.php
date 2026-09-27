@@ -429,6 +429,14 @@
                         '<path d="M4 19V9m6 10V5m6 14v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
                 ],
                 [
+                    'key' => 'report-product-profit-loss',
+                    'route' => 'reports.product-profit-loss',
+                    'bn' => 'পণ্য লাভ-ক্ষতি',
+                    'en' => 'Product Profit & Loss',
+                    'icon' =>
+                        '<path d="M4 19V9m6 10V5m6 14v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M3 3v18h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="m7 14 4-4 4 4 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+                ],
+                [
                     'key' => 'report-profit-loss',
                     'route' => 'reports.profit-loss',
                     'bn' => 'লাভ-ক্ষতি রিপোর্ট',

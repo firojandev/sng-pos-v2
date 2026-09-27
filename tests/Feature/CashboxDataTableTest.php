@@ -51,6 +51,7 @@ class CashboxDataTableTest extends TestCase
         $this->user = User::create([
             'name' => 'Cashbox Admin',
             'email' => 'admin@cashbox.test',
+            'email_verified_at' => now(),
             'password' => bcrypt('password'),
             'shop_id' => $this->shop->id,
         ]);
@@ -209,6 +210,19 @@ class CashboxDataTableTest extends TestCase
             'note' => 'Added capital',
             'created_by' => $this->user->id,
         ]);
+
+        $this->assertDatabaseHas('accounts', [
+            'shop_id' => $this->shop->id,
+            'type' => 'cash',
+            'current_balance' => 1500.50,
+        ]);
+
+        $this->assertDatabaseHas('account_transactions', [
+            'shop_id' => $this->shop->id,
+            'type' => 'in',
+            'source' => 'cash_in',
+            'amount' => 1500.50,
+        ]);
     }
 
     public function test_user_can_submit_cash_out(): void
@@ -228,6 +242,46 @@ class CashboxDataTableTest extends TestCase
             'amount' => 750.00,
             'note' => 'Emergency purchase',
             'created_by' => $this->user->id,
+        ]);
+
+        $this->assertDatabaseHas('accounts', [
+            'shop_id' => $this->shop->id,
+            'type' => 'cash',
+            'current_balance' => -750.00,
+        ]);
+
+        $this->assertDatabaseHas('account_transactions', [
+            'shop_id' => $this->shop->id,
+            'type' => 'out',
+            'source' => 'cash_out',
+            'amount' => 750.00,
+        ]);
+    }
+
+    public function test_deleting_manual_cash_transaction_restores_account_balance(): void
+    {
+        $tx = CashTransaction::create([
+            'shop_id' => $this->shop->id,
+            'type' => 'in',
+            'source' => 'manual',
+            'amount' => 1000.00,
+            'note' => 'Initial capital',
+            'occurred_at' => now(),
+            'created_by' => $this->user->id,
+        ]);
+
+        $this->assertDatabaseHas('accounts', [
+            'shop_id' => $this->shop->id,
+            'type' => 'cash',
+            'current_balance' => 1000.00,
+        ]);
+
+        $tx->delete();
+
+        $this->assertDatabaseHas('accounts', [
+            'shop_id' => $this->shop->id,
+            'type' => 'cash',
+            'current_balance' => 0.00,
         ]);
     }
 }

@@ -10,6 +10,7 @@ $allTabs = [
     ['key' => 'purchase', 'route' => 'reports.purchase', 'feature' => 'report-purchase', 'permission' => 'report-purchase.view', 'bn' => 'ক্রয় রিপোর্ট', 'en' => 'Purchase Report'],
     ['key' => 'stock', 'route' => 'reports.stock', 'feature' => 'report-stock', 'permission' => 'report-stock.view', 'bn' => 'স্টক রিপোর্ট', 'en' => 'Stock Report'],
     ['key' => 'products', 'route' => 'reports.products', 'feature' => 'report-products', 'permission' => 'report-products.view', 'bn' => 'পণ্য রিপোর্ট', 'en' => 'Products Report'],
+    ['key' => 'product-profit-loss', 'route' => 'reports.product-profit-loss', 'feature' => 'report-product-profit-loss', 'permission' => 'report-product-profit-loss.view', 'bn' => 'পণ্যভিত্তিক লাভ-ক্ষতি', 'en' => 'Product Profit & Loss'],
     ['key' => 'profit-loss', 'route' => 'reports.profit-loss', 'feature' => 'report-profit-loss', 'permission' => 'report-profit-loss.view', 'bn' => 'লাভ-ক্ষতি রিপোর্ট', 'en' => 'Profit & Loss Report'],
     ['key' => 'income', 'route' => 'reports.income', 'feature' => 'report-income', 'permission' => 'report-income.view', 'bn' => 'আয় রিপোর্ট', 'en' => 'Income Report'],
     ['key' => 'expense', 'route' => 'reports.expense', 'feature' => 'report-expense', 'permission' => 'report-expense.view', 'bn' => 'ব্যয় রিপোর্ট', 'en' => 'Expense Report'],

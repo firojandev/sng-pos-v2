@@ -91,6 +91,13 @@
                                 @endif
                             </span>
                         </div>
+                        @php
+                            $statusVal = $subscription->status instanceof \Revoltify\Subscriptionify\Enums\SubscriptionStatus
+                                ? $subscription->status->value
+                                : (string) ($subscription->status ?? '');
+                            $isTrialing = in_array($statusVal, ['trial', 'trialing'], true);
+                        @endphp
+
                         @if ($subscription->onTrial())
                             <div class="tx-row">
                                 <span class="lbl bn">ট্রায়াল অবশিষ্ট দিন</span>
@@ -99,8 +106,17 @@
                                     {{ $subscription->trialDaysRemaining() }} দিন ({{ $subscription->trial_ends_at?->format('d M, Y') }})
                                 </span>
                             </div>
+                        @elseif ($isTrialing && $subscription->trial_ends_at)
+                            <div class="tx-row">
+                                <span class="lbl bn">ট্রায়াল মেয়াদ</span>
+                                <span class="lbl en" style="display:none;">Trial Ended</span>
+                                <span class="val" style="color:var(--red-600); font-weight:700;">
+                                    {{ $subscription->trial_ends_at->format('d M, Y') }} (মেয়াদ শেষ হয়েছে)
+                                </span>
+                            </div>
                         @endif
-                        @if ($subscription->ends_at)
+
+                        @if (! $isTrialing && $subscription->ends_at)
                             <div class="tx-row">
                                 <span class="lbl bn">মেয়াদ শেষ</span>
                                 <span class="lbl en" style="display:none;">Expires On</span>

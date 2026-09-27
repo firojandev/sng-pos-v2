@@ -20,7 +20,7 @@ class SalesDueLedgerDataTable extends BaseDataTable
      */
     public function dataTable(QueryBuilder $query): EloquentDataTable
     {
-        $customerIds = (clone $query)->pluck('customers.id');
+        $customerIds = (clone $query)->reorder()->pluck('customers.id');
         $openingDueSum = (float) Customer::whereIn('id', $customerIds)->sum('opening_due');
         $salesDueSum = (float) Sale::whereIn('customer_id', $customerIds)->sum('due_amount');
         $totalDueSum = round($openingDueSum + $salesDueSum, 2);

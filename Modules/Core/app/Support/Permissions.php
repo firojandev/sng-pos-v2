@@ -60,6 +60,7 @@ class Permissions
             'report-purchase' => ['view', 'print'],
             'report-stock' => ['view', 'print'],
             'report-products' => ['view', 'print'],
+            'report-product-profit-loss' => ['view', 'print'],
             'report-profit-loss' => ['view', 'print'],
             'report-income' => ['view', 'print'],
             'report-expense' => ['view', 'print'],

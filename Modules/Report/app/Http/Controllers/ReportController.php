@@ -38,6 +38,7 @@ class ReportController extends Controller
         'report-purchase' => 'reports.purchase',
         'report-stock' => 'reports.stock',
         'report-products' => 'reports.products',
+        'report-product-profit-loss' => 'reports.product-profit-loss',
         'report-profit-loss' => 'reports.profit-loss',
         'report-income' => 'reports.income',
         'report-expense' => 'reports.expense',
@@ -436,6 +437,114 @@ class ReportController extends Controller
         ];
 
         return view('report::products', compact('range', 'from', 'to', 'products', 'totals'));
+    }
+
+    public function productProfitLoss(Request $request): View
+    {
+        [$range, $from, $to] = $this->resolveDateRange($request);
+        $user = $request->user();
+        $shop = $user?->shop;
+
+        $warehouseId = $request->query('warehouse_id');
+        $search = trim((string) $request->query('search', ''));
+        $warehouses = $shop ? Warehouse::active()->orderBy('name')->get(['id', 'name', 'branch_id']) : collect();
+
+        $saleItems = SaleItem::query()
+            ->whereHas('sale', function ($q) use ($from, $to, $warehouseId) {
+                $q->when($from, fn ($qq) => $qq->whereDate('sale_date', '>=', $from))
+                    ->when($to, fn ($qq) => $qq->whereDate('sale_date', '<=', $to))
+                    ->when($warehouseId, fn ($qq) => $qq->where('warehouse_id', $warehouseId));
+            })
+            ->when($search !== '', function ($q) use ($search) {
+                $q->whereHas('product', function ($pq) use ($search) {
+                    $pq->where('name', 'like', "%{$search}%")
+                        ->orWhere('sku', 'like', "%{$search}%")
+                        ->orWhere('barcode', 'like', "%{$search}%");
+                });
+            })
+            ->with([
+                'product:id,name,sku,purchase_price,sale_price',
+                'batch:id,batch_no,mfg_date,expiry_date',
+                'unit',
+            ])
+            ->get();
+
+        $grouped = [];
+
+        foreach ($saleItems as $item) {
+            $product = $item->product;
+            if (! $product) {
+                continue;
+            }
+
+            $productId = $product->id;
+            $batchId = $item->batch_id ?? 0;
+            $batchNo = $item->batch?->batch_no ?? ($item->batch_id ? "BATCH-{$item->batch_id}" : 'ডিফল্ট / Default');
+            $isDefaultBatch = empty($item->batch_id);
+
+            $conversionFactor = $item->unitConversionFactor();
+            $baseQty = (float) $item->quantity * $conversionFactor;
+            $purchasePriceUnit = (float) ($product->purchase_price ?? 0);
+            $purchaseCost = round($baseQty * $purchasePriceUnit, 2);
+            $saleRevenue = (float) $item->total;
+            $profit = round($saleRevenue - $purchaseCost, 2);
+
+            if (! isset($grouped[$productId])) {
+                $grouped[$productId] = [
+                    'id' => $productId,
+                    'name' => $product->name,
+                    'sku' => $product->sku,
+                    'purchase_price_unit' => $purchasePriceUnit,
+                    'batches' => [],
+                    'total_qty' => 0.0,
+                    'total_purchase_cost' => 0.0,
+                    'total_sale_revenue' => 0.0,
+                    'total_profit' => 0.0,
+                ];
+            }
+
+            if (! isset($grouped[$productId]['batches'][$batchId])) {
+                $grouped[$productId]['batches'][$batchId] = [
+                    'batch_id' => $batchId,
+                    'batch_no' => $batchNo,
+                    'is_default' => $isDefaultBatch,
+                    'qty' => 0.0,
+                    'purchase_cost' => 0.0,
+                    'sale_revenue' => 0.0,
+                    'profit' => 0.0,
+                ];
+            }
+
+            $grouped[$productId]['batches'][$batchId]['qty'] += $baseQty;
+            $grouped[$productId]['batches'][$batchId]['purchase_cost'] += $purchaseCost;
+            $grouped[$productId]['batches'][$batchId]['sale_revenue'] += $saleRevenue;
+            $grouped[$productId]['batches'][$batchId]['profit'] += $profit;
+
+            $grouped[$productId]['total_qty'] += $baseQty;
+            $grouped[$productId]['total_purchase_cost'] += $purchaseCost;
+            $grouped[$productId]['total_sale_revenue'] += $saleRevenue;
+            $grouped[$productId]['total_profit'] += $profit;
+        }
+
+        $reportData = collect($grouped)->sortBy('name')->values()->map(function ($prod) {
+            $prod['batches'] = array_values($prod['batches']);
+
+            return $prod;
+        });
+
+        $totals = [
+            'qty' => (float) $reportData->sum('total_qty'),
+            'purchase_cost' => (float) $reportData->sum('total_purchase_cost'),
+            'sale_revenue' => (float) $reportData->sum('total_sale_revenue'),
+            'profit' => (float) $reportData->sum('total_profit'),
+            'products_count' => $reportData->count(),
+            'batches_count' => $reportData->sum(fn ($p) => count($p['batches'])),
+        ];
+
+        return view('report::product-profit-loss', compact(
+            'range', 'from', 'to', 'warehouseId', 'warehouses', 'search',
+            'reportData', 'totals'
+        ));
     }
 
     public function profitLoss(Request $request): View

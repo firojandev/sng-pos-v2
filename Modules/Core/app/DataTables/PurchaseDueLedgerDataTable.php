@@ -20,7 +20,7 @@ class PurchaseDueLedgerDataTable extends BaseDataTable
      */
     public function dataTable(QueryBuilder $query): EloquentDataTable
     {
-        $supplierIds = (clone $query)->pluck('suppliers.id');
+        $supplierIds = (clone $query)->reorder()->pluck('suppliers.id');
         $openingDueSum = (float) Supplier::whereIn('id', $supplierIds)->sum('opening_due');
         $purchaseDueSum = (float) Purchase::whereIn('supplier_id', $supplierIds)->sum('due_amount');
         $totalDueSum = round($openingDueSum + $purchaseDueSum, 2);

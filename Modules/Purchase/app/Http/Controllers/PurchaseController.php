@@ -122,7 +122,7 @@ class PurchaseController extends Controller
             });
         }
 
-        $totals = (clone $query)->selectRaw('
+        $totals = (clone $query)->reorder()->selectRaw('
             COALESCE(SUM(total), 0) as total_amount,
             COALESCE(SUM(paid_amount), 0) as total_paid,
             COALESCE(SUM(due_amount), 0) as total_due,

@@ -139,6 +139,7 @@
         'report-purchase' => ['icon' => 'bar-chart', 'desc_bn' => 'ক্রয় প্রতিবেদন', 'desc_en' => 'Purchase Report'],
         'report-stock' => ['icon' => 'bar-chart', 'desc_bn' => 'স্টক প্রতিবেদন', 'desc_en' => 'Stock Report'],
         'report-products' => ['icon' => 'bar-chart', 'desc_bn' => 'পণ্য প্রতিবেদন', 'desc_en' => 'Product Report'],
+        'report-product-profit-loss' => ['icon' => 'bar-chart-2', 'desc_bn' => 'পণ্যভিত্তিক লাভ-ক্ষতি প্রতিবেদন', 'desc_en' => 'Product Wise Profit & Loss Report'],
         'report-profit-loss' => ['icon' => 'bar-chart', 'desc_bn' => 'লাভ-ক্ষতি প্রতিবেদন', 'desc_en' => 'Profit & Loss Report'],
         'report-income' => ['icon' => 'bar-chart', 'desc_bn' => 'আয় প্রতিবেদন', 'desc_en' => 'Income Report'],
         'report-expense' => ['icon' => 'bar-chart', 'desc_bn' => 'ব্যয় প্রতিবেদন', 'desc_en' => 'Expense Report'],
@@ -204,7 +205,7 @@
             'subtitle_en' => 'Staff, user accounts, business reports and activity audit',
             'icon' => 'shield',
             'badge_color' => 'red',
-            'keys' => ['employees', 'users', 'printer-settings', 'whatsapp-settings', 'report-sales', 'report-sales-vat', 'report-purchase', 'report-stock', 'report-products', 'report-profit-loss', 'report-income', 'report-expense', 'report-financial-position', 'report-balance-sheet', 'audit'],
+            'keys' => ['employees', 'users', 'printer-settings', 'whatsapp-settings', 'report-sales', 'report-sales-vat', 'report-purchase', 'report-stock', 'report-products', 'report-product-profit-loss', 'report-profit-loss', 'report-income', 'report-expense', 'report-financial-position', 'report-balance-sheet', 'audit'],
         ],
     ];
 
@@ -1140,6 +1141,7 @@ $(function () {
                 'report-purchase.view', 'report-purchase.print',
                 'report-stock.view', 'report-stock.print',
                 'report-products.view', 'report-products.print',
+                'report-product-profit-loss.view', 'report-product-profit-loss.print',
                 'report-profit-loss.view', 'report-profit-loss.print',
                 'report-income.view', 'report-income.print',
                 'report-expense.view', 'report-expense.print',

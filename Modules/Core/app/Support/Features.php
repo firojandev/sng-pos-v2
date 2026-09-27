@@ -36,6 +36,7 @@ class Features
             'report-purchase' => ['bn' => 'ক্রয় রিপোর্ট', 'en' => 'Purchase Report'],
             'report-stock' => ['bn' => 'স্টক রিপোর্ট', 'en' => 'Stock Report'],
             'report-products' => ['bn' => 'পণ্য রিপোর্ট', 'en' => 'Product Report'],
+            'report-product-profit-loss' => ['bn' => 'পণ্যভিত্তিক লাভ-ক্ষতি রিপোর্ট', 'en' => 'Product Wise Profit & Loss Report'],
             'report-profit-loss' => ['bn' => 'লাভ-ক্ষতি রিপোর্ট', 'en' => 'Profit & Loss Report'],
             'report-income' => ['bn' => 'আয় রিপোর্ট', 'en' => 'Income Report'],
             'report-expense' => ['bn' => 'ব্যয় রিপোর্ট', 'en' => 'Expense Report'],

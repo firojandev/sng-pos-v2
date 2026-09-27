@@ -15,6 +15,7 @@
         'reports.purchase' => 'report-purchase.print',
         'reports.stock' => 'report-stock.print',
         'reports.products' => 'report-products.print',
+        'reports.product-profit-loss' => 'report-product-profit-loss.print',
         'reports.profit-loss' => 'report-profit-loss.print',
         'reports.income' => 'report-income.print',
         'reports.expense' => 'report-expense.print',
@@ -71,13 +72,13 @@
 @if ($canPrint)
 {{-- Print-only Executive Header (Shown only when printing / saving as PDF) --}}
 <div class="report-print-header" style="display:none;">
-    {{-- Top Header with Shop Info --}}
-    <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:10px;">
-        <div style="flex-shrink:0; width:48px; height:48px; border-radius:6px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+    {{-- Top Header with Shop Info (Logo on Left Side) --}}
+    <div style="display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:12px;">
+        <div style="flex-shrink:0; width:52px; height:52px; border-radius:8px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
             @if(!empty($currentShop?->logo))
-                <img src="{{ $currentShop->logo_url ?? asset($currentShop->logo) }}" alt="Shop Logo" style="max-width:48px; max-height:48px; object-fit:contain;">
+                <img src="{{ $currentShop->logo_url ?? asset($currentShop->logo) }}" alt="Shop Logo" style="max-width:52px; max-height:52px; object-fit:contain;">
             @else
-                <svg width="46" height="46" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect x="7" y="19" width="34" height="23" rx="2" fill="#38bdf8" stroke="#0f172a" stroke-width="2"/>
                     <rect x="19" y="27" width="10" height="15" fill="#0f172a"/>
                     <rect x="11" y="25" width="5" height="8" rx="1" fill="#f8fafc" stroke="#0f172a" stroke-width="1.5"/>
@@ -89,7 +90,7 @@
         </div>
 
         <div>
-            <div style="font-size:18px; font-weight:800; color:#0f172a; line-height:1.2;">
+            <div style="font-size:20px; font-weight:800; color:#0f172a; line-height:1.2;">
                 {{ $currentShop->name ?? 'ব্যবসা প্রতিষ্ঠান' }}
             </div>
             @if(!empty($currentShop?->address))
@@ -106,9 +107,9 @@
     </div>
 
     {{-- Centered Title with Horizontal Accent Lines --}}
-    <div style="display:flex; align-items:center; justify-content:center; gap:16px; margin:12px 0 14px 0;">
+    <div style="display:flex; align-items:center; justify-content:center; gap:16px; margin:10px 0 14px 0;">
         <div style="flex:1; height:1px; background:#94a3b8;"></div>
-        <div style="font-size:22px; font-weight:800; color:#0f172a; letter-spacing:1px; padding:0 8px;">
+        <div style="font-size:14px; font-weight:600; color:#334155; letter-spacing:0.5px; padding:0 8px;">
             <span class="bn">{{ $reportTitle ?? 'প্রতিবেদন' }}</span>
             <span class="en" style="display:none;">{{ $reportTitleEn ?? 'Report' }}</span>
         </div>
