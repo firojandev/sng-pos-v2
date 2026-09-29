@@ -48,6 +48,7 @@ class StockDataTableTest extends TestCase
         $this->user = User::create([
             'name' => 'Test Admin',
             'email' => 'admin@test.com',
+            'email_verified_at' => now(),
             'password' => bcrypt('password'),
             'shop_id' => $this->shop->id,
         ]);

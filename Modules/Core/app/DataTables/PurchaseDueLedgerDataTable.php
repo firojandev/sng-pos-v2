@@ -22,7 +22,7 @@ class PurchaseDueLedgerDataTable extends BaseDataTable
     {
         $supplierIds = (clone $query)->reorder()->pluck('suppliers.id');
         $openingDueSum = (float) Supplier::whereIn('id', $supplierIds)->sum('opening_due');
-        $purchaseDueSum = (float) Purchase::whereIn('supplier_id', $supplierIds)->sum('due_amount');
+        $purchaseDueSum = (float) Purchase::withoutGlobalScope('shop')->whereIn('supplier_id', $supplierIds)->sum('due_amount');
         $totalDueSum = round($openingDueSum + $purchaseDueSum, 2);
 
         return (new EloquentDataTable($query))

@@ -2,6 +2,8 @@
 
 namespace Modules\FinanceManagement\Providers;
 
+use Illuminate\Console\Scheduling\Schedule;
+use Modules\FinanceManagement\Console\DepreciateAssets;
 use Modules\FinanceManagement\Models\Debt;
 use Modules\FinanceManagement\Models\Lend;
 use Modules\FinanceManagement\Models\SecurityMoney;
@@ -23,6 +25,15 @@ class FinanceManagementServiceProvider extends ModuleServiceProvider
     protected string $nameLower = 'financemanagement';
 
     /**
+     * Command classes to register.
+     *
+     * @var string[]
+     */
+    protected array $commands = [
+        DepreciateAssets::class,
+    ];
+
+    /**
      * Provider classes to register.
      *
      * @var string[]
@@ -42,5 +53,13 @@ class FinanceManagementServiceProvider extends ModuleServiceProvider
         Debt::observe(DebtAccountObserver::class);
         Lend::observe(LendAccountObserver::class);
         SecurityMoney::observe(SecurityMoneyAccountObserver::class);
+    }
+
+    /**
+     * Define module schedules.
+     */
+    protected function configureSchedules(Schedule $schedule): void
+    {
+        $schedule->command('assets:depreciate')->monthlyOn(1, '01:00');
     }
 }

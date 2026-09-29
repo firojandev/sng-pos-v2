@@ -16,6 +16,14 @@
         $rangeLabel = $rangeLabels[$range];
     @endphp
 
+    @if (! empty($selfService))
+        @include('employee::self-service.panel', ['selfService' => $selfService])
+    @endif
+
+    @if (! empty($myTasks))
+        @include('task::dashboard-card', ['myTasks' => $myTasks])
+    @endif
+
     @if (collect([
     $canViewSales,
     $canViewPurchase,

@@ -8,6 +8,17 @@
 @endphp
 
 <div style="display:flex; flex-direction:column; gap:14px;">
+    <x-core::input
+        name="employee_code"
+        label="কর্মচারী কোড"
+        label-en="Employee Code"
+        value="{{ old('employee_code', $employee->employee_code) }}"
+        placeholder="EMP-0001"
+        placeholder-en="EMP-0001"
+        size="sm"
+        :required="$employee->exists"
+    />
+
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
         <x-core::input
             name="name"

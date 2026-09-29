@@ -1,6 +1,6 @@
 @php
     $siteTitle = $siteTitle ?? \Modules\Core\Models\Setting::getSiteTitle();
-    $siteTitleBn = $siteTitleBn ?? ($siteTitle === 'SNGPOS' ? 'SNGPOS' : $siteTitle);
+    $siteTitleBn = $siteTitleBn ?? ($siteTitle === 'SNG ERP' ? 'SNG ERP' : $siteTitle);
     $showTermsAndPolicy = \Modules\Core\Models\Setting::isTermsAndPolicyEnabled();
     $showCreditText = \Modules\Core\Models\Setting::isCreditTextEnabled();
     $creditText = $showCreditText ? \Modules\Core\Models\Setting::getCreditText() : '';

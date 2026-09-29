@@ -67,6 +67,7 @@ class UnitConversionStockFeatureTest extends TestCase
         $this->user = User::create([
             'name' => 'Unit Admin',
             'email' => 'admin@unit.test',
+            'email_verified_at' => now(),
             'password' => bcrypt('password'),
             'shop_id' => $this->shop->id,
         ]);

@@ -360,7 +360,7 @@ class PrinterAndWhatsAppFeaturesTest extends TestCase
         $modalResponse->assertSee('width:760px', false);
         $modalResponse->assertDontSee('width:500px', false);
         $modalResponse->assertSee('sale-invoice-sheet', false);
-        $modalResponse->assertDontSee('thermal-receipt-sheet', false);
+        $modalResponse->assertDontSee('class="thermal-receipt-sheet"', false);
 
         // Sale Print Page should render standard A4 sheet
         $printResponse = $this->actingAs($user)->get(route('sales.print-invoice', $sale));
@@ -407,7 +407,7 @@ class PrinterAndWhatsAppFeaturesTest extends TestCase
         $modalResponse->assertSee('width:760px', false);
         $modalResponse->assertDontSee('width:460px', false);
         $modalResponse->assertSee('purchase-invoice-sheet', false);
-        $modalResponse->assertDontSee('thermal-receipt-sheet', false);
+        $modalResponse->assertDontSee('class="thermal-receipt-sheet"', false);
 
         // Purchase Print Page should render standard A4 sheet
         $printResponse = $this->actingAs($user)->get(route('purchase.print-invoice', $purchase));

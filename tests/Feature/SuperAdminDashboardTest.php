@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Modules\Company\Models\Company;
 use Modules\Core\Models\AuditLog;
 use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
@@ -58,10 +59,9 @@ class SuperAdminDashboardTest extends TestCase
         ]);
 
         $sub = Subscription::create([
-            'shop_id' => $shop->id,
             'plan_id' => $plan->id,
-            'subscribable_type' => Shop::class,
-            'subscribable_id' => $shop->id,
+            'subscribable_type' => Company::class,
+            'subscribable_id' => $shop->company_id,
             'status' => 'active',
             'starts_at' => now()->startOfMonth(),
             'ends_at' => now()->addDays(10),

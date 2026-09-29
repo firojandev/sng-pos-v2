@@ -6,17 +6,18 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Modules\Core\Concerns\BelongsToShop;
+use Modules\Core\Concerns\BelongsToCatalog;
 use Modules\Finance\Models\Expense;
 use Modules\Product\Models\Product;
 
 class Category extends Model
 {
-    use BelongsToShop;
+    use BelongsToCatalog;
 
     protected $table = 'categories';
 
     protected $fillable = [
+        'company_id',
         'shop_id',
         'parent_id',
         'category_id',

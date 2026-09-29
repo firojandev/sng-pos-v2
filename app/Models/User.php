@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 use Modules\Auth\Mail\ShopVerificationMail;
+use Modules\Company\Models\Company;
 use Modules\Core\Models\Setting;
 use Modules\Core\Observers\AuditObserver;
 use Modules\Employee\Models\Employee;
@@ -186,6 +187,78 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Shop::class, 'shop_user')
             ->withPivot('role', 'is_owner')
             ->withTimestamps();
+    }
+
+    /**
+     * Companies this user belongs to (as owner or company-level staff).
+     */
+    public function companies(): BelongsToMany
+    {
+        return $this->belongsToMany(Company::class, 'company_user')
+            ->withPivot('role', 'is_owner')
+            ->withTimestamps();
+    }
+
+    /**
+     * The company the user owns, falling back to the company of their current shop.
+     */
+    public function primaryCompany(): ?Company
+    {
+        return $this->companies()->wherePivot('is_owner', true)->oldest('company_user.id')->first()
+            ?? $this->shop?->company;
+    }
+
+    /**
+     * The company the user logs in to at company level (owner, admin or
+     * employee of a company, or of the Default Company); null for shop
+     * users. A real company comes before the Default Company.
+     */
+    public function companyLevelCompany(): ?Company
+    {
+        if ($this->isSuperAdmin()) {
+            return null;
+        }
+
+        return $this->companies()
+            ->whereIn('companies.type', [Company::TYPE_COMPANY, Company::TYPE_DEFAULT])
+            ->where(fn ($query) => $query->where('company_user.is_owner', true)->orWhereIn('company_user.role', Company::COMPANY_LEVEL_ROLES))
+            ->orderByRaw("CASE companies.type WHEN 'company' THEN 0 ELSE 1 END")
+            ->orderBy('companies.id')
+            ->first();
+    }
+
+    public function isCompanyLevelUser(): bool
+    {
+        return $this->companyLevelCompany() !== null;
+    }
+
+    /**
+     * Working in the company workspace: a company-level user with no shop
+     * open (the Default Company admin may open a standalone shop).
+     */
+    public function inCompanyWorkspace(): bool
+    {
+        return ! $this->shop_id && $this->isCompanyLevelUser();
+    }
+
+    /**
+     * Whether the user is the owner or an admin of a company (by default the
+     * company they work in). A standalone shop's owner runs just their
+     * shop, not a company.
+     */
+    public function isCompanyAdmin(?Company $company = null): bool
+    {
+        $company ??= $this->shop?->company?->isBusiness() ? $this->shop->company : $this->companyLevelCompany();
+
+        return $company !== null && $company->isBusiness() && $company->isAdministeredBy($this);
+    }
+
+    /**
+     * Whether the user administers the Default Company (every standalone shop).
+     */
+    public function isDefaultCompanyAdmin(): bool
+    {
+        return ! $this->isSuperAdmin() && Company::defaultCompany()->isAdministeredBy($this);
     }
 
     /**

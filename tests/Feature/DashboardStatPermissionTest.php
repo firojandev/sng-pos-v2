@@ -44,6 +44,7 @@ class DashboardStatPermissionTest extends TestCase
         $this->adminUser = User::create([
             'name' => 'Admin User',
             'email' => 'admin@testshop.com',
+            'email_verified_at' => now(),
             'password' => bcrypt('password'),
             'shop_id' => $this->shop->id,
         ]);
@@ -67,6 +68,7 @@ class DashboardStatPermissionTest extends TestCase
         $owner = User::create([
             'name' => 'Shop Owner',
             'email' => 'owner@testshop.com',
+            'email_verified_at' => now(),
             'password' => bcrypt('password'),
             'shop_id' => $this->shop->id,
         ]);
@@ -132,6 +134,7 @@ class DashboardStatPermissionTest extends TestCase
         $cashier = User::create([
             'name' => 'Cashier User',
             'email' => 'cashier@testshop.com',
+            'email_verified_at' => now(),
             'password' => bcrypt('password'),
             'shop_id' => $this->shop->id,
         ]);
@@ -159,55 +162,51 @@ class DashboardStatPermissionTest extends TestCase
         $response->assertDontSee('মোবাইল ব্যাংকিং (MFS)');
     }
 
-    public function test_user_with_no_stat_permissions_sees_empty_state(): void
+    public function test_user_with_no_stat_permissions_sees_no_stat_cards(): void
     {
-        setPermissionsTeamId($this->shop->id);
-        $limitedRole = Role::create([
-            'shop_id' => $this->shop->id,
-            'name' => 'Limited Viewer',
-            'guard_name' => 'web',
-        ]);
-        $limitedRole->syncPermissions(['dashboard.view']);
-
-        $viewer = User::create([
-            'name' => 'Viewer User',
-            'email' => 'viewer@testshop.com',
-            'password' => bcrypt('password'),
-            'shop_id' => $this->shop->id,
-        ]);
-        $viewer->assignRole($limitedRole);
-        setPermissionsTeamId(null);
+        $viewer = $this->createStaffUser('Limited Viewer', 'viewer@testshop.com', []);
 
         $response = $this->actingAs($viewer)->get(route('dashboard'));
 
         $response->assertOk();
-        $response->assertSee('আপনার দেখার মতো কোনো পরিসংখ্যান নেই');
         $response->assertDontSee('বিক্রি');
         $response->assertDontSee('মোট ব্যালেন্স:');
     }
 
-    public function test_user_without_dashboard_view_permission_is_forbidden(): void
+    public function test_any_shop_user_can_open_the_dashboard_without_a_dashboard_permission(): void
+    {
+        $user = $this->createStaffUser('No Dashboard', 'restricted@testshop.com', ['sales.view']);
+
+        $this->actingAs($user)->get(route('dashboard'))->assertOk();
+    }
+
+    /**
+     * Create a non-owner staff user the way UserController@store does.
+     *
+     * @param  list<string>  $permissions
+     */
+    private function createStaffUser(string $roleName, string $email, array $permissions): User
     {
         setPermissionsTeamId($this->shop->id);
-        $noDashboardRole = Role::create([
+        $role = Role::create([
             'shop_id' => $this->shop->id,
-            'name' => 'No Dashboard',
+            'name' => $roleName,
             'guard_name' => 'web',
         ]);
-        $noDashboardRole->syncPermissions(['sales.view']);
+        $role->syncPermissions($permissions);
 
         $user = User::create([
-            'name' => 'Restricted User',
-            'email' => 'restricted@testshop.com',
+            'name' => $roleName.' User',
+            'email' => $email,
+            'email_verified_at' => now(),
             'password' => bcrypt('password'),
             'shop_id' => $this->shop->id,
         ]);
-        $user->assignRole($noDashboardRole);
+        $user->assignRole($role);
+        $user->shops()->updateExistingPivot($this->shop->id, ['role' => $role->name, 'is_owner' => false]);
         setPermissionsTeamId(null);
 
-        $response = $this->actingAs($user)->get(route('dashboard'));
-
-        $response->assertForbidden();
+        return $user;
     }
 
     public function test_admin_can_grant_and_revoke_dashboard_stat_permissions_on_roles(): void

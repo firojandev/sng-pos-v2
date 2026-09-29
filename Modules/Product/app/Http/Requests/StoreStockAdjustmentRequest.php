@@ -4,6 +4,7 @@ namespace Modules\Product\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Modules\Core\Support\TenantRules;
 
 class StoreStockAdjustmentRequest extends FormRequest
 {
@@ -15,7 +16,7 @@ class StoreStockAdjustmentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'product_id' => ['required', 'exists:products,id'],
+            'product_id' => ['required', TenantRules::catalogExists('products')],
             'batch_id' => [
                 'required',
                 Rule::exists('batches', 'id')->where('product_id', $this->input('product_id')),

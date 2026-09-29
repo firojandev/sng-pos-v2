@@ -4,6 +4,7 @@ namespace Modules\Product\Http\Requests;
 
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Modules\Core\Support\TenantRules;
 
 class StoreProductRequest extends FormRequest
 {
@@ -16,14 +17,14 @@ class StoreProductRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'sku' => ['nullable', 'string', 'max:255', 'unique:products,sku'],
+            'sku' => ['nullable', 'string', 'max:255', TenantRules::uniqueInShopCatalogue('sku')],
             'size' => ['nullable', 'string', 'max:100'],
             'purchase_price' => ['required', 'numeric', 'min:0'],
             'sale_price' => ['required', 'numeric', 'min:0'],
             'image' => ['nullable', 'image', 'max:2048'],
-            'category_id' => ['required', 'exists:categories,id'],
-            'sub_category_id' => ['nullable', 'exists:categories,id'],
-            'brand_id' => ['nullable', 'exists:brands,id'],
+            'category_id' => ['required', TenantRules::catalogExists('categories')],
+            'sub_category_id' => ['nullable', TenantRules::catalogExists('categories')],
+            'brand_id' => ['nullable', TenantRules::catalogExists('brands')],
             'short_description' => ['nullable', 'string'],
             'alert_qty' => ['required', 'integer', 'min:0'],
             'is_vat' => ['nullable', 'boolean'],
@@ -41,10 +42,10 @@ class StoreProductRequest extends FormRequest
             'discount_type' => ['nullable', 'in:flat,percentage', 'required_if:has_discount,1'],
             'discount_value' => ['nullable', 'numeric', 'min:0', 'required_if:has_discount,1'],
             'has_barcode' => ['nullable', 'boolean'],
-            'barcode' => ['nullable', 'string', 'max:255', 'unique:products,barcode', 'required_if:has_barcode,1'],
+            'barcode' => ['nullable', 'string', 'max:255', TenantRules::uniqueInShopCatalogue('barcode'), 'required_if:has_barcode,1'],
 
             'units' => ['required', 'array', 'min:1'],
-            'units.*.unit_id' => ['required', 'distinct', 'exists:units,id'],
+            'units.*.unit_id' => ['required', 'distinct', TenantRules::catalogExists('units')],
             'units.*.is_base' => ['nullable', 'boolean'],
             'units.*.conversion_factor' => ['required', 'numeric', 'min:0.0001'],
             'units.*.is_smaller_unit' => ['nullable', 'boolean'],
@@ -59,6 +60,12 @@ class StoreProductRequest extends FormRequest
 
             if ($baseCount !== 1) {
                 $validator->errors()->add('units', 'ঠিক একটি ইউনিটকে বেস ইউনিট হিসেবে নির্বাচন করতে হবে');
+            }
+
+            // A shop adds products only in the categories it sells.
+            $shopCategoryIds = $this->user()?->shop?->categories()->pluck('categories.id')->all() ?? [];
+            if ($shopCategoryIds !== [] && $this->filled('category_id') && ! in_array((int) $this->input('category_id'), $shopCategoryIds, true)) {
+                $validator->errors()->add('category_id', 'এই দোকান এই ক্যাটাগরির পণ্য বিক্রি করে না (This shop doesn\'t sell this category)।');
             }
 
             if ($this->input('discount_type') === 'percentage' && (float) $this->input('discount_value') > 100) {

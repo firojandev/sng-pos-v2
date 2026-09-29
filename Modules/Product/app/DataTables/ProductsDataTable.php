@@ -133,9 +133,11 @@ class ProductsDataTable extends BaseDataTable
     public function query(Product $model): QueryBuilder
     {
         $query = $model->newQuery()
+            ->listedInShop()
             ->with(['category', 'subCategory', 'brand', 'units'])
             ->select([
                 'products.id',
+                'products.company_id',
                 'products.shop_id',
                 'products.category_id',
                 'products.sub_category_id',

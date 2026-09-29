@@ -62,6 +62,9 @@
             <div style="display:flex; align-items:center; justify-content:space-between;">
                 <div style="display:flex; align-items:center; gap:6px;">
                     <span style="font-family:var(--font-mono, monospace); font-weight:700; font-size:13px; color:var(--ink-900);">#{{ $sale->invoice_no }}</span>
+                    @if ((int) $sale->shop_id !== (int) auth()->user()->shop_id)
+                        <x-core::badge color="blue" size="xs" variant="soft" title="অন্য দোকানের ইনভয়েস / Invoice from another shop">{{ $sale->shop?->name }}</x-core::badge>
+                    @endif
                     <span style="font-size:11px; padding:1px 6px; border-radius:4px; font-weight:600; background:var(--red-100); color:var(--red-600);">বাকি</span>
                 </div>
                 <div style="font-size:12px; color:var(--ink-500);">{{ optional($sale->sale_date)->format('d M, Y') }}</div>

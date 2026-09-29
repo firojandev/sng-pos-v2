@@ -12,5 +12,9 @@
     "Purchase": true,
     "Cashbox": true,
     "Report": true,
-    "FinanceManagement": true
+    "FinanceManagement": true,
+    "Company": true,
+    "Accounting": true,
+    "Payroll": true,
+    "Task": true
 }

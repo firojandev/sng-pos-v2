@@ -217,10 +217,10 @@
                 <span>৳ {{ BanglaNumber::toBnMoney($sale->product_discount) }}</span>
             </div>
         @endif
-        @if ((float) ($sale->discount ?? 0) > 0)
+        @if ((float) ($sale->discount ?? 0) + (float) ($sale->loyalty_discount ?? 0) > 0)
             <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
                 <span>(-) বিশেষ ছাড়:</span>
-                <span>৳ {{ BanglaNumber::toBnMoney($sale->discount) }}</span>
+                <span>৳ {{ BanglaNumber::toBnMoney((float) $sale->discount + (float) $sale->loyalty_discount) }}</span>
             </div>
         @endif
         @if ((float) ($sale->tax ?? 0) > 0)

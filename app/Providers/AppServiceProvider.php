@@ -33,8 +33,9 @@ class AppServiceProvider extends ServiceProvider
 
         Paginator::defaultView('vendor.pagination.custom');
 
+        // Billing belongs to the company of the user's current shop.
         Subscriptionify::resolveSubscribableUsing(function () {
-            return auth()->user()?->shop;
+            return auth()->user()?->shop?->billingCompany();
         });
 
         // Dynamic Site Branding from Settings
@@ -43,7 +44,7 @@ class AppServiceProvider extends ServiceProvider
             $brandTag = Setting::get('brand_tag', 'Cloud POS & ERP');
             config(['app.name' => $siteTitle]);
         } catch (\Throwable) {
-            $siteTitle = config('app.name', 'SNGPOS');
+            $siteTitle = config('app.name', 'SNG ERP');
             $brandTag = 'Cloud POS & ERP';
         }
 
@@ -51,11 +52,11 @@ class AppServiceProvider extends ServiceProvider
             try {
                 $siteTitle = Setting::getSiteTitle();
                 $brandTag = Setting::get('brand_tag', 'Cloud POS & ERP');
-                $siteTitleBn = $siteTitle === 'SNGPOS' ? 'SNGPOS' : $siteTitle;
+                $siteTitleBn = $siteTitle === 'SNG ERP' ? 'SNG ERP' : $siteTitle;
             } catch (\Throwable) {
-                $siteTitle = config('app.name', 'SNGPOS');
+                $siteTitle = config('app.name', 'SNG ERP');
                 $brandTag = 'Cloud POS & ERP';
-                $siteTitleBn = 'SNGPOS';
+                $siteTitleBn = 'SNG ERP';
             }
 
             $view->with([

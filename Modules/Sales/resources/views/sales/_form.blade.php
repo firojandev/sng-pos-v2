@@ -72,6 +72,8 @@
     $initialNote = old('note', $sale->note);
     $initialInvoiceNo = old('invoice_no', $sale->exists ? $sale->invoice_no : '');
     $initialCustomerId = old('customer_id', $sale->customer_id ?? request('customer_id'));
+    $loyaltyActive = auth()->user()?->shop?->hasFeature('loyalty')
+        && app(\Modules\Customer\Services\LoyaltyService::class)->isActiveAt(auth()->user()->shop);
     $customerFromReq = request('customer_id') ? $customers->firstWhere('id', request('customer_id')) : null;
     $initialCustomerName = old('customer_name', $sale->customer->name ?? $customerFromReq?->name ?? '');
     $initialCustomerPhone = old('customer_phone', $sale->customer->phone ?? $customerFromReq?->phone ?? '');
@@ -395,6 +397,17 @@
                     style="height: 32px; width: 32px; padding: 0; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"
                 />
             </div>
+            @if ($loyaltyActive)
+                {{-- A loyalty member's points, shown as soon as they are chosen. --}}
+                <div id="loyalty-member-badge" style="display:none; margin-top:8px; padding:8px 10px; border-radius:8px; background:var(--gold-100); border:1px solid var(--border); font-size:12.5px; color:var(--gold-ink);">
+                    <div style="display:flex; align-items:center; gap:6px; font-weight:700;">
+                        <x-core::icon name="sparkles" size="sm" />
+                        <span class="bn">লয়্যালটি সদস্য</span><span class="en" style="display:none;">Loyalty member</span>
+                        <span style="margin-left:auto;"><span id="loyalty-badge-points">0</span> <span class="bn">পয়েন্ট</span><span class="en" style="display:none;">pts</span> ≈ ৳<span id="loyalty-badge-value">0.00</span></span>
+                    </div>
+                    <div id="loyalty-badge-rule" style="font-size:11.5px; color:var(--ink-600); margin-top:2px;"></div>
+                </div>
+            @endif
         </div>
 
         <input type="hidden" name="customer_name" id="customer-name-input" value="{{ $initialCustomerName }}">
@@ -540,6 +553,24 @@
                 <input type="number" step="0.01" name="adjustment" id="adjustment-input" value="{{ rtrim(rtrim(number_format($initialAdjustment, 2, '.', ''), '0'), '.') }}"
                        style="width:90px; text-align:right; border:1px solid var(--border); background:var(--card); color:var(--ink-900); border-radius:6px; padding:4px 8px; font-size:13px; font-family:'Noto Sans Bengali','SolaimanLipi',sans-serif; outline:none;">
             </div>
+            @if ($loyaltyActive)
+                <div id="loyalty-redeem-row"
+                     style="display:none; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:13px;">
+                    <span style="color:var(--ink-700);">
+                        <span class="bn">পয়েন্ট রিডিম</span>
+                        <span class="en" style="display:none;">Redeem Points</span>
+                        <small id="loyalty-balance-note" style="display:block; font-size:11px; color:var(--ink-500);"></small>
+                    </span>
+                    <input type="number" step="1" min="0" name="loyalty_points" id="loyalty-points-input" value="{{ (int) old('loyalty_points', $sale->loyalty_points_redeemed ?? 0) }}"
+                           style="width:90px; text-align:right; border:1px solid var(--border); background:var(--card); color:var(--ink-900); border-radius:6px; padding:4px 8px; font-size:13px; font-family:'Noto Sans Bengali','SolaimanLipi',sans-serif; outline:none;">
+                </div>
+                <div id="loyalty-discount-row"
+                     style="display:none; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:13px;">
+                    <span class="bn" style="color:var(--green-600, #16a34a);">পয়েন্ট ছাড়</span>
+                    <span class="en" style="color:var(--green-600, #16a34a); display:none;">Points Discount</span>
+                    <b style="color:var(--green-600, #16a34a);">-৳<span id="loyalty-discount-display">0.00</span></b>
+                </div>
+            @endif
             <div id="customer-due-alert"
                  style="display:none; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:13px;">
                 <span class="bn" style="color:var(--red-600); font-weight:600;">পূর্ববর্তী মোট বকেয়া</span>
@@ -1005,6 +1036,64 @@
         return type === 'percent' ? subtotal() * (raw / 100) : raw;
     }
 
+    // Loyalty points: a member can pay part of the bill with points.
+    const LOYALTY_URL = @json($loyaltyActive ? route('loyalty.customers.show', ['customer' => '__ID__']) : null);
+    const EDITING_SALE_ID = @json($sale->id ?? null);
+    let loyaltyInfo = null;
+
+    function loyaltyDiscount(billBeforePoints) {
+        if (!loyaltyInfo || !loyaltyInfo.active || !loyaltyInfo.member) {
+            return 0;
+        }
+        const points = Math.max(0, Math.min(parseInt($('#loyalty-points-input').val(), 10) || 0, loyaltyInfo.available));
+        const cap = Math.max(billBeforePoints, 0) * loyaltyInfo.max_redeem_percent / 100;
+        return Math.min(points * loyaltyInfo.point_value, cap);
+    }
+
+    function refreshLoyalty(customerId) {
+        if (!LOYALTY_URL) {
+            return;
+        }
+        const cid = parseInt(customerId, 10);
+        const hide = function () {
+            loyaltyInfo = null;
+            $('#loyalty-member-badge, #loyalty-redeem-row, #loyalty-discount-row').hide();
+            $('#loyalty-points-input').val(0);
+            recalcGrand();
+        };
+        if (!cid) {
+            hide();
+            return;
+        }
+        $.getJSON(LOYALTY_URL.replace('__ID__', cid), { sale_id: EDITING_SALE_ID || '' }, function (data) {
+            if (!data.active || !data.member) {
+                hide();
+                return;
+            }
+
+            // Every member sees their points; redeeming needs some to spend.
+            $('#loyalty-badge-points').text(data.balance);
+            $('#loyalty-badge-value').text(fmt(data.value));
+            $('#loyalty-badge-rule').text(data.spend_amount > 0
+                ? 'প্রতি ৳' + data.spend_amount + ' কেনাকাটায় ' + data.points_per_spend + ' পয়েন্ট / ' + data.points_per_spend + ' pts per ৳' + data.spend_amount + ' spent'
+                : '');
+            $('#loyalty-member-badge').show();
+
+            if (data.available <= 0) {
+                loyaltyInfo = null;
+                $('#loyalty-redeem-row, #loyalty-discount-row').hide();
+                $('#loyalty-points-input').val(0);
+                recalcGrand();
+                return;
+            }
+            loyaltyInfo = data;
+            $('#loyalty-balance-note').text(data.available + ' পয়েন্ট / pts × ৳' + data.point_value);
+            $('#loyalty-points-input').attr('max', data.available);
+            $('#loyalty-redeem-row').css('display', 'flex');
+            recalcGrand();
+        });
+    }
+
     function calcGrandTotalCost() {
         const sub = subtotal();
         const discount = Math.min(discountAmount(), sub);
@@ -1012,7 +1101,8 @@
         const deliveryCharge = parseFloat($('#delivery-charge-input').val()) || 0;
         const adjustment = parseFloat($('#adjustment-input').val()) || 0;
         const prevDueVal = parseFloat($('#total_previous_due').val()) || 0;
-        return Math.max(0, sub - discount + tax + deliveryCharge + adjustment + prevDueVal);
+        const beforePoints = sub - discount + tax + deliveryCharge + adjustment;
+        return Math.max(0, beforePoints - loyaltyDiscount(beforePoints) + prevDueVal);
     }
 
     let drawerMode = 'cash';
@@ -1156,8 +1246,12 @@
         const totalProductDiscount = cart.reduce((sum, item) => sum + lineDiscountAmount(item), 0);
         const deliveryCharge = parseFloat($('#delivery-charge-input').val()) || 0;
         const adjustment = parseFloat($('#adjustment-input').val()) || 0;
-        const total = Math.max(sub - discount + tax + deliveryCharge + adjustment, 0);
+        const beforePoints = sub - discount + tax + deliveryCharge + adjustment;
+        const pointsDiscount = loyaltyDiscount(beforePoints);
+        const total = Math.max(beforePoints - pointsDiscount, 0);
 
+        $('#loyalty-discount-display').text(fmt(pointsDiscount));
+        $('#loyalty-discount-row').css('display', pointsDiscount > 0 ? 'flex' : 'none');
         $('#subtotal-display').text('৳' + fmt(sub + totalProductDiscount));
         $('#tax-hidden').val(fmt(tax));
         $('#tax-display').text('৳' + fmt(tax));
@@ -1386,7 +1480,7 @@
         renderAll();
     });
 
-    $(document).on('input change', '#discount-raw-input, #discount-type-select, #delivery-charge-input, #adjustment-input, #total_previous_due', function () {
+    $(document).on('input change', '#discount-raw-input, #discount-type-select, #delivery-charge-input, #adjustment-input, #loyalty-points-input, #total_previous_due', function () {
         recalcGrand();
     });
 
@@ -1456,6 +1550,7 @@
 
         const currentCustomerId = $('#customer-id-select').val();
         updateCustomerDueNotice(currentCustomerId);
+        refreshLoyalty(currentCustomerId);
 
         const total = calcGrandTotalCost();
 
@@ -1749,6 +1844,7 @@
         $('#customer-address-input').val(address);
 
         updateCustomerDueNotice(val);
+        refreshLoyalty(val);
 
         const currentPayType = $('#drawer-payment-type-select').val() || 'cash';
         if (currentPayType === 'both') {
@@ -2197,6 +2293,7 @@
     syncPaymentTypeUI();
     renderAll();
     updateCustomerDueNotice($('#customer-id-select').val());
+    refreshLoyalty($('#customer-id-select').val());
 })();
 </script>
 

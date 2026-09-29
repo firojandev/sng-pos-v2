@@ -1,6 +1,7 @@
 @php
     $authUser = auth()->user();
     $canQuickSale = $authUser && $authUser->shop && $authUser->shop->hasFeature('quick-sale') && $authUser->can('quick-sale.create');
+    $quickLoyaltyActive = $authUser?->shop?->hasFeature('loyalty') && app(\Modules\Customer\Services\LoyaltyService::class)->isActiveAt($authUser->shop);
 @endphp
 
 @if ($canQuickSale)
@@ -204,6 +205,15 @@
                     />
                     <input type="hidden" name="customer_id" id="customerIdInput" value="">
                 </div>
+
+                @if ($quickLoyaltyActive)
+                    {{-- A loyalty member's points, shown once they are chosen. --}}
+                    <div id="quick-loyalty-badge" style="display:none; grid-column:1 / -1; padding:8px 10px; border-radius:8px; background:var(--gold-100); border:1px solid var(--border); font-size:12.5px; color:var(--gold-ink); font-weight:700;">
+                        <x-core::icon name="sparkles" size="sm" />
+                        <span class="bn">লয়্যালটি সদস্য</span><span class="en" style="display:none;">Loyalty member</span>
+                        · <span id="quick-loyalty-points">0</span> <span class="bn">পয়েন্ট</span><span class="en" style="display:none;">pts</span> ≈ ৳<span id="quick-loyalty-value">0.00</span>
+                    </div>
+                @endif
 
                 {{-- Comment / Note (full width) --}}
                 <div style="grid-column:1 / -1;">
@@ -416,8 +426,25 @@ $(function () {
         $.getJSON("{{ route('quick-sale.customers.search') }}", { q: q }, renderCustomerResults);
     }
 
+    const QUICK_LOYALTY_URL = @json($quickLoyaltyActive ? route('loyalty.customers.show', ['customer' => '__ID__']) : null);
+
+    function showQuickLoyalty(customerId) {
+        $('#quick-loyalty-badge').hide();
+        if (!QUICK_LOYALTY_URL || !customerId) {
+            return;
+        }
+        $.getJSON(QUICK_LOYALTY_URL.replace('__ID__', customerId), function (data) {
+            if (data.active && data.member) {
+                $('#quick-loyalty-points').text(data.balance);
+                $('#quick-loyalty-value').text(Number(data.value || 0).toFixed(2));
+                $('#quick-loyalty-badge').show();
+            }
+        });
+    }
+
     $('#customerNameInput').on('input', function () {
         $('#customerIdInput').val('');
+        $('#quick-loyalty-badge').hide();
         clearTimeout(debounceTimer);
         var val = $(this).val().trim();
         debounceTimer = setTimeout(function () {
@@ -436,6 +463,7 @@ $(function () {
         $('#customerNameInput').val($(this).data('name'));
         $('#customerPhoneInput').val($(this).data('phone'));
         $('#customerResults').hide().empty();
+        showQuickLoyalty($(this).data('id'));
     });
 
     $(document).on('click', function (e) {

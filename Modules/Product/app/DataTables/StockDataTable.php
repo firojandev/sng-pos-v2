@@ -151,6 +151,7 @@ class StockDataTable extends BaseDataTable
     public function query(Product $model): QueryBuilder
     {
         $query = $model->newQuery()
+            ->listedInShop()
             ->with(['category', 'subCategory', 'brand', 'units'])
             ->select([
                 'products.id',

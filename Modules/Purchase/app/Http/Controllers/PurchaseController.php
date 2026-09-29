@@ -17,6 +17,7 @@ use Modules\Finance\Services\AccountTransactionService;
 use Modules\Product\Models\Batch;
 use Modules\Product\Models\Product;
 use Modules\Product\Models\StockMovement;
+use Modules\Product\Services\ProductPricing;
 use Modules\Purchase\DataTables\PurchasesDataTable;
 use Modules\Purchase\Http\Requests\ReceivePurchaseRemainingRequest;
 use Modules\Purchase\Http\Requests\StorePurchaseRequest;
@@ -251,7 +252,10 @@ class PurchaseController extends Controller
 
                 $before = $batch ? (float) $batch->quantity : 0.0;
 
+                $baseUnitCost = $conversionFactor > 0 ? (float) $purchaseItem->purchase_price / $conversionFactor : (float) $purchaseItem->purchase_price;
+
                 if ($batch) {
+                    $batch->absorbCost($baseEnteredQty, $baseUnitCost);
                     $batch->quantity += $baseEnteredQty;
                     if (! empty($input['mfg_date'])) {
                         $batch->mfg_date = $input['mfg_date'];
@@ -267,6 +271,7 @@ class PurchaseController extends Controller
                         'warehouse_id' => $purchase->warehouse_id,
                         'batch_no' => $batchNo,
                         'quantity' => $baseEnteredQty,
+                        'unit_cost' => $baseUnitCost,
                         'mfg_date' => $input['mfg_date'] ?? null,
                         'expiry_date' => $input['expiry_date'] ?? null,
                     ]);
@@ -385,11 +390,11 @@ class PurchaseController extends Controller
             ->withSum('purchases', 'due_amount')
             ->orderBy('name')
             ->get(['id', 'name', 'phone', 'address', 'opening_due']);
-        $products = Product::where('status', 'active')
+        $products = Product::availableInShop(listedOnly: false)->where('status', 'active')
             ->withSum(['batches as batches_sum_quantity' => fn ($q) => $q->where('warehouse_id', $warehouseId)], 'quantity')
             ->with('units')
             ->orderBy('name')->get();
-        $employees = Employee::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);
+        $employees = Employee::workingAtShop()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);
         $accounts = Account::active()->orderByDesc('is_default')->orderBy('name')->get();
 
         $invoicePurchase = null;
@@ -512,11 +517,11 @@ class PurchaseController extends Controller
             ->withSum(['purchases' => fn ($q) => $q->where('id', '!=', $purchase->id)], 'due_amount')
             ->orderBy('name')
             ->get(['id', 'name', 'phone', 'address', 'opening_due']);
-        $products = Product::where('status', 'active')
+        $products = Product::availableInShop(listedOnly: false)->where('status', 'active')
             ->withSum(['batches as batches_sum_quantity' => fn ($q) => $q->where('warehouse_id', $warehouseId)], 'quantity')
             ->with('units')
             ->orderBy('name')->get();
-        $employees = Employee::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);
+        $employees = Employee::workingAtShop()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);
         $accounts = Account::active()->orderByDesc('is_default')->orderBy('name')->get();
         $purchase->load('items', 'payments');
 
@@ -794,8 +799,8 @@ class PurchaseController extends Controller
 
             // (b) Second, earlier purchases with remaining due
             if ($remainingToAllocate > 0) {
-                $previousPurchases = Purchase::where('supplier_id', $supplier->id)
-                    ->where('id', '!=', $purchase->id)
+                $previousPurchases = $supplier->purchases()
+                    ->where('purchases.id', '!=', $purchase->id)
                     ->where('due_amount', '>', 0)
                     ->orderBy('purchase_date', 'asc')
                     ->orderBy('id', 'asc')
@@ -931,11 +936,12 @@ class PurchaseController extends Controller
                 $batchNo = 'BT-'.now()->format('ymd').'-'.$item['product_id'].'-'.random_int(100, 999);
             }
 
-            if (! empty($item['barcode']) && ! Product::where('barcode', $item['barcode'])->where('id', '!=', $item['product_id'])->exists()) {
-                Product::where('id', $item['product_id'])
-                    ->where(fn ($q) => $q->whereNull('barcode')->orWhere('barcode', '!=', $item['barcode']))
-                    ->update(['has_barcode' => true, 'barcode' => $item['barcode']]);
+            if (! empty($item['barcode'])) {
+                app(ProductPricing::class)->assignBarcode((int) $item['product_id'], $item['barcode']);
             }
+
+            // Buying a product at a shop means the shop sells it.
+            Product::find($item['product_id'])?->listInShop($purchase->shop_id);
 
             $conversionFactor = $this->unitConversionFactor((int) $item['product_id'], $item['unit_id'] ?? null);
             $qty = (float) $item['quantity'];
@@ -954,7 +960,7 @@ class PurchaseController extends Controller
             if ($baseSalePrice !== null) {
                 $productUpdate['sale_price'] = $baseSalePrice;
             }
-            Product::where('id', $item['product_id'])->update($productUpdate);
+            app(ProductPricing::class)->setCompanyValues((int) $item['product_id'], $productUpdate);
 
             $batch = Batch::where('product_id', $item['product_id'])
                 ->where('batch_no', $batchNo)
@@ -965,6 +971,7 @@ class PurchaseController extends Controller
             $before = $batch ? (float) $batch->quantity : 0.0;
 
             if ($batch) {
+                $batch->absorbCost($baseReceivedQuantity, $basePurchasePrice);
                 $batch->quantity += $baseReceivedQuantity;
                 if (! empty($item['mfg_date'])) {
                     $batch->mfg_date = $item['mfg_date'];
@@ -980,6 +987,7 @@ class PurchaseController extends Controller
                     'warehouse_id' => $purchase->warehouse_id,
                     'batch_no' => $batchNo,
                     'quantity' => $baseReceivedQuantity,
+                    'unit_cost' => $basePurchasePrice,
                     'mfg_date' => $item['mfg_date'] ?? null,
                     'expiry_date' => $item['expiry_date'] ?? null,
                 ]);
@@ -1095,7 +1103,7 @@ class PurchaseController extends Controller
             if ($previousItem) {
                 $prevFactor = $previousItem->unitConversionFactor();
                 $prevBasePrice = $prevFactor > 0 ? (float) $previousItem->purchase_price / $prevFactor : (float) $previousItem->purchase_price;
-                Product::where('id', $item->product_id)->update([
+                app(ProductPricing::class)->setCompanyValues((int) $item->product_id, [
                     'purchase_price' => $prevBasePrice,
                 ]);
             }

@@ -59,6 +59,14 @@ class SubscriptionifySeeder extends Seeder
             'branches' => ['name' => 'শাখা ও গুদাম (Branches & Warehouses)', 'sort_order' => 16],
             'customers' => ['name' => 'গ্রাহক ও বাকি খাতা (Customers & Due)', 'sort_order' => 17],
             'suppliers' => ['name' => 'সরবরাহকারী (Suppliers)', 'sort_order' => 18],
+            'loyalty' => ['name' => 'লয়্যালটি পয়েন্ট (Loyalty Points)', 'sort_order' => 18],
+            'accounting' => ['name' => 'হিসাববিজ্ঞান (Accounting)', 'sort_order' => 18],
+            'attendance' => ['name' => 'হাজিরা (Attendance)', 'sort_order' => 18],
+            'leave' => ['name' => 'ছুটি (Leave)', 'sort_order' => 18],
+            'hr-setup' => ['name' => 'এইচআর সেটআপ (HR Setup)', 'sort_order' => 18],
+            'payroll' => ['name' => 'বেতন — পে-রোল (Payroll)', 'sort_order' => 18],
+            'payroll-setup' => ['name' => 'পে-রোল সেটআপ (Payroll Setup)', 'sort_order' => 18],
+            'tasks' => ['name' => 'টাস্ক ম্যানেজমেন্ট (Task Management)', 'sort_order' => 18],
             'income' => ['name' => 'আয় (Income)', 'sort_order' => 19],
             'expense' => ['name' => 'ব্যয় (Expense)', 'sort_order' => 20],
             'accounts' => ['name' => 'অ্যাকাউন্ট (Accounts)', 'sort_order' => 21],
@@ -123,7 +131,7 @@ class SubscriptionifySeeder extends Seeder
                     'max-warehouses' => 1,
                     'max-products' => 100,
                 ],
-                'toggles' => ['sales', 'purchase', 'cashbox', 'quick-sale', 'stock', 'products', 'branches', 'customers', 'suppliers', 'printer-settings', 'subscription'],
+                'toggles' => ['sales', 'purchase', 'cashbox', 'quick-sale', 'stock', 'products', 'branches', 'customers', 'suppliers', 'loyalty', 'accounting', 'attendance', 'leave', 'hr-setup', 'printer-settings', 'subscription'],
             ],
             [
                 'name' => 'বেসিক (Starter)',
@@ -144,7 +152,7 @@ class SubscriptionifySeeder extends Seeder
                     'max-warehouses' => 1,
                     'max-products' => 200,
                 ],
-                'toggles' => ['sales', 'purchase', 'cashbox', 'quick-sale', 'stock', 'products', 'branches', 'customers', 'suppliers', 'income', 'expense', 'printer-settings', 'report-sales', 'report-sales-vat', 'subscription'],
+                'toggles' => ['sales', 'purchase', 'cashbox', 'quick-sale', 'stock', 'products', 'branches', 'customers', 'suppliers', 'loyalty', 'accounting', 'attendance', 'leave', 'hr-setup', 'income', 'expense', 'printer-settings', 'report-sales', 'report-sales-vat', 'subscription'],
             ],
             [
                 'name' => 'স্ট্যান্ডার্ড (Standard)',
@@ -165,7 +173,7 @@ class SubscriptionifySeeder extends Seeder
                     'max-warehouses' => 3,
                     'max-products' => 2000,
                 ],
-                'toggles' => ['sales', 'purchase', 'cashbox', 'quick-sale', 'stock', 'products', 'branches', 'customers', 'suppliers', 'income', 'expense', 'accounts', 'account-transfers', 'assets', 'debts', 'lend', 'security-money', 'tax', 'printer-settings', 'whatsapp-settings', 'report-sales', 'report-sales-vat', 'report-purchase', 'report-stock', 'report-products', 'report-product-profit-loss', 'report-profit-loss', 'report-income', 'report-expense', 'report-financial-position', 'report-balance-sheet', 'employees', 'users', 'subscription'],
+                'toggles' => ['sales', 'purchase', 'cashbox', 'quick-sale', 'stock', 'products', 'branches', 'customers', 'suppliers', 'loyalty', 'accounting', 'attendance', 'leave', 'hr-setup', 'income', 'expense', 'accounts', 'account-transfers', 'assets', 'debts', 'lend', 'security-money', 'tax', 'printer-settings', 'whatsapp-settings', 'report-sales', 'report-sales-vat', 'report-purchase', 'report-stock', 'report-products', 'report-product-profit-loss', 'report-profit-loss', 'report-income', 'report-expense', 'report-financial-position', 'report-balance-sheet', 'employees', 'users', 'subscription'],
             ],
             [
                 'name' => 'প্রিমিয়াম (Enterprise)',
@@ -190,9 +198,13 @@ class SubscriptionifySeeder extends Seeder
             ],
         ];
 
+        // The ERP modules (HR, payroll, accounting, loyalty, tasks) come with
+        // every plan; the super admin can take them off a plan later.
+        $erpModules = ['employees', 'attendance', 'leave', 'hr-setup', 'payroll', 'payroll-setup', 'accounting', 'loyalty', 'tasks'];
+
         foreach ($plans as $planData) {
             $limits = $planData['limits'];
-            $toggles = $planData['toggles'];
+            $toggles = array_values(array_unique([...$planData['toggles'], ...$erpModules]));
             unset($planData['limits'], $planData['toggles']);
 
             $planData['max_users'] = $limits['max-users'] ?? null;

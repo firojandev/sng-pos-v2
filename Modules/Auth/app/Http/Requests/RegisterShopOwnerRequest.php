@@ -3,6 +3,7 @@
 namespace Modules\Auth\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class RegisterShopOwnerRequest extends FormRequest
 {
@@ -22,6 +23,8 @@ class RegisterShopOwnerRequest extends FormRequest
     {
         return [
             // Step 1: Owner Details
+            'account_type' => ['nullable', 'in:shop,company'],
+            'company_name' => ['nullable', 'required_if:account_type,company', 'string', 'max:255'],
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:30', 'unique:users,phone'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
@@ -36,6 +39,8 @@ class RegisterShopOwnerRequest extends FormRequest
             'currency_symbol' => ['nullable', 'string', 'max:10'],
 
             // Step 3: Setup & Initial Cash
+            'category_ids' => ['nullable', 'array'],
+            'category_ids.*' => ['integer', Rule::exists('categories', 'id')->whereNull('company_id')->where('type', 'product')],
             'branch_name' => ['nullable', 'string', 'max:255'],
             'warehouse_name' => ['nullable', 'string', 'max:255'],
             'opening_cash_balance' => ['nullable', 'numeric', 'min:0'],

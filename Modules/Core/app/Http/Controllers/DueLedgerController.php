@@ -45,7 +45,7 @@ class DueLedgerController extends Controller
     public function customerDetails(Customer $customer): View
     {
         $customer->load([
-            'sales' => fn ($q) => $q->where('due_amount', '>', 0)->latest('sale_date'),
+            'sales' => fn ($q) => $q->with('shop:id,name')->where('due_amount', '>', 0)->latest('sale_date'),
         ]);
         $customer->total_due = round((float) $customer->opening_due + (float) $customer->sales->sum('due_amount'), 2);
 
@@ -55,7 +55,7 @@ class DueLedgerController extends Controller
     public function supplierDetails(Supplier $supplier): View
     {
         $supplier->load([
-            'purchases' => fn ($q) => $q->where('due_amount', '>', 0)->latest('purchase_date'),
+            'purchases' => fn ($q) => $q->with('shop:id,name')->where('due_amount', '>', 0)->latest('purchase_date'),
         ]);
         $supplier->total_due = round((float) $supplier->opening_due + (float) $supplier->purchases->sum('due_amount'), 2);
 
@@ -65,7 +65,7 @@ class DueLedgerController extends Controller
     public function customerPaymentModal(Customer $customer): View
     {
         $customer->load([
-            'sales' => fn ($q) => $q->where('due_amount', '>', 0)->orderBy('sale_date', 'asc')->orderBy('id', 'asc'),
+            'sales' => fn ($q) => $q->with('shop:id,name')->where('due_amount', '>', 0)->orderBy('sale_date', 'asc')->orderBy('id', 'asc'),
         ]);
         $customer->total_due = round((float) $customer->opening_due + (float) $customer->sales->sum('due_amount'), 2);
 
@@ -89,7 +89,7 @@ class DueLedgerController extends Controller
         AccountTransactionService $accountTransactionService
     ): JsonResponse {
         $customer->load([
-            'sales' => fn ($q) => $q->where('due_amount', '>', 0)->orderBy('sale_date', 'asc')->orderBy('id', 'asc'),
+            'sales' => fn ($q) => $q->with('shop:id,name')->where('due_amount', '>', 0)->orderBy('sale_date', 'asc')->orderBy('id', 'asc'),
         ]);
         $totalOutstanding = round((float) $customer->opening_due + (float) $customer->sales->sum('due_amount'), 2);
 
@@ -239,8 +239,8 @@ class DueLedgerController extends Controller
                         continue;
                     }
 
-                    $sale = Sale::where('id', $saleId)
-                        ->where('customer_id', $lockedCustomer->id)
+                    $sale = $lockedCustomer->sales()
+                        ->where('sales.id', $saleId)
                         ->lockForUpdate()
                         ->first();
 
@@ -270,7 +270,7 @@ class DueLedgerController extends Controller
                 }
 
                 if ($remainingToAllocate > 0) {
-                    $sales = Sale::where('customer_id', $lockedCustomer->id)
+                    $sales = $lockedCustomer->sales()
                         ->where('due_amount', '>', 0)
                         ->orderBy('sale_date', 'asc')
                         ->orderBy('id', 'asc')
@@ -355,7 +355,7 @@ class DueLedgerController extends Controller
     public function supplierPaymentModal(Supplier $supplier): View
     {
         $supplier->load([
-            'purchases' => fn ($q) => $q->where('due_amount', '>', 0)->orderBy('purchase_date', 'asc')->orderBy('id', 'asc'),
+            'purchases' => fn ($q) => $q->with('shop:id,name')->where('due_amount', '>', 0)->orderBy('purchase_date', 'asc')->orderBy('id', 'asc'),
         ]);
         $supplier->total_due = round((float) $supplier->opening_due + (float) $supplier->purchases->sum('due_amount'), 2);
 
@@ -379,7 +379,7 @@ class DueLedgerController extends Controller
         AccountTransactionService $accountTransactionService
     ): JsonResponse {
         $supplier->load([
-            'purchases' => fn ($q) => $q->where('due_amount', '>', 0)->orderBy('purchase_date', 'asc')->orderBy('id', 'asc'),
+            'purchases' => fn ($q) => $q->with('shop:id,name')->where('due_amount', '>', 0)->orderBy('purchase_date', 'asc')->orderBy('id', 'asc'),
         ]);
         $totalOutstanding = round((float) $supplier->opening_due + (float) $supplier->purchases->sum('due_amount'), 2);
 
@@ -529,8 +529,8 @@ class DueLedgerController extends Controller
                         continue;
                     }
 
-                    $purchase = Purchase::where('id', $purchaseId)
-                        ->where('supplier_id', $lockedSupplier->id)
+                    $purchase = $lockedSupplier->purchases()
+                        ->where('purchases.id', $purchaseId)
                         ->lockForUpdate()
                         ->first();
 
@@ -560,7 +560,7 @@ class DueLedgerController extends Controller
                 }
 
                 if ($remainingToAllocate > 0) {
-                    $purchases = Purchase::where('supplier_id', $lockedSupplier->id)
+                    $purchases = $lockedSupplier->purchases()
                         ->where('due_amount', '>', 0)
                         ->orderBy('purchase_date', 'asc')
                         ->orderBy('id', 'asc')
@@ -645,7 +645,9 @@ class DueLedgerController extends Controller
     protected function calculateCustomerTotalDue(): float
     {
         $opening = (float) Customer::query()->sum('opening_due');
-        $salesDue = (float) Sale::query()->sum('due_amount');
+        $salesDue = (float) Sale::withoutGlobalScope('shop')
+            ->whereIn('customer_id', Customer::query()->select('id'))
+            ->sum('due_amount');
 
         return round($opening + $salesDue, 2);
     }
@@ -653,7 +655,9 @@ class DueLedgerController extends Controller
     protected function calculateSupplierTotalDue(): float
     {
         $opening = (float) Supplier::query()->sum('opening_due');
-        $purchaseDue = (float) Purchase::query()->sum('due_amount');
+        $purchaseDue = (float) Purchase::withoutGlobalScope('shop')
+            ->whereIn('supplier_id', Supplier::query()->select('id'))
+            ->sum('due_amount');
 
         return round($opening + $purchaseDue, 2);
     }

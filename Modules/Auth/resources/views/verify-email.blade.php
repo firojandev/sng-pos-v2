@@ -1,8 +1,6 @@
 <x-core::auth-layout
     title="ইমেইল ভেরিফিকেশন"
     title-en="Email Verification"
-    card-title="SNG Pos"
-    card-title-en="SNG Pos"
     cardSubtitle=""
     cardSubtitleEn=""
     max-width="540px"

@@ -12,6 +12,7 @@ use Modules\FinanceManagement\DataTables\AssetsDataTable;
 use Modules\FinanceManagement\Http\Requests\StoreAssetRequest;
 use Modules\FinanceManagement\Http\Requests\UpdateAssetRequest;
 use Modules\FinanceManagement\Models\Asset;
+use Modules\FinanceManagement\Services\AssetDepreciationService;
 
 class AssetController extends Controller
 {
@@ -62,6 +63,8 @@ class AssetController extends Controller
                 'amount' => (float) $asset->amount,
                 'depreciation_type' => $asset->depreciation_type ?? 'flat',
                 'depreciation' => (float) ($asset->depreciation ?? 0),
+                'purchase_date' => $asset->purchase_date?->toDateString(),
+                'residual_value' => (float) $asset->residual_value,
                 'depreciation_amount' => (float) $asset->depreciation_amount,
                 'net_value' => (float) $asset->net_value,
                 'validity' => $asset->validity !== null ? (float) $asset->validity : null,
@@ -103,5 +106,26 @@ class AssetController extends Controller
         }
 
         return redirect()->route('assets.index')->with('status', 'সম্পদ মুছে ফেলা হয়েছে');
+    }
+
+    /**
+     * Record the straight-line depreciation due up to last month.
+     */
+    public function depreciate(AssetDepreciationService $depreciation): RedirectResponse
+    {
+        $count = $depreciation->recordUpTo(now()->subMonthNoOverflow(), (int) auth()->user()->shop_id);
+
+        return back()->with('status', "{$count} মাসের অবচয় হিসাবে পোস্ট হয়েছে");
+    }
+
+    public function schedule(Asset $asset, AssetDepreciationService $depreciation): View
+    {
+        $recorded = $asset->depreciations()->get()->keyBy(fn ($row) => $row->period->format('Y-m'));
+
+        return view('financemanagement::assets.schedule', [
+            'asset' => $asset,
+            'schedule' => $depreciation->schedule($asset),
+            'recorded' => $recorded,
+        ]);
     }
 }

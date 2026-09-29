@@ -191,6 +191,16 @@
             <form method="POST" action="{{ route('employees.store') }}" id="create_employee_form">
                 @csrf
                 <div style="display:flex; flex-direction:column; gap:14px;">
+                    <x-core::input
+                        name="employee_code"
+                        id="create_employee_code"
+                        label="কর্মচারী কোড"
+                        label-en="Employee Code"
+                        :value="$nextEmployeeCode"
+                        placeholder="EMP-0001"
+                        placeholder-en="EMP-0001"
+                        size="sm"
+                    />
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                         <x-core::input
                             name="name"
@@ -356,6 +366,16 @@
                 @csrf
                 @method('PUT')
                 <div style="display:flex; flex-direction:column; gap:14px;">
+                    <x-core::input
+                        name="employee_code"
+                        id="edit_employee_code"
+                        label="কর্মচারী কোড"
+                        label-en="Employee Code"
+                        placeholder="EMP-0001"
+                        placeholder-en="EMP-0001"
+                        size="sm"
+                        :required="true"
+                    />
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                         <x-core::input
                             name="name"
@@ -581,6 +601,10 @@
                     },
                     success: function (res) {
                         closeModal($('#createEmployeeModal'));
+                        // The next new employee gets the next free code.
+                        if (res.next_employee_code) {
+                            $('#create_employee_code').attr('value', res.next_employee_code);
+                        }
                         $form[0].reset();
                         var table = getTable();
                         if (table) {
@@ -644,6 +668,7 @@
                         var $form = $('#edit_employee_form');
 
                         $form.attr('action', data.update_url);
+                        $('#edit_employee_code').val(employee.employee_code || '');
                         $('#edit_employee_name').val(employee.name);
                         $('#edit_employee_phone').val(employee.phone);
                         $('#edit_employee_email').val(employee.email || '');

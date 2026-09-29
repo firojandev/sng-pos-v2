@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Product\Http\Controllers\BatchController;
 use Modules\Product\Http\Controllers\BrandController;
+use Modules\Product\Http\Controllers\CatalogueController;
 use Modules\Product\Http\Controllers\CategoryController;
 use Modules\Product\Http\Controllers\ModelController;
 use Modules\Product\Http\Controllers\ProductController;
@@ -10,11 +11,22 @@ use Modules\Product\Http\Controllers\StockController;
 use Modules\Product\Http\Controllers\StockTransferController;
 use Modules\Product\Http\Controllers\SubCategoryController;
 use Modules\Product\Http\Controllers\UnitController;
+use Modules\Product\Http\Middleware\EnsureShopCatalogue;
 
-Route::middleware(['auth', 'feature:products'])->group(function () {
+Route::middleware(['auth', 'feature:products', EnsureShopCatalogue::class])->group(function () {
     Route::get('products/{product}/stock-history', [ProductController::class, 'stockHistory'])
         ->name('products.stock-history')
         ->middleware('permission:products.view');
+
+    Route::prefix('products/catalogue')->name('catalogue.')->group(function () {
+        Route::get('/', [CatalogueController::class, 'index'])->name('index')->middleware('permission:products.view');
+        Route::get('duplicates', [CatalogueController::class, 'duplicates'])->name('duplicates')->middleware('permission:products.create');
+        Route::put('categories', [CatalogueController::class, 'updateCategories'])->name('categories.update')->middleware('permission:products.edit');
+        Route::post('categories/{category}/list', [CatalogueController::class, 'listCategory'])->name('categories.list')->middleware('permission:products.create');
+        Route::post('products/{product}/list', [CatalogueController::class, 'listProduct'])->name('products.list')->middleware('permission:products.create');
+    });
+    Route::get('products/{product}/shop-price', [CatalogueController::class, 'editShopPrice'])->name('products.shop-price.edit')->middleware('permission:products.edit');
+    Route::put('products/{product}/shop-price', [CatalogueController::class, 'updateShopPrice'])->name('products.shop-price.update')->middleware('permission:products.edit');
 
     Route::resource('products', ProductController::class)->except(['show'])
         ->middlewareFor(['index'], 'permission:products.view')
@@ -56,7 +68,7 @@ Route::middleware(['auth', 'feature:products'])->group(function () {
     });
 });
 
-Route::middleware(['auth', 'feature:stock'])->group(function () {
+Route::middleware(['auth', 'feature:stock', EnsureShopCatalogue::class])->group(function () {
     Route::get('stock', [StockController::class, 'index'])->name('stock.index')->middleware('permission:stock.view');
     Route::post('stock/adjust', [StockController::class, 'adjust'])->name('stock.adjust')->middleware('permission:stock.adjust');
     Route::get('stock/history', [StockController::class, 'history'])->name('stock.history')->middleware('permission:stock.view');

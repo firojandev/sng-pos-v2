@@ -29,7 +29,26 @@
         'users' => 'lock',
         'printer-settings' => 'printer',
         'whatsapp-settings' => 'message-square',
+        'loyalty' => 'sparkles',
+        'accounting' => 'landmark',
+        'attendance' => 'calendar',
+        'leave' => 'calendar',
+        'hr-setup' => 'settings',
+        'payroll' => 'banknote',
+        'payroll-setup' => 'sliders',
+        'tasks' => 'check-circle',
     ];
+
+    // Modules grouped into sections; anything not listed (including features
+    // added later) shows under the general section.
+    $moduleGroups = [
+        'hr' => ['title' => ['bn' => 'এইচআর ও পে-রোল', 'en' => 'HR & Payroll'], 'keys' => ['employees', 'attendance', 'leave', 'hr-setup', 'payroll', 'payroll-setup']],
+        'erp' => ['title' => ['bn' => 'হিসাববিজ্ঞান ও টাস্ক', 'en' => 'Accounting & Tasks'], 'keys' => ['accounting', 'tasks']],
+    ];
+    $grouped = collect($moduleGroups)->pluck('keys')->flatten()->all();
+    $featureSections = ['general' => ['title' => null, 'keys' => array_values(array_filter(array_keys($features), fn ($key) => ! str_starts_with($key, 'report-') && ! in_array($key, $grouped, true)))]]
+        + collect($moduleGroups)->map(fn ($group) => ['title' => $group['title'], 'keys' => array_values(array_filter($group['keys'], fn ($key) => isset($features[$key])))])->all()
+        + ['reports' => ['title' => ['bn' => 'রিপোর্ট মডিউল', 'en' => 'Report Modules'], 'keys' => array_values(array_filter(array_keys($features), fn ($key) => str_starts_with($key, 'report-')))]];
 @endphp
 
 <style>
@@ -227,83 +246,54 @@
                 </div>
             </div>
             <div class="panel-body" style="padding:18px;">
-                <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:10px;">
-                    @foreach ($features as $key => $labels)
-                        @continue(str_starts_with($key, 'report-'))
-                        @php
-                            $isChecked = in_array($key, $selectedFeatures);
-                            $iconName = $featureIcons[$key] ?? 'check-circle';
-                        @endphp
-                        <label
-                            class="form-radio-card feature-card {{ $isChecked ? 'active' : '' }}"
-                            style="padding:10px 12px; gap:10px; border-radius:10px;"
-                        >
-                            <input
-                                type="checkbox"
-                                name="features[]"
-                                value="{{ $key }}"
-                                class="feature-checkbox"
-                                data-feature-key="{{ $key }}"
-                                data-feature-name-bn="{{ $labels['bn'] }}"
-                                data-feature-name-en="{{ $labels['en'] }}"
-                                {{ $isChecked ? 'checked' : '' }}
-                            />
-                            <span class="card-icon" style="width:30px; height:30px; border-radius:8px;">
-                                <x-core::icon :name="$iconName" size="15" />
+                @foreach ($featureSections as $sectionKey => $section)
+                    @continue($section['keys'] === [])
+                    @if ($section['title'])
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; font-weight:700; font-size:12.5px; color:var(--ink-700); margin:16px 0 10px; padding-top:14px; border-top:1px solid var(--border);">
+                            <span><span class="bn">{{ $section['title']['bn'] }}</span><span class="en" style="display:none;">{{ $section['title']['en'] }}</span></span>
+                            <span style="display:flex; gap:6px;">
+                                <x-core::button type="button" variant="soft" color="teal" size="xs" icon="check" class="btn-select-feature-section" data-section="{{ $sectionKey }}"><span class="bn">সব</span><span class="en" style="display:none;">All</span></x-core::button>
+                                <x-core::button type="button" variant="soft" color="secondary" size="xs" icon="x" class="btn-deselect-feature-section" data-section="{{ $sectionKey }}"><span class="bn">কোনোটি না</span><span class="en" style="display:none;">None</span></x-core::button>
                             </span>
-                            <span class="card-content">
-                                <span class="card-title" style="font-size:12.5px;">
-                                    <span class="bn">{{ $labels['bn'] }}</span>
-                                    <span class="en" style="display:none;">{{ $labels['en'] }}</span>
+                        </div>
+                    @endif
+                    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:10px;" data-feature-section="{{ $sectionKey }}">
+                        @foreach ($section['keys'] as $key)
+                            @php
+                                $labels = $features[$key];
+                                $isChecked = in_array($key, $selectedFeatures);
+                                $iconName = $featureIcons[$key] ?? 'check-circle';
+                            @endphp
+                            <label
+                                class="form-radio-card feature-card {{ $isChecked ? 'active' : '' }}"
+                                style="padding:10px 12px; gap:10px; border-radius:10px;"
+                            >
+                                <input
+                                    type="checkbox"
+                                    name="features[]"
+                                    value="{{ $key }}"
+                                    class="feature-checkbox"
+                                    data-feature-key="{{ $key }}"
+                                    data-feature-name-bn="{{ $labels['bn'] }}"
+                                    data-feature-name-en="{{ $labels['en'] }}"
+                                    {{ $isChecked ? 'checked' : '' }}
+                                />
+                                <span class="card-icon" style="width:30px; height:30px; border-radius:8px;">
+                                    <x-core::icon :name="$iconName" size="15" />
                                 </span>
-                                <span class="card-desc" style="font-size:11px; font-family:monospace; color:var(--ink-400);">
-                                    {{ $key }}
+                                <span class="card-content">
+                                    <span class="card-title" style="font-size:12.5px;">
+                                        <span class="bn">{{ $labels['bn'] }}</span>
+                                        <span class="en" style="display:none;">{{ $labels['en'] }}</span>
+                                    </span>
+                                    <span class="card-desc" style="font-size:11px; font-family:monospace; color:var(--ink-400);">
+                                        {{ $key }}
+                                    </span>
                                 </span>
-                            </span>
-                        </label>
-                    @endforeach
-                </div>
-
-                <div style="font-weight:700; font-size:12.5px; color:var(--ink-700); margin:16px 0 10px; padding-top:14px; border-top:1px solid var(--border);">
-                    <span class="bn">রিপোর্ট মডিউল</span>
-                    <span class="en" style="display:none;">Report Modules</span>
-                </div>
-                <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:10px;">
-                    @foreach ($features as $key => $labels)
-                        @continue(! str_starts_with($key, 'report-'))
-                        @php
-                            $isChecked = in_array($key, $selectedFeatures);
-                            $iconName = $featureIcons[$key] ?? 'check-circle';
-                        @endphp
-                        <label
-                            class="form-radio-card feature-card {{ $isChecked ? 'active' : '' }}"
-                            style="padding:10px 12px; gap:10px; border-radius:10px;"
-                        >
-                            <input
-                                type="checkbox"
-                                name="features[]"
-                                value="{{ $key }}"
-                                class="feature-checkbox"
-                                data-feature-key="{{ $key }}"
-                                data-feature-name-bn="{{ $labels['bn'] }}"
-                                data-feature-name-en="{{ $labels['en'] }}"
-                                {{ $isChecked ? 'checked' : '' }}
-                            />
-                            <span class="card-icon" style="width:30px; height:30px; border-radius:8px;">
-                                <x-core::icon :name="$iconName" size="15" />
-                            </span>
-                            <span class="card-content">
-                                <span class="card-title" style="font-size:12.5px;">
-                                    <span class="bn">{{ $labels['bn'] }}</span>
-                                    <span class="en" style="display:none;">{{ $labels['en'] }}</span>
-                                </span>
-                                <span class="card-desc" style="font-size:11px; font-family:monospace; color:var(--ink-400);">
-                                    {{ $key }}
-                                </span>
-                            </span>
-                        </label>
-                    @endforeach
-                </div>
+                            </label>
+                        @endforeach
+                    </div>
+                @endforeach
 
                 @error('features')
                     <div class="form-error" style="margin-top:10px;">{{ $message }}</div>
@@ -532,6 +522,12 @@
         });
 
         // Select All Features
+        $(document).on('click', '.btn-select-feature-section, .btn-deselect-feature-section', function (e) {
+            e.preventDefault();
+            var checked = $(this).hasClass('btn-select-feature-section');
+            $('[data-feature-section="' + $(this).data('section') + '"] input[name="features[]"]').prop('checked', checked).trigger('change');
+        });
+
         $(document).on('click', '#btn-select-all-features', function (e) {
             e.preventDefault();
             $('input[name="features[]"]').prop('checked', true);

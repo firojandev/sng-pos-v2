@@ -28,7 +28,7 @@ class DynamicSiteTitleTest extends TestCase
 
     public function test_setting_get_site_title_returns_dynamic_value(): void
     {
-        $this->assertEquals('SNGPOS', Setting::getSiteTitle());
+        $this->assertEquals('SNG ERP', Setting::getSiteTitle());
 
         Setting::set('site_title', 'Nova POS ERP');
 
@@ -42,10 +42,9 @@ class DynamicSiteTitleTest extends TestCase
         $response = $this->get('/login');
 
         $response->assertOk();
-        $response->assertSee('Falcon POS-এ লগইন করুন');
-        $response->assertSee('Sign in to Falcon POS');
+        $response->assertSee('<title>লগইন · Falcon POS</title>', false);
         $response->assertSee('Falcon POS');
-        $response->assertDontSee('SNGPOS');
+        $response->assertDontSee('SNG ERP');
         $response->assertDontSee('এসএনজিপস');
     }
 
@@ -60,7 +59,7 @@ class DynamicSiteTitleTest extends TestCase
         $response->assertSee('Smart Counter POS');
         $response->assertSee('Modern POS Solution');
         $response->assertDontSee('এসএনজিপস');
-        $response->assertDontSee('SNGPOS');
+        $response->assertDontSee('SNG ERP');
     }
 
     public function test_landing_page_uses_dynamic_site_title(): void
@@ -75,7 +74,7 @@ class DynamicSiteTitleTest extends TestCase
         $response->assertSee('কেন Titan POS');
         $response->assertSee('Titan POS স্মার্ট অটোমেশন');
         $response->assertSee('Titan POS-এ');
-        $response->assertDontSee('SNGPOS');
+        $response->assertDontSee('SNG ERP');
     }
 
     public function test_super_admin_can_update_site_title_and_affects_whole_application(): void
@@ -96,7 +95,7 @@ class DynamicSiteTitleTest extends TestCase
         $loginResponse = $this->get('/login');
         $loginResponse->assertOk();
         $loginResponse->assertSee('Nexus Retail POS');
-        $loginResponse->assertDontSee('SNGPOS');
+        $loginResponse->assertDontSee('SNG ERP');
         $loginResponse->assertDontSee('এসএনজিপস');
 
         // 2. Check Admin Panel Layout
@@ -104,13 +103,13 @@ class DynamicSiteTitleTest extends TestCase
         $dashResponse->assertOk();
         $dashResponse->assertSee('Nexus Retail POS');
         $dashResponse->assertSee('Next-Gen POS');
-        $dashResponse->assertDontSee('SNGPOS');
+        $dashResponse->assertDontSee('SNG ERP');
         $dashResponse->assertDontSee('এসএনজিপস');
 
         // 3. Check Landing Page
         $landingResponse = $this->get('/');
         $landingResponse->assertOk();
         $landingResponse->assertSee('Nexus Retail POS');
-        $landingResponse->assertDontSee('SNGPOS');
+        $landingResponse->assertDontSee('SNG ERP');
     }
 }

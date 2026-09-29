@@ -3,6 +3,7 @@
 namespace Modules\Finance\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Modules\Core\Support\TenantRules;
 
 class UpdateExpenseRequest extends FormRequest
 {
@@ -15,8 +16,8 @@ class UpdateExpenseRequest extends FormRequest
     {
         return [
             'account_id' => ['nullable', 'exists:accounts,id'],
-            'expense_category_id' => ['nullable', 'exists:categories,id'],
-            'expense_sub_category_id' => ['nullable', 'exists:categories,id'],
+            'expense_category_id' => ['nullable', TenantRules::catalogExists('categories')],
+            'expense_sub_category_id' => ['nullable', TenantRules::catalogExists('categories')],
             'title' => ['required', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'min:0'],
             'expense_date' => ['required', 'date'],

@@ -3,6 +3,7 @@
 namespace Modules\Sales\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Modules\Core\Support\TenantRules;
 
 class StoreQuickSaleRequest extends FormRequest
 {
@@ -57,7 +58,7 @@ class StoreQuickSaleRequest extends FormRequest
             'cash_amount' => ['nullable', 'numeric', 'min:0'],
             'bank_amount' => ['nullable', 'numeric', 'min:0'],
             'profit' => ['nullable', 'numeric'],
-            'customer_id' => ['nullable', 'exists:customers,id'],
+            'customer_id' => ['nullable', TenantRules::companyExists('customers')],
             'customer_name' => ['nullable', 'string', 'max:255'],
             'customer_phone' => ['nullable', 'string', 'max:30'],
             'note' => ['nullable', 'string', 'max:1000'],

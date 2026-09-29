@@ -291,8 +291,10 @@ class UserProfileTest extends TestCase
         Storage::fake('public');
 
         $path = UploadedFile::fake()->image('topbar_avatar.jpg')->store('avatars', 'public');
+        $shop = Shop::create(['name' => 'Avatar Shop', 'slug' => 'avatar-shop', 'status' => 'active']);
         $user = User::factory()->create([
             'avatar' => $path,
+            'shop_id' => $shop->id,
         ]);
 
         $response = $this->actingAs($user)->get(route('dashboard'));

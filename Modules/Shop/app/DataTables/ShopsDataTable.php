@@ -124,6 +124,7 @@ class ShopsDataTable extends BaseDataTable
             ->with(['activeSubscription.plan.features'])
             ->select([
                 'shops.id',
+                'shops.company_id',
                 'shops.name',
                 'shops.slug',
                 'shops.store_code',

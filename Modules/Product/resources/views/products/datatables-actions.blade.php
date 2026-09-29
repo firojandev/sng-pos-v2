@@ -1,3 +1,6 @@
+@php
+    $canChangeProduct = $product->isEditableBy(auth()->user());
+@endphp
 <x-core::button-group size="xs" aria-label="Product Actions">
     @can('products.view')
         <x-core::button
@@ -12,6 +15,17 @@
             title="স্টকের ইতিহাস / Stock History"
         />
     @endcan
+    @can('products.edit')
+        <x-core::button
+            :href="route('products.shop-price.edit', $product)"
+            variant="soft"
+            color="teal"
+            icon="tag"
+            icon-only
+            title="দোকানের নিজস্ব মূল্য / Shop Price"
+        />
+    @endcan
+    @if ($canChangeProduct)
     @can('products.edit')
         <x-core::button
             :href="route('products.edit', $product)"
@@ -42,4 +56,5 @@
             />
         </form>
     @endcan
+    @endif
 </x-core::button-group>

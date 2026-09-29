@@ -22,7 +22,7 @@
                 @forelse ($categories as $category)
                     <div class="mini-card pm-card">
                         <div class="mini-card-actions">
-                            @can('products.edit')
+                            @if (auth()->user()?->can('products.edit') && $category->isEditableBy(auth()->user()))
                                 <x-core::button
                                     type="button"
                                     size="sm"
@@ -36,8 +36,8 @@
                                     data-description="{{ $category->description }}"
                                     data-action="{{ route('categories.update', $category) }}"
                                 />
-                            @endcan
-                            @can('products.delete')
+                            @endif
+                            @if (auth()->user()?->can('products.delete') && $category->isEditableBy(auth()->user()))
                                 <form method="POST" action="{{ route('categories.destroy', $category) }}" class="delete-form" style="display:inline;">
                                     @csrf
                                     @method('DELETE')
@@ -50,7 +50,7 @@
                                         title="Delete"
                                     />
                                 </form>
-                            @endcan
+                            @endif
                         </div>
                         <div class="nm">{{ $category->name }}</div>
                         <div class="sub">{{ $category->sub_categories_count }} সাব-ক্যাটাগরি &middot; {{ $category->products_count }} পণ্য</div>
