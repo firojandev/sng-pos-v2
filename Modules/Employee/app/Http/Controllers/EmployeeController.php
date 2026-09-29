@@ -49,7 +49,9 @@ class EmployeeController extends Controller
 
         $users = $this->linkableUsers();
 
-        return $dataTable->render('employee::index', compact('metrics', 'departments', 'designations', 'users'));
+        $nextEmployeeCode = $this->nextEmployeeCode();
+
+        return $dataTable->render('employee::index', compact('metrics', 'departments', 'designations', 'users', 'nextEmployeeCode'));
     }
 
     public function create(): View
@@ -58,7 +60,7 @@ class EmployeeController extends Controller
         $users = $this->linkableUsers();
 
         return view('employee::create', [
-            'employee' => new Employee,
+            'employee' => new Employee(['employee_code' => $this->nextEmployeeCode()]),
             'users' => $users,
         ]);
     }
@@ -75,6 +77,7 @@ class EmployeeController extends Controller
                 'success' => true,
                 'message' => 'কর্মচারী সফলভাবে যোগ করা হয়েছে',
                 'employee' => $employee->load('user'),
+                'next_employee_code' => $this->nextEmployeeCode(),
             ]);
         }
 
@@ -94,6 +97,7 @@ class EmployeeController extends Controller
             return response()->json([
                 'employee' => [
                     'id' => $employee->id,
+                    'employee_code' => $employee->employee_code,
                     'name' => $employee->name,
                     'phone' => $employee->phone,
                     'email' => $employee->email,
@@ -179,6 +183,16 @@ class EmployeeController extends Controller
             ->where(fn ($query) => $query->whereIn('shop_id', $shopIds ?: [0])->orWhereHas('companies', fn ($companies) => $companies->where('companies.id', $companyId ?? 0)))
             ->orderBy('name')
             ->get();
+    }
+
+    /**
+     * The code a new employee gets unless another is entered.
+     */
+    private function nextEmployeeCode(): ?string
+    {
+        $companyId = app(TenantContext::class)->companyId();
+
+        return $companyId ? Employee::nextCode($companyId) : null;
     }
 
     private function ensureNotOwnRecord(Employee $employee): void

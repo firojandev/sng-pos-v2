@@ -3,6 +3,8 @@
 namespace Modules\Employee\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Modules\Core\Support\TenantContext;
 use Modules\Employee\Models\Employee;
 
 class UpdateEmployeeRequest extends FormRequest
@@ -21,6 +23,7 @@ class UpdateEmployeeRequest extends FormRequest
         $employeeId = $employeeParam instanceof Employee ? $employeeParam->id : $employeeParam;
 
         return [
+            'employee_code' => ['sometimes', 'required', 'string', 'max:30', Rule::unique('employees', 'employee_code')->where('company_id', app(TenantContext::class)->companyId())->ignore($employeeId)],
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:20', 'unique:employees,phone,'.$employeeId],
             'email' => ['nullable', 'email', 'max:255', 'unique:employees,email,'.$employeeId],

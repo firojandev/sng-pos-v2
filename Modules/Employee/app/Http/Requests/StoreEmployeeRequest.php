@@ -3,6 +3,8 @@
 namespace Modules\Employee\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Modules\Core\Support\TenantContext;
 
 class StoreEmployeeRequest extends FormRequest
 {
@@ -14,6 +16,8 @@ class StoreEmployeeRequest extends FormRequest
     public function rules(): array
     {
         return [
+            // Blank: the next free code is given.
+            'employee_code' => ['nullable', 'string', 'max:30', Rule::unique('employees', 'employee_code')->where('company_id', app(TenantContext::class)->companyId())],
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:20', 'unique:employees,phone'],
             'email' => ['nullable', 'email', 'max:255', 'unique:employees,email'],
