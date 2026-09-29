@@ -124,9 +124,29 @@ class BatchCostingAndShopTransferTest extends TestCase
         $this->assertSame(8.0, (float) $received->quantity);
         $this->assertSame(55.0, (float) $received->unit_cost);
 
+        // Each shop keeps its own catalogue: Ctg receives into its own copy of
+        // the product (with its own category), which it sells from now on.
         $this->actingAs($this->ctgAdmin);
-        $this->assertTrue(Product::listedInShop()->whereKey($this->rice->id)->exists());
+        $ctgRice = Product::listedInShop()->where('name', 'Miniket Rice')->firstOrFail();
+        $this->assertNotSame($this->rice->id, $ctgRice->id);
+        $this->assertSame($this->ctg->id, $ctgRice->shop_id);
+        $this->assertSame($this->ctg->id, $ctgRice->category->shop_id);
+        $this->assertSame($ctgRice->id, $received->product_id);
+        $this->assertFalse(Product::whereKey($this->rice->id)->exists());
         $this->assertTrue(StockTransfer::whereKey($transfer->id)->exists(), 'The receiving shop sees the transfer.');
+
+        // A second transfer reuses Ctg's copy.
+        $this->actingAs($this->dhakaAdmin)->postJson(route('stock-transfers.store'), [
+            'from_warehouse_id' => $this->dhakaStore->id,
+            'to_warehouse_id' => $this->ctgStore->id,
+            'items' => [['product_id' => $this->rice->id, 'batch_id' => $source->id, 'quantity' => 2]],
+        ])->assertOk();
+        $second = StockTransfer::withoutGlobalScopes()->latest('id')->firstOrFail();
+        $this->postJson(route('stock-transfers.approve', $second))->assertOk();
+        $this->postJson(route('stock-transfers.dispatch', $second))->assertOk();
+        $this->actingAs($this->ctgAdmin)->postJson(route('stock-transfers.receive', $second))->assertOk();
+        $this->assertSame(1, Product::withoutGlobalScopes()->where('shop_id', $this->ctg->id)->count());
+        $this->assertSame(10.0, (float) Batch::withoutGlobalScopes()->where('product_id', $ctgRice->id)->sum('quantity'));
     }
 
     public function test_transfers_only_use_the_shops_own_stock_and_the_companys_warehouses(): void

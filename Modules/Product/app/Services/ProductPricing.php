@@ -46,8 +46,11 @@ class ProductPricing
      */
     public function assignBarcode(int $productId, string $barcode): void
     {
+        // A barcode is unique within the product's shop.
+        $shopId = Product::withoutGlobalScopes()->whereKey($productId)->value('shop_id');
         $barcodeTaken = Product::withoutGlobalScopes()
             ->where('barcode', $barcode)
+            ->where(fn ($query) => $shopId ? $query->where('shop_id', $shopId) : $query->whereNull('shop_id'))
             ->whereKeyNot($productId)
             ->exists();
 

@@ -17,6 +17,7 @@ use Modules\Product\Models\Batch;
 use Modules\Product\Models\Product;
 use Modules\Product\Models\StockMovement;
 use Modules\Product\Models\StockTransfer;
+use Modules\Product\Services\CatalogueService;
 use Modules\Shop\Models\Shop;
 use Modules\Shop\Models\Warehouse;
 
@@ -253,10 +254,17 @@ class StockTransferController extends Controller
         }
 
         DB::transaction(function () use ($transfer) {
+            $toShop = Shop::findOrFail($transfer->to_shop_id);
+
             foreach ($transfer->items as $item) {
                 $sourceBatch = $item->batch;
 
-                $destBatch = Batch::where('product_id', $item->product_id)
+                // Each shop keeps its own catalogue: stock arrives as the
+                // receiving shop's own product (matched or copied).
+                $source = Product::withoutGlobalScopes()->findOrFail($item->product_id);
+                $productId = app(CatalogueService::class)->productForShop($source, $toShop)->id;
+
+                $destBatch = Batch::where('product_id', $productId)
                     ->where('batch_no', $item->batch_no)
                     ->where('warehouse_id', $transfer->to_warehouse_id)
                     ->lockForUpdate()
@@ -273,7 +281,7 @@ class StockTransferController extends Controller
                 } else {
                     $destBatch = Batch::create([
                         'shop_id' => $transfer->to_shop_id,
-                        'product_id' => $item->product_id,
+                        'product_id' => $productId,
                         'warehouse_id' => $transfer->to_warehouse_id,
                         'batch_no' => $item->batch_no,
                         'quantity' => $item->quantity,
@@ -284,10 +292,10 @@ class StockTransferController extends Controller
                 }
 
                 // The receiving shop now sells the product.
-                Product::find($item->product_id)?->listInShop($transfer->to_shop_id);
+                Product::withoutGlobalScopes()->find($productId)?->listInShop($transfer->to_shop_id);
 
                 StockMovement::create([
-                    'product_id' => $item->product_id,
+                    'product_id' => $productId,
                     'batch_id' => $destBatch->id,
                     'type' => 'transfer_in',
                     'quantity_change' => $item->quantity,

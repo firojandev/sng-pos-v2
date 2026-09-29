@@ -390,7 +390,7 @@ class PurchaseController extends Controller
             ->withSum('purchases', 'due_amount')
             ->orderBy('name')
             ->get(['id', 'name', 'phone', 'address', 'opening_due']);
-        $products = Product::listedInShop()->where('status', 'active')
+        $products = Product::availableInShop(listedOnly: false)->where('status', 'active')
             ->withSum(['batches as batches_sum_quantity' => fn ($q) => $q->where('warehouse_id', $warehouseId)], 'quantity')
             ->with('units')
             ->orderBy('name')->get();
@@ -517,7 +517,7 @@ class PurchaseController extends Controller
             ->withSum(['purchases' => fn ($q) => $q->where('id', '!=', $purchase->id)], 'due_amount')
             ->orderBy('name')
             ->get(['id', 'name', 'phone', 'address', 'opening_due']);
-        $products = Product::listedInShop()->where('status', 'active')
+        $products = Product::availableInShop(listedOnly: false)->where('status', 'active')
             ->withSum(['batches as batches_sum_quantity' => fn ($q) => $q->where('warehouse_id', $warehouseId)], 'quantity')
             ->with('units')
             ->orderBy('name')->get();

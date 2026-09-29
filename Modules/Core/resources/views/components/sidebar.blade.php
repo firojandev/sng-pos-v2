@@ -34,14 +34,6 @@
                         '<rect x="3" y="7" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="1.7"/><path d="M3 12h18" stroke="currentColor" stroke-width="1.5"/>',
                 ],
                 [
-                    'key' => 'catalogue-review',
-                    'route' => 'catalogue-review.index',
-                    'bn' => 'ক্যাটালগ রিভিউ',
-                    'en' => 'Catalogue Review',
-                    'icon' =>
-                        '<path d="M4 7h11M4 12h8M4 17h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="m14 16 2.5 2.5L21 14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
-                ],
-                [
                     'key' => 'plans',
                     'route' => 'plans.index',
                     'bn' => 'প্ল্যান',
@@ -496,6 +488,24 @@
                         '<path d="M3 21h18M5 21V8l7-5 7 5v13" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 21v-5h6v5M9 11h.01M15 11h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
                 ],
                 [
+                    'key' => 'company-users',
+                    'route' => 'company.users.index',
+                    'bn' => 'ইউজার',
+                    'en' => 'Users',
+                    'gated' => false,
+                    'icon' =>
+                        '<circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.6"/><path d="M4.5 20c1-4 3.8-6 7.5-6s6.5 2 7.5 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+                ],
+                [
+                    'key' => 'company-roles',
+                    'route' => 'company.roles.index',
+                    'bn' => 'রোল ও পারমিশন',
+                    'en' => 'Roles & Permissions',
+                    'gated' => false,
+                    'icon' =>
+                        '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+                ],
+                [
                     'key' => 'company-settings',
                     'route' => 'company-settings.edit',
                     'bn' => 'আমার কোম্পানি',
@@ -648,7 +658,7 @@
     // inventory, parties, money, finance management).
     $companyWorkspace = $user && ! $isSuperAdmin && $user->inCompanyWorkspace();
     $workspaceCompany = $companyWorkspace ? $user->companyLevelCompany() : null;
-    $workspaceItems = ['dashboard', 'tasks', 'employees', 'attendance', 'leave', 'payroll', 'payroll-setup', 'hr-setup', 'ledger-accounts', 'journal-entries', 'accounting-reports', 'accounting-setup', 'company-settings'];
+    $workspaceItems = ['dashboard', 'tasks', 'my-leave', 'employees', 'attendance', 'leave', 'payroll', 'payroll-setup', 'hr-setup', 'ledger-accounts', 'journal-entries', 'accounting-reports', 'accounting-setup', 'company-users', 'company-roles', 'company-settings'];
 
     $isNavItemVisible = function (array $item, bool $groupGated, $user) use ($companyWorkspace, $workspaceCompany, $workspaceItems) {
         if (isset($item['enabled']) && !$item['enabled']) {
@@ -659,6 +669,7 @@
         if ($item['key'] === 'tasks') {
             return \Modules\Task\Models\Task::isAvailableTo($user);
         }
+
         // My Leave: anyone who is (or, at company level, becomes) an employee,
         // when the plan has Leave.
         if ($item['key'] === 'my-leave') {
@@ -681,7 +692,7 @@
             if ($item['key'] === 'dashboard') {
                 return true;
             }
-            if ($item['key'] === 'company-settings') {
+            if (in_array($item['key'], ['company-settings', 'company-users', 'company-roles'], true)) {
                 return $user->isCompanyAdmin();
             }
             $permissionKey = $item['permission'] ?? $item['key'];
@@ -706,6 +717,9 @@
             // The way back to the standalone shop list, for a Default Company
             // admin working inside a shop (the list is their dashboard).
             return (bool) ($user && $user->shop_id && $user->isDefaultCompanyAdmin());
+        }
+        if (in_array($item['key'], ['company-users', 'company-roles'], true)) {
+            return false;
         }
         if ($item['key'] === 'company-settings') {
             // The company's owner and admins run it: details, shops, shop admins.

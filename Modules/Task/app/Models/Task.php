@@ -124,12 +124,18 @@ class Task extends Model
             return true;
         }
 
+        if (! $user->shop_id) {
+            // Company workspace: through their company role.
+            return $user->can('tasks.manage');
+        }
+
         return (int) $user->shop?->company_id === (int) $company->id && ($user->isShopAdmin() || $user->can('tasks.manage'));
     }
 
     public static function canAssign(User $user): bool
     {
-        return static::canManage($user) || ((int) $user->shop?->company_id === (int) static::companyFor($user)?->id && $user->can('tasks.assign'));
+        return static::canManage($user)
+            || ((! $user->shop_id || (int) $user->shop?->company_id === (int) static::companyFor($user)?->id) && $user->can('tasks.assign'));
     }
 
     public function isOpen(): bool

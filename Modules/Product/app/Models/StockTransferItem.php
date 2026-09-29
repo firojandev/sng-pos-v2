@@ -22,9 +22,13 @@ class StockTransferItem extends Model
         return $this->belongsTo(StockTransfer::class, 'stock_transfer_id');
     }
 
+    /**
+     * The sending shop's product (the receiving shop sees it on the transfer
+     * though the catalogue is per shop).
+     */
     public function product(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class)->withoutGlobalScope('catalog');
     }
 
     /**

@@ -147,44 +147,13 @@
         </div>
 
         <div class="panel" style="margin-top:0;">
-            <div class="panel-head"><div class="panel-title"><span class="bn">কোম্পানি ইউজার</span><span class="en" style="display:none;">Company Users</span></div></div>
-            <div class="panel-body" style="font-size:12px; color:var(--ink-500); padding-bottom:0;">
-                <span class="bn">কোম্পানি ইউজাররা কোম্পানি ওয়ার্কস্পেসে লগইন করেন (এইচআর, পে-রোল, হিসাব, টাস্ক, রিপোর্ট) — বিক্রয়/ক্রয় (POS) নয়। POS এর জন্য দোকান এডমিন দিন।</span>
-                <span class="en" style="display:none;">Company users log in to the company workspace (HR, payroll, accounting, tasks, reports) — not the POS. For the POS, add shop admins.</span>
-            </div>
-            <div class="table-responsive">
-                <table class="app-table">
-                    <tbody>
-                        @foreach ($companyUsers as $companyUser)
-                            @php $companyRole = $companyUser->pivot->is_owner ? 'Owner' : ($companyUser->pivot->role === 'Employee' ? 'Employee' : 'Admin'); @endphp
-                            <tr>
-                                <td>{{ $companyUser->name }} <div style="font-size:11.5px; color:var(--ink-500);">{{ $companyUser->phone }}{{ $companyUser->email ? ' · '.$companyUser->email : '' }}</div></td>
-                                <td><x-core::badge :color="['Owner' => 'gold', 'Admin' => 'blue', 'Employee' => 'grey'][$companyRole]" size="xs">{{ $companyRole }}</x-core::badge></td>
-                                <td class="table-cell-right">
-                                    @if ($companyRole !== 'Owner' && $companyUser->id !== auth()->id())
-                                        <form method="POST" action="{{ route('company.users.destroy', $companyUser) }}" class="delete-form" data-title="{{ $companyUser->name }} কে সরাবেন?">
-                                            @csrf
-                                            @method('DELETE')
-                                            <x-core::button type="submit" size="sm" variant="soft" color="danger" icon="trash-2" icon-only title="সরান / Remove" />
-                                        </form>
-                                    @endif
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-            <div class="panel-body">
-                <form method="POST" action="{{ route('company.users.store') }}" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                    @csrf
-                    <x-core::select size="sm" name="role" label="ভূমিকা" label-en="Role" value="Employee" :options="['Employee' => 'কর্মচারী (Employee)', 'Admin' => 'কোম্পানি এডমিন (Company Admin)']" />
-                    <x-core::input size="sm" name="name" label="নাম" label-en="Name" :required="true" />
-                    <x-core::input size="sm" name="phone" label="মোবাইল" label-en="Phone" :required="true" />
-                    <x-core::input size="sm" type="email" name="email" label="ইমেইল (ঐচ্ছিক)" label-en="Email (optional)" />
-                    <x-core::input size="sm" type="password" name="password" label="পাসওয়ার্ড" label-en="Password" :required="true" />
-                    <x-core::input size="sm" type="password" name="password_confirmation" label="পাসওয়ার্ড নিশ্চিত" label-en="Confirm Password" :required="true" />
-                    <div><x-core::button type="submit" size="sm" variant="solid" color="primary" icon="user-plus"><span class="bn">যোগ করুন</span><span class="en" style="display:none;">Add User</span></x-core::button></div>
-                </form>
+            <div class="panel-head"><div class="panel-title"><span class="bn">কোম্পানি ইউজার ও রোল</span><span class="en" style="display:none;">Company Users & Roles</span></div></div>
+            <div class="panel-body" style="font-size:12.5px; color:var(--ink-600); display:flex; flex-direction:column; gap:10px;">
+                <span><span class="bn">কোম্পানি এডমিন ও কর্মচারী (কোম্পানি ওয়ার্কস্পেস, POS নয়): {{ $companyUsers->count() }} জন।</span><span class="en" style="display:none;">Company admins and employees (company workspace, not the POS): {{ $companyUsers->count() }}.</span></span>
+                <div style="display:flex; gap:8px;">
+                    <x-core::button as="a" href="{{ route('company.users.index') }}" size="sm" variant="secondary" icon="users"><span class="bn">ইউজার</span><span class="en" style="display:none;">Users</span></x-core::button>
+                    <x-core::button as="a" href="{{ route('company.roles.index') }}" size="sm" variant="secondary" icon="shield"><span class="bn">রোল ও পারমিশন</span><span class="en" style="display:none;">Roles & Permissions</span></x-core::button>
+                </div>
             </div>
         </div>
 

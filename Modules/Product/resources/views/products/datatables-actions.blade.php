@@ -1,5 +1,5 @@
 @php
-    $canChangeProduct = ! $product->isShared() || auth()->user()?->isSuperAdmin();
+    $canChangeProduct = $product->isEditableBy(auth()->user());
 @endphp
 <x-core::button-group size="xs" aria-label="Product Actions">
     @can('products.view')
@@ -24,19 +24,6 @@
             icon-only
             title="দোকানের নিজস্ব মূল্য / Shop Price"
         />
-        @if (! $product->isShared() && ! $product->suggested_at)
-            <form method="POST" action="{{ route('products.suggest', $product) }}">
-                @csrf
-                <x-core::button
-                    type="submit"
-                    variant="soft"
-                    color="blue"
-                    icon="send"
-                    icon-only
-                    title="শেয়ার্ড ক্যাটালগে প্রস্তাব করুন / Suggest to Shared Catalogue"
-                />
-            </form>
-        @endif
     @endcan
     @if ($canChangeProduct)
     @can('products.edit')

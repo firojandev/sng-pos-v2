@@ -50,16 +50,44 @@ class CompanyServiceProvider extends ModuleServiceProvider
     {
         parent::boot();
 
+        // In the company workspace (no shop): the company's owner and admins
+        // get every company-module permission; company employees get what
+        // their company role grants. Reports and the dashboard's sales /
+        // purchase / stock figures belong to the POS: shop logins only.
         Gate::before(function (User $user, string $ability) {
-            if ($user->shop_id || ! $user->isCompanyAdmin()) {
+            if ($user->shop_id || $user->isSuperAdmin()) {
                 return null;
             }
 
             $feature = explode('.', $ability)[0];
 
-            // Reports and the dashboard's sales/purchase/stock figures belong to
-            // the POS: shop logins only.
-            return in_array($feature, self::COMPANY_WORKSPACE_FEATURES, true) ? true : null;
+            if (! in_array($feature, self::COMPANY_WORKSPACE_FEATURES, true)) {
+                return null;
+            }
+
+            // Worked out once per request.
+            $cache = request()->attributes;
+            $key = 'company_workspace_access.'.$user->id;
+
+            if (! $cache->has($key)) {
+                $cache->set($key, (function () use ($user) {
+                    $company = $user->companyLevelCompany();
+
+                    if (! $company) {
+                        return [];
+                    }
+
+                    if ($company->isBusiness() && $company->isAdministeredBy($user)) {
+                        return ['*'];
+                    }
+
+                    return $company->roleOf($user)?->permissions ?? [];
+                })());
+            }
+
+            $access = $cache->get($key);
+
+            return in_array('*', $access, true) || in_array($ability, $access, true) ? true : null;
         });
     }
 

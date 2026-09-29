@@ -155,7 +155,11 @@ class ProductController extends Controller
     private function formOptions(): array
     {
         return [
-            'categories' => Category::parents()->with('subCategories')->orderBy('name')->get(),
+            'categories' => Category::parents()
+                ->when($this->shopCategoryIds(), fn ($query, array $ids) => $query->whereIn('categories.id', $ids))
+                ->with('subCategories')
+                ->orderBy('name')
+                ->get(),
             'brands' => Brand::orderBy('name')->get(),
             'units' => Unit::orderBy('name')->get(),
             'subCategories' => SubCategory::orderBy('name')->get(),
@@ -163,13 +167,24 @@ class ProductController extends Controller
     }
 
     /**
-     * Shared catalogue products belong to every company; only a Super Admin
-     * may change or delete them.
+     * The categories the current shop sells, when it has chosen (or been
+     * given) any: its staff add products only in those.
+     *
+     * @return list<int>
+     */
+    private function shopCategoryIds(): array
+    {
+        return auth()->user()?->shop?->categories()->pluck('categories.id')->all() ?? [];
+    }
+
+    /**
+     * A shop changes only its own products; shared catalogue products are
+     * the Super Admin's (a shop sets its own price for them).
      */
     private function ensureCompanyCanEdit(Product $product): void
     {
-        abort_if(
-            $product->isShared() && ! auth()->user()?->isSuperAdmin(),
+        abort_unless(
+            $product->isEditableBy(auth()->user()),
             403,
             'শেয়ার্ড ক্যাটালগের পণ্য শুধুমাত্র সুপার এডমিন পরিবর্তন করতে পারেন (Only a Super Admin can change shared catalogue products)।'
         );

@@ -1,5 +1,5 @@
 <x-core::button-group size="xs" aria-label="Sub-category Actions">
-    @can('products.edit')
+    @if (auth()->user()?->can('products.edit') && $subCategory->isEditableBy(auth()->user()))
         <x-core::button
             type="button"
             variant="soft"
@@ -14,8 +14,8 @@
             data-action="{{ route('sub-categories.update', $subCategory) }}"
             title="সম্পাদনা / Edit"
         />
-    @endcan
-    @can('products.delete')
+    @endif
+    @if (auth()->user()?->can('products.delete') && $subCategory->isEditableBy(auth()->user()))
         <form
             method="POST"
             action="{{ route('sub-categories.destroy', $subCategory) }}"
@@ -34,5 +34,5 @@
                 title="মুছুন / Delete"
             />
         </form>
-    @endcan
+    @endif
 </x-core::button-group>

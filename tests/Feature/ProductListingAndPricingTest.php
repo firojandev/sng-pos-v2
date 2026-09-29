@@ -35,7 +35,7 @@ class ProductListingAndPricingTest extends TestCase
         $company = Company::factory()->create();
         $this->dhaka = Shop::create(['company_id' => $company->id, 'name' => 'Dhaka Outlet', 'slug' => 'dhaka-outlet', 'status' => 'active']);
         $this->ctg = Shop::create(['company_id' => $company->id, 'name' => 'Ctg Outlet', 'slug' => 'ctg-outlet', 'status' => 'active']);
-        $this->category = Category::create(['shop_id' => $this->dhaka->id, 'name' => 'Grocery', 'type' => 'product']);
+        $this->category = Category::create(['name' => 'Grocery', 'type' => 'product']);
     }
 
     public function test_a_product_is_listed_in_the_shop_that_creates_it(): void
@@ -46,17 +46,14 @@ class ProductListingAndPricingTest extends TestCase
         $this->assertTrue(Product::listedInShop()->whereKey($product->id)->exists());
 
         $this->actingAs($this->userAt($this->ctg));
-        $this->assertTrue(Product::whereKey($product->id)->exists(), 'The company can see the product.');
-        $this->assertFalse(Product::listedInShop()->whereKey($product->id)->exists(), 'Ctg does not sell it yet.');
-
-        $product->listInShop($this->ctg->id);
-
-        $this->assertTrue(Product::listedInShop()->whereKey($product->id)->exists());
+        $this->assertFalse(Product::whereKey($product->id)->exists(), "Dhaka's own product.");
     }
 
     public function test_values_resolve_from_shop_then_company_then_base(): void
     {
-        $product = $this->productWithBasePrice(100);
+        // A shared catalogue product that Dhaka sells (Ctg sees it too).
+        $product = Product::create(['name' => 'Rice 5kg', 'category_id' => $this->category->id, 'purchase_price' => 80, 'sale_price' => 100]);
+        $product->listInShop($this->dhaka->id);
         CompanyProduct::create(['company_id' => $this->dhaka->company_id, 'product_id' => $product->id, 'sale_price' => 110, 'is_vat' => true]);
         ShopProduct::where('shop_id', $this->dhaka->id)->where('product_id', $product->id)->update(['sale_price' => 120]);
 
@@ -97,7 +94,7 @@ class ProductListingAndPricingTest extends TestCase
         $this->assertSame('25.00', Product::findOrFail($shared->id)->sale_price);
     }
 
-    public function test_barcodes_are_unique_across_companies_and_shared_products_keep_theirs(): void
+    public function test_barcodes_are_unique_within_a_shop_and_shared_products_keep_theirs(): void
     {
         $otherShop = Shop::create(['name' => 'Other Company Store', 'slug' => 'other-store', 'status' => 'active']);
         $otherCategory = Category::create(['shop_id' => $otherShop->id, 'name' => 'Grocery', 'type' => 'product']);
@@ -107,11 +104,18 @@ class ProductListingAndPricingTest extends TestCase
         $this->actingAs($this->userAt($this->dhaka));
         $pricing = app(ProductPricing::class);
 
+        // Another shop's barcode is free to use here (each shop has its own catalogue).
         $pricing->assignBarcode($own->id, '8901234567890');
+        $this->assertSame('8901234567890', Product::withoutGlobalScopes()->findOrFail($own->id)->barcode);
         $pricing->assignBarcode($shared->id, '222');
         $pricing->assignBarcode($own->id, '555');
 
+        // Within the shop a barcode stays unique.
+        $second = Product::create(['shop_id' => $this->dhaka->id, 'name' => 'Rice 10kg', 'category_id' => $this->category->id]);
+        $pricing->assignBarcode($second->id, '555');
+
         $this->assertSame('555', Product::withoutGlobalScopes()->findOrFail($own->id)->barcode);
+        $this->assertNull(Product::withoutGlobalScopes()->findOrFail($second->id)->barcode);
         $this->assertSame('111', Product::withoutGlobalScopes()->findOrFail($shared->id)->barcode);
     }
 

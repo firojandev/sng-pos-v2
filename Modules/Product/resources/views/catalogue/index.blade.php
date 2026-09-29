@@ -87,9 +87,6 @@
                                 <tr>
                                     <td>
                                         <span style="font-weight:600; color:var(--ink-900);">{{ $product->name }}</span>
-                                        @if ($product->isShared())
-                                            <x-core::badge color="blue" size="xs" variant="soft" label="শেয়ার্ড" label-en="Shared" />
-                                        @endif
                                     </td>
                                     <td class="table-cell-right" style="font-family:var(--font-mono, monospace);">৳{{ number_format((float) $product->sale_price, 2) }}</td>
                                     <td class="table-cell-right">

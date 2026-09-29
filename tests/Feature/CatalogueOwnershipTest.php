@@ -37,7 +37,7 @@ class CatalogueOwnershipTest extends TestCase
         $this->otherCompanyShop = Shop::create(['name' => 'Other Company Store', 'slug' => 'other-store', 'status' => 'active']);
     }
 
-    public function test_catalogue_records_are_shared_by_the_companys_shops_only(): void
+    public function test_each_shop_keeps_its_own_catalogue(): void
     {
         $this->actingAs($this->userAt($this->dhaka));
         $category = Category::create(['name' => 'Grocery', 'type' => 'product']);
@@ -48,17 +48,14 @@ class CatalogueOwnershipTest extends TestCase
         $this->assertSame($this->dhaka->company_id, $product->company_id);
         $this->assertSame($this->dhaka->id, $product->shop_id);
 
-        $this->actingAs($this->userAt($this->ctg));
-        $this->assertTrue(Product::whereKey($product->id)->exists());
-        $this->assertTrue(Category::whereKey($category->id)->exists());
-        $this->assertTrue(Unit::whereKey($unit->id)->exists());
-        $this->assertTrue(Brand::whereKey($brand->id)->exists());
-
-        $this->actingAs($this->userAt($this->otherCompanyShop));
-        $this->assertSame(0, Product::count());
-        $this->assertSame(0, Category::count());
-        $this->assertSame(0, Unit::count());
-        $this->assertSame(0, Brand::count());
+        // Not even the company's other shop sees it.
+        foreach ([$this->ctg, $this->otherCompanyShop] as $shop) {
+            $this->actingAs($this->userAt($shop));
+            $this->assertSame(0, Product::count());
+            $this->assertSame(0, Category::count());
+            $this->assertSame(0, Unit::count());
+            $this->assertSame(0, Brand::count());
+        }
     }
 
     public function test_shared_catalogue_records_are_visible_to_every_company(): void
@@ -77,8 +74,8 @@ class CatalogueOwnershipTest extends TestCase
 
     public function test_stock_stays_with_the_shop_that_holds_it(): void
     {
-        $category = Category::create(['shop_id' => $this->dhaka->id, 'name' => 'Grocery', 'type' => 'product']);
-        $product = Product::create(['shop_id' => $this->dhaka->id, 'name' => 'Rice 5kg', 'category_id' => $category->id]);
+        $category = Category::create(['name' => 'Grocery', 'type' => 'product']);
+        $product = Product::create(['name' => 'Rice 5kg', 'category_id' => $category->id]);
         Batch::create(['shop_id' => $this->dhaka->id, 'product_id' => $product->id, 'batch_no' => 'B-1', 'quantity' => 20]);
 
         $this->actingAs($this->userAt($this->ctg));
@@ -89,7 +86,8 @@ class CatalogueOwnershipTest extends TestCase
 
     public function test_catalogue_validation_accepts_own_and_shared_records_only(): void
     {
-        $ownCategory = Category::create(['shop_id' => $this->dhaka->id, 'name' => 'Grocery', 'type' => 'product']);
+        $ownCategory = Category::create(['shop_id' => $this->ctg->id, 'name' => 'Grocery', 'type' => 'product']);
+        $sisterShopsCategory = Category::create(['shop_id' => $this->dhaka->id, 'name' => 'Toys', 'type' => 'product']);
         $foreignCategory = Category::create(['shop_id' => $this->otherCompanyShop->id, 'name' => 'Grocery', 'type' => 'product']);
         $sharedCategory = Category::create(['name' => 'Beverages', 'type' => 'product']);
 
@@ -98,6 +96,7 @@ class CatalogueOwnershipTest extends TestCase
 
         $this->assertTrue(Validator::make(['category_id' => $ownCategory->id], $rules)->passes());
         $this->assertTrue(Validator::make(['category_id' => $sharedCategory->id], $rules)->passes());
+        $this->assertTrue(Validator::make(['category_id' => $sisterShopsCategory->id], $rules)->fails());
         $this->assertTrue(Validator::make(['category_id' => $foreignCategory->id], $rules)->fails());
     }
 
@@ -110,6 +109,61 @@ class CatalogueOwnershipTest extends TestCase
 
         $this->actingAs($this->userAt($this->otherCompanyShop));
         $this->assertFalse(ExpenseCategory::whereKey($expenseCategory->id)->exists());
+    }
+
+    public function test_existing_records_move_to_their_shop_unless_another_shop_uses_them(): void
+    {
+        $grocery = Category::create(['shop_id' => $this->dhaka->id, 'name' => 'Grocery', 'type' => 'product']);
+        $toys = Category::create(['shop_id' => $this->dhaka->id, 'name' => 'Toys', 'type' => 'product']);
+        $usedByBoth = Product::create(['shop_id' => $this->dhaka->id, 'name' => 'Miniket Rice', 'category_id' => $grocery->id]);
+        $usedByBoth->listInShop($this->ctg->id);
+        $dhakasOnly = Product::create(['shop_id' => $this->dhaka->id, 'name' => 'Toy Car', 'category_id' => $toys->id]);
+        $singleShopBrand = Brand::create(['company_id' => $this->otherCompanyShop->company_id, 'name' => 'Old Brand']);
+
+        (require base_path('Modules/Product/database/migrations/2026_09_29_085536_make_catalogue_per_shop.php'))->up();
+
+        // Used by two shops: kept at company level, so Ctg still has it.
+        $this->assertNull($usedByBoth->fresh()->shop_id);
+        $this->assertNull($grocery->fresh()->shop_id);
+        $this->actingAs($this->userAt($this->ctg));
+        $this->assertTrue(Product::whereKey($usedByBoth->id)->exists());
+        $this->assertFalse(Product::whereKey($dhakasOnly->id)->exists());
+
+        $this->assertSame($this->dhaka->id, $dhakasOnly->fresh()->shop_id);
+        $this->assertSame($this->otherCompanyShop->id, $singleShopBrand->fresh()->shop_id);
+    }
+
+    public function test_product_management_is_only_inside_a_shop(): void
+    {
+        $superAdmin = $this->superAdmin();
+        $this->actingAs($superAdmin)->get(route('dashboard'))->assertOk()->assertDontSee('Catalogue Review');
+
+        foreach (['products.index', 'products.create', 'categories.index', 'brands.index', 'catalogue.index', 'stock.index'] as $route) {
+            $this->actingAs($superAdmin)->get(route($route))->assertForbidden();
+        }
+        $this->assertFalse(app('router')->has('catalogue-review.index'));
+        $this->assertFalse(app('router')->has('products.suggest'));
+    }
+
+    public function test_shared_records_a_single_shop_uses_become_its_own(): void
+    {
+        $category = Category::create(['name' => 'Beverages', 'type' => 'product']);
+        $water = Product::create(['name' => 'Mineral Water', 'category_id' => $category->id]);
+        $water->listInShop($this->dhaka->id);
+        $juice = Product::create(['name' => 'Mango Juice', 'category_id' => $category->id]);
+        $juice->listInShop($this->dhaka->id);
+        $juice->listInShop($this->otherCompanyShop->id);
+
+        (require base_path('Modules/Product/database/migrations/2026_09_29_150753_remove_shared_catalogue.php'))->up();
+
+        $this->assertSame($this->dhaka->id, $water->fresh()->shop_id);
+        $this->assertSame($this->dhaka->company_id, $water->fresh()->company_id);
+        $this->assertNull($juice->fresh()->company_id, 'Used by two shops: left shared, read only.');
+        $this->assertNull($category->fresh()->company_id);
+
+        $this->actingAs($this->userAt($this->otherCompanyShop));
+        $this->assertFalse(Product::whereKey($water->id)->exists());
+        $this->assertTrue(Product::whereKey($juice->id)->exists());
     }
 
     private function userAt(Shop $shop): User

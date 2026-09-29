@@ -354,7 +354,7 @@ class SaleController extends Controller
         $defaultWarehouse = $warehouses->firstWhere('is_default', true);
         $warehouseId = $request->query('warehouse_id', $defaultWarehouse?->id ?? optional($warehouses->first())->id);
         $employees = Employee::workingAtShop()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);
-        $products = Product::listedInShop()->where('status', 'active')
+        $products = Product::availableInShop()->where('status', 'active')
             ->withSum(['batches as batches_sum_quantity' => fn ($q) => $q->where('warehouse_id', $warehouseId)], 'quantity')
             ->with('units')
             ->orderBy('name')->get();
@@ -478,7 +478,7 @@ class SaleController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'phone', 'address', 'opening_due']);
         $employees = Employee::workingAtShop()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);
-        $products = Product::listedInShop()->where('status', 'active')
+        $products = Product::availableInShop()->where('status', 'active')
             ->withSum(['batches as batches_sum_quantity' => fn ($q) => $q->where('warehouse_id', $sale->warehouse_id)], 'quantity')
             ->with('units')
             ->orderBy('name')->get();

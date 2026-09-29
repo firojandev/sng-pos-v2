@@ -16,9 +16,8 @@ use Modules\Product\Services\CatalogueService;
 use Modules\Shop\Models\Shop;
 
 /**
- * The current shop's catalogue: the categories it sells, adding the
- * company's own and shared products, its own prices, and suggesting
- * products for the shared catalogue.
+ * The current shop's catalogue: the categories it sells, listing its
+ * products that it doesn't sell yet, and its own prices.
  */
 class CatalogueController extends Controller
 {
@@ -72,15 +71,6 @@ class CatalogueController extends Controller
         return redirect()->route('products.index')->with('status', 'দোকানের নিজস্ব মূল্য হালনাগাদ করা হয়েছে');
     }
 
-    public function suggest(Product $product): RedirectResponse
-    {
-        abort_if($product->isShared(), 422, 'পণ্যটি ইতিমধ্যে শেয়ার্ড ক্যাটালগে রয়েছে (Already in the shared catalogue)।');
-
-        $this->catalogue->suggest($product, auth()->user());
-
-        return back()->with('status', 'পণ্যটি শেয়ার্ড ক্যাটালগের জন্য প্রস্তাব করা হয়েছে');
-    }
-
     /**
      * Existing products that look like the one being entered.
      */
@@ -98,7 +88,6 @@ class CatalogueController extends Controller
                 'id' => $product->id,
                 'name' => $product->name,
                 'barcode' => $product->barcode,
-                'shared' => $product->isShared(),
                 'listed' => $product->shopListings()->where('shop_id', $shopId)->exists(),
                 'list_url' => route('catalogue.products.list', $product),
             ])->values(),

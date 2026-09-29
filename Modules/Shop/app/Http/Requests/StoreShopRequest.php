@@ -80,8 +80,6 @@ class StoreShopRequest extends FormRequest
                 'min:8',
                 'confirmed',
             ],
-            'category_ids' => ['nullable', 'array'],
-            'category_ids.*' => ['integer', Rule::exists('categories', 'id')->whereNull('company_id')->where('type', 'product')],
             'plan_id' => ['nullable', 'exists:plans,id'],
             'subscription_status' => ['nullable', 'string', 'in:active,trialing,trial,past_due,suspended,cancelled,expired'],
             'current_period_start' => ['nullable', 'date'],

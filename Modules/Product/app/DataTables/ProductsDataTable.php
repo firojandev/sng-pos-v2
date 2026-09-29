@@ -138,7 +138,6 @@ class ProductsDataTable extends BaseDataTable
             ->select([
                 'products.id',
                 'products.company_id',
-                'products.suggested_at',
                 'products.shop_id',
                 'products.category_id',
                 'products.sub_category_id',

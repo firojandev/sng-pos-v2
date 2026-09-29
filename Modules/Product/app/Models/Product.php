@@ -52,8 +52,6 @@ class Product extends Model
 
     protected $fillable = [
         'company_id',
-        'suggested_at',
-        'suggested_by',
         'shop_id',
         'name',
         'sku',
@@ -97,7 +95,6 @@ class Product extends Model
         'wholesale_price' => 'decimal:2',
         'discount_value' => 'decimal:2',
         'expiry_date' => 'date',
-        'suggested_at' => 'datetime',
     ];
 
     public function company(): BelongsTo
@@ -178,6 +175,29 @@ class Product extends Model
         }
 
         $query->whereHas('shopListings', fn (Builder $listings) => $listings->where('shop_products.shop_id', $shopId));
+    }
+
+    /**
+     * Products the shop can buy and sell, in one of the categories it sells.
+     * Selling needs the product listed in the shop; buying doesn't: any
+     * product the shop can see (its own, the shared catalogue) in its
+     * categories can be bought, which lists it in the shop.
+     */
+    #[Scope]
+    protected function availableInShop(Builder $query, ?int $shopId = null, bool $listedOnly = true): void
+    {
+        $shopId ??= app(TenantContext::class)->shopId();
+
+        $query->when($listedOnly, fn (Builder $query) => $query->listedInShop($shopId));
+
+        if (! $shopId) {
+            return;
+        }
+
+        $query->where(function (Builder $query) use ($shopId) {
+            $query->whereNull('products.category_id')
+                ->orWhereIn('products.category_id', DB::table('shop_category')->where('shop_id', $shopId)->select('category_id'));
+        });
     }
 
     public function listInShop(?int $shopId): void

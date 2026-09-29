@@ -2,9 +2,11 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\Company\Http\Controllers\CompanyController;
+use Modules\Company\Http\Controllers\CompanyRoleController;
 use Modules\Company\Http\Controllers\CompanySettingsController;
 use Modules\Company\Http\Controllers\CompanyShopAdminController;
 use Modules\Company\Http\Controllers\CompanyShopController;
+use Modules\Company\Http\Controllers\CompanyUserController;
 use Modules\Company\Http\Controllers\DefaultCompanyController;
 use Modules\Company\Http\Controllers\ShopCompanyController;
 
@@ -23,8 +25,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('company/settings', [CompanySettingsController::class, 'edit'])->name('company-settings.edit');
     Route::put('company/settings', [CompanySettingsController::class, 'update'])->name('company-settings.update');
     Route::post('company/shops', [CompanyShopController::class, 'store'])->name('company.shops.store');
-    Route::post('company/users', [CompanySettingsController::class, 'storeUser'])->name('company.users.store');
-    Route::delete('company/users/{user}', [CompanySettingsController::class, 'destroyUser'])->name('company.users.destroy');
+    Route::get('company/users', [CompanyUserController::class, 'index'])->name('company.users.index');
+    Route::post('company/users', [CompanyUserController::class, 'store'])->name('company.users.store');
+    Route::put('company/users/{user}', [CompanyUserController::class, 'update'])->name('company.users.update');
+    Route::delete('company/users/{user}', [CompanyUserController::class, 'destroy'])->name('company.users.destroy');
+    Route::resource('company/roles', CompanyRoleController::class)->except(['show'])->names('company.roles')->parameters(['roles' => 'role']);
     Route::post('company/shop-admins', [CompanyShopAdminController::class, 'store'])->name('company.shop-admins.store');
     Route::delete('company/shops/{shop}/admins/{user}', [CompanyShopAdminController::class, 'destroy'])->name('company.shop-admins.destroy');
 });

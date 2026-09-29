@@ -435,40 +435,6 @@
                             </div>
                         </div>
 
-                        {{-- Product categories the new shop sells (shared catalogue) --}}
-                        <div class="panel" style="margin-top:0;">
-                            <div class="panel-head" style="padding:14px 18px;">
-                                <div class="panel-title" style="display:flex; align-items:center; gap:8px; font-size:15px;">
-                                    <x-core::icon name="tag" size="18" style="color:var(--teal-800);" />
-                                    <span class="bn">পণ্যের ক্যাটাগরি</span>
-                                    <span class="en" style="display:none;">Product Categories</span>
-                                </div>
-                            </div>
-                            <div class="panel-body" style="padding:18px;">
-                                <p style="font-size:12.5px; color:var(--ink-600); margin:0 0 10px;">
-                                    <span class="bn">দোকানটি কোন ধরনের পণ্য বিক্রি করবে তা নির্বাচন করুন। দোকানের মালিক পরে ক্যাটালগ থেকে পরিবর্তন করতে পারবেন।</span>
-                                    <span class="en" style="display:none;">Choose what kinds of products the shop sells. The owner can change this later from the Catalogue tab.</span>
-                                </p>
-                                <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:8px;">
-                                    @forelse ($sharedCategories as $category)
-                                        <x-core::checkbox
-                                            size="sm"
-                                            name="category_ids[]"
-                                            :value="$category->id"
-                                            :checked="in_array($category->id, old('category_ids', []))"
-                                        >
-                                            <span style="font-size:13px;">{{ $category->name }}</span>
-                                        </x-core::checkbox>
-                                    @empty
-                                        <span style="font-size:12.5px; color:var(--ink-500);">
-                                            <span class="bn">শেয়ার্ড ক্যাটালগে এখনো কোনো ক্যাটাগরি নেই।</span>
-                                            <span class="en" style="display:none;">The shared catalogue has no categories yet.</span>
-                                        </span>
-                                    @endforelse
-                                </div>
-                            </div>
-                        </div>
-
                         {{-- Card 4: Subscription Package & Duration --}}
                         <div class="panel" style="margin-top:0;">
                             <div class="panel-head" style="padding:14px 18px;">

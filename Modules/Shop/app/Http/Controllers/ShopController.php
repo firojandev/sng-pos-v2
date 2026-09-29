@@ -14,7 +14,6 @@ use Illuminate\View\View;
 use Modules\Company\Models\Company;
 use Modules\Finance\Models\Account;
 use Modules\Finance\Models\AccountTransaction;
-use Modules\Product\Models\Category;
 use Modules\Shop\DataTables\ShopsDataTable;
 use Modules\Shop\Http\Requests\StoreShopAdminRequest;
 use Modules\Shop\Http\Requests\StoreShopRequest;
@@ -110,12 +109,6 @@ class ShopController extends Controller
     {
         return view('shop::create', [
             'shop' => new Shop,
-            'sharedCategories' => Category::withoutGlobalScopes()
-                ->whereNull('company_id')
-                ->where('type', 'product')
-                ->whereNull('parent_id')
-                ->orderBy('name')
-                ->get(['id', 'name']),
             'nextStoreCode' => Shop::generateNextStoreCode(),
             'plans' => Plan::where('is_active', true)->orWhere('status', 'active')->orderBy('sort_order')->orderBy('price')->get(),
             'companies' => Company::where('type', Company::TYPE_COMPANY)->withCount('shops')->orderBy('name')->get(['id', 'name']),
@@ -202,8 +195,6 @@ class ShopController extends Controller
                     'is_owner' => true,
                 ],
             ]);
-
-            $shop->categories()->sync($request->validated('category_ids') ?? []);
 
             // A standalone shop's admin owns its private company record; a
             // company's shop admin stays a shop-level login (the company's

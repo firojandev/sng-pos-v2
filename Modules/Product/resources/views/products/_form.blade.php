@@ -750,9 +750,6 @@ $(function () {
             }
             $.each(data.matches, function (i, match) {
                 var $item = $('<li>').text(match.name + (match.barcode ? ' (' + match.barcode + ')' : ''));
-                if (match.shared) {
-                    $item.append(' <span class="badge b-blue badge-blue badge-xs">শেয়ার্ড / Shared</span>');
-                }
                 if (match.listed) {
                     $item.append(' <span class="badge b-green badge-green badge-xs">এই দোকানে আছে / In this shop</span>');
                 } else {

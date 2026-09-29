@@ -5,14 +5,10 @@ namespace Modules\Company\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Modules\Company\Http\Requests\UpdateCompanyRequest;
 use Modules\Company\Models\Company;
-use Modules\Core\Support\BanglaNumber;
 use Modules\Product\Models\Category;
 
 /**
@@ -47,53 +43,6 @@ class CompanySettingsController extends Controller
         $company->update($request->safe()->except('status'));
 
         return redirect()->route('company-settings.edit')->with('status', 'কোম্পানির তথ্য হালনাগাদ করা হয়েছে');
-    }
-
-    /**
-     * Add a company-level user: a company admin, or a company employee
-     * (both log in to the company workspace; neither uses the POS).
-     */
-    public function storeUser(Request $request): RedirectResponse
-    {
-        $company = static::manageableCompany();
-
-        if ($request->filled('phone')) {
-            $request->merge(['phone' => BanglaNumber::toEn(trim((string) $request->input('phone')))]);
-        }
-
-        $validated = $request->validate([
-            'role' => ['required', Rule::in([Company::ROLE_ADMIN, Company::ROLE_EMPLOYEE])],
-            'name' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'string', 'max:30', Rule::unique('users', 'phone')],
-            'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')],
-            'username' => ['nullable', 'string', 'max:50', 'alpha_dash', Rule::unique('users', 'username')],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ]);
-
-        $user = User::create([
-            'name' => $validated['name'],
-            'phone' => $validated['phone'],
-            'email' => $validated['email'] ?? null,
-            'username' => $validated['username'] ?? null,
-            'password' => Hash::make($validated['password']),
-            'email_verified_at' => now(),
-        ]);
-        $company->users()->attach($user->id, ['role' => $validated['role'], 'is_owner' => false]);
-
-        return back()->with('status', "{$user->name} — কোম্পানি ইউজার তৈরি হয়েছে");
-    }
-
-    public function destroyUser(User $user): RedirectResponse
-    {
-        $company = static::manageableCompany();
-
-        if ($company->owner()?->id === $user->id || $user->id === auth()->id()) {
-            return back()->withErrors(['user' => 'মালিক বা নিজেকে সরানো যায় না (The owner, or yourself, cannot be removed)।']);
-        }
-
-        $company->users()->detach($user->id);
-
-        return back()->with('status', "{$user->name} কে কোম্পানি থেকে সরানো হয়েছে");
     }
 
     /**

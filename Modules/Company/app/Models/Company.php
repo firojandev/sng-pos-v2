@@ -208,7 +208,7 @@ class Company extends Model implements Subscribable
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'company_user')
-            ->withPivot('role', 'is_owner')
+            ->withPivot('role', 'is_owner', 'company_role_id')
             ->withTimestamps();
     }
 
@@ -277,6 +277,21 @@ class Company extends Model implements Subscribable
             ->where('users.id', $user->id)
             ->where(fn ($query) => $query->where('company_user.is_owner', true)->orWhereIn('company_user.role', [self::ROLE_OWNER, self::ROLE_ADMIN]))
             ->exists();
+    }
+
+    public function roles(): HasMany
+    {
+        return $this->hasMany(CompanyRole::class);
+    }
+
+    /**
+     * The company role of one of its employees (null for admins or none).
+     */
+    public function roleOf(User $user): ?CompanyRole
+    {
+        $roleId = $this->users()->where('users.id', $user->id)->value('company_user.company_role_id');
+
+        return $roleId ? CompanyRole::find($roleId) : null;
     }
 
     public function hasOwner(): bool
