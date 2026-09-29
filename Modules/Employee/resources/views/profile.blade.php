@@ -108,10 +108,17 @@
         </div>
 
         @can('employees.edit')
-            <div style="display:flex; gap:10px; margin-top:16px;">
-                <x-core::button type="submit" size="sm" variant="solid" color="primary">
-                    <span class="bn">সংরক্ষণ করুন</span><span class="en" style="display:none;">Save</span>
-                </x-core::button>
+            <div style="display:flex; gap:10px; margin-top:16px; align-items:center;">
+                @if ($employee->isRecordOf(auth()->user()))
+                    <span style="font-size:12.5px; color:var(--ink-500);">
+                        <span class="bn">এটি আপনার নিজের রেকর্ড — অন্য একজন এডমিন পরিবর্তন করবেন।</span>
+                        <span class="en" style="display:none;">This is your own record — another admin changes it.</span>
+                    </span>
+                @else
+                    <x-core::button type="submit" size="sm" variant="solid" color="primary">
+                        <span class="bn">সংরক্ষণ করুন</span><span class="en" style="display:none;">Save</span>
+                    </x-core::button>
+                @endif
                 <x-core::button as="a" href="{{ route('employees.index') }}" size="sm" variant="secondary">
                     <span class="bn">তালিকায় ফিরুন</span><span class="en" style="display:none;">Back to List</span>
                 </x-core::button>

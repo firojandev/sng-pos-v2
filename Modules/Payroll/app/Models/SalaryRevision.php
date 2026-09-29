@@ -24,7 +24,7 @@ class SalaryRevision extends Model
         static::observe(AuditObserver::class);
     }
 
-    protected $fillable = ['company_id', 'employee_id', 'effective_from', 'previous_salary', 'new_salary', 'type', 'designation_id', 'note', 'created_by'];
+    protected $fillable = ['company_id', 'employee_id', 'effective_from', 'previous_salary', 'new_salary', 'type', 'designation_id', 'previous_designation_id', 'note', 'created_by'];
 
     /**
      * @return array<string, string>
@@ -42,6 +42,11 @@ class SalaryRevision extends Model
     public function designation(): BelongsTo
     {
         return $this->belongsTo(Designation::class);
+    }
+
+    public function previousDesignation(): BelongsTo
+    {
+        return $this->belongsTo(Designation::class, 'previous_designation_id');
     }
 
     public function creator(): BelongsTo

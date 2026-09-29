@@ -60,7 +60,9 @@ class UpdateEmployeeProfileRequest extends FormRequest
 
     public function authorize(): bool
     {
-        // A shop login, or a company user in the company workspace.
-        return (bool) ($this->user()?->shop_id || $this->user()?->inCompanyWorkspace());
+        // A shop login, or a company user in the company workspace; nobody
+        // changes their own employee record.
+        return (bool) ($this->user()?->shop_id || $this->user()?->inCompanyWorkspace())
+            && ! $this->route('employee')?->isRecordOf($this->user());
     }
 }

@@ -1,3 +1,7 @@
+@php
+    // Nobody edits or deletes their own employee record.
+    $isOwnRecord = $employee->isRecordOf(auth()->user());
+@endphp
 <div class="row-actions" style="display:flex; align-items:center; justify-content:flex-end; gap:6px;">
     @can('employees.view')
         <x-core::button
@@ -10,7 +14,7 @@
         />
     @endcan
 
-    @can('employees.edit')
+    @if (! $isOwnRecord && auth()->user()?->can('employees.edit'))
         <x-core::button
             size="sm"
             variant="secondary"
@@ -20,9 +24,9 @@
             :href="route('employees.edit', $employee)"
             title="সম্পাদনা / Edit"
         />
-    @endcan
+    @endif
 
-    @can('employees.delete')
+    @if (! $isOwnRecord && auth()->user()?->can('employees.delete'))
         <form method="POST" action="{{ route('employees.destroy', $employee) }}" class="delete-form" data-title="কর্মচারী মুছে ফেলতে চান?" data-text="এই কর্মচারীর সম্পূর্ণ রেকর্ড মুছে ফেলা হবে।" style="display:inline-block; margin:0;">
             @csrf
             @method('DELETE')
@@ -35,5 +39,5 @@
                 title="মুছে ফেলুন / Delete"
             />
         </form>
-    @endcan
+    @endif
 </div>

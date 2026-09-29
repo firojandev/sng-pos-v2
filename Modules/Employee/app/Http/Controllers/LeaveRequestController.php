@@ -23,8 +23,16 @@ class LeaveRequestController extends Controller
 {
     public function __construct(private LeaveService $leave) {}
 
-    public function index(Request $request, HrSetup $setup): View
+    /**
+     * HR's view of everyone's leave, for those who approve it. Anyone else
+     * applies for and follows their own leave on My Leave.
+     */
+    public function index(Request $request, HrSetup $setup): View|RedirectResponse
     {
+        if (! $request->user()->can('leave.approve')) {
+            return redirect()->route('my.leave.index');
+        }
+
         $setup->ensureFor((int) app(TenantContext::class)->companyId());
         $employees = Employee::workingAtShop()->where('status', 'active')->orderBy('name')->get();
 
@@ -46,6 +54,14 @@ class LeaveRequestController extends Controller
     public function store(StoreLeaveRequestRequest $request): RedirectResponse
     {
         $employee = Employee::findOrFail($request->validated('employee_id'));
+
+        // Applying for someone else is HR's (those who approve leave).
+        abort_unless(
+            $request->user()->can('leave.approve') || $employee->isRecordOf($request->user()),
+            403,
+            'শুধু নিজের ছুটির আবেদন করা যায় — "আমার ছুটি" থেকে করুন (You can only apply for your own leave — use My Leave)।'
+        );
+
         $this->leave->apply($employee, $request->validated(), $request->file('attachment'));
 
         return redirect()->route('leave-requests.index')->with('status', 'ছুটির আবেদন জমা হয়েছে');

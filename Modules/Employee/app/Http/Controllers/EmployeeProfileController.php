@@ -42,6 +42,8 @@ class EmployeeProfileController extends Controller
 
     public function update(UpdateEmployeeProfileRequest $request, Employee $employee): RedirectResponse
     {
+        abort_if($employee->isRecordOf(auth()->user()), 403, 'নিজের কর্মচারী রেকর্ড নিজে পরিবর্তন বা মুছে ফেলা যায় না (You can\'t change or delete your own employee record)।');
+
         $employee->update($request->validated());
 
         return redirect()->route('employees.profile.edit', $employee)->with('status', 'কর্মচারীর তথ্য হালনাগাদ করা হয়েছে');

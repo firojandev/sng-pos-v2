@@ -12,6 +12,7 @@ use Modules\Accounting\Services\OpeningBalanceService;
 use Modules\Core\Support\Features;
 use Modules\Core\Support\Permissions;
 use Modules\Employee\Models\Attendance;
+use Modules\Employee\Models\Designation;
 use Modules\Employee\Models\Employee;
 use Modules\Employee\Services\HrSetup;
 use Modules\Finance\Models\Account;
@@ -27,6 +28,7 @@ use Modules\Payroll\Services\IncomeTax;
 use Modules\Payroll\Services\LoanService;
 use Modules\Payroll\Services\PayrollService;
 use Modules\Payroll\Services\PayrollSetup;
+use Modules\Payroll\Services\SalaryStructure;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
 use Modules\Shop\Models\Shop;
 use Spatie\Permission\Models\Permission;
@@ -312,6 +314,52 @@ class PayrollTest extends TestCase
      * @param  list<string>  $late
      * @param  array<string, int>  $overtime
      */
+    public function test_an_employee_sees_their_salary_payslips_and_payments(): void
+    {
+        $user = User::factory()->create(['shop_id' => $this->shop->id]);
+        $this->karim->update(['user_id' => $user->id]);
+        $rahim = Employee::create(['name' => 'Rahim', 'phone' => '01711000002', 'designation' => 'Helper', 'salary' => 20000, 'status' => 'active', 'joining_date' => '2024-01-01']);
+
+        $service = app(PayrollService::class);
+        $run = $service->create($this->shop->id, Carbon::parse('2026-08-01'));
+        $payslip = Payslip::where('employee_id', $this->karim->id)->firstOrFail();
+        $rahimsPayslip = Payslip::where('employee_id', $rahim->id)->firstOrFail();
+
+        // A draft run isn't theirs to see yet.
+        $this->actingAs($user)->get(route('dashboard'))->assertOk()->assertSee('href="'.route('my.salary.index').'"', false);
+        $this->get(route('my.salary.index'))->assertOk()->assertSee('30,000.00')->assertSee('No payslips yet');
+        $this->get(route('my.salary.payslip', $payslip->id))->assertNotFound();
+
+        $service->approve($run);
+        $service->pay($payslip->fresh(), $this->cash, 10000, Carbon::parse('2026-09-01'));
+
+        $this->get(route('my.salary.index'))->assertOk()
+            ->assertSee('August 2026')
+            ->assertSee('Partly paid')
+            ->assertSee('10,000.00')
+            ->assertSee('01 Sep, 2026')
+            ->assertSee('href="'.route('my.salary.payslip', $payslip->id).'"', false);
+        $this->get(route('my.salary.payslip', $payslip->id))->assertOk()->assertSee('Karim')->assertDontSee('Rahim');
+
+        // Their employment history: joining to the current position.
+        $senior = Designation::withoutGlobalScopes()->create(['company_id' => $this->shop->company_id, 'name' => 'Senior Cashier']);
+        $this->actingAs(User::where('shop_id', $this->shop->id)->whereKeyNot($user->id)->firstOrFail());
+        app(SalaryStructure::class)->revise($this->karim->fresh(), ['effective_from' => '2026-09-01', 'new_salary' => 35000, 'type' => 'promotion', 'designation_id' => $senior->id]);
+        app(SalaryStructure::class)->revise($this->karim->fresh(), ['effective_from' => '2027-01-01', 'new_salary' => 38000, 'type' => 'increment']);
+
+        $history = app(SalaryStructure::class)->employmentHistory($this->karim->fresh());
+        $this->assertSame(
+            [['01/01/2024', 'Cashier', 30000.0, 'joining', false], ['01/09/2026', 'Senior Cashier', 35000.0, 'promotion', true], ['01/01/2027', 'Senior Cashier', 38000.0, 'increment', false]],
+            array_map(fn (array $row) => [$row['date']->format('d/m/Y'), $row['designation'], $row['salary'], $row['type'], $row['is_current']], $history),
+        );
+        $this->actingAs($user->fresh())->get(route('my.salary.index'))->assertOk()
+            ->assertSee('Employment History')->assertSeeInOrder(['01/01/2024', 'Cashier', '30,000/=', '01/09/2026', 'Senior Cashier', '35,000/=', 'Upcoming']);
+
+        // Only their own.
+        $this->get(route('my.salary.payslip', $rahimsPayslip->id))->assertNotFound();
+        $this->actingAs(User::factory()->create(['shop_id' => $this->shop->id]))->get(route('my.salary.index'))->assertForbidden();
+    }
+
     private function attendanceForAugust(Employee $employee, array $absent = [], array $late = [], array $overtime = []): void
     {
         for ($day = Carbon::parse('2026-08-01'); $day->month === 8; $day->addDay()) {

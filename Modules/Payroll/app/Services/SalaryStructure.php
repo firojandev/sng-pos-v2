@@ -5,6 +5,7 @@ namespace Modules\Payroll\Services;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Modules\Employee\Models\Designation;
 use Modules\Employee\Models\Employee;
 use Modules\Payroll\Models\EmployeeSalaryItem;
 use Modules\Payroll\Models\SalaryComponent;
@@ -146,6 +147,7 @@ class SalaryStructure
                 'new_salary' => $data['new_salary'],
                 'type' => $data['type'],
                 'designation_id' => $data['designation_id'] ?? null,
+                'previous_designation_id' => $employee->designation_id,
                 'note' => $data['note'] ?? null,
                 'created_by' => Auth::id(),
             ]);
@@ -162,6 +164,68 @@ class SalaryStructure
 
             return $revision;
         });
+    }
+
+    /**
+     * The employee's positions from joining to now: the joining position,
+     * then each recorded salary change with the designation it brought (or
+     * kept). Changes dated after today are marked upcoming.
+     *
+     * @return list<array{date: Carbon, designation: ?string, salary: float, type: string, note: ?string, is_current: bool, is_upcoming: bool}>
+     */
+    public function employmentHistory(Employee $employee): array
+    {
+        $revisions = SalaryRevision::withoutGlobalScopes()
+            ->where('employee_id', $employee->id)
+            ->orderBy('effective_from')
+            ->orderBy('id')
+            ->get();
+        $designationNames = Designation::withoutGlobalScopes()
+            ->whereIn('id', $revisions->pluck('designation_id')->merge($revisions->pluck('previous_designation_id'))->push($employee->designation_id)->filter()->unique())
+            ->pluck('name', 'id');
+        $nameOf = fn (?int $id) => $id ? ($designationNames[$id] ?? null) : null;
+
+        $rows = [];
+        $first = $revisions->first();
+
+        if ($first?->type !== 'joining') {
+            // The joining position: what the first change started from (older
+            // changes didn't record it; then, if no change set a designation,
+            // it is still the current one).
+            $joiningDesignation = $first
+                ? ($first->previous_designation_id ?? ($revisions->whereNotNull('designation_id')->isEmpty() ? $employee->designation_id : null))
+                : $employee->designation_id;
+
+            $rows[] = [
+                'date' => ($employee->joining_date ?? $employee->created_at)->copy()->startOfDay(),
+                'designation_id' => $joiningDesignation,
+                'salary' => $first ? (float) $first->previous_salary : (float) $employee->salary,
+                'type' => 'joining',
+                'note' => null,
+            ];
+        }
+
+        foreach ($revisions as $revision) {
+            $rows[] = [
+                'date' => $revision->effective_from->copy(),
+                'designation_id' => $revision->designation_id ?? ($rows ? end($rows)['designation_id'] : $revision->previous_designation_id),
+                'salary' => (float) $revision->new_salary,
+                'type' => $revision->type,
+                'note' => $revision->note,
+            ];
+        }
+
+        $currentIndex = collect($rows)->filter(fn (array $row) => $row['date']->lte(now()))->keys()->last();
+
+        return collect($rows)->map(fn (array $row, int $index) => [
+            'date' => $row['date'],
+            'designation' => $nameOf($row['designation_id']) ?? ($index === $currentIndex ? $employee->designation : null),
+            'salary' => $row['salary'],
+            'type' => $row['type'],
+            'note' => $row['note'],
+            'is_current' => $index === $currentIndex,
+            'is_upcoming' => $row['date']->gt(now()),
+        ])->values()->all();
     }
 
     /**

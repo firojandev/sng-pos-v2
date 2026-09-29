@@ -7,9 +7,12 @@ use Modules\Employee\Models\Employee;
 
 class UpdateEmployeeRequest extends FormRequest
 {
+    /**
+     * Nobody changes their own employee record.
+     */
     public function authorize(): bool
     {
-        return true;
+        return ! $this->route('employee')?->isRecordOf($this->user());
     }
 
     public function rules(): array

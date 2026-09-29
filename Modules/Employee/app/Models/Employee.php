@@ -118,6 +118,14 @@ class Employee extends Model
     }
 
     /**
+     * The user's own employee record: nobody edits or deletes their own.
+     */
+    public function isRecordOf(?User $user): bool
+    {
+        return $user !== null && $this->user_id !== null && (int) $this->user_id === (int) $user->id;
+    }
+
+    /**
      * Whether payslips, loans or a settlement refer to the employee, so the
      * record must be kept (set inactive instead of deleting).
      */

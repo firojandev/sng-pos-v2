@@ -8,6 +8,10 @@ use Modules\Company\Models\Company;
 use Modules\Company\Models\CompanyRole;
 use Modules\Core\Support\Features;
 use Modules\Core\Support\Permissions;
+use Modules\Employee\Models\Employee;
+use Modules\Employee\Models\LeaveRequest;
+use Modules\Employee\Models\LeaveType;
+use Modules\Employee\Services\HrSetup;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
 use Modules\Shop\Models\Shop;
 use Spatie\Permission\Models\Permission;
@@ -104,5 +108,29 @@ class CompanyRolesTest extends TestCase
         $this->post(route('company.users.store'), [
             'role' => 'Employee', 'company_role_id' => $otherRole->id, 'name' => 'X', 'phone' => '01711000011', 'password' => 'secret123', 'password_confirmation' => 'secret123',
         ])->assertSessionHasErrors('company_role_id');
+    }
+
+    public function test_a_company_user_who_cannot_approve_leave_only_handles_their_own(): void
+    {
+        $role = $this->company->roles()->create(['name' => 'Staff', 'permissions' => ['leave.view', 'leave.create']]);
+        $staff = User::factory()->create();
+        $this->company->users()->attach($staff->id, ['role' => Company::ROLE_EMPLOYEE, 'is_owner' => false, 'company_role_id' => $role->id]);
+        $colleague = Employee::withoutGlobalScopes()->create(['company_id' => $this->company->id, 'name' => 'Colleague', 'phone' => '01711000020', 'designation' => 'Clerk', 'salary' => 15000, 'status' => 'active']);
+        app(HrSetup::class)->ensureFor($this->company->id);
+        $casual = LeaveType::withoutGlobalScopes()->where('company_id', $this->company->id)->firstOrFail();
+
+        $this->actingAs($staff)->get(route('dashboard'))->assertOk()
+            ->assertSee('href="'.route('my.leave.index').'"', false)
+            ->assertDontSee('href="'.route('leave-requests.index').'"', false);
+        $this->get(route('leave-requests.index'))->assertRedirect(route('my.leave.index'));
+        $this->get(route('my.leave.index'))->assertOk()->assertDontSee('Colleague');
+
+        $this->post(route('leave-requests.store'), [
+            'employee_id' => $colleague->id, 'leave_type_id' => $casual->id, 'from_date' => now()->addDay()->toDateString(), 'to_date' => now()->addDay()->toDateString(),
+        ])->assertForbidden();
+        $this->assertSame(0, LeaveRequest::withoutGlobalScopes()->count());
+
+        // The owner (who approves leave) keeps HR's page with everyone.
+        $this->actingAs($this->owner)->get(route('leave-requests.index'))->assertOk()->assertSee('Colleague');
     }
 }

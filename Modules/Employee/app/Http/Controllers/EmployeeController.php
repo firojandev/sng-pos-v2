@@ -85,6 +85,8 @@ class EmployeeController extends Controller
 
     public function edit(Request $request, Employee $employee): View|JsonResponse
     {
+        $this->ensureNotOwnRecord($employee);
+
         $shopId = auth()->user()->shop_id;
         $users = $this->linkableUsers();
 
@@ -113,6 +115,8 @@ class EmployeeController extends Controller
 
     public function update(UpdateEmployeeRequest $request, Employee $employee): RedirectResponse|JsonResponse
     {
+        $this->ensureNotOwnRecord($employee);
+
         $employee->update($request->validated());
 
         if ($request->ajax() || $request->wantsJson()) {
@@ -130,6 +134,8 @@ class EmployeeController extends Controller
 
     public function destroy(Request $request, Employee $employee): RedirectResponse|JsonResponse
     {
+        $this->ensureNotOwnRecord($employee);
+
         if ($employee->hasPayrollHistory()) {
             $message = 'এই কর্মচারীর বেতন/অগ্রিমের রেকর্ড আছে, মুছে ফেলা যাবে না; অবস্থা "নিষ্ক্রিয়" করুন (The employee has payroll records; set them inactive instead)।';
 
@@ -173,5 +179,10 @@ class EmployeeController extends Controller
             ->where(fn ($query) => $query->whereIn('shop_id', $shopIds ?: [0])->orWhereHas('companies', fn ($companies) => $companies->where('companies.id', $companyId ?? 0)))
             ->orderBy('name')
             ->get();
+    }
+
+    private function ensureNotOwnRecord(Employee $employee): void
+    {
+        abort_if($employee->isRecordOf(auth()->user()), 403, 'নিজের কর্মচারী রেকর্ড নিজে পরিবর্তন বা মুছে ফেলা যায় না (You can\'t change or delete your own employee record)।');
     }
 }

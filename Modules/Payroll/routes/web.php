@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Modules\Payroll\Http\Controllers\EmployeeLoanController;
 use Modules\Payroll\Http\Controllers\EmployeeSalaryController;
 use Modules\Payroll\Http\Controllers\FinalSettlementController;
+use Modules\Payroll\Http\Controllers\MySalaryController;
 use Modules\Payroll\Http\Controllers\PayrollRunController;
 use Modules\Payroll\Http\Controllers\PayrollSetupController;
 use Modules\Payroll\Http\Controllers\StatutoryPaymentController;
@@ -77,4 +78,11 @@ Route::middleware(['auth', 'feature:payroll-setup'])->prefix('hr/payroll/setup')
         Route::post('tax-years', [TaxSetupController::class, 'saveTaxYear'])->name('tax-years.store');
         Route::put('tax-years/{taxYear}', [TaxSetupController::class, 'saveTaxYear'])->name('tax-years.update');
     });
+});
+
+// My Salary: a user linked to an employee sees their own salary, payslips
+// and payments.
+Route::middleware(['auth', 'feature:payroll'])->prefix('my/salary')->name('my.salary.')->group(function () {
+    Route::get('/', [MySalaryController::class, 'index'])->name('index');
+    Route::get('payslips/{payslip}', [MySalaryController::class, 'payslip'])->name('payslip')->whereNumber('payslip');
 });

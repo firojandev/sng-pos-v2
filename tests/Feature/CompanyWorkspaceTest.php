@@ -190,4 +190,34 @@ class CompanyWorkspaceTest extends TestCase
         $this->get(route('default-company.index'))->assertOk();
         $this->assertNull($admin->fresh()->shop_id, 'Back at the company level.');
     }
+
+    public function test_nobody_edits_or_deletes_their_own_employee_record(): void
+    {
+        $own = Employee::withoutGlobalScopes()->create(['company_id' => $this->company->id, 'user_id' => $this->owner->id, 'name' => 'Karim Owner', 'phone' => '01711000009', 'designation' => 'Director', 'salary' => 50000, 'status' => 'active']);
+        $other = Employee::withoutGlobalScopes()->where('name', 'Dhaka Cashier')->firstOrFail();
+
+        $this->actingAs($this->owner);
+        $rows = $this->getJson(route('employees.index', ['draw' => 1]), ['X-Requested-With' => 'XMLHttpRequest'])->assertOk()->json('data');
+        $actions = collect($rows)->mapWithKeys(fn (array $row) => [$row['DT_RowId'] ?? $row['id'] => $row['action']]);
+        $this->assertStringNotContainsString('action="'.route('employees.destroy', $own).'"', $actions[$own->id]);
+        $this->assertStringNotContainsString('href="'.route('employees.edit', $own).'"', $actions[$own->id]);
+        $this->assertStringContainsString('action="'.route('employees.destroy', $other).'"', $actions[$other->id]);
+        $this->assertStringContainsString('href="'.route('employees.edit', $other).'"', $actions[$other->id]);
+
+        $this->delete(route('employees.destroy', $own))->assertForbidden();
+        $this->get(route('employees.edit', $own))->assertForbidden();
+        $this->put(route('employees.update', $own), ['name' => 'Changed'])->assertForbidden();
+        $this->put(route('employees.profile.update', $own), ['name' => 'Changed'])->assertForbidden();
+        $this->get(route('employees.profile.edit', $own))->assertOk()->assertSee('This is your own record');
+        $this->assertSame('Karim Owner', $own->fresh()->name);
+
+        $this->get(route('employees.edit', $other))->assertOk();
+    }
+
+    public function test_a_company_user_sees_my_salary(): void
+    {
+        $this->actingAs($this->employee)->get(route('dashboard'))->assertOk()->assertSee('href="'.route('my.salary.index').'"', false);
+        $this->get(route('my.salary.index'))->assertOk()->assertSee('My Salary')->assertSee('No payslips yet');
+        $this->actingAs($this->owner)->get(route('my.salary.index'))->assertOk();
+    }
 }
