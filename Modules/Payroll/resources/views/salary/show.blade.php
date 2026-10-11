@@ -35,16 +35,16 @@
                                 @php $line = $lines->firstWhere('component_id', $salaryComponent->id); @endphp
                                 <tr>
                                     <td>{{ $salaryComponent->name }} <span style="font-size:11.5px; color:var(--ink-500);">{{ $salaryComponent->type === 'deduction' ? '(−)' : '' }}</span></td>
-                                    <td class="table-cell-right">{{ number_format((float) ($line['amount'] ?? 0), 2) }}</td>
+                                    <td class="table-cell-right"><x-core::masked-amount>{{ number_format((float) ($line['amount'] ?? 0), 2) }}</x-core::masked-amount></td>
                                     <td><x-core::input size="sm" :no-margin="true" type="number" step="0.01" min="0" :name="'amounts['.$salaryComponent->id.']'" :value="$overrides[$salaryComponent->id] ?? ''" placeholder="স্বয়ংক্রিয়" placeholder-en="Auto" :stepper="false" /></td>
                                 </tr>
                             @endforeach
                             @if ($line = $lines->firstWhere('code', 'OTHER'))
-                                <tr><td>{{ $line['name'] }}</td><td class="table-cell-right">{{ number_format($line['amount'], 2) }}</td><td></td></tr>
+                                <tr><td>{{ $line['name'] }}</td><td class="table-cell-right"><x-core::masked-amount>{{ number_format($line['amount'], 2) }}</x-core::masked-amount></td><td></td></tr>
                             @endif
                             <tr>
                                 <td style="font-weight:700;"><span class="bn">মোট বেতন</span><span class="en" style="display:none;">Gross Salary</span></td>
-                                <td class="table-cell-right" style="font-weight:700;">{{ number_format($gross, 2) }}</td>
+                                <td class="table-cell-right" style="font-weight:700;"><x-core::masked-amount>{{ number_format($gross, 2) }}</x-core::masked-amount></td>
                                 <td></td>
                             </tr>
                             <tr>
@@ -79,7 +79,7 @@
                                 <td>{{ $revisionTypes[$revision->type] ?? $revision->type }}
                                     <div style="font-size:11.5px; color:var(--ink-500);">{{ $revision->designation?->name }}{{ $revision->note ? ' · '.$revision->note : '' }}</div>
                                 </td>
-                                <td class="table-cell-right" style="white-space:nowrap;">{{ number_format((float) $revision->previous_salary, 0) }} → <b>{{ number_format((float) $revision->new_salary, 0) }}</b></td>
+                                <td class="table-cell-right" style="white-space:nowrap;"><x-core::masked-amount>{{ number_format((float) $revision->previous_salary, 0) }} → <b>{{ number_format((float) $revision->new_salary, 0) }}</b></x-core::masked-amount></td>
                             </tr>
                         @empty
                             <tr><td colspan="3"><x-core::table.empty icon="trending-up" title="কোনো পরিবর্তন নেই" title-en="No changes yet" /></td></tr>
