@@ -79,9 +79,11 @@ class EmployeesDataTable extends BaseDataTable
             })
             ->editColumn('salary', function (Employee $employee) {
                 $formatted = number_format((float) $employee->salary, 2);
+                $amount = '<span style="font-family:var(--font-mono, monospace); font-weight:700; font-size:13px; color:var(--ink-900);">৳'.$formatted.'</span>';
+                $masked = view('core::components.masked-amount', ['value' => $amount])->render();
 
                 return '<div style="white-space:nowrap;">'
-                    .'<span style="font-family:var(--font-mono, monospace); font-weight:700; font-size:13px; color:var(--ink-900);">৳'.$formatted.'</span>'
+                    .$masked
                     .'<div style="font-size:11px; color:var(--ink-400); margin-top:2px;"><span class="bn">মাসিক বেতন</span><span class="en" style="display:none;">Monthly</span></div>'
                     .'</div>';
             })

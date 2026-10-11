@@ -146,18 +146,70 @@
         </div>
 
         @can('employees.create')
-            <x-core::button
-                type="button"
-                color="primary"
-                size="sm"
-                icon="plus"
-                id="btn-open-create-employee-modal"
-            >
-                <span class="bn">নতুন কর্মচারী</span>
-                <span class="en" style="display:none;">New Employee</span>
-            </x-core::button>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <x-core::button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    icon="upload"
+                    id="btn-open-import-employee-modal"
+                >
+                    <span class="bn">এক্সেল থেকে আপলোড</span>
+                    <span class="en" style="display:none;">Import from Excel</span>
+                </x-core::button>
+
+                <x-core::button
+                    type="button"
+                    color="primary"
+                    size="sm"
+                    icon="plus"
+                    id="btn-open-create-employee-modal"
+                >
+                    <span class="bn">নতুন কর্মচারী</span>
+                    <span class="en" style="display:none;">New Employee</span>
+                </x-core::button>
+            </div>
         @endcan
     </div>
+
+    {{-- Result of the last Excel upload --}}
+    @if (session('import_errors'))
+        <div style="margin-bottom:16px; padding:12px 14px; border:1px solid var(--red-600); background:var(--red-100); border-radius:10px;">
+            <div style="font-weight:700; font-size:13px; color:var(--red-600);">
+                <span class="bn">ফাইলে ভুল আছে, তাই কোনো কর্মচারী যোগ হয়নি। নিচের সারিগুলো ঠিক করে আবার আপলোড করুন।</span>
+                <span class="en" style="display:none;">The file has mistakes, so nothing was imported. Correct these rows and upload it again.</span>
+            </div>
+            <ul style="margin:8px 0 0; padding-left:18px; font-size:12.5px; color:var(--ink-900); max-height:220px; overflow-y:auto;">
+                @foreach (session('import_errors') as $importError)
+                    <li>{{ $importError }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    @if (session('import_report') && (session('import_report.without_login') || session('import_report.emails_failed')))
+        <div style="margin-bottom:16px; padding:12px 14px; border:1px solid var(--border); background:var(--gold-100); border-radius:10px;">
+            <div style="font-weight:700; font-size:13px; color:var(--gold-ink);">
+                <span class="bn">কর্মচারীরা যোগ হয়েছেন, তবে নিচের জনদের লগইন তৈরি হয়নি। সম্পাদনা থেকে পরে লগইন তৈরি করা যাবে।</span>
+                <span class="en" style="display:none;">The employees were imported, but no login was created for these. You can create one later from Edit.</span>
+            </div>
+            <ul style="margin:8px 0 0; padding-left:18px; font-size:12.5px; color:var(--ink-900); max-height:220px; overflow-y:auto;">
+                @foreach (session('import_report.without_login', []) as $skipped)
+                    <li>সারি (Row) {{ $skipped['row'] }} — {{ $skipped['name'] }}: {{ $skipped['reason'] }}</li>
+                @endforeach
+                @if (session('import_report.emails_failed'))
+                    <li>{{ session('import_report.emails_failed') }}টি ইমেইল পাঠানো যায়নি ({{ session('import_report.emails_failed') }} emails could not be sent)।</li>
+                @endif
+            </ul>
+        </div>
+    @endif
+
+    @error('file')
+        <div style="margin-bottom:16px; color:var(--red-600); font-size:12.5px;">{{ $message }}</div>
+    @enderror
+    @error('user_role')
+        <div style="margin-bottom:16px; color:var(--red-600); font-size:12.5px;">{{ $message }}</div>
+    @enderror
 
     {{-- DataTable Container --}}
     <div class="table-container table-teal">
@@ -165,6 +217,96 @@
             {!! $dataTable->table(['class' => 'app-table', 'id' => 'employees-data-table']) !!}
         </div>
     </div>
+
+    {{-- Import Employees Modal --}}
+    @can('employees.create')
+        <div class="modal-backdrop" id="importEmployeeModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); z-index:999; align-items:center; justify-content:center; padding:16px;">
+            <div class="modal-box" style="background:var(--card); border:1px solid var(--border); box-shadow:var(--shadow-card); width:560px; max-width:95vw; max-height:90vh; overflow-y:auto; padding:24px; border-radius:16px;">
+                <div class="modal-head" style="margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <div style="width:34px; height:34px; border-radius:8px; background:var(--teal-100); color:var(--teal-800); display:flex; align-items:center; justify-content:center;">
+                            <x-core::icon name="upload" size="18" />
+                        </div>
+                        <div>
+                            <div class="modal-title" style="font-size:16px; font-weight:700; color:var(--ink-900);">
+                                <span class="bn">এক্সেল থেকে কর্মচারী আপলোড</span>
+                                <span class="en" style="display:none;">Import Employees from Excel</span>
+                            </div>
+                            <div style="font-size:12px; color:var(--ink-500);">
+                                <span class="bn">একসাথে অনেক কর্মচারী যোগ করুন</span>
+                                <span class="en" style="display:none;">Add many employees at once</span>
+                            </div>
+                        </div>
+                    </div>
+                    <x-core::button type="button" variant="ghost" color="secondary" size="sm" icon="x" icon-only class="modal-close-btn" title="বন্ধ / Close" />
+                </div>
+
+                <form method="POST" action="{{ route('employees.import.store') }}" enctype="multipart/form-data" id="import_employee_form" style="display:flex; flex-direction:column; gap:14px;">
+                    @csrf
+
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px; border:1px solid var(--border); background:var(--paper); border-radius:10px;">
+                        <div style="font-size:12.5px; color:var(--ink-700);">
+                            <div style="font-weight:700; color:var(--ink-900);"><span class="bn">ধাপ ১: ফরম্যাট ডাউনলোড করুন</span><span class="en" style="display:none;">Step 1: Download the format</span></div>
+                            <span class="bn">ফাইলে কর্মচারীদের তথ্য লিখুন; নির্দেশনা ফাইলের ভেতরেই আছে।</span>
+                            <span class="en" style="display:none;">Fill in your employees; the instructions are inside the file.</span>
+                        </div>
+                        <x-core::button :href="route('employees.import.template')" variant="secondary" size="sm" icon="download" style="flex-shrink:0;">
+                            <span class="bn">ফরম্যাট</span>
+                            <span class="en" style="display:none;">Format</span>
+                        </x-core::button>
+                    </div>
+
+                    @if ($canCreateLogin)
+                        <div style="border:1px solid var(--border); background:var(--paper); border-radius:10px; padding:12px;">
+                            <div style="font-weight:700; font-size:12.5px; color:var(--ink-900); margin-bottom:8px;"><span class="bn">ধাপ ২: লগইন অ্যাকাউন্ট (ঐচ্ছিক)</span><span class="en" style="display:none;">Step 2: Login accounts (optional)</span></div>
+                            <x-core::checkbox
+                                name="create_user"
+                                id="import_employee_create_user"
+                                size="sm"
+                                label="কর্মচারীদের লগইন অ্যাকাউন্টও তৈরি করুন"
+                                label-en="Also create login accounts for the employees"
+                            />
+                            <div id="import_employee_login_fields" hidden>
+                                <x-core::select
+                                    name="user_role"
+                                    id="import_employee_user_role"
+                                    label="সবার জন্য ইউজার রোল"
+                                    label-en="User role for everyone"
+                                    size="sm"
+                                    :required="$loginRoleRequired"
+                                    :disabled="true"
+                                    :error="false"
+                                    :options="['' => $loginRoleRequired ? '-- রোল নির্বাচন করুন (Select role) --' : '-- কোনো রোল নেই (No role) --'] + $loginRoleOptions"
+                                />
+                                <p style="font-size:12px; color:var(--ink-600); margin:8px 0 0;">
+                                    <span class="bn">ইমেইল থাকা প্রত্যেক কর্মচারীর লগইন তৈরি হবে এবং তার ইমেইলে পাসওয়ার্ড সেট করার লিংক যাবে। ইমেইল ছাড়া কর্মচারীরা যোগ হবেন, তবে লগইন ছাড়া।</span>
+                                    <span class="en" style="display:none;">Every employee with an email gets a login and is emailed a link to set their password. Employees without an email are imported without a login.</span>
+                                </p>
+                            </div>
+                        </div>
+                    @endif
+
+                    <div>
+                        <div style="font-weight:700; font-size:12.5px; color:var(--ink-900);"><span class="bn">{{ $canCreateLogin ? 'ধাপ ৩' : 'ধাপ ২' }}: পূরণ করা ফাইলটি দিন</span><span class="en" style="display:none;">{{ $canCreateLogin ? 'Step 3' : 'Step 2' }}: Choose the filled-in file</span></div>
+                        <x-core::input size="sm" type="file" name="file" id="import_employee_file" accept=".xlsx,.xls,.csv" :required="true" :error="false"
+                            helper="একটি সারিতেও ভুল থাকলে কিছুই যোগ হবে না; ভুলগুলো দেখানো হবে।"
+                            helper-en="If any row has a mistake nothing is imported; the mistakes are listed for you." />
+                    </div>
+
+                    <div style="padding-top:14px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:flex-end; gap:8px;">
+                        <x-core::button type="button" variant="secondary" size="sm" class="modal-close-btn">
+                            <span class="bn">বাতিল</span>
+                            <span class="en" style="display:none;">Cancel</span>
+                        </x-core::button>
+                        <x-core::button type="submit" color="primary" size="sm" icon="upload" id="btn-submit-import-employee">
+                            <span class="bn">আপলোড করুন</span>
+                            <span class="en" style="display:none;">Upload</span>
+                        </x-core::button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endcan
 
     {{-- Create Employee Modal --}}
     <div class="modal-backdrop" id="createEmployeeModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); z-index:999; align-items:center; justify-content:center; padding:16px;">
@@ -188,7 +330,7 @@
                 <button type="button" class="modal-close-btn" style="width:28px; height:28px; font-size:18px; cursor:pointer; background:none; border:none; color:var(--ink-400); border-radius:6px; display:flex; align-items:center; justify-content:center;">&times;</button>
             </div>
 
-            <form method="POST" action="{{ route('employees.store') }}" id="create_employee_form">
+            <form method="POST" action="{{ route('employees.store') }}" id="create_employee_form" data-employee-form>
                 @csrf
                 <div style="display:flex; flex-direction:column; gap:14px;">
                     <x-core::input
@@ -237,26 +379,17 @@
                     />
 
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-                        <x-core::input
-                            name="designation"
-                            id="create_employee_designation"
-                            label="পদবি"
-                            label-en="Designation"
-                            placeholder="যেমন: বিক্রয়কর্মী / ম্যানেজার"
-                            placeholder-en="e.g. Sales / Manager"
-                            size="sm"
-                            :required="true"
-                        />
+                        @include('employee::partials.named-select', [
+                            'field' => 'designation', 'idPrefix' => 'create_employee', 'options' => $designationOptions, 'required' => true,
+                            'selectedId' => null, 'newValue' => null,
+                            'label' => 'পদবি', 'labelEn' => 'Designation', 'placeholder' => 'নতুন পদবির নাম', 'placeholderEn' => 'New designation name',
+                        ])
 
-                        <x-core::input
-                            name="department"
-                            id="create_employee_department"
-                            label="বিভাগ"
-                            label-en="Department"
-                            placeholder="যেমন: বিক্রয় / হিসাব"
-                            placeholder-en="e.g. Sales / Accounts"
-                            size="sm"
-                        />
+                        @include('employee::partials.named-select', [
+                            'field' => 'department', 'idPrefix' => 'create_employee', 'options' => $departmentOptions, 'required' => false,
+                            'selectedId' => null, 'newValue' => null,
+                            'label' => 'বিভাগ', 'labelEn' => 'Department', 'placeholder' => 'নতুন বিভাগের নাম', 'placeholderEn' => 'New department name',
+                        ])
                     </div>
 
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
@@ -294,6 +427,8 @@
                         size="sm"
                     />
 
+                    @include('employee::partials.login-account', ['idPrefix' => 'create_employee'])
+
                     <x-core::select
                         name="user_id"
                         id="create_employee_user_id"
@@ -302,6 +437,11 @@
                         size="sm"
                         :options="$userSelectOptions"
                     />
+
+                    <p data-linked-user-note hidden style="font-size:12px; color:var(--ink-400); margin:-8px 0 0;">
+                        <span class="bn">নতুন লগইন অ্যাকাউন্টটি তৈরি হয়ে এখানে নিজে থেকেই সংযুক্ত হবে।</span>
+                        <span class="en" style="display:none;">The new login account is created and linked here automatically.</span>
+                    </p>
 
                     <div>
                         <label class="bn" style="display:block; margin-bottom:6px; font-weight:600; font-size:13px; color:var(--ink-800);">অবস্থা</label>
@@ -362,7 +502,7 @@
                 <button type="button" class="modal-close-btn" style="width:28px; height:28px; font-size:18px; cursor:pointer; background:none; border:none; color:var(--ink-400); border-radius:6px; display:flex; align-items:center; justify-content:center;">&times;</button>
             </div>
 
-            <form method="POST" action="" id="edit_employee_form">
+            <form method="POST" action="" id="edit_employee_form" data-employee-form>
                 @csrf
                 @method('PUT')
                 <div style="display:flex; flex-direction:column; gap:14px;">
@@ -409,24 +549,17 @@
                     />
 
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-                        <x-core::input
-                            name="designation"
-                            id="edit_employee_designation"
-                            label="পদবি"
-                            label-en="Designation"
-                            placeholder="যেমন: বিক্রয়কর্মী / ম্যানেজার"
-                            size="sm"
-                            :required="true"
-                        />
+                        @include('employee::partials.named-select', [
+                            'field' => 'designation', 'idPrefix' => 'edit_employee', 'options' => $designationOptions, 'required' => true,
+                            'selectedId' => null, 'newValue' => null,
+                            'label' => 'পদবি', 'labelEn' => 'Designation', 'placeholder' => 'নতুন পদবির নাম', 'placeholderEn' => 'New designation name',
+                        ])
 
-                        <x-core::input
-                            name="department"
-                            id="edit_employee_department"
-                            label="বিভাগ"
-                            label-en="Department"
-                            placeholder="যেমন: বিক্রয় / হিসাব"
-                            size="sm"
-                        />
+                        @include('employee::partials.named-select', [
+                            'field' => 'department', 'idPrefix' => 'edit_employee', 'options' => $departmentOptions, 'required' => false,
+                            'selectedId' => null, 'newValue' => null,
+                            'label' => 'বিভাগ', 'labelEn' => 'Department', 'placeholder' => 'নতুন বিভাগের নাম', 'placeholderEn' => 'New department name',
+                        ])
                     </div>
 
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
@@ -463,6 +596,10 @@
                         size="sm"
                     />
 
+                    <div data-login-wrap id="edit_employee_login_wrap">
+                        @include('employee::partials.login-account', ['idPrefix' => 'edit_employee'])
+                    </div>
+
                     <x-core::select
                         name="user_id"
                         id="edit_employee_user_id"
@@ -471,6 +608,11 @@
                         size="sm"
                         :options="$userSelectOptions"
                     />
+
+                    <p data-linked-user-note hidden style="font-size:12px; color:var(--ink-400); margin:-8px 0 0;">
+                        <span class="bn">নতুন লগইন অ্যাকাউন্টটি তৈরি হয়ে এখানে নিজে থেকেই সংযুক্ত হবে।</span>
+                        <span class="en" style="display:none;">The new login account is created and linked here automatically.</span>
+                    </p>
 
                     <div>
                         <label class="bn" style="display:block; margin-bottom:6px; font-weight:600; font-size:13px; color:var(--ink-800);">অবস্থা</label>
@@ -508,6 +650,8 @@
             </form>
         </div>
     </div>
+
+    @include('employee::partials.form-scripts')
 
     @push('scripts')
         {!! $dataTable->scripts() !!}
@@ -559,11 +703,54 @@
             $('#btn-open-create-employee-modal').on('click', function () {
                 var $form = $('#create_employee_form');
                 $form[0].reset();
+                window.employeeForm.sync($form);
                 showModal($('#createEmployeeModal'));
                 setTimeout(function () {
                     $('#create_employee_name').focus();
                 }, 100);
             });
+
+            // Import modal: the role is asked for only when logins are created
+            $('#btn-open-import-employee-modal').on('click', function () {
+                showModal($('#importEmployeeModal'));
+            });
+
+            $('#import_employee_create_user').on('change', function () {
+                $('#import_employee_login_fields').prop('hidden', !this.checked);
+                $('#import_employee_user_role').prop('disabled', !this.checked);
+            });
+
+            $('#import_employee_form').on('submit', function () {
+                $('#btn-submit-import-employee').prop('disabled', true);
+            });
+
+            // A designation/department typed in as new joins both dropdowns.
+            function addNamedOptions(employee) {
+                $.each(['designation', 'department'], function (i, field) {
+                    var id = employee[field + '_id'];
+                    if (!id || !employee[field]) {
+                        return;
+                    }
+                    $('[data-named-field="' + field + '"] [data-named-select]').each(function () {
+                        if (!$(this).find('option[value="' + id + '"]').length) {
+                            $(this).find('option[value="__new"]').before($('<option></option>').val(id).text(employee[field]));
+                        }
+                    });
+                });
+            }
+
+            function showFieldError($form, field, message) {
+                var $field = $form.find('[name="' + field + '"]');
+                if (!$field.length) {
+                    return;
+                }
+                var $anchor = $field.closest('.form-input-group, .form-select-group');
+                if (!$anchor.length) {
+                    $anchor = $field.closest('.form-check');
+                }
+                $field.addClass('is-invalid');
+                $anchor.after($('<div class="form-error-msg" style="color:var(--red-600); font-size:11.5px; margin-top:3px;"></div>').text(message));
+            }
 
             // Close modals
             $(document).on('click', '.modal-close-btn', function () {
@@ -606,6 +793,7 @@
                             $('#create_employee_code').attr('value', res.next_employee_code);
                         }
                         $form[0].reset();
+                        addNamedOptions(res.employee || {});
                         var table = getTable();
                         if (table) {
                             table.ajax.reload(null, false);
@@ -625,13 +813,7 @@
                         if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
                             var errors = xhr.responseJSON.errors;
                             $.each(errors, function (field, msgs) {
-                                var $field = $form.find('[name="' + field + '"]');
-                                if ($field.length) {
-                                    $field.addClass('is-invalid');
-                                    $field.closest('.form-input-group, .form-select-group').after(
-                                        '<div class="form-error-msg" style="color:var(--red-600); font-size:11.5px; margin-top:3px;">' + msgs[0] + '</div>'
-                                    );
-                                }
+                                showFieldError($form, field, msgs[0]);
                             });
                         } else {
                             var errorMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'অনাকাঙ্ক্ষিত ত্রুটি ঘটেছে। পুনরায় চেষ্টা করুন।';
@@ -672,12 +854,30 @@
                         $('#edit_employee_name').val(employee.name);
                         $('#edit_employee_phone').val(employee.phone);
                         $('#edit_employee_email').val(employee.email || '');
-                        $('#edit_employee_designation').val(employee.designation);
-                        $('#edit_employee_department').val(employee.department || '');
+                        // The dropdown choice; a name with no record yet goes in as new.
+                        $.each(['designation', 'department'], function (i, field) {
+                            var id = employee[field + '_id'];
+                            var isNew = !id && !!employee[field];
+                            $('#edit_employee_' + field + '_id').val(isNew ? '__new' : (id || ''));
+                            $('#edit_employee_' + field).prop('disabled', false).val(isNew ? employee[field] : '');
+                        });
                         $('#edit_employee_salary').val(employee.salary);
                         $('#edit_employee_joining_date').val(employee.joining_date || '');
                         $('#edit_employee_address').val(employee.address || '');
-                        $('#edit_employee_user_id').val(employee.user_id || '');
+
+                        // Logins created since the page loaded are in the fresh list.
+                        var $userSelect = $('#edit_employee_user_id');
+                        $userSelect.find('option').not('[value=""]').remove();
+                        $.each(data.users || [], function (i, user) {
+                            $userSelect.append($('<option></option>').val(user.id).text(user.name + ' (' + (user.email || '') + ')'));
+                        });
+                        $userSelect.val(employee.user_id || '');
+
+                        // A login can be created only for an employee without one.
+                        $form.find('[name="create_user"]').prop('checked', false);
+                        $form.find('[name="user_password"]').val('');
+                        $('#edit_employee_login_wrap').prop('hidden', !!employee.user_id);
+                        window.employeeForm.sync($form);
 
                         // Status toggle update
                         var statusVal = employee.status || 'active';
@@ -715,6 +915,7 @@
                     },
                     success: function (res) {
                         closeModal($('#editEmployeeModal'));
+                        addNamedOptions(res.employee || {});
                         var table = getTable();
                         if (table) {
                             table.ajax.reload(null, false);
@@ -734,13 +935,7 @@
                         if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
                             var errors = xhr.responseJSON.errors;
                             $.each(errors, function (field, msgs) {
-                                var $field = $form.find('[name="' + field + '"]');
-                                if ($field.length) {
-                                    $field.addClass('is-invalid');
-                                    $field.closest('.form-input-group, .form-select-group').after(
-                                        '<div class="form-error-msg" style="color:var(--red-600); font-size:11.5px; margin-top:3px;">' + msgs[0] + '</div>'
-                                    );
-                                }
+                                showFieldError($form, field, msgs[0]);
                             });
                         } else {
                             var errorMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'অনাকাঙ্ক্ষিত ত্রুটি ঘটেছে। পুনরায় চেষ্টা করুন।';

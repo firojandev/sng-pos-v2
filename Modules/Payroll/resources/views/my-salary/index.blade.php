@@ -22,7 +22,7 @@
                 <div style="font-size:12px; color:var(--ink-500);">{{ $employee->name }} · {{ $employee->employee_code }}</div>
             </div>
             <div class="panel-body">
-                <div style="font-size:28px; font-weight:800; color:var(--ink-900);">{{ $money($gross) }}
+                <div style="font-size:28px; font-weight:800; color:var(--ink-900);"><x-core::masked-amount>{{ $money($gross) }}</x-core::masked-amount>
                     <span style="font-size:12px; font-weight:500; color:var(--ink-500);"><span class="bn">/ মাস (মোট)</span><span class="en" style="display:none;">/ month (gross)</span></span>
                 </div>
                 <div style="font-size:12.5px; color:var(--ink-600); margin:4px 0 12px;">
@@ -37,7 +37,7 @@
                             <tr>
                                 <td>{{ $line['name'] }}</td>
                                 <td class="table-cell-right" style="font-family:var(--font-mono, monospace); color:{{ $line['type'] === 'deduction' ? 'var(--red-600)' : 'var(--ink-900)' }};">
-                                    {{ $line['type'] === 'deduction' ? '−' : '' }}{{ $money($line['amount']) }}
+                                    <x-core::masked-amount>{{ $line['type'] === 'deduction' ? '−' : '' }}{{ $money($line['amount']) }}</x-core::masked-amount>
                                 </td>
                             </tr>
                         @empty
