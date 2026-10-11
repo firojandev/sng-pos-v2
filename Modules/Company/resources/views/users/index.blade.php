@@ -2,6 +2,8 @@
     @php
         $roleOptions = ['' => 'কোনো রোল নেই (No role)'] + $roles->all();
         $typeOptions = ['Employee' => 'কর্মচারী (Employee)', 'Admin' => 'কোম্পানি এডমিন (Company Admin)'];
+        $selectedEmployee = $employees->firstWhere('id', (int) old('employee_id'));
+        $employeeLabel = fn ($employee) => trim(($employee->employee_code ? $employee->employee_code.' — ' : '').$employee->name);
     @endphp
 
     @if ($errors->any())
@@ -14,6 +16,29 @@
             <div class="panel-body">
                 <form method="POST" action="{{ route('company.users.store') }}" style="display:flex; flex-direction:column; gap:10px;">
                     @csrf
+                    <div class="employee-picker" id="company-user-employee-picker">
+                        <input type="hidden" name="employee_id" value="{{ $selectedEmployee?->id }}">
+                        <x-core::input size="sm" id="company-user-employee-search" icon="search" :clearable="true" autocomplete="off"
+                            label="কর্মচারী (ঐচ্ছিক)" label-en="Employee (optional)"
+                            placeholder="নাম, কোড বা মোবাইল দিয়ে খুঁজুন" placeholder-en="Search by name, code or phone"
+                            :value="$selectedEmployee ? $employeeLabel($selectedEmployee) : ''" />
+                        <div class="employee-picker-menu" hidden>
+                            @foreach ($employees as $employee)
+                                <div class="employee-picker-item" role="option" tabindex="-1"
+                                    data-id="{{ $employee->id }}" data-label="{{ $employeeLabel($employee) }}"
+                                    data-name="{{ $employee->name }}" data-phone="{{ $employee->phone }}" data-email="{{ $employee->email }}"
+                                    data-search="{{ mb_strtolower($employee->employee_code.' '.$employee->name.' '.$employee->phone.' '.$employee->designation) }}">
+                                    <div class="employee-picker-name">{{ $employeeLabel($employee) }}</div>
+                                    <div class="employee-picker-meta">{{ $employee->phone }}{{ $employee->designation ? ' · '.$employee->designation : '' }}</div>
+                                </div>
+                            @endforeach
+                            <div class="employee-picker-empty" hidden><span class="bn">কোনো কর্মচারী পাওয়া যায়নি</span><span class="en" style="display:none;">No employee found</span></div>
+                        </div>
+                    </div>
+                    <p style="font-size:12px; color:var(--ink-400); margin:0;">
+                        <span class="bn">কর্মচারী বাছলে নাম, মোবাইল ও ইমেইল নিজে থেকে বসবে এবং ইউজারটি তার সাথে যুক্ত হবে।</span>
+                        <span class="en" style="display:none;">Choosing an employee fills in the name, phone and email, and links the user to them.</span>
+                    </p>
                     <x-core::input size="sm" name="name" label="নাম" label-en="Name" :value="old('name')" :required="true" />
                     <x-core::input size="sm" name="phone" label="মোবাইল" label-en="Phone" :value="old('phone')" :required="true" />
                     <x-core::input size="sm" type="email" name="email" label="ইমেইল (ঐচ্ছিক)" label-en="Email (optional)" :value="old('email')" />
@@ -90,4 +115,89 @@
             </div>
         </div>
     </div>
+
+    @push('styles')
+        <style>
+            .employee-picker { position: relative; }
+            .employee-picker-menu { position: absolute; left: 0; right: 0; top: 100%; z-index: 30; max-height: 240px; overflow-y: auto; margin-top: 4px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; color: var(--ink-900); box-shadow: var(--shadow-card); }
+            .employee-picker-item { padding: 7px 10px; cursor: pointer; }
+            .employee-picker-item:hover, .employee-picker-item.is-active { background: var(--paper); }
+            .employee-picker-name { font-size: 13px; font-weight: 600; }
+            .employee-picker-meta, .employee-picker-empty { font-size: 11.5px; color: var(--ink-400); }
+            .employee-picker-empty { padding: 10px; }
+        </style>
+    @endpush
+
+    @push('scripts')
+        <script>
+            $(function () {
+                var $picker = $('#company-user-employee-picker');
+                var $form = $picker.closest('form');
+                var $search = $('#company-user-employee-search');
+                var $hidden = $picker.find('input[name="employee_id"]');
+                var $menu = $picker.find('.employee-picker-menu');
+                var $items = $menu.find('.employee-picker-item');
+                var $empty = $menu.find('.employee-picker-empty');
+
+                function filter() {
+                    var term = $.trim($search.val()).toLowerCase();
+                    var shown = 0;
+                    $items.each(function () {
+                        var match = term === '' || String($(this).data('search')).indexOf(term) !== -1;
+                        $(this).prop('hidden', !match).removeClass('is-active');
+                        shown += match ? 1 : 0;
+                    });
+                    $empty.prop('hidden', shown > 0);
+                    $menu.prop('hidden', false);
+                }
+
+                function choose($item) {
+                    $hidden.val($item.data('id'));
+                    $search.val($item.data('label'));
+                    $form.find('[name="name"]').val($item.data('name'));
+                    $form.find('[name="phone"]').val($item.data('phone'));
+                    if ($item.data('email')) {
+                        $form.find('[name="email"]').val($item.data('email'));
+                    }
+                    $menu.prop('hidden', true);
+                }
+
+                $search.on('focus', filter).on('input', function () {
+                    // Typing again (or clearing) drops the earlier choice.
+                    $hidden.val('');
+                    filter();
+                }).on('keydown', function (event) {
+                    var $visible = $items.filter(':not([hidden])');
+                    var index = $visible.index($visible.filter('.is-active'));
+
+                    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                        event.preventDefault();
+                        if ($menu.prop('hidden')) { filter(); $visible = $items.filter(':not([hidden])'); index = -1; }
+                        if (!$visible.length) { return; }
+                        index = event.key === 'ArrowDown' ? (index + 1) % $visible.length : (index <= 0 ? $visible.length - 1 : index - 1);
+                        $items.removeClass('is-active');
+                        $visible.eq(index).addClass('is-active')[0].scrollIntoView({ block: 'nearest' });
+                    } else if (event.key === 'Enter' && !$menu.prop('hidden')) {
+                        event.preventDefault();
+                        if (index >= 0) { choose($visible.eq(index)); }
+                    } else if (event.key === 'Escape') {
+                        $menu.prop('hidden', true);
+                    }
+                });
+
+                $items.on('mousedown', function (event) {
+                    event.preventDefault();
+                    choose($(this));
+                });
+
+                $(document).on('mousedown', function (event) {
+                    if (!$(event.target).closest($picker).length) {
+                        $menu.prop('hidden', true);
+                        // Text that matches no chosen employee is not a selection.
+                        if (!$hidden.val()) { $search.val(''); }
+                    }
+                });
+            });
+        </script>
+    @endpush
 </x-core::layout>

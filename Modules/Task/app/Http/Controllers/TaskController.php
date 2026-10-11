@@ -12,6 +12,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Modules\Core\Support\TenantContext;
 use Modules\Task\Models\Task;
+use Modules\Task\Services\DailyWorkReport;
 use Modules\Task\Services\TaskPeople;
 
 /**
@@ -58,6 +59,7 @@ class TaskController extends Controller implements HasMiddleware
             ->when($request->filled('q'), fn ($query) => $query->where(fn ($search) => $search->where('title', 'like', '%'.$request->input('q').'%')->orWhere('description', 'like', '%'.$request->input('q').'%')))
             ->with(['reporter:id,name', 'assignee:id,name'])
             ->orderByRaw("CASE status WHEN 'in_progress' THEN 0 WHEN 'todo' THEN 1 WHEN 'completed' THEN 2 ELSE 3 END")
+            ->orderByRaw("CASE priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END")
             ->orderByRaw('deadline IS NULL')
             ->orderBy('deadline')
             ->latest('id')
@@ -73,6 +75,7 @@ class TaskController extends Controller implements HasMiddleware
             'counts' => $counts,
             'canAssign' => Task::canAssign($user),
             'canManage' => $canManage,
+            'canSeeReport' => app(DailyWorkReport::class)->isAvailableTo($user),
             'people' => $this->people->assignable($this->companyId()),
         ]);
     }
@@ -146,7 +149,10 @@ class TaskController extends Controller implements HasMiddleware
             'description' => ['nullable', 'string', 'max:2000'],
             'assigned_to' => ['nullable', 'integer', Rule::in($this->people->assignable($this->companyId())->keys()->all())],
             'deadline' => ['nullable', 'date'],
+            'priority' => ['nullable', Rule::in(Task::PRIORITIES)],
         ]);
+
+        $validated['priority'] ??= $task?->priority ?? 'medium';
 
         $validated['assigned_to'] = (int) ($validated['assigned_to'] ?? 0) ?: ($task?->assigned_to ?? $user->id);
 

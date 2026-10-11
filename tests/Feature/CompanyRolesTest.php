@@ -110,6 +110,34 @@ class CompanyRolesTest extends TestCase
         ])->assertSessionHasErrors('company_role_id');
     }
 
+    public function test_a_new_company_user_can_be_linked_to_an_employee_without_a_login(): void
+    {
+        $rahim = Employee::withoutGlobalScopes()->create(['company_id' => $this->company->id, 'name' => 'Rahim Uddin', 'phone' => '01711000030', 'designation' => 'Clerk', 'salary' => 15000, 'status' => 'active']);
+        $linked = Employee::withoutGlobalScopes()->create(['company_id' => $this->company->id, 'user_id' => $this->owner->id, 'name' => 'Already Linked', 'phone' => '01711000031', 'designation' => 'Clerk', 'salary' => 15000, 'status' => 'active']);
+        $other = Company::create(['name' => 'Other Group', 'slug' => 'other-group', 'type' => Company::TYPE_COMPANY, 'status' => 'active']);
+        $outsider = Employee::withoutGlobalScopes()->create(['company_id' => $other->id, 'name' => 'Outsider', 'phone' => '01711000032', 'designation' => 'Clerk', 'salary' => 15000, 'status' => 'active']);
+
+        // Only this company's employees without a login are offered.
+        $this->actingAs($this->owner)->get(route('company.users.index'))->assertOk()
+            ->assertSee('Rahim Uddin')->assertDontSee('Already Linked')->assertDontSee('Outsider');
+
+        $user = fn (string $phone, ?int $employeeId) => [
+            'role' => 'Employee', 'name' => 'Rahim Uddin', 'phone' => $phone, 'employee_id' => $employeeId,
+            'password' => 'secret123', 'password_confirmation' => 'secret123',
+        ];
+
+        $this->post(route('company.users.store'), $user('01711000033', $linked->id))->assertSessionHasErrors('employee_id');
+        $this->post(route('company.users.store'), $user('01711000033', $outsider->id))->assertSessionHasErrors('employee_id');
+        $this->assertDatabaseMissing('users', ['phone' => '01711000033']);
+
+        $this->post(route('company.users.store'), $user('01711000030', $rahim->id))->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame(User::where('phone', '01711000030')->value('id'), $rahim->fresh()->user_id);
+
+        // The employee stays optional.
+        $this->post(route('company.users.store'), $user('01711000034', null))->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame(0, Employee::withoutGlobalScopes()->where('user_id', User::where('phone', '01711000034')->value('id'))->count());
+    }
+
     public function test_a_company_user_who_cannot_approve_leave_only_handles_their_own(): void
     {
         $role = $this->company->roles()->create(['name' => 'Staff', 'permissions' => ['leave.view', 'leave.create']]);

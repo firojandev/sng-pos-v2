@@ -5,10 +5,13 @@ namespace Modules\Employee\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Modules\Core\Support\TenantContext;
+use Modules\Employee\Http\Requests\Concerns\HandlesEmployeeForm;
 use Modules\Employee\Models\Employee;
 
 class UpdateEmployeeRequest extends FormRequest
 {
+    use HandlesEmployeeForm;
+
     /**
      * Nobody changes their own employee record.
      */
@@ -27,13 +30,13 @@ class UpdateEmployeeRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:20', 'unique:employees,phone,'.$employeeId],
             'email' => ['nullable', 'email', 'max:255', 'unique:employees,email,'.$employeeId],
-            'designation' => ['required', 'string', 'max:255'],
-            'department' => ['nullable', 'string', 'max:255'],
+            ...$this->namedRecordRules(),
             'salary' => ['required', 'numeric', 'min:0'],
             'joining_date' => ['nullable', 'date'],
             'address' => ['nullable', 'string', 'max:255'],
             'status' => ['required', 'in:active,inactive'],
             'user_id' => ['nullable', 'exists:users,id'],
+            ...$this->loginRules(),
         ];
     }
 }

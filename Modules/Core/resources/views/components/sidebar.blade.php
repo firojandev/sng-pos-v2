@@ -382,6 +382,15 @@
                         '<path d="M4 19c5 0 9-3 10-9 1 4 3 6 6 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M14 10c-1-3-3-5-6-6 4 0 7 2 8 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
                 ],
                 [
+                    'key' => 'hr-reporting',
+                    'route' => 'tasks.report',
+                    'bn' => 'রিপোর্টিং',
+                    'en' => 'Reporting',
+                    'gated' => false,
+                    'icon' =>
+                        '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M14 3v5h5M9 13h6M9 17h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+                ],
+                [
                     'key' => 'payroll',
                     'route' => 'payroll.runs.index',
                     'bn' => 'বেতন (পে-রোল)',
@@ -677,6 +686,11 @@
         // not standalone shops, not the super admin.
         if ($item['key'] === 'tasks') {
             return \Modules\Task\Models\Task::isAvailableTo($user);
+        }
+        // HR → Reporting (daily work report): those who manage the company's
+        // tasks see everyone's; an employee sees their own.
+        if ($item['key'] === 'hr-reporting') {
+            return app(\Modules\Task\Services\DailyWorkReport::class)->isAvailableTo($user);
         }
         // HR's Leave page (everyone's leave) is for those who approve leave;
         // others use My Leave.

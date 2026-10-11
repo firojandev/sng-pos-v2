@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Auth\Http\Controllers\AuthController;
 use Modules\Auth\Http\Controllers\RegisterController;
+use Modules\Auth\Http\Controllers\SetPasswordController;
 use Modules\Auth\Http\Controllers\VerificationController;
 
 Route::middleware('guest')->group(function () {
@@ -13,6 +14,10 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [RegisterController::class, 'register'])->name('register.store');
     Route::get('/register/check-availability', [RegisterController::class, 'checkAvailability'])->name('register.check-availability');
 });
+
+// The set-password link emailed to a user an admin created.
+Route::get('/password/setup/{token}', [SetPasswordController::class, 'show'])->name('password.setup');
+Route::post('/password/setup', [SetPasswordController::class, 'store'])->middleware('throttle:6,1')->name('password.setup.store');
 
 Route::prefix('email')->group(function () {
     Route::get('/verify', [VerificationController::class, 'notice'])->name('verification.notice');

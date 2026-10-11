@@ -24,6 +24,11 @@ class Task extends Model
 
     public const OPEN_STATUSES = ['todo', 'in_progress'];
 
+    /**
+     * Most urgent first.
+     */
+    public const PRIORITIES = ['urgent', 'high', 'medium', 'low'];
+
     protected static function booted(): void
     {
         static::observe(AuditObserver::class);
@@ -32,17 +37,22 @@ class Task extends Model
             if ($task->isDirty('status') || ! $task->exists) {
                 $task->finished_at = $task->status === 'completed' ? ($task->finished_at ?? now()) : null;
             }
+
+            // Picked up: the first time it is in progress.
+            if ($task->status === 'in_progress' && ! $task->started_at) {
+                $task->started_at = now();
+            }
         });
     }
 
-    protected $fillable = ['company_id', 'shop_id', 'title', 'description', 'status', 'reported_by', 'assigned_to', 'deadline', 'finished_at'];
+    protected $fillable = ['company_id', 'shop_id', 'title', 'description', 'status', 'priority', 'reported_by', 'assigned_to', 'deadline', 'started_at', 'finished_at'];
 
     /**
      * @return array<string, string>
      */
     protected function casts(): array
     {
-        return ['deadline' => 'date', 'finished_at' => 'datetime'];
+        return ['deadline' => 'date', 'started_at' => 'datetime', 'finished_at' => 'datetime'];
     }
 
     /**
@@ -55,6 +65,19 @@ class Task extends Model
             'in_progress' => ['bn' => 'চলমান', 'en' => 'In Progress', 'color' => 'blue'],
             'completed' => ['bn' => 'সম্পন্ন', 'en' => 'Completed', 'color' => 'green'],
             'canceled' => ['bn' => 'বাতিল', 'en' => 'Canceled', 'color' => 'red'],
+        ];
+    }
+
+    /**
+     * @return array<string, array{bn: string, en: string, color: string}>
+     */
+    public static function priorityLabels(): array
+    {
+        return [
+            'urgent' => ['bn' => 'জরুরি', 'en' => 'Urgent', 'color' => 'red'],
+            'high' => ['bn' => 'উচ্চ', 'en' => 'High', 'color' => 'gold'],
+            'medium' => ['bn' => 'মাঝারি', 'en' => 'Medium', 'color' => 'blue'],
+            'low' => ['bn' => 'নিম্ন', 'en' => 'Low', 'color' => 'grey'],
         ];
     }
 

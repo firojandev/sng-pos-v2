@@ -5,12 +5,16 @@ use Modules\Employee\Http\Controllers\AttendanceController;
 use Modules\Employee\Http\Controllers\AttendanceDeviceController;
 use Modules\Employee\Http\Controllers\EmployeeController;
 use Modules\Employee\Http\Controllers\EmployeeDocumentController;
+use Modules\Employee\Http\Controllers\EmployeeImportController;
 use Modules\Employee\Http\Controllers\EmployeeProfileController;
 use Modules\Employee\Http\Controllers\HrSetupController;
 use Modules\Employee\Http\Controllers\LeaveRequestController;
 use Modules\Employee\Http\Controllers\SelfServiceController;
 
 Route::middleware(['auth', 'feature:employees'])->group(function () {
+    Route::get('employees/import/format', [EmployeeImportController::class, 'template'])->name('employees.import.template')->middleware('permission:employees.create');
+    Route::post('employees/import', [EmployeeImportController::class, 'store'])->name('employees.import.store')->middleware('permission:employees.create');
+
     Route::resource('employees', EmployeeController::class)->except(['show'])
         ->middlewareFor(['index'], 'permission:employees.view')
         ->middlewareFor(['create', 'store'], 'permission:employees.create')

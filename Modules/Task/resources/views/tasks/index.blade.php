@@ -7,6 +7,8 @@
             'reported' => ['অন্যকে দেওয়া', 'Assigned by Me'],
         ] + ($canManage ? ['all' => ['সবার টাস্ক', 'All Tasks']] : []);
         $me = auth()->id();
+        $priorities = \Modules\Task\Models\Task::priorityLabels();
+        $priorityOptions = collect($priorities)->map(fn ($label) => $label['bn'].' ('.$label['en'].')')->all();
     @endphp
 
     <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:16px;">
@@ -27,21 +29,29 @@
                     <x-core::input size="sm" name="title" label="শিরোনাম" label-en="Title" :value="old('title')" :required="true" />
                     <x-core::textarea size="sm" name="description" label="সংক্ষিপ্ত বিবরণ" label-en="Short Description" rows="3" :value="old('description')" />
                     @if ($canAssign)
-                        <x-core::select size="sm" name="assigned_to" label="কাকে দেওয়া হবে" label-en="Assign To" :options="$people->all()" :value="old('assigned_to', $me)" />
+                        <x-core::searchable-select size="sm" name="assigned_to" label="কাকে দেওয়া হবে" label-en="Assign To" placeholder="নাম বা পদবি দিয়ে খুঁজুন" placeholder-en="Search by name or designation" :options="$people->all()" :value="old('assigned_to', $me)" />
                     @else
                         <p style="font-size:12px; color:var(--ink-500); margin:0;"><span class="bn">এটি আপনার নিজের করণীয় তালিকায় যোগ হবে।</span><span class="en" style="display:none;">This goes on your own to-do list.</span></p>
                     @endif
-                    <x-core::input size="sm" type="date" name="deadline" label="শেষ সময়" label-en="Deadline" :value="old('deadline')" />
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        <x-core::select size="sm" name="priority" label="অগ্রাধিকার" label-en="Priority" :options="$priorityOptions" :value="old('priority', 'medium')" />
+                        <x-core::input size="sm" type="date" name="deadline" label="শেষ সময়" label-en="Deadline" :value="old('deadline')" />
+                    </div>
                     <div><x-core::button type="submit" size="sm" variant="solid" color="primary" icon="plus"><span class="bn">যোগ করুন</span><span class="en" style="display:none;">Add Task</span></x-core::button></div>
                 </form>
             </div>
         </div>
 
         <div>
-            <div class="tabbar" style="margin-top:0;">
-                @foreach ($tabs as $key => [$bn, $en])
-                    <a href="{{ route('tasks.index', ['tab' => $key]) }}" class="tabbtn {{ $tab === $key ? 'active' : '' }}"><span class="bn">{{ $bn }}</span><span class="en">{{ $en }}</span></a>
-                @endforeach
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+                <div class="tabbar" style="margin-top:0;">
+                    @foreach ($tabs as $key => [$bn, $en])
+                        <a href="{{ route('tasks.index', ['tab' => $key]) }}" class="tabbtn {{ $tab === $key ? 'active' : '' }}"><span class="bn">{{ $bn }}</span><span class="en">{{ $en }}</span></a>
+                    @endforeach
+                </div>
+                @if ($canSeeReport)
+                    <x-core::button as="a" href="{{ route('tasks.report') }}" size="sm" variant="secondary" icon="file-text"><span class="bn">{{ $canManage ? 'দৈনিক কাজের রিপোর্ট' : 'আমার কাজের রিপোর্ট' }}</span><span class="en" style="display:none;">{{ $canManage ? 'Daily Work Report' : 'My Work Report' }}</span></x-core::button>
+                @endif
             </div>
 
             <form method="GET" style="display:flex; gap:8px; align-items:center; flex-wrap:nowrap; margin:12px 0;">
@@ -65,6 +75,7 @@
                         <thead>
                             <tr>
                                 <th><span class="bn">টাস্ক</span><span class="en" style="display:none;">Task</span></th>
+                                <th><span class="bn">অগ্রাধিকার</span><span class="en" style="display:none;">Priority</span></th>
                                 <th><span class="bn">দায়িত্বপ্রাপ্ত</span><span class="en" style="display:none;">Assigned To</span></th>
                                 <th><span class="bn">রিপোর্টার</span><span class="en" style="display:none;">Reported By</span></th>
                                 <th><span class="bn">শেষ সময়</span><span class="en" style="display:none;">Deadline</span></th>
@@ -85,6 +96,10 @@
                                         @if ($task->description)
                                             <div style="font-size:12px; color:var(--ink-600); max-width:420px;">{{ \Illuminate\Support\Str::limit($task->description, 160) }}</div>
                                         @endif
+                                    </td>
+                                    <td>
+                                        @php($priority = $priorities[$task->priority] ?? $priorities['medium'])
+                                        <x-core::badge :color="$priority['color']" size="xs" :label="$priority['bn']" :label-en="$priority['en']" />
                                     </td>
                                     <td style="font-size:12.5px;">{{ $task->assignee?->name ?? '—' }}</td>
                                     <td style="font-size:12.5px;">{{ $task->reporter?->name ?? '—' }}</td>
@@ -120,7 +135,7 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="7"><x-core::table.empty icon="check-circle" title="কোনো টাস্ক নেই" title-en="No tasks" /></td></tr>
+                                <tr><td colspan="8"><x-core::table.empty icon="check-circle" title="কোনো টাস্ক নেই" title-en="No tasks" /></td></tr>
                             @endforelse
                         </tbody>
                     </table>

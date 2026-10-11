@@ -4,13 +4,18 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Modules\Company\Models\Company;
 use Modules\Core\Support\Features;
 use Modules\Core\Support\Permissions;
+use Modules\Employee\Models\Attendance;
+use Modules\Employee\Models\Employee;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
 use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
 use Modules\Task\Models\Task;
+use Modules\Task\Services\DailyWorkReport;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Revoltify\Subscriptionify\Models\Feature;
 use Revoltify\Subscriptionify\Services\FeatureResolver;
 use Spatie\Permission\Models\Permission;
@@ -62,6 +67,12 @@ class TaskManagementTest extends TestCase
         $task = Task::firstOrFail();
         $this->assertSame([$this->leader->id, $this->rahim->id, 'todo'], [(int) $task->reported_by, (int) $task->assigned_to, $task->status]);
 
+        // "Assign To" is a searchable list: the leader by default, the assignee when editing.
+        $index = $this->get(route('tasks.index'))->assertOk()->assertSee('data-value="'.$this->rahim->id.'"', false);
+        $this->assertMatchesRegularExpression('/name="assigned_to"\s+value="'.$this->leader->id.'"\s+data-searchable-value/', $index->getContent());
+        $edit = $this->get(route('tasks.edit', $task))->assertOk();
+        $this->assertMatchesRegularExpression('/name="assigned_to"\s+value="'.$this->rahim->id.'"\s+data-searchable-value/', $edit->getContent());
+
         $this->actingAs($this->rahim)->get(route('tasks.index'))->assertOk()->assertSee('Count the rice stock');
         $this->patch(route('tasks.status', $task), ['status' => 'in_progress'])->assertRedirect();
         $this->assertNull($task->fresh()->finished_at);
@@ -75,6 +86,101 @@ class TaskManagementTest extends TestCase
             ->assertOk()->assertSee('Count the rice stock');
         $this->put(route('tasks.update', $task), ['title' => 'Count all stock', 'assigned_to' => $this->karim->id])->assertRedirect();
         $this->assertSame($this->karim->id, (int) $task->fresh()->assigned_to);
+    }
+
+    public function test_a_task_has_a_priority_shown_in_the_list(): void
+    {
+        $this->actingAs($this->leader)->post(route('tasks.store'), ['title' => 'Fix the freezer', 'assigned_to' => $this->rahim->id, 'priority' => 'urgent'])->assertSessionHasNoErrors();
+        $this->post(route('tasks.store'), ['title' => 'Dust the shelves', 'assigned_to' => $this->rahim->id])->assertSessionHasNoErrors();
+        $this->post(route('tasks.store'), ['title' => 'Bad', 'priority' => 'whenever'])->assertSessionHasErrors('priority');
+
+        $this->assertSame(['urgent', 'medium'], Task::orderBy('id')->pluck('priority')->all());
+
+        // Most urgent first, with its priority.
+        $this->actingAs($this->rahim)->get(route('tasks.index'))->assertOk()
+            ->assertSee('name="priority"', false)
+            ->assertSeeInOrder(['Fix the freezer', 'Urgent', 'Dust the shelves', 'Medium']);
+
+        $task = Task::where('title', 'Dust the shelves')->firstOrFail();
+        $this->actingAs($this->leader)->put(route('tasks.update', $task), ['title' => 'Dust the shelves', 'priority' => 'low'])->assertSessionHasNoErrors();
+        $this->assertSame('low', $task->fresh()->priority);
+    }
+
+    public function test_an_admin_sees_and_exports_the_daily_work_report_under_hr_reporting(): void
+    {
+        $this->travelTo('2026-10-08 10:00:00');
+        $employee = Employee::withoutGlobalScopes()->create([
+            'company_id' => $this->shop->company_id, 'shop_id' => $this->shop->id, 'user_id' => $this->rahim->id, 'employee_code' => 'EMP-0007',
+            'name' => 'Rahim Uddin', 'phone' => '01711000070', 'designation' => 'Cashier', 'salary' => 15000, 'status' => 'active',
+        ]);
+        $karimEmployee = Employee::withoutGlobalScopes()->create([
+            'company_id' => $this->shop->company_id, 'shop_id' => $this->shop->id, 'user_id' => $this->karim->id, 'employee_code' => 'EMP-0008',
+            'name' => 'Karim Mia', 'phone' => '01711000071', 'designation' => 'Cashier', 'salary' => 15000, 'status' => 'active',
+        ]);
+        Attendance::withoutGlobalScopes()->create([
+            'company_id' => $this->shop->company_id, 'employee_id' => $employee->id, 'shop_id' => $this->shop->id, 'date' => '2026-10-08',
+            'check_in' => '2026-10-08 09:05:00', 'check_out' => '2026-10-08 17:35:00', 'worked_minutes' => 510, 'status' => 'present',
+        ]);
+
+        // Created on the 8th, due on the 12th, picked up on the 9th and finished on the 10th.
+        $this->actingAs($this->leader)->post(route('tasks.store'), [
+            'title' => 'Count the rice stock', 'description' => "Both warehouses\nNote the damaged bags", 'assigned_to' => $this->rahim->id, 'priority' => 'high', 'deadline' => '2026-10-12',
+        ]);
+        $task = Task::firstOrFail();
+        $this->travelTo('2026-10-09 11:00:00');
+        $this->actingAs($this->rahim)->patch(route('tasks.status', $task), ['status' => 'in_progress']);
+        $this->assertSame('2026-10-09', $task->fresh()->started_at->toDateString());
+        $this->travelTo('2026-10-10 15:00:00');
+        $this->patch(route('tasks.status', $task), ['status' => 'completed']);
+        Task::create(['company_id' => $this->shop->company_id, 'title' => 'Clean the shelves', 'status' => 'todo', 'reported_by' => $this->leader->id, 'assigned_to' => $this->karim->id]);
+        $this->travelTo('2026-10-11 09:00:00');
+
+        $rows = app(DailyWorkReport::class)->rows($this->shop->company_id, $this->shop->id, Carbon::parse('2026-10-01'), Carbon::parse('2026-10-31'), $employee->id);
+        $this->assertSame(['2026-10-08', '2026-10-09', '2026-10-10', '2026-10-12'], $rows->map(fn ($row) => $row['date']->toDateString())->all());
+        $this->assertSame([510, 0, 0, 0], $rows->pluck('worked_minutes')->all());
+        $this->assertSame(['Count the rice stock'], $rows->first()['tasks']->pluck('title')->all());
+
+        // A task picked up before the period shows on each day it was still being worked on.
+        $this->assertSame(
+            ['2026-10-10'],
+            app(DailyWorkReport::class)->rows($this->shop->company_id, $this->shop->id, Carbon::parse('2026-10-10'), Carbon::parse('2026-10-11'), $employee->id)
+                ->map(fn ($row) => $row['date']->toDateString())->all(),
+        );
+
+        // An employee sees and exports their own report only, whatever they ask for.
+        $this->actingAs($this->rahim)->get(route('dashboard'))->assertOk()->assertSee('href="'.route('tasks.report').'"', false);
+        $this->get(route('tasks.index'))->assertOk()->assertSee('My Work Report');
+        $this->get(route('tasks.report', ['from' => '2026-10-01', 'to' => '2026-10-31']))->assertOk()
+            ->assertSee('My Work Report')->assertSee('Count the rice stock')->assertSee('09:05 AM')
+            ->assertDontSee('Karim Mia')->assertDontSee('Clean the shelves')->assertDontSee('name="employee_id"', false);
+        $this->get(route('tasks.report', ['from' => '2026-10-01', 'to' => '2026-10-31', 'employee_id' => $karimEmployee->id]))->assertSessionHasErrors('employee_id');
+        $own = $this->get(route('tasks.report.export', ['from' => '2026-10-01', 'to' => '2026-10-31']))->assertOk()->streamedContent();
+        $ownPath = tempnam(sys_get_temp_dir(), 'own').'.xlsx';
+        file_put_contents($ownPath, $own);
+        $this->assertSame(['Rahim Uddin'], array_values(array_unique(array_column(array_slice(IOFactory::load($ownPath)->getActiveSheet()->toArray(), 1), 2))));
+
+        // A user with no employee record has no report.
+        $this->actingAs($this->leader)->get(route('tasks.report'))->assertForbidden();
+        $this->get(route('tasks.report.export'))->assertForbidden();
+        $this->get(route('tasks.index'))->assertOk()->assertDontSee('Work Report');
+
+        $this->actingAs($this->admin)->get(route('dashboard'))->assertOk()->assertSee('href="'.route('tasks.report').'"', false);
+        $this->get(route('tasks.report', ['from' => '2026-10-01', 'to' => '2026-10-31']))->assertOk()
+            ->assertSeeInOrder(['EMP-0007', 'Rahim Uddin', '08 Oct, 2026', '09:05 AM', '05:35 PM', '8h 30m', 'Count the rice stock', 'Both warehouses'])
+            ->assertSee('Karim Mia')->assertSee('Clean the shelves');
+        $this->get(route('tasks.report', ['from' => '2026-10-01', 'to' => '2026-10-31', 'employee_id' => $employee->id]))->assertOk()
+            ->assertDontSee('Clean the shelves');
+        $this->get(route('tasks.report', ['employee_id' => 999999]))->assertSessionHasErrors('employee_id');
+
+        $response = $this->get(route('tasks.report.export', ['from' => '2026-10-01', 'to' => '2026-10-31', 'employee_id' => $employee->id]))
+            ->assertOk()->assertDownload('daily-work-report-2026-10-01-to-2026-10-31.xlsx');
+        $path = tempnam(sys_get_temp_dir(), 'report').'.xlsx';
+        file_put_contents($path, $response->streamedContent());
+        $sheet = IOFactory::load($path)->getActiveSheet()->toArray();
+
+        $this->assertSame(['SL', 'Employee Id', 'Employee Name', 'Date', 'Clock In', 'Clock Out', 'Worked Hours', 'Tasks Details'], $sheet[0]);
+        $this->assertSame(['1', 'EMP-0007', 'Rahim Uddin', '08 Oct, 2026', '09:05 AM', '05:35 PM', '8h 30m', "• Count the rice stock [High] — Completed — Deadline 12 Oct, 2026\n   Both warehouses\n   Note the damaged bags"], $sheet[1]);
+        $this->assertCount(5, $sheet);
     }
 
     public function test_an_employee_keeps_a_personal_todo_list_but_cannot_assign_to_others(): void

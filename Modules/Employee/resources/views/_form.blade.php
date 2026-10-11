@@ -55,26 +55,17 @@
     />
 
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-        <x-core::input
-            name="designation"
-            label="পদবি"
-            label-en="Designation"
-            value="{{ old('designation', $employee->designation) }}"
-            placeholder="যেমন: বিক্রয়কর্মী / ম্যানেজার"
-            placeholder-en="e.g. Sales / Manager"
-            size="sm"
-            :required="true"
-        />
+        @include('employee::partials.named-select', [
+            'field' => 'designation', 'idPrefix' => 'employee', 'options' => $designationOptions, 'required' => true,
+            'selectedId' => old('designation_id', $employee->designation_id), 'newValue' => old('designation', $employee->designation_id ? null : $employee->designation),
+            'label' => 'পদবি', 'labelEn' => 'Designation', 'placeholder' => 'নতুন পদবির নাম', 'placeholderEn' => 'New designation name',
+        ])
 
-        <x-core::input
-            name="department"
-            label="বিভাগ"
-            label-en="Department"
-            value="{{ old('department', $employee->department) }}"
-            placeholder="যেমন: বিক্রয় / হিসাব"
-            placeholder-en="e.g. Sales / Accounts"
-            size="sm"
-        />
+        @include('employee::partials.named-select', [
+            'field' => 'department', 'idPrefix' => 'employee', 'options' => $departmentOptions, 'required' => false,
+            'selectedId' => old('department_id', $employee->department_id), 'newValue' => old('department', $employee->department_id ? null : $employee->department),
+            'label' => 'বিভাগ', 'labelEn' => 'Department', 'placeholder' => 'নতুন বিভাগের নাম', 'placeholderEn' => 'New department name',
+        ])
     </div>
 
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
@@ -113,6 +104,10 @@
         value="{{ old('address', $employee->address) }}"
     />
 
+    @if (! $employee->user_id)
+        @include('employee::partials.login-account', ['idPrefix' => 'employee'])
+    @endif
+
     <x-core::select
         name="user_id"
         label="সংযুক্ত ইউজার লগইন অ্যাকাউন্ট (ঐচ্ছিক)"
@@ -121,6 +116,11 @@
         :options="$userOptions"
         :value="old('user_id', $employee->user_id)"
     />
+
+    <p data-linked-user-note hidden style="font-size:12px; color:var(--ink-400); margin:-8px 0 0;">
+        <span class="bn">নতুন লগইন অ্যাকাউন্টটি তৈরি হয়ে এখানে নিজে থেকেই সংযুক্ত হবে।</span>
+        <span class="en" style="display:none;">The new login account is created and linked here automatically.</span>
+    </p>
 
     <div>
         <label class="bn" style="display:block; margin-bottom:6px; font-weight:600; font-size:13px; color:var(--ink-800);">অবস্থা</label>
@@ -131,3 +131,5 @@
         />
     </div>
 </div>
+
+@include('employee::partials.form-scripts')

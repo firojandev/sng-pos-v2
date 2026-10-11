@@ -4,13 +4,16 @@ namespace Modules\Company\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Modules\Company\Models\Company;
 use Modules\Core\Support\BanglaNumber;
+use Modules\Employee\Models\Employee;
 
 /**
  * Company users: company admins (everything in the company workspace) and
@@ -26,6 +29,7 @@ class CompanyUserController extends Controller
             'company' => $company,
             'users' => $company->companyUsers()->orderByDesc('company_user.is_owner')->orderBy('name')->get(),
             'roles' => $company->roles()->orderBy('name')->pluck('name', 'id'),
+            'employees' => $this->unlinkedEmployees($company)->orderBy('name')->get(['id', 'employee_code', 'name', 'phone', 'email', 'designation']),
         ]);
     }
 
@@ -34,16 +38,24 @@ class CompanyUserController extends Controller
         $company = CompanySettingsController::manageableCompany();
         $validated = $this->validated($request, $company);
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'phone' => $validated['phone'],
-            'email' => $validated['email'] ?? null,
-            'username' => $validated['username'] ?? null,
-            'password' => Hash::make($validated['password']),
-            'email_verified_at' => now(),
-        ]);
+        $user = DB::transaction(function () use ($company, $validated): User {
+            $user = User::create([
+                'name' => $validated['name'],
+                'phone' => $validated['phone'],
+                'email' => $validated['email'] ?? null,
+                'username' => $validated['username'] ?? null,
+                'password' => Hash::make($validated['password']),
+                'email_verified_at' => now(),
+            ]);
 
-        $company->users()->attach($user->id, $this->membership($validated));
+            $company->users()->attach($user->id, $this->membership($validated));
+
+            if (! empty($validated['employee_id'])) {
+                $this->unlinkedEmployees($company)->findOrFail($validated['employee_id'])->update(['user_id' => $user->id]);
+            }
+
+            return $user;
+        });
 
         return back()->with('status', "{$user->name} — কোম্পানি ইউজার তৈরি হয়েছে");
     }
@@ -101,7 +113,19 @@ class CompanyUserController extends Controller
             'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user)],
             'username' => ['nullable', 'string', 'max:50', 'alpha_dash', Rule::unique('users', 'username')->ignore($user)],
             'password' => [$user ? 'nullable' : 'required', 'string', 'min:8', 'confirmed'],
+            'employee_id' => ['nullable', 'integer', Rule::exists('employees', 'id')->where('company_id', $company->id)->whereNull('user_id')],
         ]);
+    }
+
+    /**
+     * The company's employees that have no login yet, so a new user can be
+     * linked to one.
+     *
+     * @return Builder<Employee>
+     */
+    private function unlinkedEmployees(Company $company): Builder
+    {
+        return Employee::withoutGlobalScopes()->where('company_id', $company->id)->whereNull('user_id');
     }
 
     /**

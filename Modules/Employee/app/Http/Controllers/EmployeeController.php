@@ -8,12 +8,16 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Modules\Core\Support\TenantContext;
 use Modules\Employee\DataTables\EmployeesDataTable;
 use Modules\Employee\Http\Requests\StoreEmployeeRequest;
 use Modules\Employee\Http\Requests\UpdateEmployeeRequest;
+use Modules\Employee\Models\Department;
+use Modules\Employee\Models\Designation;
 use Modules\Employee\Models\Employee;
+use Modules\Employee\Services\EmployeeLogin;
 
 class EmployeeController extends Controller
 {
@@ -51,7 +55,7 @@ class EmployeeController extends Controller
 
         $nextEmployeeCode = $this->nextEmployeeCode();
 
-        return $dataTable->render('employee::index', compact('metrics', 'departments', 'designations', 'users', 'nextEmployeeCode'));
+        return $dataTable->render('employee::index', [...compact('metrics', 'departments', 'designations', 'users', 'nextEmployeeCode'), ...$this->formOptions()]);
     }
 
     public function create(): View
@@ -62,20 +66,21 @@ class EmployeeController extends Controller
         return view('employee::create', [
             'employee' => new Employee(['employee_code' => $this->nextEmployeeCode()]),
             'users' => $users,
+            ...$this->formOptions(),
         ]);
     }
 
     public function store(StoreEmployeeRequest $request): RedirectResponse|JsonResponse
     {
-        $data = $request->validated();
+        $data = $request->employeeData();
         $data['shop_id'] = auth()->user()->shop_id;
 
-        $employee = Employee::create($data);
+        [$employee, $loginNote] = $this->saveWithLogin($request, fn () => Employee::create($data));
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => 'কর্মচারী সফলভাবে যোগ করা হয়েছে',
+                'message' => 'কর্মচারী সফলভাবে যোগ করা হয়েছে'.$loginNote,
                 'employee' => $employee->load('user'),
                 'next_employee_code' => $this->nextEmployeeCode(),
             ]);
@@ -83,7 +88,7 @@ class EmployeeController extends Controller
 
         return redirect()
             ->route('employees.index')
-            ->with('status', 'কর্মচারী সফলভাবে যোগ করা হয়েছে');
+            ->with('status', 'কর্মচারী সফলভাবে যোগ করা হয়েছে'.$loginNote);
     }
 
     public function edit(Request $request, Employee $employee): View|JsonResponse
@@ -108,32 +113,34 @@ class EmployeeController extends Controller
                     'address' => $employee->address,
                     'status' => $employee->status,
                     'user_id' => $employee->user_id,
+                    'designation_id' => $employee->designation_id,
+                    'department_id' => $employee->department_id,
                 ],
-                'users' => $users->map(fn ($u) => ['id' => $u->id, 'name' => $u->name]),
+                'users' => $users->map(fn ($u) => ['id' => $u->id, 'name' => $u->name, 'email' => $u->email]),
                 'update_url' => route('employees.update', $employee),
             ]);
         }
 
-        return view('employee::edit', compact('employee', 'users'));
+        return view('employee::edit', [...compact('employee', 'users'), ...$this->formOptions()]);
     }
 
     public function update(UpdateEmployeeRequest $request, Employee $employee): RedirectResponse|JsonResponse
     {
         $this->ensureNotOwnRecord($employee);
 
-        $employee->update($request->validated());
+        [$employee, $loginNote] = $this->saveWithLogin($request, fn () => tap($employee)->update($request->employeeData()));
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => 'কর্মচারীর তথ্য সফলভাবে হালনাগাদ করা হয়েছে',
+                'message' => 'কর্মচারীর তথ্য সফলভাবে হালনাগাদ করা হয়েছে'.$loginNote,
                 'employee' => $employee->load('user'),
             ]);
         }
 
         return redirect()
             ->route('employees.index')
-            ->with('status', 'কর্মচারীর তথ্য হালনাগাদ করা হয়েছে');
+            ->with('status', 'কর্মচারীর তথ্য হালনাগাদ করা হয়েছে'.$loginNote);
     }
 
     public function destroy(Request $request, Employee $employee): RedirectResponse|JsonResponse
@@ -160,6 +167,58 @@ class EmployeeController extends Controller
         return redirect()
             ->route('employees.index')
             ->with('status', 'কর্মচারী মুছে ফেলা হয়েছে');
+    }
+
+    /**
+     * Save the employee and, when asked, create their login with it. The
+     * set-password email goes out once both are saved.
+     *
+     * @param  callable(): Employee  $save
+     * @return array{0: Employee, 1: string} the employee and a note about the login for the status message
+     */
+    private function saveWithLogin(StoreEmployeeRequest|UpdateEmployeeRequest $request, callable $save): array
+    {
+        if (! $request->boolean('create_user')) {
+            return [$save(), ''];
+        }
+
+        $login = app(EmployeeLogin::class);
+        $password = $request->validated('user_password');
+        $roleId = $request->validated('user_role') ? (int) $request->validated('user_role') : null;
+
+        [$employee, $user] = DB::transaction(function () use ($save, $login, $roleId, $password) {
+            $employee = $save();
+
+            return [$employee, $login->create($employee, $roleId, $password)];
+        });
+
+        if ($password) {
+            return [$employee, '; লগইন অ্যাকাউন্ট তৈরি হয়েছে (login account created)'];
+        }
+
+        return [$employee, $login->invite($user)
+            ? "; পাসওয়ার্ড সেট করার লিংক {$user->email}-এ পাঠানো হয়েছে (set-password link emailed)"
+            : '; লগইন তৈরি হয়েছে কিন্তু ইমেইল পাঠানো যায়নি (login created, but the email could not be sent)'];
+    }
+
+    /**
+     * The dropdowns of the add/edit forms, and whether the user may create
+     * a login with the employee.
+     *
+     * @return array<string, mixed>
+     */
+    private function formOptions(): array
+    {
+        $login = app(EmployeeLogin::class);
+        $canCreateLogin = $login->allowed();
+
+        return [
+            'designationOptions' => Designation::orderBy('name')->pluck('name', 'id')->all(),
+            'departmentOptions' => Department::orderBy('name')->pluck('name', 'id')->all(),
+            'canCreateLogin' => $canCreateLogin,
+            'loginRoleOptions' => $canCreateLogin ? $login->roleOptions() : [],
+            'loginRoleRequired' => $login->roleRequired(),
+        ];
     }
 
     /**

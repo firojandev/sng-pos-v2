@@ -22,7 +22,7 @@
             </div>
         </div>
 
-        <form method="POST" action="{{ route('employees.store') }}">
+        <form method="POST" action="{{ route('employees.store') }}" data-employee-form>
             @csrf
             @include('employee::_form')
 
