@@ -380,7 +380,7 @@ class SaleController extends Controller
     public function store(StoreSaleRequest $request): RedirectResponse
     {
         $data = $request->validated();
-        $items = $data['items'];
+        $items = $this->normalizeItems($data['items']);
 
         $sale = DB::transaction(function () use ($data, $items) {
             $customerId = $this->resolveCustomerId($data);
@@ -481,7 +481,7 @@ class SaleController extends Controller
     public function update(UpdateSaleRequest $request, Sale $sale): RedirectResponse
     {
         $data = $request->validated();
-        $items = $data['items'];
+        $items = $this->normalizeItems($data['items']);
 
         DB::transaction(function () use ($data, $items, $sale) {
             $this->revertItems($sale);
@@ -612,6 +612,38 @@ class SaleController extends Controller
     }
 
     /**
+     * Resolve both entry modes into the existing selected-unit sale values.
+     *
+     * @param  array<int, array<string, mixed>>  $items
+     * @return array<int, array<string, mixed>>
+     */
+    private function normalizeItems(array $items): array
+    {
+        foreach ($items as $index => &$item) {
+            $item['unit_price'] = round((float) $item['unit_price'], 6);
+            if (($item['entry_mode'] ?? 'quantity') === 'amount') {
+                if ($item['unit_price'] <= 0) {
+                    throw ValidationException::withMessages(["items.$index.unit_price" => 'Amount entry requires a positive selling price.']);
+                }
+                $amount = round((float) $item['amount'], 2);
+                $item['quantity'] = round($amount / $item['unit_price'], 6);
+                if ($item['quantity'] > 0 && round($item['quantity'] * $item['unit_price'], 2) !== $amount) {
+                    throw ValidationException::withMessages(["items.$index.amount" => 'This amount cannot be represented at the supported quantity precision.']);
+                }
+            } else {
+                $item['quantity'] = round((float) $item['quantity'], 6);
+            }
+
+            if ($item['quantity'] <= 0) {
+                throw ValidationException::withMessages(["items.$index.quantity" => 'Quantity is below the supported precision.']);
+            }
+        }
+        unset($item);
+
+        return $items;
+    }
+
+    /**
      * @return array{0: float, 1: float, 2: float, 3: float, 4: float, 5: float, 6: float}
      */
     private function calculateBaseTotals(array $items, array $data): array
@@ -687,19 +719,7 @@ class SaleController extends Controller
             return 1.0;
         }
 
-        $product = Product::with('units')->find($productId);
-        $unit = $product?->units->firstWhere('id', $unitId);
-        $factor = $unit ? (float) $unit->pivot->conversion_factor : 0.0;
-
-        if ($factor <= 0) {
-            return 1.0;
-        }
-
-        // is_smaller_unit means the stored factor is "X of this unit = 1 base
-        // unit" (e.g. Litre when the base unit is a Drum: 1 Drum = 204 Litres),
-        // the inverse of the default "1 of this unit = X base units" (e.g. a
-        // Box holding 4 base Pieces).
-        return $unit->pivot->is_smaller_unit ? 1 / $factor : $factor;
+        return Product::with('units')->find($productId)?->unitConversionFactor($unitId) ?? 1.0;
     }
 
     /**
@@ -901,10 +921,15 @@ class SaleController extends Controller
             $enteredQuantity = (float) $item['quantity'];
             $enteredUnitPrice = (float) $item['unit_price'];
             $baseQuantity = $enteredQuantity * $conversionFactor;
+            if (round($baseQuantity, 6) <= 0) {
+                throw ValidationException::withMessages(['items' => 'Quantity is below the supported stock precision.']);
+            }
             $baseUnitPrice = $conversionFactor > 0 ? $enteredUnitPrice / $conversionFactor : $enteredUnitPrice;
             $lineDiscount = (float) ($item['discount'] ?? 0);
 
             $remaining = $baseQuantity;
+            $remainingTotal = round($this->lineAmount($item), 2);
+            $remainingDiscount = round($lineDiscount, 2);
 
             $batches = Batch::where('product_id', $item['product_id'])
                 ->where('warehouse_id', $sale->warehouse_id)
@@ -930,17 +955,20 @@ class SaleController extends Controller
                 // A single cart line can split across multiple batches; prorate its
                 // discount by each split's share of the line's total base quantity
                 // so the split rows' totals still sum to the intended line amount.
-                $discountShare = $baseQuantity > 0 ? $lineDiscount * ($take / $baseQuantity) : 0;
+                $isLastBatch = $take >= $remaining;
+                $discountShare = $isLastBatch ? $remainingDiscount : round($lineDiscount * ($take / $baseQuantity), 2);
                 $itemQuantity = $conversionFactor > 0 ? ($take / $conversionFactor) : $take;
+
+                $splitTotal = $isLastBatch ? $remainingTotal : round(($itemQuantity * $enteredUnitPrice) - $discountShare, 2);
 
                 $sale->items()->create([
                     'product_id' => $item['product_id'],
                     'batch_id' => $batch->id,
                     'unit_id' => $unitId,
-                    'quantity' => round($itemQuantity, 4),
-                    'unit_price' => round($enteredUnitPrice, 4),
+                    'quantity' => round($itemQuantity, 6),
+                    'unit_price' => round($enteredUnitPrice, 6),
                     'discount' => round($discountShare, 2),
-                    'total' => round(($itemQuantity * $enteredUnitPrice) - $discountShare, 2),
+                    'total' => $splitTotal,
                     'warranty_expires_at' => $item['warranty_expires_at'] ?? null,
                 ]);
 
@@ -956,7 +984,9 @@ class SaleController extends Controller
                     'created_by' => Auth::id(),
                 ]);
 
-                $remaining -= $take;
+                $remaining = round($remaining - $take, 9);
+                $remainingTotal = round($remainingTotal - $splitTotal, 2);
+                $remainingDiscount = round($remainingDiscount - $discountShare, 2);
             }
         }
     }

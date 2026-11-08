@@ -19,9 +19,9 @@ class StockMovement extends Model
     ];
 
     protected $casts = [
-        'quantity_change' => 'decimal:2',
-        'quantity_before' => 'decimal:2',
-        'quantity_after' => 'decimal:2',
+        'quantity_change' => 'decimal:6',
+        'quantity_before' => 'decimal:6',
+        'quantity_after' => 'decimal:6',
     ];
 
     /**

@@ -204,7 +204,7 @@
                         {{ BanglaNumber::toBn($itemQty) }} {{ $unitName }}
                     </td>
                     <td style="text-align:right; vertical-align:top; padding:3px 2px; white-space:normal; overflow-wrap:anywhere; font-size:{{ $isCompact58 ? '9.5px' : '11px' }};">
-                        ৳{{ BanglaNumber::toBnMoney($itemPrice) }}
+                        ৳{{ BanglaNumber::toBn(rtrim(rtrim(number_format($itemPrice, 6), '0'), '.')) }}
                     </td>
                     <td style="text-align:right; vertical-align:top; padding:3px 2px; font-weight:400; white-space:normal; overflow-wrap:anywhere; font-size:{{ $isCompact58 ? '10.5px' : '12px' }};">
                         ৳{{ BanglaNumber::toBnMoney($itemTotal) }}

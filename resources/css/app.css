@@ -2571,7 +2571,7 @@ html.lang-en .cart-item .ci-discount-offer-badge .en,
 body.lang-en .cart-item .ci-discount-offer-badge .en{display:inline !important;}
 .cart-item .ci-grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;}
 .cart-item .ci-grid.ci-grid-5{grid-template-columns:1fr 1fr 0.7fr 1fr 1fr;}
-.cart-item .ci-grid.ci-grid-6{grid-template-columns:0.7fr 0.9fr 0.9fr 0.9fr 1.2fr 0.9fr; gap:6px;}
+.cart-item .ci-grid.ci-grid-6{grid-template-columns:0.7fr minmax(80px,110px) 0.9fr 0.9fr minmax(110px,145px) 0.9fr; gap:6px;}
 .cart-item .ci-grid.ci-grid-6-purchase{grid-template-columns:1fr 1fr 0.75fr 0.75fr 1fr 1fr; gap:6px;}
 .cart-item .ci-grid label{display:block; font-size:10px; font-weight:700; color:var(--ink-600); margin-bottom:3px;}
 .cart-item .ci-grid input, .cart-item .ci-grid select{width:100%; border:1px solid var(--border); border-radius:8px; padding:7px 8px; font-size:12px; font-family:'Plus Jakarta Sans','Manrope',sans-serif; background:var(--card); color:var(--ink-900); outline:none; transition:border-color .15s ease, box-shadow .15s ease, background-color .15s ease;}
@@ -2580,12 +2580,17 @@ body.lang-en .cart-item .ci-discount-offer-badge .en{display:inline !important;}
 .cart-item .ci-grid select option{background:var(--card); color:var(--ink-900);}
 .cart-item .ci-grid.ci-grid-6 label, .cart-item .ci-grid.ci-grid-6-purchase label{font-size:9px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .cart-item .ci-grid.ci-grid-6 input, .cart-item .ci-grid.ci-grid-6 select, .cart-item .ci-grid.ci-grid-6-purchase input, .cart-item .ci-grid.ci-grid-6-purchase select{padding:6px 5px; font-size:11px;}
+.cart-item .ci-grid.ci-grid-6{align-items:start;}
+.cart-item .ci-grid.ci-grid-6 .form-group{gap:0; margin-top:0;}
+.cart-item .ci-grid.ci-grid-6 label{height:16px; line-height:16px; margin-bottom:4px;}
+.cart-item .ci-grid.ci-grid-6 input,
+.cart-item .ci-grid.ci-grid-6 select{height:32px; min-height:32px; box-sizing:border-box; font-family:'Noto Sans Bengali','SolaimanLipi','Hind Siliguri','Plus Jakarta Sans','Inter',sans-serif;}
 .cart-item .ci-grid .ci-unit-price{background:var(--paper); color:var(--ink-600);}
 .cart-item .ci-grid input[readonly], .cart-item .ci-grid input:disabled{background:var(--card); color:var(--ink-900); cursor:default;}
 .cart-item .ci-grid .ci-total{font-weight:700; color:var(--ink-900);}
 .cart-item .ci-grid .ci-disc-row{display:flex; gap:4px;}
 .cart-item .ci-grid .ci-disc-row input{min-width:0; flex:1.4; padding-left:4px; padding-right:2px;}
-.cart-item .ci-grid .ci-disc-row select{width:auto; flex:1; padding:6px 2px; font-size:10.5px;}
+.cart-item .ci-grid .ci-disc-row select{width:40px; flex:0 0 40px; padding:6px 2px; font-size:10.5px;}
 
 @media (max-width:1100px){
   .cart-item .ci-grid.ci-grid-6, .cart-item .ci-grid.ci-grid-6-purchase{grid-template-columns:repeat(3,1fr); row-gap:12px;}

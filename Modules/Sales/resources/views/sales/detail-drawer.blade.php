@@ -185,7 +185,7 @@
                 <div style="text-align:right;">
                     <div style="font-family:var(--font-mono, monospace); font-weight:700; color:var(--ink-900);">৳{{ number_format((float) $item->total, 2) }}</div>
                     <div style="font-size:11.5px; color:var(--ink-500); font-family:var(--font-mono, monospace);">
-                        {{ rtrim(rtrim(number_format((float) $item->quantity, 2), '0'), '.') }} {{ $item->unit?->name ?? 'টি' }} &times; ৳{{ number_format((float) $item->unit_price, 2) }}
+                        {{ rtrim(rtrim(number_format((float) $item->quantity, 6), '0'), '.') }} {{ $item->unit?->name ?? 'টি' }} &times; ৳{{ rtrim(rtrim(number_format((float) $item->unit_price, 6), '0'), '.') }}
                     </div>
                 </div>
             </div>

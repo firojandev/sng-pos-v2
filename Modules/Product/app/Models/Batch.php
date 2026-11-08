@@ -16,7 +16,7 @@ class Batch extends Model
     protected $casts = [
         'mfg_date' => 'date',
         'expiry_date' => 'date',
-        'quantity' => 'decimal:2',
+        'quantity' => 'decimal:6',
     ];
 
     public function product(): BelongsTo
