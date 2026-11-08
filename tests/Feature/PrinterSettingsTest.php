@@ -277,10 +277,12 @@ class PrinterSettingsTest extends TestCase
         $response = $this->actingAs($user)->get(route('sales.print-invoice', $sale));
 
         $response->assertStatus(200);
-        $response->assertSee('80mm auto');
+        $response->assertSee('data-thermal-width="80mm"', false);
+        $response->assertSee('data-thermal-margin="2"', false);
+        $response->assertSee('data-auto-print="1"', false);
         $response->assertSee('id="thermalReceiptSheet"', false);
         $response->assertSee('INV-TEST-001');
         $response->assertSee('করিম সাহেব');
-        $response->assertSee('window.print()', false);
+        $response->assertSee('data-print-invoice', false);
     }
 }

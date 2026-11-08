@@ -16,8 +16,8 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         @page {
             @if ($isThermal)
-                size: {{ $printerSetting->getCssPageSize() }};
-                margin: {{ $printerSetting->page_margin ?? 2 }}mm;
+                size: portrait;
+                margin: 0;
             @elseif ($printerSetting->isA5())
                 size: A5 {{ $printerSetting->orientation ?: 'portrait' }};
                 margin: {{ $printerSetting->page_margin ?? 6 }}mm;
@@ -155,18 +155,53 @@
             }
         }
     </style>
+    @if ($isThermal)
+        <style>
+            @media print {
+                html, body {
+                    display: block !important;
+                    height: auto !important;
+                    min-height: 0 !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+                body {
+                    width: {{ $printerSetting->getCssPaperWidth() }} !important;
+                    max-width: 100% !important;
+                }
+                body .thermal-receipt-sheet, body .purchase-thermal-receipt-sheet {
+                    width: 100% !important;
+                    max-width: 100% !important;
+                    padding: {{ $printerSetting->page_margin ?? 2 }}mm !important;
+                    margin: 0 !important;
+                    border-radius: 0 !important;
+                }
+                body .report-credit-watermark {
+                    position: static !important;
+                    margin: 1mm {{ $printerSetting->page_margin ?? 2 }}mm !important;
+                }
+            }
+        </style>
+    @endif
+    @vite('resources/js/invoice-print.js')
 </head>
-<body>
+<body
+    data-auto-print="{{ request()->query('autoprint') === '1' || $printerSetting->auto_print ? '1' : '0' }}"
+    @if ($isThermal)
+        data-thermal-width="{{ $printerSetting->getCssPaperWidth() }}"
+        data-thermal-margin="{{ $printerSetting->page_margin ?? 2 }}"
+    @endif
+>
     <div class="no-print">
         <div class="no-print-title">
             <span>ক্রয় ইনভয়েস স্লিপ প্রিভিউ</span>
         </div>
         <div class="btn-group">
-            <button type="button" class="btn btn-secondary" onclick="window.close()">উইন্ডো বন্ধ করুন</button>
-            <button type="button" class="btn btn-primary" onclick="window.print()">
+            <x-core::button size="sm" variant="secondary" onclick="window.close()">উইন্ডো বন্ধ করুন</x-core::button>
+            <x-core::button size="sm" color="primary" data-print-invoice>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
                 PDF ডাউনলোড / প্রিন্ট করুন
-            </button>
+            </x-core::button>
         </div>
     </div>
 
@@ -176,18 +211,6 @@
             <div style="page-break-after: always; break-after: page; height: 0;"></div>
         @endif
     @endfor
-
-    @if(request()->query('autoprint') === '1' || $printerSetting->auto_print)
-        <script>
-            if (document.readyState === 'complete') {
-                setTimeout(function() { window.print(); }, 100);
-            } else {
-                window.addEventListener('load', function() {
-                    setTimeout(function() { window.print(); }, 100);
-                });
-            }
-        </script>
-    @endif
 
     @if (\Modules\Core\Models\Setting::isCreditTextEnabled())
         <div class="report-credit-watermark" style="display:none;">
