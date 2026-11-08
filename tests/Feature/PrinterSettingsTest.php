@@ -15,6 +15,7 @@ use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
 use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\PrinterSetting;
 use Modules\Shop\Models\Shop;
+use PHPUnit\Framework\Attributes\TestWith;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -74,6 +75,70 @@ class PrinterSettingsTest extends TestCase
         $response = $this->get(route('printer-settings.index'));
 
         $response->assertRedirect(route('login'));
+    }
+
+    /**
+     * @param  list<string>  $permissions
+     * @return array{Shop, User}
+     */
+    private function createShopAndManager(array $permissions): array
+    {
+        [$shop] = $this->createShopAndAdmin();
+        $manager = User::factory()->unverified()->create(['shop_id' => $shop->id]);
+        $role = Role::query()->create(['name' => 'Manager', 'guard_name' => 'web', 'shop_id' => $shop->id]);
+        $role->syncPermissions($permissions);
+        $manager->assignRole($role);
+        $manager->shops()->updateExistingPivot($shop->id, ['role' => 'Manager', 'is_owner' => false]);
+
+        return [$shop, $manager];
+    }
+
+    #[TestWith([true])]
+    #[TestWith([false])]
+    public function test_manager_can_view_printer_settings_only_with_view_permission(bool $hasPermission): void
+    {
+        [$shop, $manager] = $this->createShopAndManager($hasPermission ? ['printer-settings.view'] : []);
+
+        $response = $this->actingAs($manager)->get(route('printer-settings.index'));
+
+        if ($hasPermission) {
+            $response->assertOk();
+            $response->assertViewHas('shop', fn (Shop $viewShop): bool => $viewShop->is($shop));
+        } else {
+            $response->assertForbidden();
+        }
+    }
+
+    #[TestWith([true])]
+    #[TestWith([false])]
+    public function test_manager_can_update_printer_settings_only_with_edit_permission(bool $hasPermission): void
+    {
+        [$shop, $manager] = $this->createShopAndManager($hasPermission
+            ? ['printer-settings.view', 'printer-settings.edit']
+            : ['printer-settings.view']);
+        $otherShop = Shop::create(['name' => 'Other Shop', 'slug' => 'other-printer-shop', 'status' => 'active']);
+        $otherSetting = PrinterSetting::getDefaultForShop($otherShop->id);
+        $otherAttributes = $otherSetting->refresh()->getAttributes();
+
+        $response = $this->actingAs($manager)->put(route('printer-settings.update'), [
+            'printer_type' => PrinterSetting::TYPE_A5,
+            'orientation' => PrinterSetting::ORIENTATION_PORTRAIT,
+            'shop_id' => $otherShop->id,
+            'print_copies' => 3,
+        ]);
+
+        if ($hasPermission) {
+            $response->assertRedirect(route('printer-settings.index'));
+            $this->assertDatabaseHas('printer_settings', [
+                'shop_id' => $shop->id,
+                'printer_type' => PrinterSetting::TYPE_A5,
+                'print_copies' => 3,
+            ]);
+        } else {
+            $response->assertForbidden();
+            $this->assertDatabaseMissing('printer_settings', ['shop_id' => $shop->id]);
+        }
+        $this->assertSame($otherAttributes, $otherSetting->fresh()->getAttributes());
     }
 
     public function test_user_without_shop_receives_403(): void

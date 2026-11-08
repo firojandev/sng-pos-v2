@@ -83,7 +83,7 @@ class User extends Authenticatable implements MustVerifyEmail
         });
 
         static::saved(function (User $user) {
-            if ($user->shop_id && ! $user->isSuperAdmin()) {
+            if ($user->shop_id && ! $user->isSuperAdmin() && ! $user->shops()->whereKey($user->shop_id)->exists()) {
                 $user->shops()->syncWithoutDetaching([
                     $user->shop_id => [
                         'role' => $user->roles->first()?->name ?? 'Admin',
