@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\Product\Http\Controllers\BarcodeController;
 use Modules\Product\Http\Controllers\BatchController;
 use Modules\Product\Http\Controllers\BrandController;
 use Modules\Product\Http\Controllers\CategoryController;
@@ -12,9 +13,17 @@ use Modules\Product\Http\Controllers\SubCategoryController;
 use Modules\Product\Http\Controllers\UnitController;
 
 Route::middleware(['auth', 'feature:products'])->group(function () {
+    Route::get('barcodes', [BarcodeController::class, 'index'])
+        ->name('barcodes.index')->middleware('permission:products.view');
+    Route::post('barcodes', [BarcodeController::class, 'store'])
+        ->name('barcodes.store')->middleware('permission:products.view');
+
     Route::get('products/{product}/stock-history', [ProductController::class, 'stockHistory'])
         ->name('products.stock-history')
         ->middleware('permission:products.view');
+
+    Route::get('products/{product}', [ProductController::class, 'show'])
+        ->whereNumber('product')->name('products.show')->middleware('permission:products.view');
 
     Route::resource('products', ProductController::class)->except(['show'])
         ->middlewareFor(['index'], 'permission:products.view')

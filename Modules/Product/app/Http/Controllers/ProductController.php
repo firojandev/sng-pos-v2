@@ -29,6 +29,13 @@ class ProductController extends Controller
         return $dataTable->render('product::products.index', compact('categories', 'brands'));
     }
 
+    public function show(Product $product): View
+    {
+        $product->load(['category', 'units']);
+
+        return view('product::products.show', compact('product'));
+    }
+
     public function create(): View
     {
         return view('product::products.create', [

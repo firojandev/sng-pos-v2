@@ -1,6 +1,7 @@
 @props([
     'name' => null,
     'id' => null,
+    'form' => null,
     'value' => '1',
     'checked' => false,
     'label' => null,
@@ -39,6 +40,7 @@
 <label for="{{ $checkId }}" {{ $attributes->merge(['class' => implode(' ', $wrapClasses)]) }}>
     <input
         type="checkbox"
+        @if ($form) form="{{ $form }}" @endif
         @if ($name) name="{{ $name }}" @endif
         id="{{ $checkId }}"
         value="{{ $value }}"
