@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Modules\Core\Support\BanglaNumber;
 use Modules\Core\Support\Features;
 use Modules\Core\Support\Permissions;
 use Modules\Customer\Models\Customer;
@@ -21,6 +22,7 @@ use Modules\Shop\Models\Branch;
 use Modules\Shop\Models\Shop;
 use Modules\Shop\Models\Warehouse;
 use Modules\Supplier\Models\Supplier;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -623,5 +625,175 @@ class UnitConversionStockFeatureTest extends TestCase
 
         // Profit: 1500 - (0.5 Drum * 2000) = 500
         $this->assertEquals(500.00, (float) $sale->profit);
+    }
+
+    public static function salesEntryModes(): array
+    {
+        return [
+            'amount in grams' => ['amount', 100, 999, 0.7, 1000, true, 142.857143, 100, 9.857143],
+            'quantity in grams' => ['quantity', null, 400, 0.7, 1000, true, 400, 280, 9.6],
+            'amount in millilitres' => ['amount', 50, null, 0.125, 1000, true, 400, 50, 9.6],
+            'amount in boxes' => ['amount', 100, null, 500, 10, false, 0.2, 100, 8],
+            'fractional base unit' => ['amount', 100, null, 700, 1, false, 0.142857, 100, 9.857143],
+            'price override' => ['amount', 100, null, 0.8, 1000, true, 125, 100, 9.875],
+        ];
+    }
+
+    #[DataProvider('salesEntryModes')]
+    public function test_sales_entry_modes_preserve_totals_and_stock(
+        string $mode, ?float $amount, ?float $quantity, float $price, float $factor,
+        bool $smaller, float $expectedQuantity, float $expectedTotal, float $expectedStock
+    ): void {
+        $this->product->units()->updateExistingPivot($this->boxUnit->id, [
+            'conversion_factor' => $factor, 'is_smaller_unit' => $smaller,
+        ]);
+        $batch = Batch::create([
+            'shop_id' => $this->shop->id, 'product_id' => $this->product->id,
+            'warehouse_id' => $this->warehouse->id, 'batch_no' => 'ENTRY', 'quantity' => 10,
+        ]);
+
+        $this->actingAs($this->user)->post(route('sales.store'), [
+            'customer_id' => $this->customer->id,
+            'warehouse_id' => $this->warehouse->id, 'sale_date' => now()->toDateString(),
+            'items' => [[
+                'product_id' => $this->product->id, 'unit_id' => $this->boxUnit->id,
+                'entry_mode' => $mode, 'amount' => $amount, 'quantity' => $quantity,
+                'unit_price' => $price,
+            ]],
+        ])->assertSessionHasNoErrors()->assertRedirect(route('sales.index'));
+
+        $sale = Sale::latest('id')->firstOrFail();
+        $item = $sale->items()->firstOrFail();
+        $this->assertEqualsWithDelta($expectedQuantity, (float) $item->quantity, 0.000001);
+        $this->assertSame($expectedTotal, (float) $sale->subtotal);
+        $this->assertSame($expectedTotal, (float) $sale->total);
+        $this->assertSame($expectedTotal, (float) $item->total);
+        $this->assertEqualsWithDelta($expectedStock, (float) $batch->fresh()->quantity, 0.000001);
+        $this->assertEqualsWithDelta($expectedStock - 10, (float) StockMovement::where('type', 'sale')->firstOrFail()->quantity_change, 0.000001);
+
+        $this->actingAs($this->user)->delete(route('sales.destroy', $sale))->assertRedirect(route('sales.index'));
+        $this->assertEqualsWithDelta(10, (float) $batch->fresh()->quantity, 0.000001);
+    }
+
+    public function test_amount_entry_applies_discounts_vat_and_recalculates_on_update(): void
+    {
+        $this->product->update(['is_vat' => true, 'vat_percentage' => 10]);
+        $batch = Batch::create([
+            'shop_id' => $this->shop->id, 'product_id' => $this->product->id,
+            'warehouse_id' => $this->warehouse->id, 'batch_no' => 'AMOUNT-VAT', 'quantity' => 50,
+        ]);
+        $data = [
+            'customer_id' => $this->customer->id,
+            'warehouse_id' => $this->warehouse->id, 'sale_date' => now()->toDateString(),
+            'discount' => 5, 'delivery_charge' => 10,
+            'items' => [[
+                'product_id' => $this->product->id, 'unit_id' => $this->baseUnit->id,
+                'entry_mode' => 'amount', 'amount' => 100, 'unit_price' => 50, 'discount' => 10,
+            ]],
+        ];
+
+        $this->actingAs($this->user)->post(route('sales.store'), $data)->assertSessionHasNoErrors();
+
+        $sale = Sale::latest('id')->firstOrFail();
+        $this->assertSame(90.0, (float) $sale->subtotal);
+        $this->assertSame(9.0, (float) $sale->tax);
+        $this->assertSame(104.0, (float) $sale->total);
+        $this->assertSame(48.0, (float) $batch->fresh()->quantity);
+
+        $data['items'][0]['unit_price'] = 25;
+        $this->actingAs($this->user)->put(route('sales.update', $sale), $data)->assertSessionHasNoErrors();
+        $this->assertSame(4.0, (float) $sale->fresh()->items()->firstOrFail()->quantity);
+        $this->assertSame(46.0, (float) $batch->fresh()->quantity);
+        $this->assertSame(104.0, (float) $sale->fresh()->total);
+    }
+
+    public static function invalidAmountEntries(): array
+    {
+        return [
+            'zero price' => [['entry_mode' => 'amount', 'amount' => 100, 'unit_price' => 0], 'unit_price'],
+            'amount cannot be represented' => [['entry_mode' => 'amount', 'amount' => 0.51, 'unit_price' => 1000000], 'amount'],
+            'missing price' => [['entry_mode' => 'amount', 'amount' => 100], 'unit_price'],
+            'negative price' => [['entry_mode' => 'amount', 'amount' => 100, 'unit_price' => -1], 'unit_price'],
+            'missing amount' => [['entry_mode' => 'amount', 'unit_price' => 50], 'amount'],
+            'zero amount' => [['entry_mode' => 'amount', 'amount' => 0, 'unit_price' => 50], 'amount'],
+            'invalid mode' => [['entry_mode' => 'invalid', 'quantity' => 1, 'unit_price' => 50], 'entry_mode'],
+            'below quantity precision' => [['entry_mode' => 'amount', 'amount' => 0.01, 'unit_price' => 999999], 'quantity'],
+        ];
+    }
+
+    #[DataProvider('invalidAmountEntries')]
+    public function test_invalid_amount_entry_does_not_create_sale_or_change_stock(array $item, string $field): void
+    {
+        $batch = Batch::create([
+            'shop_id' => $this->shop->id, 'product_id' => $this->product->id,
+            'warehouse_id' => $this->warehouse->id, 'batch_no' => 'INVALID', 'quantity' => 50,
+        ]);
+
+        $this->actingAs($this->user)->post(route('sales.store'), [
+            'customer_id' => $this->customer->id,
+            'warehouse_id' => $this->warehouse->id, 'sale_date' => now()->toDateString(),
+            'items' => [array_merge(['product_id' => $this->product->id], $item)],
+        ])->assertSessionHasErrors('items.0.'.$field);
+
+        $this->assertDatabaseCount('sales', 0);
+        $this->assertDatabaseCount('stock_movements', 0);
+        $this->assertSame(50.0, (float) $batch->fresh()->quantity);
+    }
+
+    public function test_amount_sale_splits_batches_without_losing_invoice_cents(): void
+    {
+        foreach (['FIRST', 'SECOND', 'THIRD'] as $batchNo) {
+            Batch::create([
+                'shop_id' => $this->shop->id, 'product_id' => $this->product->id,
+                'warehouse_id' => $this->warehouse->id, 'batch_no' => $batchNo, 'quantity' => 1,
+            ]);
+        }
+
+        $this->actingAs($this->user)->post(route('sales.store'), [
+            'customer_id' => $this->customer->id,
+            'warehouse_id' => $this->warehouse->id, 'sale_date' => now()->toDateString(),
+            'items' => [[
+                'product_id' => $this->product->id, 'entry_mode' => 'amount',
+                'amount' => 1, 'unit_price' => 0.333333, 'discount' => 0.01,
+            ]],
+        ])->assertSessionHasErrors('items');
+        $this->assertDatabaseCount('sales', 0);
+        $this->assertSame(3.0, (float) Batch::sum('quantity'));
+
+        $this->actingAs($this->user)->post(route('sales.store'), [
+            'customer_id' => $this->customer->id,
+            'warehouse_id' => $this->warehouse->id, 'sale_date' => now()->toDateString(),
+            'items' => [[
+                'product_id' => $this->product->id, 'entry_mode' => 'amount',
+                'amount' => 1, 'unit_price' => 0.34, 'discount' => 0.01,
+            ]],
+        ])->assertSessionHasNoErrors();
+
+        $sale = Sale::latest('id')->firstOrFail();
+        $this->assertSame(0.99, (float) $sale->total);
+        $this->assertSame(0.99, round((float) $sale->items()->sum('total'), 2));
+        $this->assertSame(0.01, round((float) $sale->items()->sum('discount'), 2));
+        $this->assertSame(3, $sale->items()->count());
+    }
+
+    public function test_sales_form_renders_entry_controls_and_invoice_preserves_fractional_quantity(): void
+    {
+        $this->actingAs($this->user)->get(route('sales.create'))
+            ->assertSee('sale-quantity-control')->assertSee('sale-amount-control')
+            ->assertDontSee('ci-entry-mode')->assertDontSee('class="ci-amount"', false);
+
+        $sale = Sale::create([
+            'shop_id' => $this->shop->id, 'customer_id' => $this->customer->id,
+            'warehouse_id' => $this->warehouse->id, 'sale_date' => now(),
+            'invoice_no' => 'DECIMAL-INVOICE', 'subtotal' => 100, 'total' => 100,
+            'paid_amount' => 0, 'due_amount' => 100, 'payment_status' => 'due',
+        ]);
+        $sale->items()->create([
+            'product_id' => $this->product->id, 'unit_id' => $this->boxUnit->id,
+            'quantity' => 142.857143, 'unit_price' => 0.7, 'total' => 100,
+        ]);
+
+        $this->actingAs($this->user)->get(route('sales.invoice-modal', $sale))
+            ->assertSee(BanglaNumber::toBn('142.857143'));
     }
 }

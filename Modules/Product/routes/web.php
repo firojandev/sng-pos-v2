@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\Product\Http\Controllers\BarcodeController;
 use Modules\Product\Http\Controllers\BatchController;
 use Modules\Product\Http\Controllers\BrandController;
 use Modules\Product\Http\Controllers\CatalogueController;
@@ -14,6 +15,11 @@ use Modules\Product\Http\Controllers\UnitController;
 use Modules\Product\Http\Middleware\EnsureShopCatalogue;
 
 Route::middleware(['auth', 'feature:products', EnsureShopCatalogue::class])->group(function () {
+    Route::get('barcodes', [BarcodeController::class, 'index'])
+        ->name('barcodes.index')->middleware('permission:products.view');
+    Route::post('barcodes', [BarcodeController::class, 'store'])
+        ->name('barcodes.store')->middleware('permission:products.view');
+
     Route::get('products/{product}/stock-history', [ProductController::class, 'stockHistory'])
         ->name('products.stock-history')
         ->middleware('permission:products.view');
@@ -27,6 +33,9 @@ Route::middleware(['auth', 'feature:products', EnsureShopCatalogue::class])->gro
     });
     Route::get('products/{product}/shop-price', [CatalogueController::class, 'editShopPrice'])->name('products.shop-price.edit')->middleware('permission:products.edit');
     Route::put('products/{product}/shop-price', [CatalogueController::class, 'updateShopPrice'])->name('products.shop-price.update')->middleware('permission:products.edit');
+
+    Route::get('products/{product}', [ProductController::class, 'show'])
+        ->whereNumber('product')->name('products.show')->middleware('permission:products.view');
 
     Route::resource('products', ProductController::class)->except(['show'])
         ->middlewareFor(['index'], 'permission:products.view')

@@ -220,6 +220,14 @@
                         '<path d="M4 7h11M15 7l-3-3M15 7l-3 3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 17H9M9 17l3-3M9 17l3 3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
                 ],
                 [
+                    'key' => 'barcodes',
+                    'permission' => 'products',
+                    'route' => 'barcodes.index',
+                    'bn' => 'বারকোড ব্যবস্থাপনা',
+                    'en' => 'Barcode Management',
+                    'icon' => '<path d="M4 4v16M8 4v16M11 4v16M15 4v16M20 4v16" stroke="currentColor" stroke-width="2"/>',
+                ],
+                [
                     'key' => 'products',
                     'route' => 'products.index',
                     'bn' => 'পণ্য ব্যবস্থাপনা',

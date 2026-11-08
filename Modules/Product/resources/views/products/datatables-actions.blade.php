@@ -3,6 +3,8 @@
 @endphp
 <x-core::button-group size="xs" aria-label="Product Actions">
     @can('products.view')
+        <x-core::button size="sm" :href="route('products.show', $product)" icon="eye" variant="secondary" title="Product Details" />
+        <x-core::button size="sm" :href="route('barcodes.index', ['product_id' => $product->id])" icon="barcode" variant="secondary" title="Generate Barcode" />
         <x-core::button
             :href="route('stock.history', ['product_id' => $product->id])"
             variant="soft"

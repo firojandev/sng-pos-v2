@@ -190,7 +190,7 @@
                         {{ $unitName }}
                     </td>
                     <td style="border-right:1px solid #94a3b8 !important; border-bottom:1px solid #94a3b8 !important; border-top:none; border-left:none; padding:6px 4px; text-align:right; vertical-align:middle; white-space:nowrap;">
-                        {{ BanglaNumber::toBn(number_format((float) $item->unit_price, 2)) }}
+                        {{ BanglaNumber::toBn(rtrim(rtrim(number_format((float) $item->unit_price, 6), '0'), '.')) }}
                     </td>
                     <td style="border-bottom:1px solid #94a3b8 !important; border-right:none; border-top:none; border-left:none; padding:6px 4px; text-align:right; vertical-align:middle; white-space:nowrap;">
                         {{ BanglaNumber::toBn(number_format((float) $item->total, 2)) }}

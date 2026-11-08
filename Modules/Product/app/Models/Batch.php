@@ -20,8 +20,7 @@ class Batch extends Model
     protected $casts = [
         'mfg_date' => 'date',
         'expiry_date' => 'date',
-        'quantity' => 'decimal:2',
-        'unit_cost' => 'decimal:4',
+        'quantity' => 'decimal:6',
     ];
 
     protected static function booted(): void

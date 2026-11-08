@@ -54,9 +54,9 @@
     $initialItems = old('items', $sale->exists
         ? $sale->grouped_items->map(fn ($item) => [
             'product_id' => (int) $item->product_id,
-            'qty' => rtrim(rtrim(number_format($item->quantity, 2, '.', ''), '0'), '.'),
+            'qty' => rtrim(rtrim(number_format($item->quantity, 6, '.', ''), '0'), '.'),
             'unitId' => $item->unit_id,
-            'price' => rtrim(rtrim(number_format($item->unit_price, 2, '.', ''), '0'), '.'),
+            'price' => rtrim(rtrim(number_format($item->unit_price, 6, '.', ''), '0'), '.'),
             'discount' => rtrim(rtrim(number_format($item->discount, 2, '.', ''), '0'), '.'),
             'barcode' => $item->product->barcode ?? '',
             'warrantyExpiresAt' => optional($item->warranty_expires_at)->format('Y-m-d') ?? '',
@@ -690,6 +690,17 @@
 
 @include('sales::sales._invoice_preview_modal')
 
+<template id="sale-amount-control">
+    <x-core::input size="sm" type="number" class="ci-total" label="মোট" label-en="Amount" step="0.01" min="0.01" :no-margin="true" />
+    <small class="ci-price-error" style="color:var(--red-600);" hidden>সঠিক বিক্রয় মূল্য ও ছাড় দিন / Enter a positive selling price and valid discount</small>
+</template>
+<template id="sale-quantity-control">
+    <x-core::input size="sm" type="number" class="ci-qty" label="পরিমাণ" label-en="Qty" step="0.000001" min="0.000001" :no-margin="true" />
+</template>
+<template id="sale-price-control">
+    <x-core::input size="sm" type="number" class="ci-price" label="বিক্রয় মূল্য" label-en="Selling Price" step="0.000001" min="0" :no-margin="true" />
+</template>
+
 <script>
 (function () {
     const productData = JSON.parse(document.getElementById('sale-products-data').textContent);
@@ -704,6 +715,8 @@
 
     let cart = initialItems.map((row) => ({
         productId: row.product_id,
+        entryMode: row.entry_mode || 'quantity',
+        amount: parseFloat(row.amount) || 0,
         qty: parseFloat(row.qty || row.quantity) || 1,
         unitId: row.unitId || row.unit_id || (productData[row.product_id]?.baseUnitId ?? ''),
         price: parseFloat(row.price || row.unit_price) || 0,
@@ -732,6 +745,39 @@
     function unitFactor(p, unitId) {
         const u = (p.units || []).find((x) => String(x.id) === String(unitId));
         return u ? (u.factor || 1) : 1;
+    }
+
+    function syncEntry(item) {
+        item.entryMode = item.entryMode || 'quantity';
+        if (item.entryMode === 'amount') {
+            item.qty = Number.isFinite(item.price) && item.price > 0
+                ? Number((Math.max(0, item.amount || 0) / item.price).toFixed(6)) : 0;
+        } else {
+            item.amount = Number((item.qty * item.price).toFixed(2));
+        }
+        const p = productData[item.productId];
+        if (p?.hasDiscount && p.discountType === 'flat' && !item.manuallyDiscounted) {
+            item.discountRaw = Math.round(p.discountValue * unitFactor(p, item.unitId) * item.qty * 100) / 100;
+        }
+    }
+
+    function setLineAmount(item, amount) {
+        const p = productData[item.productId];
+        const isPercent = item.discountType === 'percent' || item.discountType === 'percentage';
+        let effectivePrice = item.price;
+        let flatDiscount = 0;
+        if (isPercent) {
+            effectivePrice *= 1 - Math.min(Math.max(item.discountRaw, 0), 100) / 100;
+        } else if (p?.hasDiscount && p.discountType === 'flat' && !item.manuallyDiscounted) {
+            effectivePrice -= p.discountValue * unitFactor(p, item.unitId);
+        } else {
+            flatDiscount = Math.max(0, item.discountRaw);
+        }
+        item.entryMode = 'amount';
+        item.amount = effectivePrice > 0
+            ? Number(((Math.max(0, amount) + flatDiscount) / effectivePrice * item.price).toFixed(2)) : 0;
+        syncEntry(item);
+        return Number.isFinite(effectivePrice) && effectivePrice > 0;
     }
 
     function lineDiscountAmount(item) {
@@ -820,6 +866,7 @@
         const existing = cart.find((c) => String(c.productId) === String(productId));
         if (existing) {
             existing.qty += 1;
+            existing.amount = Number((existing.qty * existing.price).toFixed(2));
             if (p.hasDiscount && (p.discountType === 'flat') && !existing.manuallyDiscounted) {
                 const factor = unitFactor(p, existing.unitId);
                 existing.discountRaw = Math.round(p.discountValue * factor * existing.qty * 100) / 100;
@@ -856,6 +903,7 @@
 
         if (cart[index].qty > 1) {
             cart[index].qty -= 1;
+            cart[index].amount = Number((cart[index].qty * cart[index].price).toFixed(2));
             const p = productData[productId];
             if (p && p.hasDiscount && (p.discountType === 'flat') && !cart[index].manuallyDiscounted) {
                 const factor = unitFactor(p, cart[index].unitId);
@@ -992,28 +1040,52 @@
                     '</div>' : '') +
                 '</div>' +
                 '<div class="ci-grid ci-grid-6">' +
-                    '<div><label class="bn">পরিমাণ</label><label class="en" style="display:none;">Qty</label><input type="number" step="0.01" min="0.01" class="ci-qty" value="' + item.qty + '"></div>' +
+                    '<div class="ci-qty-field"></div>' +
                     '<div><label class="bn">একক</label><label class="en" style="display:none;">Unit</label><select class="ci-unit-select">' +
                         (p.units || []).map((u) => '<option value="' + u.id + '"' + (String(u.id) === String(item.unitId) ? ' selected' : '') + '>' + escapeHtml(u.label) + '</option>').join('') +
                     '</select></div>' +
                     '<div><label class="bn">একক মূল্য</label><label class="en" style="display:none;">Unit Price</label><input type="text" class="ci-unit-price" value="' + fmt(referenceUnitPrice) + '" readonly></div>' +
-                    '<div><label class="bn">বিক্রয় মূল্য</label><label class="en" style="display:none;">Selling Price</label><input type="number" step="0.01" min="0" class="ci-price" value="' + item.price + '"></div>' +
+                    '<div class="ci-price-field"></div>' +
                     '<div><label class="bn">ছাড়</label><label class="en" style="display:none;">Discount</label>' +
                         '<div class="disc-row ci-disc-row">' +
                             '<input type="number" step="0.01" min="0" class="ci-discount-raw" value="' + item.discountRaw + '">' +
                             '<select class="ci-discount-type"><option value="flat"' + (item.discountType === 'flat' ? ' selected' : '') + '>৳</option><option value="percent"' + (item.discountType === 'percent' || item.discountType === 'percentage' ? ' selected' : '') + '>%</option></select>' +
                         '</div>' +
                     '</div>' +
-                    '<div><label class="bn">মোট</label><label class="en" style="display:none;">Amount</label><input type="text" class="ci-total" value="' + fmt(lineAmount(item)) + '" readonly></div>' +
+                    '<div class="ci-total-field"></div>' +
                 '</div>' +
             '</div>';
         }).join('');
+        $('#cart-list .cart-item').each(function (i) {
+            const item = cart[i];
+            const $row = $(this);
+            $row.find('.ci-total-field').html($('#sale-amount-control').html());
+            $row.find('.ci-total').val(fmt(lineAmount(item)));
+            $row.find('.ci-qty-field').html($('#sale-quantity-control').html());
+            $row.find('.ci-price-field').html($('#sale-price-control').html());
+            $row.find('.ci-qty').val(item.qty);
+            $row.find('.ci-price').val(item.price);
+            $row.find('.ci-price-error').prop('hidden', item.price > 0);
+        });
     }
+
+    $(document).on('input', '#cart-list .ci-total', function () {
+        const $row = $(this).closest('.cart-item');
+        const item = cart[$row.data('index')];
+        const validPrice = setLineAmount(item, parseFloat($(this).val()) || 0);
+        $row.find('.ci-price-error').prop('hidden', validPrice);
+        $row.find('.ci-qty').val(item.qty);
+        $row.find('.ci-discount-raw').val(item.discountRaw);
+        $row.find('.ci-item-tax-amt').text(fmt(lineTaxAmount(item)));
+        renderHiddenFields();
+        recalcGrand();
+    });
 
     function renderHiddenFields() {
         const container = document.getElementById('hidden-fields-container');
         let html = '';
         cart.forEach((item, i) => {
+            html += $('<div>').append($('<input>', {type: 'hidden', name: 'items[' + i + '][entry_mode]', value: item.entryMode || 'quantity'}), $('<input>', {type: 'hidden', name: 'items[' + i + '][amount]', value: item.amount || 0})).html();
             html += '<input type="hidden" name="items[' + i + '][product_id]" value="' + item.productId + '">';
             html += '<input type="hidden" name="items[' + i + '][quantity]" value="' + item.qty + '">';
             html += '<input type="hidden" name="items[' + i + '][unit_id]" value="' + (item.unitId || '') + '">';
@@ -1288,6 +1360,7 @@
     }
 
     function renderAll() {
+        cart.forEach(syncEntry);
         renderCatalog();
         renderCart();
         renderHiddenFields();
@@ -1371,10 +1444,10 @@
                     item.qty = minQty;
                 }
                 const wholesaleBase = p.wholesalePrice > 0 ? p.wholesalePrice : p.price;
-                item.price = Math.round(wholesaleBase * factor * 100) / 100;
+                item.price = Number((wholesaleBase * factor).toFixed(6));
             } else {
                 item.qty = 1;
-                item.price = Math.round(p.price * factor * 100) / 100;
+                item.price = Number((p.price * factor).toFixed(6));
             }
             if (p && p.hasDiscount && (p.discountType === 'flat') && !item.manuallyDiscounted) {
                 item.discountRaw = Math.round(p.discountValue * factor * item.qty * 100) / 100;
@@ -1388,7 +1461,7 @@
             const factor = unitFactor(p, e.target.value);
             item.unitId = e.target.value;
             const basePrice = item.isWholesale ? (p.wholesalePrice || p.price) : p.price;
-            item.price = Math.round(basePrice * factor * 100) / 100;
+            item.price = Number((basePrice * factor).toFixed(6));
             if (p && p.hasDiscount && (p.discountType === 'flat') && !item.manuallyDiscounted) {
                 item.discountRaw = Math.round(p.discountValue * factor * item.qty * 100) / 100;
             }
@@ -1397,8 +1470,10 @@
         }
 
         if (e.target.classList.contains('ci-discount-type')) {
+            item.entryMode = 'quantity';
             item.discountType = e.target.value;
             item.manuallyDiscounted = true;
+            syncEntry(item);
             row.querySelector('.ci-total').value = fmt(lineAmount(item));
             const p = productData[item.productId];
             if (p && p.isVat && p.vatPercentage > 0) {
@@ -1411,7 +1486,7 @@
         }
     });
 
-    cartList.addEventListener('input', (e) => {
+    $(document).on('input', '#cart-list .ci-qty, #cart-list .ci-price, #cart-list .ci-discount-raw, #cart-list .ci-discount-type, #cart-list .ci-barcode-input', function (e) {
         const row = e.target.closest('.cart-item');
         if (!row) return;
         const index = parseInt(row.dataset.index, 10);
@@ -1419,6 +1494,7 @@
         if (!item) return;
 
         if (e.target.classList.contains('ci-qty')) {
+            item.entryMode = 'quantity';
             const newQty = parseFloat(e.target.value) || 0;
             const p = productData[item.productId];
             if (item.isWholesale) {
@@ -1432,10 +1508,10 @@
                         text: 'Quantity set to minimum allowed ' + minQty
                     });
                 } else {
-                    item.qty = newQty;
+                    item.qty = Number(newQty.toFixed(6));
                 }
             } else {
-                item.qty = newQty;
+                item.qty = Number(newQty.toFixed(6));
             }
             if (p && p.hasDiscount && (p.discountType === 'flat') && !item.manuallyDiscounted) {
                 const factor = unitFactor(p, item.unitId);
@@ -1444,15 +1520,25 @@
                 if (discInput) discInput.value = item.discountRaw;
             }
         }
-        if (e.target.classList.contains('ci-price')) item.price = parseFloat(e.target.value) || 0;
+        if (e.target.classList.contains('ci-price')) {
+            item.price = Number(Math.max(0, parseFloat(e.target.value) || 0).toFixed(6));
+        }
+        syncEntry(item);
+        if (item.entryMode === 'amount') $(row).find('.ci-qty').val(item.qty);
+        $(row).find('.ci-price-error').prop('hidden', item.price > 0);
         if (e.target.classList.contains('ci-discount-raw')) {
+            item.entryMode = 'quantity';
             item.discountRaw = parseFloat(e.target.value) || 0;
             item.manuallyDiscounted = true;
+            syncEntry(item);
         }
         if (e.target.classList.contains('ci-discount-type')) {
+            item.entryMode = 'quantity';
             item.discountType = e.target.value;
             item.manuallyDiscounted = true;
+            syncEntry(item);
         }
+        $(row).find('.ci-discount-raw').val(item.discountRaw);
         if (e.target.classList.contains('ci-barcode-input')) {
             item.barcode = e.target.value;
             const btn = row.querySelector('.barcode-toggle-btn');

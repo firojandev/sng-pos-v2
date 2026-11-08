@@ -28,10 +28,6 @@ class PrinterSettingController extends Controller
             abort(403, 'কোনো দোকান নির্বাচন বা বরাদ্দ করা নেই (No shop assigned)।');
         }
 
-        if (! $user->isShopAdmin($shop)) {
-            abort(403, 'প্রিন্টার সেটিংস দেখার বা পরিচালনা করার অনুমতি শুধুমাত্র শপ এডমিনের রয়েছে (Only shop admin can access printer settings)।');
-        }
-
         $printerSetting = PrinterSetting::getDefaultForShop($shop->id);
 
         return view('shop::printer-settings.index', compact('shop', 'printerSetting'));
@@ -52,10 +48,6 @@ class PrinterSettingController extends Controller
 
         if (! $shop) {
             abort(403, 'কোনো দোকান নির্বাচন বা বরাদ্দ করা নেই (No shop assigned)।');
-        }
-
-        if (! $user->isShopAdmin($shop)) {
-            abort(403, 'প্রিন্টার সেটিংস পরিবর্তন করার অনুমতি শুধুমাত্র শপ এডমিনের রয়েছে (Only shop admin can update printer settings)।');
         }
 
         $validated = $request->validated();
