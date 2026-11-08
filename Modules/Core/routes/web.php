@@ -6,6 +6,7 @@ use Modules\Core\Http\Controllers\BackupController;
 use Modules\Core\Http\Controllers\DueLedgerController;
 use Modules\Core\Http\Controllers\LandingController;
 use Modules\Core\Http\Controllers\PageController;
+use Modules\Core\Http\Controllers\SupportPinController;
 use Modules\Core\Models\Setting;
 
 Route::get('/', [LandingController::class, 'index'])->name('home');
@@ -30,6 +31,7 @@ Route::get('/terms', function () {
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [PageController::class, 'dashboard'])->name('dashboard');
     Route::get('/styleguide', [PageController::class, 'styleguide'])->name('styleguide');
+    Route::post('/support-pin/verify', [SupportPinController::class, 'verify'])->middleware('throttle:5,1')->name('support-pin.verify');
     Route::prefix('due-ledger')->name('due-ledger.')->group(function () {
         Route::get('/', [DueLedgerController::class, 'index'])->name('index');
         Route::get('/sales', [DueLedgerController::class, 'sales'])->name('sales')->middleware('permission:customers.view');

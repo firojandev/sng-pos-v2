@@ -21,7 +21,7 @@ class EmployeesDataTable extends BaseDataTable
         return (new EloquentDataTable($query))
             ->editColumn('name', function (Employee $employee) {
                 $initial = mb_strtoupper(mb_substr($employee->name ?: 'E', 0, 1));
-                $code = '<span style="font-size:11px; font-family:var(--font-mono, monospace); color:var(--ink-400);">#EMP-'.str_pad((string) $employee->id, 4, '0', STR_PAD_LEFT).'</span>';
+                $code = '<span style="font-size:11px; font-family:var(--font-mono, monospace); color:var(--ink-400);">'.e($employee->employee_code ?: '—').'</span>';
 
                 $userBadge = '';
                 if ($employee->user_id) {
@@ -40,6 +40,9 @@ class EmployeesDataTable extends BaseDataTable
                     .'<div style="margin-top:2px;">'.$code.'</div>'
                     .'</div>'
                     .'</div>';
+            })
+            ->filterColumn('name', function ($query, $keyword) {
+                $query->where(fn ($query) => $query->where('employees.name', 'like', "%{$keyword}%")->orWhere('employees.employee_code', 'like', "%{$keyword}%"));
             })
             ->addColumn('contact', function (Employee $employee) {
                 $phone = $employee->phone
@@ -76,9 +79,11 @@ class EmployeesDataTable extends BaseDataTable
             })
             ->editColumn('salary', function (Employee $employee) {
                 $formatted = number_format((float) $employee->salary, 2);
+                $amount = '<span style="font-family:var(--font-mono, monospace); font-weight:700; font-size:13px; color:var(--ink-900);">৳'.$formatted.'</span>';
+                $masked = view('core::components.masked-amount', ['value' => $amount])->render();
 
                 return '<div style="white-space:nowrap;">'
-                    .'<span style="font-family:var(--font-mono, monospace); font-weight:700; font-size:13px; color:var(--ink-900);">৳'.$formatted.'</span>'
+                    .$masked
                     .'<div style="font-size:11px; color:var(--ink-400); margin-top:2px;"><span class="bn">মাসিক বেতন</span><span class="en" style="display:none;">Monthly</span></div>'
                     .'</div>';
             })
@@ -120,6 +125,7 @@ class EmployeesDataTable extends BaseDataTable
      */
     public function query(Employee $model): QueryBuilder
     {
+        // The current shop; in the company workspace, the whole company.
         $shopId = auth()->user()?->shop_id;
 
         $query = $model->newQuery()
@@ -127,6 +133,7 @@ class EmployeesDataTable extends BaseDataTable
             ->with(['user'])
             ->select([
                 'employees.id',
+                'employees.employee_code',
                 'employees.shop_id',
                 'employees.user_id',
                 'employees.name',

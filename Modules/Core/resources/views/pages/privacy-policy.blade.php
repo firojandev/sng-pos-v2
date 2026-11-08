@@ -1,8 +1,8 @@
 <x-core::legal-layout
     title="গোপনীয়তা নীতি ও তথ্যের সুরক্ষা"
     title-en="Privacy Policy & Data Protection"
-    subtitle="SNGPOS ক্লাউড সফটওয়্যার ব্যবহারে আপনার ব্যবসা, বিক্রয় লেনদেন এবং গ্রাহকদের ব্যক্তিগত তথ্যের সর্বোচ্চ গোপনীয়তা, নিরাপত্তা ও সুরক্ষা নীতিমালা"
-    subtitle-en="Comprehensive privacy policy and data security commitments for your business, sales transactions, and customer records on SNGPOS Cloud"
+    subtitle="{{ $siteTitle }} ক্লাউড সফটওয়্যার ব্যবহারে আপনার ব্যবসা, বিক্রয় লেনদেন এবং গ্রাহকদের ব্যক্তিগত তথ্যের সর্বোচ্চ গোপনীয়তা, নিরাপত্তা ও সুরক্ষা নীতিমালা"
+    subtitle-en="Comprehensive privacy policy and data security commitments for your business, sales transactions, and customer records on {{ $siteTitle }} Cloud"
     active="privacy"
     badge="তথ্য সুরক্ষা ও গোপনীয়তা"
     badge-en="Privacy & Data Protection"
@@ -25,7 +25,7 @@
 >
     @php
         $siteTitle = \Modules\Core\Models\Setting::getSiteTitle();
-        $siteTitleBn = $siteTitle === 'SNGPOS' ? 'SNGPOS' : $siteTitle;
+        $siteTitleBn = $siteTitle === 'SNG ERP' ? 'SNG ERP' : $siteTitle;
         $content = \Modules\Core\Support\LandingPageContent::all();
         $supportPhone = $content['support_phone'] ?? '+880 1886 861430';
         $supportEmail = $content['support_email'] ?? 'support@softngear.com';

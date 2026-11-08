@@ -10,12 +10,15 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Modules\Core\Support\TenantContext;
 use Modules\Product\DataTables\StockTransfersDataTable;
 use Modules\Product\Http\Requests\StoreStockTransferRequest;
 use Modules\Product\Models\Batch;
 use Modules\Product\Models\Product;
 use Modules\Product\Models\StockMovement;
 use Modules\Product\Models\StockTransfer;
+use Modules\Product\Services\CatalogueService;
+use Modules\Shop\Models\Shop;
 use Modules\Shop\Models\Warehouse;
 
 class StockTransferController extends Controller
@@ -27,7 +30,7 @@ class StockTransferController extends Controller
             ->orderBy('name')
             ->get();
 
-        $products = Product::where('status', 'active')
+        $products = Product::listedInShop()->where('status', 'active')
             ->orderBy('name')
             ->get(['id', 'name', 'sku']);
 
@@ -60,8 +63,11 @@ class StockTransferController extends Controller
             'cancelled' => $cancelledCount,
         ];
 
+        $destinationWarehouses = $this->destinationWarehouses();
+
         return $dataTable->render('product::stock-transfers.index', compact(
             'warehouses',
+            'destinationWarehouses',
             'products',
             'batchesByWarehouseAndProduct',
             'metrics'
@@ -91,7 +97,7 @@ class StockTransferController extends Controller
     public function create(): View
     {
         $warehouses = Warehouse::where('status', 'active')->with('branch')->orderBy('name')->get();
-        $products = Product::where('status', 'active')->orderBy('name')->get(['id', 'name', 'sku']);
+        $products = Product::listedInShop()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'sku']);
 
         $batches = Batch::whereIn('warehouse_id', $warehouses->pluck('id'))
             ->where('quantity', '>', 0)
@@ -108,6 +114,7 @@ class StockTransferController extends Controller
 
         return view('product::stock-transfers.create', [
             'warehouses' => $warehouses,
+            'destinationWarehouses' => $this->destinationWarehouses(),
             'products' => $products,
             'batchesByWarehouseAndProduct' => $batchesByWarehouseAndProduct,
         ]);
@@ -156,6 +163,8 @@ class StockTransferController extends Controller
 
     public function approve(StockTransfer $transfer, Request $request): JsonResponse|RedirectResponse
     {
+        $this->ensureSendingShop($transfer);
+
         if ($transfer->status !== 'pending') {
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => 'শুধুমাত্র অপেক্ষমাণ ট্রান্সফার অনুমোদন করা যায়'], 422);
@@ -179,6 +188,8 @@ class StockTransferController extends Controller
 
     public function dispatch(StockTransfer $transfer, Request $request): JsonResponse|RedirectResponse
     {
+        $this->ensureSendingShop($transfer);
+
         if ($transfer->status !== 'approved') {
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => 'শুধুমাত্র অনুমোদিত ট্রান্সফার প্রেরণ করা যায়'], 422);
@@ -197,6 +208,7 @@ class StockTransferController extends Controller
 
                 $before = (float) $batch->quantity;
                 $batch->decrement('quantity', $item->quantity);
+                $item->update(['unit_cost' => $batch->unit_cost]);
 
                 StockMovement::create([
                     'product_id' => $item->product_id,
@@ -227,6 +239,12 @@ class StockTransferController extends Controller
 
     public function receive(StockTransfer $transfer, Request $request): JsonResponse|RedirectResponse
     {
+        abort_unless(
+            $transfer->isReceivedBy(auth()->user()->shop_id) || auth()->user()->isSuperAdmin(),
+            403,
+            'শুধুমাত্র গ্রহণকারী দোকান ট্রান্সফার গ্রহণ করতে পারে (Only the receiving shop can receive this transfer)।'
+        );
+
         if ($transfer->status !== 'dispatched') {
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => 'শুধুমাত্র প্রেরিত ট্রান্সফার গ্রহণ করা যায়'], 422);
@@ -236,10 +254,17 @@ class StockTransferController extends Controller
         }
 
         DB::transaction(function () use ($transfer) {
+            $toShop = Shop::findOrFail($transfer->to_shop_id);
+
             foreach ($transfer->items as $item) {
                 $sourceBatch = $item->batch;
 
-                $destBatch = Batch::where('product_id', $item->product_id)
+                // Each shop keeps its own catalogue: stock arrives as the
+                // receiving shop's own product (matched or copied).
+                $source = Product::withoutGlobalScopes()->findOrFail($item->product_id);
+                $productId = app(CatalogueService::class)->productForShop($source, $toShop)->id;
+
+                $destBatch = Batch::where('product_id', $productId)
                     ->where('batch_no', $item->batch_no)
                     ->where('warehouse_id', $transfer->to_warehouse_id)
                     ->lockForUpdate()
@@ -247,21 +272,30 @@ class StockTransferController extends Controller
 
                 $before = $destBatch ? (float) $destBatch->quantity : 0.0;
 
+                $unitCost = (float) ($item->unit_cost ?? $sourceBatch?->unit_cost ?? 0);
+
                 if ($destBatch) {
-                    $destBatch->increment('quantity', $item->quantity);
+                    $destBatch->absorbCost((float) $item->quantity, $unitCost);
+                    $destBatch->quantity = (float) $destBatch->quantity + (float) $item->quantity;
+                    $destBatch->save();
                 } else {
                     $destBatch = Batch::create([
-                        'product_id' => $item->product_id,
+                        'shop_id' => $transfer->to_shop_id,
+                        'product_id' => $productId,
                         'warehouse_id' => $transfer->to_warehouse_id,
                         'batch_no' => $item->batch_no,
                         'quantity' => $item->quantity,
+                        'unit_cost' => $unitCost,
                         'mfg_date' => $sourceBatch?->mfg_date,
                         'expiry_date' => $sourceBatch?->expiry_date,
                     ]);
                 }
 
+                // The receiving shop now sells the product.
+                Product::withoutGlobalScopes()->find($productId)?->listInShop($transfer->to_shop_id);
+
                 StockMovement::create([
-                    'product_id' => $item->product_id,
+                    'product_id' => $productId,
                     'batch_id' => $destBatch->id,
                     'type' => 'transfer_in',
                     'quantity_change' => $item->quantity,
@@ -289,6 +323,8 @@ class StockTransferController extends Controller
 
     public function cancel(StockTransfer $transfer, Request $request): JsonResponse|RedirectResponse
     {
+        $this->ensureSendingShop($transfer);
+
         if (! in_array($transfer->status, ['pending', 'approved'], true)) {
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => 'প্রেরিত বা গৃহীত ট্রান্সফার বাতিল করা যায় না'], 422);
@@ -308,5 +344,31 @@ class StockTransferController extends Controller
         }
 
         return back()->with('status', 'ট্রান্সফার বাতিল করা হয়েছে');
+    }
+
+    /**
+     * Warehouses stock can be sent to: the current shop's and those of the
+     * company's other shops.
+     */
+    private function destinationWarehouses()
+    {
+        $companyShopIds = Shop::where('company_id', app(TenantContext::class)->companyId())->pluck('id');
+
+        return Warehouse::withoutGlobalScope('shop')
+            ->whereIn('shop_id', $companyShopIds)
+            ->where('status', 'active')
+            ->with('shop:id,name')
+            ->orderBy('shop_id')
+            ->orderBy('name')
+            ->get();
+    }
+
+    private function ensureSendingShop(StockTransfer $transfer): void
+    {
+        abort_unless(
+            $transfer->isSentBy(auth()->user()->shop_id) || auth()->user()->isSuperAdmin(),
+            403,
+            'শুধুমাত্র প্রেরণকারী দোকান এই কাজটি করতে পারে (Only the sending shop can do this)।'
+        );
     }
 }

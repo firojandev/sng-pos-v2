@@ -60,6 +60,7 @@ class DueLedgerFeatureTest extends TestCase
         $this->user = User::create([
             'name' => 'Due Ledger Admin',
             'email' => 'admin@dueledger.test',
+            'email_verified_at' => now(),
             'password' => bcrypt('password'),
             'shop_id' => $this->shop->id,
         ]);

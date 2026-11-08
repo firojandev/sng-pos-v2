@@ -29,9 +29,9 @@ Artisan::command('landing:status', function () {
     $this->info("Landing page is currently {$status}.");
 })->purpose('Check the current status of the public landing page');
 
-Artisan::command('db:backup {--prefix=sngpos : Prefix for the backup file name}', function (DatabaseBackupService $service) {
+Artisan::command('db:backup {--prefix=sngerp : Prefix for the backup file name}', function (DatabaseBackupService $service) {
     $this->info('Starting database backup...');
-    $prefix = $this->option('prefix') ?: 'sngpos';
+    $prefix = $this->option('prefix') ?: 'sngerp';
     $result = $service->createBackup($prefix);
     $this->info("Backup created successfully: {$result['filename']} ({$result['size_formatted']})");
     $this->line("Saved to: {$result['path']}");

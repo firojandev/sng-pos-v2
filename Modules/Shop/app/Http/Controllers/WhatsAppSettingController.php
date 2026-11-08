@@ -230,7 +230,7 @@ class WhatsAppSettingController extends Controller
                 ], 422);
             }
 
-            $message = "অভিনন্দন! আপনার SNG POS এর ব্যক্তিগত হোয়াটসঅ্যাপ সংযোগ সফলভাবে সক্রিয় হয়েছে।\nতারিখ ও সময়: ".now()->format('d/m/Y h:i A');
+            $message = "অভিনন্দন! আপনার SNG ERP এর ব্যক্তিগত হোয়াটসঅ্যাপ সংযোগ সফলভাবে সক্রিয় হয়েছে।\nতারিখ ও সময়: ".now()->format('d/m/Y h:i A');
             $result = $session->messages()->sendText('+'.$rawPhone, $message);
 
             // Store in database

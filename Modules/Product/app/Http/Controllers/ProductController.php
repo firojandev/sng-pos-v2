@@ -76,6 +76,8 @@ class ProductController extends Controller
 
     public function edit(Product $product): View
     {
+        $this->ensureCompanyCanEdit($product);
+
         $product->load('units');
 
         return view('product::products.edit', [
@@ -86,6 +88,8 @@ class ProductController extends Controller
 
     public function update(UpdateProductRequest $request, Product $product): RedirectResponse
     {
+        $this->ensureCompanyCanEdit($product);
+
         $data = $request->safe()->except(['image', 'units']);
         $data['is_vat'] = $request->boolean('is_vat');
         $data['has_warranty'] = $request->boolean('has_warranty');
@@ -114,6 +118,8 @@ class ProductController extends Controller
 
     public function destroy(Product $product): RedirectResponse
     {
+        $this->ensureCompanyCanEdit($product);
+
         if ($product->image_url) {
             Storage::disk('public')->delete(str_replace('/storage/', '', $product->image_url));
         }
@@ -156,10 +162,38 @@ class ProductController extends Controller
     private function formOptions(): array
     {
         return [
-            'categories' => Category::parents()->with('subCategories')->orderBy('name')->get(),
+            'categories' => Category::parents()
+                ->when($this->shopCategoryIds(), fn ($query, array $ids) => $query->whereIn('categories.id', $ids))
+                ->with('subCategories')
+                ->orderBy('name')
+                ->get(),
             'brands' => Brand::orderBy('name')->get(),
             'units' => Unit::orderBy('name')->get(),
             'subCategories' => SubCategory::orderBy('name')->get(),
         ];
+    }
+
+    /**
+     * The categories the current shop sells, when it has chosen (or been
+     * given) any: its staff add products only in those.
+     *
+     * @return list<int>
+     */
+    private function shopCategoryIds(): array
+    {
+        return auth()->user()?->shop?->categories()->pluck('categories.id')->all() ?? [];
+    }
+
+    /**
+     * A shop changes only its own products; shared catalogue products are
+     * the Super Admin's (a shop sets its own price for them).
+     */
+    private function ensureCompanyCanEdit(Product $product): void
+    {
+        abort_unless(
+            $product->isEditableBy(auth()->user()),
+            403,
+            'শেয়ার্ড ক্যাটালগের পণ্য শুধুমাত্র সুপার এডমিন পরিবর্তন করতে পারেন (Only a Super Admin can change shared catalogue products)।'
+        );
     }
 }

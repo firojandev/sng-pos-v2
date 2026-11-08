@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Modules\Product\DataTables\SubCategoriesDataTable;
+use Modules\Product\Http\Controllers\Concerns\ChangesOwnCatalogueOnly;
 use Modules\Product\Http\Requests\StoreSubCategoryRequest;
 use Modules\Product\Http\Requests\UpdateSubCategoryRequest;
 use Modules\Product\Models\Category;
@@ -13,6 +14,8 @@ use Modules\Product\Models\SubCategory;
 
 class SubCategoryController extends Controller
 {
+    use ChangesOwnCatalogueOnly;
+
     public function index(SubCategoriesDataTable $dataTable): mixed
     {
         $categories = Category::parents()->orderBy('name')->get();
@@ -41,6 +44,8 @@ class SubCategoryController extends Controller
 
     public function edit(SubCategory $subCategory): View
     {
+        $this->ensureOwnRecord($subCategory);
+
         $categories = Category::parents()->orderBy('name')->get();
 
         return view('product::sub-categories.edit', compact('subCategory', 'categories'));
@@ -48,6 +53,8 @@ class SubCategoryController extends Controller
 
     public function update(UpdateSubCategoryRequest $request, SubCategory $subCategory): RedirectResponse
     {
+        $this->ensureOwnRecord($subCategory);
+
         $data = $request->validated();
         if (isset($data['category_id']) && ! isset($data['parent_id'])) {
             $data['parent_id'] = $data['category_id'];
@@ -60,6 +67,8 @@ class SubCategoryController extends Controller
 
     public function destroy(SubCategory $subCategory): RedirectResponse
     {
+        $this->ensureOwnRecord($subCategory);
+
         if ($subCategory->products()->exists()) {
             return redirect()->route('sub-categories.index')->with('status', 'এই সাব-ক্যাটাগরিতে পণ্য যুক্ত আছে, মুছে ফেলা যাবে না');
         }

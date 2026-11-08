@@ -27,7 +27,7 @@ class PlanLimits
 
         if ($shop->subscribed()) {
             $resolver = resolve(FeatureResolver::class);
-            $resolved = $resolver->resolve($shop, $featureSlug);
+            $resolved = $resolver->resolve($shop->billingCompany(), $featureSlug);
 
             if ($resolved) {
                 if ($resolved->isUnlimited()) {

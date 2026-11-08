@@ -16,7 +16,10 @@ class EnsureFeatureEnabled
             return $next($request);
         }
 
-        if (! $user || ! $user->shop || ! $user->shop->hasFeature($feature)) {
+        // In the company workspace the company's plan decides.
+        $subscriber = $user?->shop ?? $user?->companyLevelCompany();
+
+        if (! $subscriber || ! $subscriber->hasFeature($feature)) {
             abort(403, 'এই ফিচারটি আপনার দোকানের জন্য সক্রিয় নেই।');
         }
 

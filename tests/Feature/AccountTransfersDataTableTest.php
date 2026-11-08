@@ -60,6 +60,7 @@ class AccountTransfersDataTableTest extends TestCase
         $this->user = User::create([
             'name' => 'Finance Admin',
             'email' => 'finance@test.com',
+            'email_verified_at' => now(),
             'password' => Hash::make('password'),
             'shop_id' => $this->shop->id,
         ]);

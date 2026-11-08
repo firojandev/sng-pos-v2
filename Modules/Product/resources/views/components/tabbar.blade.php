@@ -3,6 +3,7 @@
 @php
 $tabs = [
     ['key' => 'products', 'route' => 'products.index', 'bn' => 'পণ্য তালিকা', 'en' => 'Product List'],
+    ['key' => 'catalogue', 'route' => 'catalogue.index', 'bn' => 'ক্যাটালগ', 'en' => 'Catalogue'],
     ['key' => 'categories', 'route' => 'categories.index', 'bn' => 'ক্যাটাগরি', 'en' => 'Category'],
     ['key' => 'sub-categories', 'route' => 'sub-categories.index', 'bn' => 'সাব-ক্যাটাগরি', 'en' => 'Sub-category'],
     ['key' => 'brands', 'route' => 'brands.index', 'bn' => 'ব্র্যান্ড', 'en' => 'Brand'],

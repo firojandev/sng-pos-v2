@@ -107,7 +107,7 @@ class WhatsAppServerSetupCommand extends Command
     {
         $this->newLine();
         $this->line('<fg=cyan;options=bold>====================================================================</>');
-        $this->line('<fg=green;options=bold>               SNG POS - WhatsApp Server Setup Assistant           </>');
+        $this->line('<fg=green;options=bold>               SNG ERP - WhatsApp Server Setup Assistant           </>');
         $this->line('<fg=cyan;options=bold>====================================================================</>');
         $this->newLine();
     }
@@ -248,7 +248,7 @@ INI;
         // 3. Systemd Unit File
         $systemdConfig = <<<INI
 [Unit]
-Description=SNG POS WhatsApp Web Sidecar
+Description=SNG ERP WhatsApp Web Sidecar
 After=network.target
 
 [Service]
@@ -308,7 +308,7 @@ INI;
         $this->newLine();
 
         $this->line('<fg=yellow;options=bold>Next Steps in Web Dashboard:</>');
-        $this->line('  1. Login to SNG POS and open: <info>/settings/whatsapp</info>');
+        $this->line('  1. Login to SNG ERP and open: <info>/settings/whatsapp</info>');
         $this->line('  2. Scan the QR code using your WhatsApp mobile app (Linked Devices).');
         $this->line('  3. Invoices will now be sent directly from your linked personal WhatsApp number!');
         $this->newLine();

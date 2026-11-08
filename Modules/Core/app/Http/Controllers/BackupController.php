@@ -68,7 +68,7 @@ class BackupController extends Controller
         }
 
         try {
-            $backup = $this->backupService->createBackup('sngpos');
+            $backup = $this->backupService->createBackup('sngerp');
 
             // Log activity in AuditLog
             AuditLog::create([

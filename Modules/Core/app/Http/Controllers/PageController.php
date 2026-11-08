@@ -11,6 +11,7 @@ use Illuminate\View\View;
 use Modules\Cashbox\Models\CashTransaction;
 use Modules\Core\Models\AuditLog;
 use Modules\Core\Models\Setting;
+use Modules\Core\Support\TenantContext;
 use Modules\Customer\Models\Customer;
 use Modules\Finance\Models\Account;
 use Modules\Finance\Models\Expense;
@@ -31,6 +32,15 @@ class PageController extends Controller
         $user = auth()->user();
         if ($user->isSuperAdmin()) {
             return $this->superAdminDashboard($request);
+        }
+
+        if (! $user->shop && $user->isDefaultCompanyAdmin()) {
+            return redirect()->route('default-company.index');
+        }
+
+        // Without a shop only the company workspace has a dashboard.
+        if (! $user->shop && ! $user->inCompanyWorkspace()) {
+            return redirect()->route('shops.select');
         }
 
         $isOwnerOrAdmin = $user->isShopAdmin();
@@ -107,17 +117,17 @@ class PageController extends Controller
         if ($canViewStockValue) {
             $totalStockValue = (float) Batch::query()
                 ->join('products', 'batches.product_id', '=', 'products.id')
-                ->sum(DB::raw('batches.quantity * products.purchase_price'));
+                ->sum(DB::raw('batches.quantity * COALESCE(batches.unit_cost, products.purchase_price)'));
         }
 
         $totalReceivable = 0.0;
         if ($canViewReceivable) {
-            $totalReceivable = (float) Customer::sum('opening_due') + (float) Sale::sum('due_amount');
+            $totalReceivable = (float) Customer::createdAtShop(app(TenantContext::class)->shopId())->sum('opening_due') + (float) Sale::sum('due_amount');
         }
 
         $totalPayable = 0.0;
         if ($canViewPayable) {
-            $totalPayable = (float) Supplier::sum('opening_due') + (float) Purchase::sum('due_amount');
+            $totalPayable = (float) Supplier::createdAtShop(app(TenantContext::class)->shopId())->sum('opening_due') + (float) Purchase::sum('due_amount');
         }
 
         $totalCash = 0.0;
@@ -262,7 +272,7 @@ class PageController extends Controller
         }
 
         $siteTitle = Setting::getSiteTitle();
-        $siteTitleBn = $siteTitle === 'SNGPOS' ? 'SNGPOS' : $siteTitle;
+        $siteTitleBn = $siteTitle === 'SNG ERP' ? 'SNG ERP' : $siteTitle;
 
         return view('core::pages.privacy-policy', compact('siteTitle', 'siteTitleBn'));
     }
@@ -274,7 +284,7 @@ class PageController extends Controller
         }
 
         $siteTitle = Setting::getSiteTitle();
-        $siteTitleBn = $siteTitle === 'SNGPOS' ? 'SNGPOS' : $siteTitle;
+        $siteTitleBn = $siteTitle === 'SNG ERP' ? 'SNG ERP' : $siteTitle;
 
         return view('core::pages.terms', compact('siteTitle', 'siteTitleBn'));
     }
@@ -358,7 +368,7 @@ class PageController extends Controller
         }])->orderBy('sort_order')->get();
 
         // Expiring Soon Subscriptions (within 14 days)
-        $expiringSubscriptions = Subscription::with(['shop', 'plan'])
+        $expiringSubscriptions = Subscription::with(['shop', 'company', 'plan'])
             ->whereIn('status', ['active', 'trial', 'trialing'])
             ->where(function ($q) {
                 $q->whereBetween('ends_at', [now(), now()->addDays(14)])
@@ -369,7 +379,7 @@ class PageController extends Controller
             ->get();
 
         // Recent Shops
-        $recentShops = Shop::with(['activeSubscription.plan', 'users'])
+        $recentShops = Shop::with(['company.activeSubscription.plan', 'users'])
             ->latest()
             ->limit(5)
             ->get();

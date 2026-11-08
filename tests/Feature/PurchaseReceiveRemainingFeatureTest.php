@@ -61,6 +61,7 @@ class PurchaseReceiveRemainingFeatureTest extends TestCase
         $this->user = User::create([
             'name' => 'Stock Admin',
             'email' => 'admin@receive.test',
+            'email_verified_at' => now(),
             'password' => bcrypt('password'),
             'shop_id' => $this->shop->id,
         ]);

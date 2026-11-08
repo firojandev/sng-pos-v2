@@ -4,13 +4,13 @@ namespace Modules\Product\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Modules\Core\Concerns\BelongsToShop;
+use Modules\Core\Concerns\BelongsToCatalog;
 
 class Brand extends Model
 {
-    use BelongsToShop;
+    use BelongsToCatalog;
 
-    protected $fillable = ['shop_id', 'name', 'description'];
+    protected $fillable = ['company_id', 'shop_id', 'name', 'description'];
 
     public function models(): HasMany
     {

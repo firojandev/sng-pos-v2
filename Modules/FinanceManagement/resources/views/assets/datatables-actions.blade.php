@@ -1,4 +1,7 @@
 <x-core::button-group size="xs" aria-label="Asset Actions">
+    @if ($asset->depreciation_type === 'straight_line')
+        <x-core::button as="a" href="{{ route('assets.schedule', $asset) }}" variant="soft" color="secondary" icon="calendar" icon-only title="অবচয় সূচি / Depreciation Schedule" />
+    @endif
     @can('assets.edit')
         <x-core::button
             type="button"

@@ -20,13 +20,13 @@ class SupplierController extends Controller
         $metrics = [
             'totalSuppliers' => Supplier::count(),
             'activeSuppliers' => Supplier::where('status', 'active')->count(),
-            'totalDue' => round((float) Supplier::sum('opening_due') + (float) Purchase::whereNotNull('supplier_id')->sum('due_amount'), 2),
+            'totalDue' => round((float) Supplier::sum('opening_due') + (float) Purchase::withoutGlobalScope('shop')->whereIn('supplier_id', Supplier::query()->select('id'))->sum('due_amount'), 2),
             'dueSuppliersCount' => Supplier::where(function ($q) {
                 $q->where('opening_due', '>', 0)
                     ->orWhereHas('purchases', fn ($sq) => $sq->where('due_amount', '>', 0));
             })->count(),
-            'totalPurchaseAmount' => round((float) Purchase::whereNotNull('supplier_id')->sum('total'), 2),
-            'totalPurchaseCount' => Purchase::whereNotNull('supplier_id')->count(),
+            'totalPurchaseAmount' => round((float) Purchase::withoutGlobalScope('shop')->whereIn('supplier_id', Supplier::query()->select('id'))->sum('total'), 2),
+            'totalPurchaseCount' => Purchase::withoutGlobalScope('shop')->whereIn('supplier_id', Supplier::query()->select('id'))->count(),
         ];
 
         return $dataTable->render('supplier::index', compact('metrics'));

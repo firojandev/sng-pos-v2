@@ -65,6 +65,7 @@ class PurchasePreviousDuePaymentFeatureTest extends TestCase
         $this->user = User::create([
             'name' => 'Purchase Admin',
             'email' => 'admin@purchasetest.test',
+            'email_verified_at' => now(),
             'password' => bcrypt('password'),
             'shop_id' => $this->shop->id,
         ]);

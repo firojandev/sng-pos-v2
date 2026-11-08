@@ -66,13 +66,13 @@
                         :no-margin="true"
                     >
                         <option value="">-- নির্বাচন করুন --</option>
-                        @foreach ($warehouses as $warehouse)
+                        @foreach ($destinationWarehouses ?? $warehouses as $warehouse)
                             <option
                                 value="{{ $warehouse->id }}"
-                                data-text-bn="{{ $warehouse->name }}@if($warehouse->is_default) [ডিফল্ট]@endif @if($warehouse->branch) ({{ $warehouse->branch->name }})@endif"
-                                data-text-en="{{ $warehouse->name }}@if($warehouse->is_default) [Default]@endif @if($warehouse->branch) ({{ $warehouse->branch->name }})@endif"
+                                data-text-bn="{{ $warehouse->name }}@if ((int) $warehouse->shop_id !== (int) auth()->user()->shop_id) — {{ $warehouse->shop?->name }}@endif @if($warehouse->is_default) [ডিফল্ট]@endif @if($warehouse->branch) ({{ $warehouse->branch->name }})@endif"
+                                data-text-en="{{ $warehouse->name }}@if ((int) $warehouse->shop_id !== (int) auth()->user()->shop_id) — {{ $warehouse->shop?->name }}@endif @if($warehouse->is_default) [Default]@endif @if($warehouse->branch) ({{ $warehouse->branch->name }})@endif"
                                 {{ (string) old('to_warehouse_id') === (string) $warehouse->id ? 'selected' : '' }}>
-                                {{ $warehouse->name }} @if($warehouse->is_default) [ডিফল্ট] @endif @if($warehouse->branch)
+                                {{ $warehouse->name }}@if ((int) $warehouse->shop_id !== (int) auth()->user()->shop_id) — {{ $warehouse->shop?->name }}@endif @if($warehouse->is_default) [ডিফল্ট] @endif @if($warehouse->branch)
                                     ({{ $warehouse->branch->name }})
                                 @endif
                             </option>

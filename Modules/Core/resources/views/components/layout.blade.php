@@ -13,7 +13,7 @@
     $isEn = $cookieLang === 'en';
 
     $siteTitle = $siteTitle ?? \Modules\Core\Models\Setting::getSiteTitle();
-    $siteTitleBn = $siteTitleBn ?? ($siteTitle === 'SNGPOS' ? 'SNGPOS' : $siteTitle);
+    $siteTitleBn = $siteTitleBn ?? ($siteTitle === 'SNG ERP' ? 'SNG ERP' : $siteTitle);
     $currentSiteTitle = $isEn ? $siteTitle : $siteTitleBn;
     $pageHeading = $isEn ? ($titleEn ?: $title) : $title;
 @endphp
@@ -27,6 +27,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#0F172A">
+    @auth
+        <meta name="support-pin-verify-url" content="{{ route('support-pin.verify') }}">
+    @endauth
     <title>{{ $pageHeading ? $pageHeading . ' · ' : '' }}{{ $currentSiteTitle }}</title>
 
     <script>

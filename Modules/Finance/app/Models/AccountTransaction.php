@@ -57,6 +57,10 @@ class AccountTransaction extends Model
             'manual_adjustment' => ['bn' => 'ম্যানুয়াল সমন্বয়', 'en' => 'Manual Adjustment'],
             'cash_in' => ['bn' => 'ক্যাশ ইন', 'en' => 'Cash In'],
             'cash_out' => ['bn' => 'ক্যাশ আউট', 'en' => 'Cash Out'],
+            'salary' => ['bn' => 'বেতন পরিশোধ', 'en' => 'Salary Payment'],
+            'employee_advance' => ['bn' => 'কর্মচারী অগ্রিম/ঋণ', 'en' => 'Employee Advance'],
+            'employee_advance_repaid' => ['bn' => 'অগ্রিম/ঋণ ফেরত', 'en' => 'Advance Repaid'],
+            'statutory_payment' => ['bn' => 'পিএফ/আয়কর জমা', 'en' => 'PF / Tax Payment'],
         ];
     }
 

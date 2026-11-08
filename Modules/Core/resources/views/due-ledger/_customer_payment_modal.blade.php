@@ -278,6 +278,9 @@
                             <tr class="allocation-row" data-type="invoice" data-id="{{ $sale->id }}" data-due="{{ $sale->due_amount }}">
                                 <td>
                                     <div style="font-weight:700; font-family:var(--font-mono, monospace); color:var(--ink-900); font-size:12.5px;">#{{ $sale->invoice_no }}</div>
+                                    @if ((int) $sale->shop_id !== (int) auth()->user()->shop_id)
+                                        <x-core::badge color="blue" size="xs" variant="soft" title="অন্য দোকানের ইনভয়েস / Invoice from another shop">{{ $sale->shop?->name }}</x-core::badge>
+                                    @endif
                                     <div style="font-size:11px; color:var(--ink-500);">পরিশোধিত: ৳{{ number_format($sale->paid_amount, 2) }}</div>
                                 </td>
                                 <td style="font-size:12px; color:var(--ink-700);">{{ optional($sale->sale_date)->format('d M, Y') ?? '—' }}</td>

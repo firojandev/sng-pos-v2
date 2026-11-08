@@ -3,6 +3,7 @@
 namespace Modules\FinanceManagement\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Core\Concerns\BelongsToShop;
 use Modules\Core\Observers\AuditObserver;
@@ -27,6 +28,8 @@ class Asset extends Model
         'shop_id',
         'name',
         'amount',
+        'purchase_date',
+        'residual_value',
         'depreciation_type',
         'depreciation',
         'validity',
@@ -36,15 +39,45 @@ class Asset extends Model
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'purchase_date' => 'date',
+        'residual_value' => 'decimal:2',
         'depreciation' => 'decimal:2',
         'validity' => 'decimal:2',
     ];
+
+    public function depreciations(): HasMany
+    {
+        return $this->hasMany(AssetDepreciation::class)->orderBy('period');
+    }
+
+    public function isStraightLine(): bool
+    {
+        return $this->depreciation_type === 'straight_line';
+    }
+
+    /**
+     * The useful life (the validity) in months.
+     */
+    public function usefulLifeMonths(): int
+    {
+        $validity = (float) $this->validity;
+
+        return (int) round(match ($this->validity_unit) {
+            'month' => $validity,
+            'day' => $validity / 30,
+            default => $validity * 12,
+        });
+    }
 
     /**
      * Calculate the monetary depreciation amount based on type.
      */
     public function getDepreciationAmountAttribute(): float
     {
+        if ($this->isStraightLine()) {
+            return round((float) $this->depreciations()->sum('amount'), 2);
+        }
+
         $dep = (float) ($this->depreciation ?? 0);
         if ($this->depreciation_type === 'percentage') {
             return round(((float) $this->amount * $dep) / 100, 2);

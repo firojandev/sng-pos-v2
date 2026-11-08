@@ -3,6 +3,7 @@
 namespace Modules\Customer\Providers;
 
 use Illuminate\Console\Scheduling\Schedule;
+use Modules\Customer\Console\ExpireLoyaltyPoints;
 use Nwidart\Modules\Support\ModuleServiceProvider;
 
 class CustomerServiceProvider extends ModuleServiceProvider
@@ -22,7 +23,9 @@ class CustomerServiceProvider extends ModuleServiceProvider
      *
      * @var string[]
      */
-    // protected array $commands = [];
+    protected array $commands = [
+        ExpireLoyaltyPoints::class,
+    ];
 
     /**
      * Provider classes to register.
@@ -36,11 +39,9 @@ class CustomerServiceProvider extends ModuleServiceProvider
 
     /**
      * Define module schedules.
-     *
-     * @param  $schedule
      */
-    // protected function configureSchedules(Schedule $schedule): void
-    // {
-    //     $schedule->command('inspire')->hourly();
-    // }
+    protected function configureSchedules(Schedule $schedule): void
+    {
+        $schedule->command('loyalty:expire-points')->dailyAt('00:30');
+    }
 }

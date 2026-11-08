@@ -918,6 +918,46 @@ html:not(.lang-en) .lang-segmented-switcher .segmented-switch-slider::before {
   color: #2dd4bf;
 }
 
+/* ---------------- Masked Amount (salary masking) ---------------- */
+.masked-amount {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  vertical-align: middle;
+}
+
+.masked-amount-mask {
+  font-family: var(--font-mono, monospace);
+  letter-spacing: 1px;
+  color: var(--ink-400);
+  user-select: none;
+}
+
+.masked-amount-eye {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink-400);
+  cursor: pointer;
+  transition: color .15s ease, background .15s ease;
+}
+
+.masked-amount-eye:hover {
+  color: var(--ink-700);
+  background: var(--paper-line);
+}
+
+.masked-amount.is-revealed .masked-amount-eye {
+  color: var(--teal-700);
+}
+
 .user-menu-divider {
   height: 1px;
   background: var(--border);

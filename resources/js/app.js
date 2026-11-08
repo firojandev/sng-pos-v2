@@ -761,6 +761,107 @@ function toggleAccordion($box, forceOpen) {
     }
 }
 
+/* ---------------- Masked Amount (salary masking) ---------------- */
+const MASKED_AMOUNT_GRACE_MS = 60000; // one correct PIN entry skips re-prompting for this long
+const MASKED_AMOUNT_REVEAL_MS = 10000; // a revealed amount auto re-masks after this long
+let maskedAmountUnlockedUntil = 0; // epoch ms
+
+const MASKED_EYE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="app-icon" data-masked-icon><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const MASKED_EYE_OFF_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="app-icon" data-masked-icon><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61M2 2l20 20"/></svg>';
+
+function maskedAmountReveal($item) {
+    if ($item.hasClass('is-revealed')) {
+        return;
+    }
+
+    $item.addClass('is-revealed');
+    $item.find('[data-masked-mask]').hide();
+    $item.find('[data-masked-real]').show();
+    $item.find('[data-masked-icon]').replaceWith(MASKED_EYE_OFF_ICON);
+
+    clearTimeout($item.data('masked-timer'));
+    $item.data('masked-timer', setTimeout(() => maskedAmountHide($item), MASKED_AMOUNT_REVEAL_MS));
+}
+
+function maskedAmountHide($item) {
+    clearTimeout($item.data('masked-timer'));
+    $item.removeClass('is-revealed');
+    $item.find('[data-masked-real]').hide();
+    $item.find('[data-masked-mask]').show();
+    $item.find('[data-masked-icon]').replaceWith(MASKED_EYE_ICON);
+}
+
+function promptMaskedAmountPin($item) {
+    const isEn = $('body').hasClass('lang-en') || $('html').hasClass('lang-en');
+    const verifyUrl = $('meta[name="support-pin-verify-url"]').attr('content');
+
+    if (!verifyUrl) {
+        return;
+    }
+
+    Swal.fire({
+        title: isEn ? 'Enter Support PIN' : 'সাপোর্ট পিন লিখুন',
+        text: isEn ? 'Enter your support PIN to reveal the amount.' : 'পরিমাণ দেখতে আপনার সাপোর্ট পিন দিন।',
+        input: 'text',
+        inputAttributes: {
+            inputmode: 'numeric',
+            maxlength: '6',
+            autocomplete: 'off',
+            style: 'text-align:center; letter-spacing:4px; font-family:monospace; font-size:18px;'
+        },
+        showCancelButton: true,
+        confirmButtonText: isEn ? 'Verify' : 'যাচাই করুন',
+        cancelButtonText: isEn ? 'Cancel' : 'বাতিল',
+        reverseButtons: true,
+        customClass: { popup: 'app-swal-popup' },
+        preConfirm: (pin) => {
+            if (!pin) {
+                Swal.showValidationMessage(isEn ? 'PIN is required' : 'পিন আবশ্যক');
+                return false;
+            }
+
+            return $.ajax({
+                url: verifyUrl,
+                method: 'POST',
+                data: { pin: pin }
+            }).catch((xhr) => {
+                const message = xhr.status === 429
+                    ? (isEn ? 'Too many attempts. Try again shortly.' : 'অনেকবার চেষ্টা করা হয়েছে। কিছুক্ষণ পর আবার চেষ্টা করুন।')
+                    : (isEn ? 'Incorrect PIN' : 'ভুল পিন');
+                Swal.showValidationMessage(message);
+                return Promise.reject(xhr);
+            });
+        },
+        allowOutsideClick: () => !Swal.isLoading()
+    }).then((result) => {
+        if (result.isConfirmed && result.value && result.value.valid) {
+            maskedAmountUnlockedUntil = Date.now() + MASKED_AMOUNT_GRACE_MS;
+            $('[data-masked-amount]').each(function () {
+                maskedAmountReveal($(this));
+            });
+        }
+    });
+}
+
+function initMaskedAmountBehaviors() {
+    $(document).on('click', '[data-masked-eye]', function (e) {
+        e.preventDefault();
+        const $item = $(this).closest('[data-masked-amount]');
+
+        if ($item.hasClass('is-revealed')) {
+            maskedAmountHide($item);
+            return;
+        }
+
+        if (Date.now() < maskedAmountUnlockedUntil) {
+            maskedAmountReveal($item);
+            return;
+        }
+
+        promptMaskedAmountPin($item);
+    });
+}
+
 function initAccordionBehaviors() {
     // 1. Trigger clicked (Header)
     $(document).on('click', '[data-accordion-trigger], .feature-box-toggle', function (e) {
@@ -863,6 +964,7 @@ window.initAccordionBehaviors = initAccordionBehaviors;
 window.initStatusSwitcherBehaviors = initStatusSwitcherBehaviors;
 window.toEnglishDigits = toEnglishDigits;
 window.isNumberInput = isNumberInput;
+window.initMaskedAmountBehaviors = initMaskedAmountBehaviors;
 $.toEnglishDigits = toEnglishDigits;
 
 $(function () {
@@ -870,6 +972,7 @@ $(function () {
     initButtonGroupBehaviors();
     initDeleteConfirmBehaviors();
     initAccordionBehaviors();
+    initMaskedAmountBehaviors();
     initStatusSwitcherBehaviors();
     initNumberStepperBehaviors();
     initEnglishNumberInputBehaviors();

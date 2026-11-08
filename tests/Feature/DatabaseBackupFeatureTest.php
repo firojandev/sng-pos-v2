@@ -4,10 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Modules\Core\DataTables\BackupDataTable;
 use Modules\Core\Services\DatabaseBackupService;
 use Modules\Core\Support\Permissions;
+use Modules\Shop\Models\Shop;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -36,6 +36,7 @@ class DatabaseBackupFeatureTest extends TestCase
         $this->superAdmin = User::create([
             'name' => 'Super Admin User',
             'email' => 'superadmin@test.com',
+            'email_verified_at' => now(),
             'password' => bcrypt('password123'),
         ]);
         $this->superAdmin->assignRole($superAdminRole);
@@ -43,6 +44,7 @@ class DatabaseBackupFeatureTest extends TestCase
         $this->regularUser = User::create([
             'name' => 'Regular User',
             'email' => 'regular@test.com',
+            'email_verified_at' => now(),
             'password' => bcrypt('password123'),
         ]);
 
@@ -89,6 +91,7 @@ class DatabaseBackupFeatureTest extends TestCase
         $shopAdmin = User::create([
             'name' => 'Shop Admin',
             'email' => 'shopadmin@test.com',
+            'email_verified_at' => now(),
             'password' => bcrypt('password123'),
         ]);
         $shopAdmin->assignRole($adminRole);
@@ -196,13 +199,12 @@ class DatabaseBackupFeatureTest extends TestCase
 
     public function test_super_admin_can_restore_specific_shops(): void
     {
-        $shopId = DB::table('shops')->insertGetId([
+        $shop = Shop::create([
             'name' => 'Test Shop 1',
             'slug' => 'test-shop-1',
             'phone' => '01700000000',
-            'created_at' => now(),
-            'updated_at' => now(),
         ]);
+        $shopId = $shop->id;
 
         $backup = $this->backupService->createBackup('restore_shop_test');
 
@@ -215,6 +217,8 @@ class DatabaseBackupFeatureTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertJson(['success' => true]);
+        $this->assertDatabaseHas('shops', ['id' => $shopId, 'company_id' => $shop->company_id]);
+        $this->assertDatabaseHas('companies', ['id' => $shop->company_id, 'name' => 'Test Shop 1']);
     }
 
     public function test_restore_fails_with_invalid_confirmation(): void

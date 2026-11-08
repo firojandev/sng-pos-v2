@@ -12,6 +12,7 @@ use Modules\Employee\Models\Employee;
 use Modules\Product\Models\Batch;
 use Modules\Product\Models\Product;
 use Modules\Product\Models\StockMovement;
+use Modules\Product\Services\ProductPricing;
 use Modules\Purchase\Http\Requests\ReceivePurchaseDeliveryOrderRequest;
 use Modules\Purchase\Http\Requests\StorePurchaseDeliveryOrderRequest;
 use Modules\Purchase\Http\Requests\UpdatePurchaseDeliveryOrderRequest;
@@ -79,9 +80,9 @@ class PurchaseDeliveryOrderController extends Controller
     public function create(): View
     {
         $suppliers = Supplier::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone', 'address']);
-        $products = Product::where('status', 'active')->withSum('batches', 'quantity')->with('units')->orderBy('name')->get();
+        $products = Product::availableInShop(listedOnly: false)->where('status', 'active')->withSum('batches', 'quantity')->with('units')->orderBy('name')->get();
         $warehouses = Warehouse::where('status', 'active')->with('branch')->orderBy('name')->get();
-        $employees = Employee::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);
+        $employees = Employee::workingAtShop()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);
 
         return view('purchase::delivery-orders.create', [
             'order' => new PurchaseDeliveryOrder,
@@ -176,9 +177,9 @@ class PurchaseDeliveryOrderController extends Controller
         }
 
         $suppliers = Supplier::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone', 'address']);
-        $products = Product::where('status', 'active')->withSum('batches', 'quantity')->with('units')->orderBy('name')->get();
+        $products = Product::availableInShop(listedOnly: false)->where('status', 'active')->withSum('batches', 'quantity')->with('units')->orderBy('name')->get();
         $warehouses = Warehouse::where('status', 'active')->with('branch')->orderBy('name')->get();
-        $employees = Employee::where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);
+        $employees = Employee::workingAtShop()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'phone']);
 
         $deliveryOrder->load('items');
 
@@ -350,9 +351,10 @@ class PurchaseDeliveryOrderController extends Controller
                 $receiptTotal += $lineSubtotal;
 
                 // Update product purchase price to latest
-                Product::where('id', $orderItem->product_id)->update([
+                app(ProductPricing::class)->setCompanyValues((int) $orderItem->product_id, [
                     'purchase_price' => $baseCost,
                 ]);
+                Product::find($orderItem->product_id)?->listInShop($deliveryOrder->shop_id);
 
                 // Update / create Batch in destination warehouse
                 $batch = Batch::where('product_id', $orderItem->product_id)
@@ -364,6 +366,7 @@ class PurchaseDeliveryOrderController extends Controller
                 $before = $batch ? (float) $batch->quantity : 0.0;
 
                 if ($batch) {
+                    $batch->absorbCost($baseQuantity, $baseCost);
                     $batch->quantity += $baseQuantity;
                     if (! empty($input['mfg_date'])) {
                         $batch->mfg_date = $input['mfg_date'];
@@ -378,6 +381,7 @@ class PurchaseDeliveryOrderController extends Controller
                         'warehouse_id' => $deliveryOrder->warehouse_id,
                         'batch_no' => $batchNo,
                         'quantity' => $baseQuantity,
+                        'unit_cost' => $baseCost,
                         'mfg_date' => $input['mfg_date'] ?? null,
                         'expiry_date' => $input['expiry_date'] ?? null,
                     ]);

@@ -136,6 +136,21 @@
         :root[data-theme="dark"] .shop-select-btn:hover {
             background: #14b8a6;
         }
+        .shop-select-company {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 14px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: var(--ink-600, #475569);
+        }
+        [data-theme="dark"] .shop-select-company,
+        :root[data-theme="dark"] .shop-select-company {
+            color: #94a3b8;
+        }
         .shop-select-footer {
             border-top: 1px solid var(--border);
             padding-top: 16px;
@@ -166,8 +181,15 @@
             </p>
         </div>
     @else
+        @foreach ($shopGroups as $groupShops)
+        @if ($showCompanies)
+            <div class="shop-select-company">
+                <x-core::icon name="briefcase" size="14" />
+                <span>{{ $groupShops->first()->company?->displayName() }}</span>
+            </div>
+        @endif
         <div class="shop-select-list">
-            @foreach ($shops as $shop)
+            @foreach ($groupShops as $shop)
                 @php
                     $isCurrent = (int) $currentShopId === (int) $shop->id;
                     $subscription = $shop->activeSubscription;
@@ -223,6 +245,7 @@
                 </form>
             @endforeach
         </div>
+        @endforeach
     @endif
 
     <div class="shop-select-footer">

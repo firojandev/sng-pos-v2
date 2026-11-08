@@ -292,7 +292,7 @@ class ShopOwnerRegistrationTest extends TestCase
         // 2. Verification notice renders successfully
         $noticeResponse = $this->actingAs($owner)->get(route('verification.notice'));
         $noticeResponse->assertStatus(200);
-        $noticeResponse->assertSee('ইমেইল ভেরিফাই করুন');
+        $noticeResponse->assertSee('ইমেইল ভেরিফিকেশন');
         $noticeResponse->assertSee('unverified@shop.test');
         $noticeResponse->assertSee('পুনরায় ভেরিফিকেশন ইমেইল পাঠান');
     }
@@ -353,8 +353,8 @@ class ShopOwnerRegistrationTest extends TestCase
         $successResponse = $this->get(route('verification.success'));
         $successResponse->assertStatus(200);
         $successResponse->assertSee(route('login'));
-        $successResponse->assertSee('ইমেইল ভেরিফিকেশন সম্পন্ন');
-        $successResponse->assertSee('লগইন করুন');
+        $successResponse->assertSee('ইমেইল ভেরিফিকেশন সফল');
+        $successResponse->assertSee('লগইন পেজে যান');
 
         // Accessing the same verification link a second time shows expired
         $secondResponse = $this->get($verificationUrl);

@@ -3,6 +3,7 @@
 namespace Modules\Product\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Modules\Core\Support\TenantRules;
 
 class StoreBatchRequest extends FormRequest
 {
@@ -14,7 +15,7 @@ class StoreBatchRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'product_id' => ['required', 'exists:products,id'],
+            'product_id' => ['required', TenantRules::catalogExists('products')],
             'batch_no' => ['required', 'string', 'max:255'],
             'quantity' => ['required', 'numeric', 'min:0'],
             'mfg_date' => ['nullable', 'date'],

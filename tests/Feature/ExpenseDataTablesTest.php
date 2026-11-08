@@ -61,6 +61,7 @@ class ExpenseDataTablesTest extends TestCase
         $this->user = User::create([
             'name' => 'Finance Admin',
             'email' => 'admin@finance.test',
+            'email_verified_at' => now(),
             'password' => bcrypt('password'),
             'shop_id' => $this->shop->id,
         ]);

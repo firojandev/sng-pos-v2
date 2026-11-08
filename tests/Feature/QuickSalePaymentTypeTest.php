@@ -54,6 +54,7 @@ class QuickSalePaymentTypeTest extends TestCase
         $this->user = User::create([
             'name' => 'Quick Sale Admin',
             'email' => 'admin@quicksale.test',
+            'email_verified_at' => now(),
             'password' => bcrypt('password'),
             'shop_id' => $this->shop->id,
         ]);

@@ -103,7 +103,7 @@ class Setting extends Model
     {
         $title = static::get('site_title');
 
-        return ! empty($title) ? (string) $title : 'SNG POS';
+        return ! empty($title) ? (string) $title : 'SNG ERP';
     }
 
     /**

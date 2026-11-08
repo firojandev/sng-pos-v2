@@ -19,7 +19,7 @@
     $isEn = $cookieLang === 'en';
 
     $siteTitle = $siteTitle ?? \Modules\Core\Models\Setting::getSiteTitle();
-    $siteTitleBn = $siteTitleBn ?? ($siteTitle === 'SNG POS' ? 'SNG POS' : $siteTitle);
+    $siteTitleBn = $siteTitleBn ?? ($siteTitle === 'SNG ERP' ? 'SNG ERP' : $siteTitle);
     $currentSiteTitle = $isEn ? $siteTitle : $siteTitleBn;
     $pageHeading = $isEn ? ($titleEn ?: $title) : $title;
 
@@ -29,7 +29,7 @@
         $mark ??
         ($isEn
             ? mb_strtoupper(mb_substr($siteTitle, 0, 1))
-            : ($siteTitle === 'SNGPOS'
+            : ($siteTitle === 'SNG ERP'
                 ? 'S'
                 : mb_strtoupper(mb_substr($siteTitle, 0, 1))));
 @endphp

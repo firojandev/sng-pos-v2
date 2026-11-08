@@ -3,6 +3,7 @@
 namespace Tests;
 
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
@@ -11,6 +12,30 @@ use Revoltify\Subscriptionify\Models\Feature;
 
 abstract class TestCase extends BaseTestCase
 {
+    private ?string $temporaryStoragePath = null;
+
+    /**
+     * Tests get their own storage folder, so backups made (and cleaned up)
+     * by tests never touch the real storage/app/private/backups.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->temporaryStoragePath = sys_get_temp_dir().DIRECTORY_SEPARATOR.'sng-tests-'.getmypid().'-'.Str::random(8);
+        File::ensureDirectoryExists($this->temporaryStoragePath);
+        $this->app->useStoragePath($this->temporaryStoragePath);
+    }
+
+    protected function tearDown(): void
+    {
+        if ($this->temporaryStoragePath) {
+            File::deleteDirectory($this->temporaryStoragePath);
+        }
+
+        parent::tearDown();
+    }
+
     /**
      * Grant a shop access to the given feature keys by creating a
      * throwaway Plan, syncing Subscriptionify Feature rows for those keys,
@@ -36,9 +61,7 @@ abstract class TestCase extends BaseTestCase
 
         $plan->features()->sync($ids->mapWithKeys(fn ($id) => [$id => ['value' => '0']]));
 
-        $shop->subscriptions()->create([
-            'subscribable_type' => Shop::class,
-            'subscribable_id' => $shop->id,
+        $shop->company->subscriptions()->create([
             'plan_id' => $plan->id,
             'status' => 'active',
             'starts_at' => now(),

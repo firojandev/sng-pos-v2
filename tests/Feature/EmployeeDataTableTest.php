@@ -294,4 +294,32 @@ class EmployeeDataTableTest extends TestCase
             'id' => $employee->id,
         ]);
     }
+
+    public function test_the_employee_code_is_suggested_on_create_and_editable(): void
+    {
+        $this->actingAs($this->user);
+        $this->get(route('employees.index'))->assertOk()->assertSee('id="create_employee_code"', false)->assertSee('EMP-0001');
+
+        // Blank: the next free code; entered: kept.
+        $base = ['phone' => '01733000001', 'designation' => 'Clerk', 'salary' => 12000, 'status' => 'active'];
+        $this->postJson(route('employees.store'), [...$base, 'name' => 'Auto Code', 'employee_code' => ''])->assertOk()->assertJson(['next_employee_code' => 'EMP-0002']);
+        $this->postJson(route('employees.store'), [...$base, 'name' => 'Own Code', 'phone' => '01733000002', 'employee_code' => 'DHK-101'])->assertOk();
+        $auto = Employee::where('name', 'Auto Code')->firstOrFail();
+        $own = Employee::where('name', 'Own Code')->firstOrFail();
+        $this->assertSame('EMP-0001', $auto->employee_code);
+        $this->assertSame('DHK-101', $own->employee_code);
+
+        // Unique within the company.
+        $this->postJson(route('employees.store'), [...$base, 'name' => 'Clash', 'phone' => '01733000003', 'employee_code' => 'DHK-101'])->assertJsonValidationErrors('employee_code');
+
+        $this->getJson(route('employees.edit', $auto))->assertOk()->assertJsonPath('employee.employee_code', 'EMP-0001');
+        $this->putJson(route('employees.update', $auto), [...$base, 'name' => 'Auto Code', 'employee_code' => 'DHK-102'])->assertOk();
+        $this->assertSame('DHK-102', $auto->fresh()->employee_code);
+        $this->putJson(route('employees.update', $auto), [...$base, 'name' => 'Auto Code', 'employee_code' => 'DHK-101'])->assertJsonValidationErrors('employee_code');
+        $this->putJson(route('employees.update', $auto), [...$base, 'name' => 'Auto Code', 'employee_code' => ''])->assertJsonValidationErrors('employee_code');
+
+        // The list shows (and searches) the real code.
+        $this->getJson(route('employees.index', ['draw' => 1, 'columns' => [['data' => 'name', 'name' => 'name', 'searchable' => 'true', 'orderable' => 'true', 'search' => ['value' => '']]], 'search' => ['value' => 'DHK-102']]), ['X-Requested-With' => 'XMLHttpRequest'])
+            ->assertOk()->assertSee('DHK-102')->assertDontSee('Own Code');
+    }
 }

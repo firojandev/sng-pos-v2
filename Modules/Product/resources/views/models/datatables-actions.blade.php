@@ -1,5 +1,5 @@
 <x-core::button-group size="xs" aria-label="Model Actions">
-    @can('products.edit')
+    @if (auth()->user()?->can('products.edit') && $model->isEditableBy(auth()->user()))
         <x-core::button
             type="button"
             variant="soft"
@@ -13,8 +13,8 @@
             data-action="{{ route('models.update', $model) }}"
             title="সম্পাদনা / Edit"
         />
-    @endcan
-    @can('products.delete')
+    @endif
+    @if (auth()->user()?->can('products.delete') && $model->isEditableBy(auth()->user()))
         <form
             method="POST"
             action="{{ route('models.destroy', $model) }}"
@@ -33,5 +33,5 @@
                 title="মুছুন / Delete"
             />
         </form>
-    @endcan
+    @endif
 </x-core::button-group>

@@ -13,7 +13,7 @@ class WhatsAppServerSetupCommandTest extends TestCase
             '--skip-install' => true,
             '--skip-migrate' => true,
         ])
-            ->expectsOutputToContain('SNG POS - WhatsApp Server Setup Assistant')
+            ->expectsOutputToContain('SNG ERP - WhatsApp Server Setup Assistant')
             ->expectsOutputToContain('Checking System Prerequisites')
             ->expectsOutputToContain('Configuring Environment Variables')
             ->expectsOutputToContain('Generating Production Service Configuration Templates')

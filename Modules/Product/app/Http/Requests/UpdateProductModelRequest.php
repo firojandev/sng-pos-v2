@@ -3,6 +3,7 @@
 namespace Modules\Product\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Modules\Core\Support\TenantRules;
 
 class UpdateProductModelRequest extends FormRequest
 {
@@ -14,7 +15,7 @@ class UpdateProductModelRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'brand_id' => ['required', 'exists:brands,id'],
+            'brand_id' => ['required', TenantRules::catalogExists('brands')],
             'name' => ['required', 'string', 'max:255'],
         ];
     }

@@ -15,14 +15,14 @@ class BatchController extends Controller
 {
     public function index(BatchesDataTable $dataTable): mixed
     {
-        $products = Product::orderBy('name')->get();
+        $products = Product::listedInShop()->orderBy('name')->get();
 
         return $dataTable->render('product::batches.index', compact('products'));
     }
 
     public function create(): View
     {
-        $products = Product::orderBy('name')->get();
+        $products = Product::listedInShop()->orderBy('name')->get();
 
         return view('product::batches.create', ['batch' => new Batch, 'products' => $products]);
     }
@@ -36,7 +36,7 @@ class BatchController extends Controller
 
     public function edit(Batch $batch): View
     {
-        $products = Product::orderBy('name')->get();
+        $products = Product::listedInShop()->orderBy('name')->get();
 
         return view('product::batches.edit', compact('batch', 'products'));
     }

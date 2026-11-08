@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
+use Modules\Company\Models\Company;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
 use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
@@ -164,6 +165,8 @@ class ShopSubscriptionStatusTest extends TestCase
         $plan = Plan::first();
 
         $response = $this->actingAs($superAdmin)->post(route('shops.store'), [
+            'company_mode' => 'new',
+            'new_company_name' => 'Test Company 167',
             'name' => 'Existing Owner Shop',
             'slug' => 'existing-owner-shop',
             'phone' => '01711223344', // shop phone matching owner phone
@@ -213,9 +216,8 @@ class ShopSubscriptionStatusTest extends TestCase
         $plan = Plan::first();
 
         Subscription::create([
-            'subscribable_type' => Shop::class,
-            'subscribable_id' => $shop->id,
-            'shop_id' => $shop->id,
+            'subscribable_type' => Company::class,
+            'subscribable_id' => $shop->company_id,
             'plan_id' => $plan->id,
             'status' => 'active',
             'starts_at' => '2026-09-09 00:00:00',

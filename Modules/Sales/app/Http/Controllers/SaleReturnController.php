@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Modules\Customer\Services\LoyaltyService;
 use Modules\Product\Models\Batch;
 use Modules\Product\Models\StockMovement;
 use Modules\Sales\Http\Requests\StoreSaleReturnRequest;
@@ -129,6 +130,7 @@ class SaleReturnController extends Controller
             $newDue = max($due - $reduceDue, 0);
             $status = $newDue <= 0 ? 'paid' : ($sale->paid_amount <= 0 ? 'due' : 'partial');
             $sale->update(['due_amount' => $newDue, 'payment_status' => $status]);
+            app(LoyaltyService::class)->syncSale($sale);
         });
 
         return redirect()->route('sales.ledger')->with('status', 'বিক্রয় ফেরত সফলভাবে সম্পন্ন হয়েছে');

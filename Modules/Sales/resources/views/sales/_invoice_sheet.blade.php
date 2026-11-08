@@ -271,10 +271,10 @@
                             <td style="padding:2px 0; text-align:right; white-space:nowrap;">৳{{ BanglaNumber::toBn(number_format((float) $sale->product_discount, 2)) }}</td>
                         </tr>
                     @endif
-                    @if ((float) ($sale->discount ?? 0) > 0)
+                    @if ((float) ($sale->discount ?? 0) + (float) ($sale->loyalty_discount ?? 0) > 0)
                         <tr>
                             <td style="padding:2px 0; text-align:left; color:#334155;">(-) ছাড়</td>
-                            <td style="padding:2px 0; text-align:right; white-space:nowrap;">৳{{ BanglaNumber::toBn(number_format((float) $sale->discount, 2)) }}</td>
+                            <td style="padding:2px 0; text-align:right; white-space:nowrap;">৳{{ BanglaNumber::toBn(number_format((float) $sale->discount + (float) $sale->loyalty_discount, 2)) }}</td>
                         </tr>
                     @endif
                     @if ((float) ($sale->tax ?? 0) > 0)

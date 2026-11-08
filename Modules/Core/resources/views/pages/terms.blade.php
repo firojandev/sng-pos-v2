@@ -1,8 +1,8 @@
 <x-core::legal-layout
     title="ব্যবহারের সাধারণ শর্তাবলী ও নীতিমালা"
     title-en="Terms of Service & General Operating Conditions"
-    subtitle="SNGPOS ক্লাউড প্ল্যাটফর্ম, পয়েন্ট অব সেল সফটওয়্যার এবং আনুষঙ্গিক ডিজিটাল সেবা ব্যবহারের বিধিবদ্ধ নিয়মাবলী, পারস্পরিক অধিকার ও দায়বদ্ধতা"
-    subtitle-en="Legally binding terms, mutual rights, operational guidelines, and service conditions governing the use of SNGPOS Cloud POS & ERP software"
+    subtitle="{{ $siteTitle }} ক্লাউড প্ল্যাটফর্ম, পয়েন্ট অব সেল সফটওয়্যার এবং আনুষঙ্গিক ডিজিটাল সেবা ব্যবহারের বিধিবদ্ধ নিয়মাবলী, পারস্পরিক অধিকার ও দায়বদ্ধতা"
+    subtitle-en="Legally binding terms, mutual rights, operational guidelines, and service conditions governing the use of {{ $siteTitle }} Cloud POS & ERP software"
     active="terms"
     badge="ব্যবহারের শর্তাবলী"
     badge-en="Terms of Service"
@@ -26,7 +26,7 @@
 >
     @php
         $siteTitle = \Modules\Core\Models\Setting::getSiteTitle();
-        $siteTitleBn = $siteTitle === 'SNGPOS' ? 'SNGPOS' : $siteTitle;
+        $siteTitleBn = $siteTitle === 'SNG ERP' ? 'SNG ERP' : $siteTitle;
         $content = \Modules\Core\Support\LandingPageContent::all();
         $supportPhone = $content['support_phone'] ?? '+880 1886 861430';
         $supportEmail = $content['support_email'] ?? 'support@softngear.com';

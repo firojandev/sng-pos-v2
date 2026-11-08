@@ -9,8 +9,8 @@ use Symfony\Component\HttpFoundation\Response;
 class EnsureSubscriptionActive
 {
     /**
-     * Block shop users once their subscription is suspended, cancelled, or
-     * past its trial/grace period. Super Admins, guests, shops with no
+     * Block shop users once their company's subscription is suspended,
+     * cancelled, or past its trial/grace period. Super Admins, guests, shops with no
      * subscription record yet, and the subscription page itself are always
      * let through so nobody gets locked out with no way to see why.
      */
@@ -26,7 +26,7 @@ class EnsureSubscriptionActive
             return $next($request);
         }
 
-        $subscription = $user->shop?->subscription();
+        $subscription = $user->shop?->billingSubscription();
 
         if (! $subscription || $subscription->isUsable()) {
             return $next($request);

@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Modules\Company\Models\Company;
 use Modules\Core\Support\Permissions;
 use Modules\Finance\Database\Seeders\AccountDatabaseSeeder;
 use Modules\Shop\Database\Seeders\ShopDatabaseSeeder;
@@ -14,10 +14,12 @@ use Modules\Shop\Models\Shop;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
+/**
+ * Seeds with model events on: the app relies on them to keep its data
+ * consistent (a shop gets its company, a user its shop membership).
+ */
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     /**
      * Seed the application's database.
      */
@@ -52,12 +54,28 @@ class DatabaseSeeder extends Seeder
             $superAdmin->syncRoles([$superAdminRole]);
         }
 
-        $demoShop = Shop::firstOrCreate(
-            ['slug' => 'rahim-general-store'],
+        // The Default Company groups every standalone shop; its admin sees them all.
+        $defaultCompany = Company::defaultCompany();
+        // Its own account (not a super admin: a super admin always gets the
+        // super admin dashboard), found by its username.
+        $defaultAdmin = User::firstOrCreate(
+            ['username' => 'SNGCompanyAdmin'],
             [
-                'name' => 'রহিম জেনারেল স্টোর',
+                'name' => 'Soft N Gear',
+                'phone' => '+8801886861430',
+                'password' => bcrypt('SNGAdmin@2026!'),
+                'email_verified_at' => now(),
+            ]
+        );
+        $defaultCompany->users()->syncWithoutDetaching([$defaultAdmin->id => ['role' => Company::ROLE_ADMIN, 'is_owner' => false]]);
+
+        // The demo shop is a standalone shop (its own plan, under the Default Company).
+        $demoShop = Shop::firstOrCreate(
+            ['slug' => 'sng-shop'],
+            [
+                'name' => 'Soft N Gear Shop',
                 'phone' => '+8801700000000',
-                'address' => 'মিরপুর-১০, ঢাকা-১২১৬',
+                'address' => 'Rajshahi, Bangladesh',
                 'status' => 'active',
             ]
         );
@@ -76,11 +94,16 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Admin',
                 'username' => 'SNGShopAdmin',
                 'password' => bcrypt('SNGAdmin@2026!'),
+                'email_verified_at' => now(),
             ]
         );
         setPermissionsTeamId($demoShop->id);
         $demoAdmin->syncRoles([$demoAdminRole]);
         setPermissionsTeamId(null);
+
+        // The demo shop admin owns the demo company.
+        $demoShop->users()->syncWithoutDetaching([$demoAdmin->id => ['role' => 'Admin', 'is_owner' => true]]);
+        $demoShop->company->users()->syncWithoutDetaching([$demoAdmin->id => ['role' => Company::ROLE_OWNER, 'is_owner' => true]]);
 
         $this->call(ShopDatabaseSeeder::class);
         $this->call(SubscriptionifySeeder::class);

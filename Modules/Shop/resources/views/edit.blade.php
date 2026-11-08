@@ -316,6 +316,46 @@
                         </div>
                     </div>
 
+                    {{-- Company: the shop's company and moving it to another company --}}
+                    <div class="panel" style="margin-top:0;">
+                        <div class="panel-head" style="padding:14px 18px; display:flex; align-items:center; justify-content:space-between;">
+                            <div class="panel-title" style="display:flex; align-items:center; gap:8px; font-size:15px;">
+                                <x-core::icon name="briefcase" size="18" style="color:var(--teal-800);" />
+                                <span class="bn">কোম্পানি</span>
+                                <span class="en" style="display:none;">Company</span>
+                            </div>
+                            <x-core::button :href="route('companies.edit', $shop->company)" size="sm" variant="soft" color="primary" icon="edit">
+                                {{ $shop->company->displayName() }}
+                            </x-core::button>
+                        </div>
+                        <div class="panel-body" style="padding:18px;">
+                            <p style="font-size:12.5px; color:var(--ink-600); margin:0 0 12px;">
+                                <span class="bn">দোকানটিকে অন্য কোম্পানিতে সরালে সেই কোম্পানির সাবস্ক্রিপশন প্রযোজ্য হবে। বর্তমান কোম্পানিতে আর কোনো দোকান না থাকলে সেটি আর্কাইভ হবে।</span>
+                                <span class="en" style="display:none;">Moving the shop puts it under the target company's subscription. If its current company is left without shops, that company is archived.</span>
+                            </p>
+                            <form method="POST" action="{{ route('shops.company.update', $shop) }}" style="display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap;">
+                                @csrf
+                                @method('PUT')
+                                <div style="flex:1; min-width:220px;">
+                                    <x-core::select
+                                        size="sm"
+                                        name="company_id"
+                                        label="কোম্পানিতে স্থানান্তর"
+                                        label-en="Move to Company"
+                                        :options="$companies->where('id', '!=', $shop->company_id)->mapWithKeys(fn ($company) => [$company->id => $company->name.' ('.$company->slug.')'])->all()"
+                                        placeholder="-- কোম্পানি নির্বাচন করুন --"
+                                        placeholder-en="-- Select a company --"
+                                        :required="true"
+                                    />
+                                </div>
+                                <x-core::button type="submit" size="sm" variant="solid" color="primary" icon="arrow-right">
+                                    <span class="bn">স্থানান্তর করুন</span>
+                                    <span class="en" style="display:none;">Move Shop</span>
+                                </x-core::button>
+                            </form>
+                        </div>
+                    </div>
+
                     {{-- Form 3: Shop Admins List & Add New Admin --}}
                     <div class="panel" style="margin-top:0;">
                         <div class="panel-head" style="padding:14px 18px; display:flex; align-items:center; justify-content:space-between;">

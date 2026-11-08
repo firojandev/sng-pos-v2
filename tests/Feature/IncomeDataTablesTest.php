@@ -54,6 +54,7 @@ class IncomeDataTablesTest extends TestCase
         $this->user = User::create([
             'name' => 'Income Admin',
             'email' => 'admin@income.test',
+            'email_verified_at' => now(),
             'password' => bcrypt('password'),
             'shop_id' => $this->shop->id,
         ]);

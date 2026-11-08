@@ -5,12 +5,15 @@ namespace Modules\Product\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use Modules\Product\Http\Controllers\Concerns\ChangesOwnCatalogueOnly;
 use Modules\Product\Http\Requests\StoreUnitRequest;
 use Modules\Product\Http\Requests\UpdateUnitRequest;
 use Modules\Product\Models\Unit;
 
 class UnitController extends Controller
 {
+    use ChangesOwnCatalogueOnly;
+
     public function index(): View
     {
         $units = Unit::withCount('products')->latest()->paginate(10);
@@ -32,11 +35,15 @@ class UnitController extends Controller
 
     public function edit(Unit $unit): View
     {
+        $this->ensureOwnRecord($unit);
+
         return view('product::units.edit', compact('unit'));
     }
 
     public function update(UpdateUnitRequest $request, Unit $unit): RedirectResponse
     {
+        $this->ensureOwnRecord($unit);
+
         $unit->update($request->validated());
 
         return redirect()->route('units.index')->with('status', 'ইউনিট হালনাগাদ করা হয়েছে');
@@ -44,6 +51,8 @@ class UnitController extends Controller
 
     public function destroy(Unit $unit): RedirectResponse
     {
+        $this->ensureOwnRecord($unit);
+
         if ($unit->products()->exists()) {
             return redirect()->route('units.index')->with('status', 'এই ইউনিট পণ্যে ব্যবহৃত হচ্ছে, মুছে ফেলা যাবে না');
         }

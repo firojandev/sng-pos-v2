@@ -482,7 +482,7 @@
                                     </td>
                                     <td>
                                         <x-core::badge color="blue" size="sm">
-                                            {{ $shop->activeSubscription?->plan?->name ?? 'Default' }}
+                                            {{ $shop->company?->activeSubscription?->plan?->name ?? 'Default' }}
                                         </x-core::badge>
                                     </td>
                                     <td>

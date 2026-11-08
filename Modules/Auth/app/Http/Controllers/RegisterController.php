@@ -12,9 +12,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 use Modules\Auth\Http\Requests\RegisterShopOwnerRequest;
+use Modules\Company\Models\Company;
 use Modules\Core\Models\Setting;
 use Modules\Finance\Models\Account;
 use Modules\Finance\Models\AccountTransaction;
+use Modules\Product\Models\Category;
 use Modules\Shop\Models\Branch;
 use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
@@ -40,6 +42,12 @@ class RegisterController extends Controller
 
         return view('auth::register', [
             'freePlan' => $freePlan,
+            'sharedCategories' => Category::withoutGlobalScopes()
+                ->whereNull('company_id')
+                ->where('type', 'product')
+                ->whereNull('parent_id')
+                ->orderBy('name')
+                ->get(['id', 'name']),
             'nextStoreCode' => Shop::generateNextStoreCode(),
         ]);
     }
@@ -111,43 +119,75 @@ class RegisterController extends Controller
                 'name' => $validated['name'],
                 'phone' => $validated['phone'],
                 'email' => $validated['email'],
-                'username' => $validated['username'] ?: null,
+                'username' => ($validated['username'] ?? null) ?: null,
                 'password' => Hash::make($validated['password']),
             ]);
 
-            // 2. Generate Store Code & Create Shop
+            // 2. A company registration creates the company (its plan covers
+            //    all its shops); a shop owner's shop is standalone (its own
+            //    plan, listed under the Default Company).
+            $company = ($validated['account_type'] ?? 'shop') === 'company'
+                ? Company::create([
+                    'name' => $validated['company_name'],
+                    'slug' => Company::generateUniqueSlug($validated['company_name']),
+                    'type' => Company::TYPE_COMPANY,
+                    'phone' => $validated['phone'],
+                    'email' => $validated['email'],
+                    'address' => ($validated['shop_address'] ?? null) ?: null,
+                    'status' => 'active',
+                ])
+                : null;
+
+            // 3. Generate Store Code & Create Shop
             $storeCode = Shop::generateNextStoreCode();
             $shop = Shop::create([
+                'company_id' => $company?->id,
                 'name' => $validated['shop_name'],
                 'slug' => $validated['shop_slug'],
                 'store_code' => $storeCode,
-                'phone' => $validated['shop_phone'] ?: $validated['phone'],
-                'address' => $validated['shop_address'] ?: null,
-                'currency_symbol' => $validated['currency_symbol'] ?: '৳',
+                'phone' => ($validated['shop_phone'] ?? null) ?: $validated['phone'],
+                'address' => ($validated['shop_address'] ?? null) ?: null,
+                'currency_symbol' => ($validated['currency_symbol'] ?? null) ?: '৳',
                 'status' => 'active',
             ]);
 
-            // 3. Link User to Shop
-            $owner->shop_id = $shop->id;
-            $owner->save();
+            // 4. A shop owner runs the shop (shop admin, POS); a company owner
+            //    works at company level and adds the shop's admin later.
+            if ($company) {
+                $company->users()->syncWithoutDetaching([$owner->id => ['role' => Company::ROLE_OWNER, 'is_owner' => true]]);
+                $shop->categories()->sync($validated['category_ids'] ?? []);
+            } else {
+                // 3. Link User to Shop
+                $owner->shop_id = $shop->id;
+                $owner->save();
 
-            // Set Spatie Team Scope for the Shop & Assign Admin Role
-            setPermissionsTeamId($shop->id);
-            $adminRole = Role::firstOrCreate([
-                'shop_id' => $shop->id,
-                'name' => 'Admin',
-                'guard_name' => 'web',
-            ]);
-            $owner->assignRole($adminRole);
-            setPermissionsTeamId(null);
+                // Set Spatie Team Scope for the Shop & Assign Admin Role
+                setPermissionsTeamId($shop->id);
+                $adminRole = Role::firstOrCreate([
+                    'shop_id' => $shop->id,
+                    'name' => 'Admin',
+                    'guard_name' => 'web',
+                ]);
+                $owner->assignRole($adminRole);
+                setPermissionsTeamId(null);
 
-            // Sync Pivot Table
-            $shop->users()->syncWithoutDetaching([
-                $owner->id => [
-                    'role' => 'Admin',
-                    'is_owner' => true,
-                ],
-            ]);
+                // Sync Pivot Table
+                $shop->users()->syncWithoutDetaching([
+                    $owner->id => [
+                        'role' => 'Admin',
+                        'is_owner' => true,
+                    ],
+                ]);
+
+                $shop->categories()->sync($validated['category_ids'] ?? []);
+
+                $shop->company->users()->syncWithoutDetaching([
+                    $owner->id => [
+                        'role' => Company::ROLE_OWNER,
+                        'is_owner' => true,
+                    ],
+                ]);
+            }
 
             // 4. Create Default Branch
             $branchName = ! empty($validated['branch_name']) ? trim($validated['branch_name']) : 'প্রধান শাখা';
@@ -209,9 +249,7 @@ class RegisterController extends Controller
                 ->first() ?? Plan::where('slug', 'free')->first();
 
             if ($freePlan) {
-                $shop->subscriptions()->create([
-                    'subscribable_type' => Shop::class,
-                    'subscribable_id' => $shop->id,
+                $shop->company->subscriptions()->create([
                     'plan_id' => $freePlan->id,
                     'status' => 'active',
                     'trial_ends_at' => null,

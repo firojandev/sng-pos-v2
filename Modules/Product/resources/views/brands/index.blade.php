@@ -22,7 +22,7 @@
                 @forelse ($brands as $brand)
                     <div class="mini-card pm-card">
                         <div class="mini-card-actions">
-                            @can('products.edit')
+                            @if (auth()->user()?->can('products.edit') && $brand->isEditableBy(auth()->user()))
                                 <x-core::button
                                     type="button"
                                     size="sm"
@@ -36,8 +36,8 @@
                                     data-description="{{ $brand->description }}"
                                     data-action="{{ route('brands.update', $brand) }}"
                                 />
-                            @endcan
-                            @can('products.delete')
+                            @endif
+                            @if (auth()->user()?->can('products.delete') && $brand->isEditableBy(auth()->user()))
                                 <form method="POST" action="{{ route('brands.destroy', $brand) }}" class="delete-form" style="display:inline;">
                                     @csrf
                                     @method('DELETE')
@@ -50,7 +50,7 @@
                                         title="Delete"
                                     />
                                 </form>
-                            @endcan
+                            @endif
                         </div>
                         <div class="row-avatar">
                             <div class="av" style="background:var(--teal-800);">{{ mb_substr($brand->name, 0, 1) }}</div>

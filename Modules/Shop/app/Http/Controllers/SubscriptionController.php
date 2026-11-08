@@ -14,7 +14,7 @@ class SubscriptionController extends Controller
     public function show(): View
     {
         $shop = auth()->user()->shop;
-        $subscription = $shop?->subscription();
+        $subscription = $shop?->billingSubscription();
         if ($subscription) {
             $subscription->loadMissing(['plan.features', 'payments']);
         }

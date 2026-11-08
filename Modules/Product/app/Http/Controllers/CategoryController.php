@@ -5,12 +5,15 @@ namespace Modules\Product\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use Modules\Product\Http\Controllers\Concerns\ChangesOwnCatalogueOnly;
 use Modules\Product\Http\Requests\StoreCategoryRequest;
 use Modules\Product\Http\Requests\UpdateCategoryRequest;
 use Modules\Product\Models\Category;
 
 class CategoryController extends Controller
 {
+    use ChangesOwnCatalogueOnly;
+
     public function index(): View
     {
         $categories = Category::parents()->withCount(['subCategories', 'products'])->latest()->paginate(10);
@@ -25,18 +28,25 @@ class CategoryController extends Controller
 
     public function store(StoreCategoryRequest $request): RedirectResponse
     {
-        Category::create($request->validated());
+        $category = Category::create($request->validated());
+
+        // A category a shop adds is one it sells.
+        auth()->user()->shop?->categories()->syncWithoutDetaching([$category->id]);
 
         return redirect()->route('categories.index')->with('status', 'ক্যাটাগরি সফলভাবে যোগ করা হয়েছে');
     }
 
     public function edit(Category $category): View
     {
+        $this->ensureOwnRecord($category);
+
         return view('product::categories.edit', compact('category'));
     }
 
     public function update(UpdateCategoryRequest $request, Category $category): RedirectResponse
     {
+        $this->ensureOwnRecord($category);
+
         $category->update($request->validated());
 
         return redirect()->route('categories.index')->with('status', 'ক্যাটাগরি হালনাগাদ করা হয়েছে');
@@ -44,6 +54,8 @@ class CategoryController extends Controller
 
     public function destroy(Category $category): RedirectResponse
     {
+        $this->ensureOwnRecord($category);
+
         if ($category->subCategories()->exists() || $category->products()->exists()) {
             return redirect()->route('categories.index')->with('status', 'এই ক্যাটাগরিতে সাব-ক্যাটাগরি/পণ্য যুক্ত আছে, মুছে ফেলা যাবে না');
         }

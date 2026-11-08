@@ -38,7 +38,16 @@
         </div>
     @endif
 
-    <div class="section-row" style="margin-bottom:16px; margin-top:16px; display:flex; align-items:center; justify-content:flex-end;">
+    <div class="section-row" style="margin-bottom:16px; margin-top:16px; display:flex; align-items:center; justify-content:flex-end; gap:8px;">
+        @can('assets.edit')
+            <form method="POST" action="{{ route('assets.depreciate') }}" class="delete-form" data-title="অবচয় পোস্ট করবেন?" data-text="সরলরেখা পদ্ধতির সম্পদের গত মাস পর্যন্ত বাকি অবচয় হিসাবে পোস্ট হবে।">
+                @csrf
+                <x-core::button type="submit" size="sm" variant="secondary" icon="trending-down">
+                    <span class="bn">অবচয় পোস্ট করুন</span>
+                    <span class="en" style="display:none;">Post Depreciation</span>
+                </x-core::button>
+            </form>
+        @endcan
         @can('assets.create')
             <x-core::button color="primary" size="sm" type="button" icon="plus" id="btn-open-create-asset-modal">
                 <span class="bn">নতুন সম্পদ</span>
@@ -130,6 +139,7 @@
                                         :options="[
                                             'flat' => ['bn' => 'ফ্ল্যাট (৳)', 'en' => 'Flat (৳)'],
                                             'percentage' => ['bn' => 'শতাংশ (%)', 'en' => 'Percent (%)'],
+                                            'straight_line' => ['bn' => 'সরলরেখা', 'en' => 'Straight-line'],
                                         ]"
                                     />
                                 </div>
@@ -175,6 +185,10 @@
                                 </div>
                             </div>
                         </x-core::form-group>
+
+                        <x-core::input name="purchase_date" id="create_asset_purchase_date" type="date" label="ক্রয়ের তারিখ" label-en="Purchase Date" size="sm" />
+
+                        <x-core::input name="residual_value" id="create_asset_residual_value" type="number" step="0.01" min="0" label="অবশিষ্ট মূল্য (সরলরেখা)" label-en="Residual Value (Straight-line)" placeholder="0.00" size="sm" :stepper="false" />
                     </div>
 
                     <div id="create_asset_net_preview" style="display:none; padding:8px 12px; border-radius:8px; background:var(--paper-line); border:1px solid var(--border); font-size:12.5px; align-items:center; justify-content:space-between;">
@@ -287,6 +301,7 @@
                                         :options="[
                                             'flat' => ['bn' => 'ফ্ল্যাট (৳)', 'en' => 'Flat (৳)'],
                                             'percentage' => ['bn' => 'শতাংশ (%)', 'en' => 'Percent (%)'],
+                                            'straight_line' => ['bn' => 'সরলরেখা', 'en' => 'Straight-line'],
                                         ]"
                                     />
                                 </div>
@@ -332,6 +347,10 @@
                                 </div>
                             </div>
                         </x-core::form-group>
+
+                        <x-core::input name="purchase_date" id="edit_asset_purchase_date" type="date" label="ক্রয়ের তারিখ" label-en="Purchase Date" size="sm" />
+
+                        <x-core::input name="residual_value" id="edit_asset_residual_value" type="number" step="0.01" min="0" label="অবশিষ্ট মূল্য (সরলরেখা)" label-en="Residual Value (Straight-line)" placeholder="0.00" size="sm" :stepper="false" />
                     </div>
 
                     <div id="edit_asset_net_preview" style="display:none; padding:8px 12px; border-radius:8px; background:var(--paper-line); border:1px solid var(--border); font-size:12.5px; align-items:center; justify-content:space-between;">
@@ -510,6 +529,8 @@
                             $('#edit_asset_validity').val(v || '');
                             $('#edit_asset_validity_unit').val(vu);
                             if (data.note !== undefined) $('#edit_asset_note').val(data.note || '');
+                            $('#edit_asset_purchase_date').val(data.purchase_date || '');
+                            $('#edit_asset_residual_value').val(data.residual_value || '');
                             updateEditNetPreview();
                         }
                     });

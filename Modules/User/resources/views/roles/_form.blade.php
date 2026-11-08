@@ -156,8 +156,8 @@
         'dashboard_overview' => [
             'title_bn' => 'ড্যাশবোর্ড ও পরিসংখ্যান',
             'title_en' => 'Dashboard & Statistics',
-            'subtitle_bn' => 'ড্যাশবোর্ড প্রবেশাধিকার এবং প্রতিটি পরিসংখ্যান কার্ডের অনুমতি',
-            'subtitle_en' => 'Dashboard access and permissions for individual stat cards',
+            'subtitle_bn' => 'ড্যাশবোর্ডের প্রতিটি পরিসংখ্যান কার্ডের অনুমতি',
+            'subtitle_en' => 'Permissions for individual dashboard stat cards',
             'icon' => 'layout-dashboard',
             'badge_color' => 'teal',
             'keys' => ['dashboard'],
@@ -637,25 +637,9 @@
                 {{-- DEDICATED DASHBOARD & STATS SELECTOR UI --}}
                 <div style="padding:16px 20px; background:var(--paper); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        @php
-                            $isDashboardViewChecked = in_array('dashboard.view', $currentPermissions);
-                        @endphp
-                        <x-core::checkbox
-                            size="md"
-                            color="primary"
-                            name="permissions[]"
-                            value="dashboard.view"
-                            class="perm-checkbox perm-col-view perm-domain-dashboard_overview"
-                            :checked="$isDashboardViewChecked"
-                        >
-                            <span style="font-size:13px; font-weight:700; color:var(--ink-900);">
-                                <span class="bn">ড্যাশবোর্ড প্রবেশাধিকার (Dashboard View Access)</span>
-                                <span class="en" style="display:none;">Dashboard View Access</span>
-                            </span>
-                        </x-core::checkbox>
                         <span style="font-size:12px; color:var(--ink-600);">
-                            <span class="bn">— মূল ড্যাশবোর্ড পেজে প্রবেশের অনুমতি</span>
-                            <span class="en" style="display:none;">— Permission to view main dashboard page</span>
+                            <span class="bn">সব ব্যবহারকারী ড্যাশবোর্ড দেখতে পারেন; নিচে কোন পরিসংখ্যান কার্ড দেখা যাবে তা নির্বাচন করুন</span>
+                            <span class="en" style="display:none;">Every user can open the dashboard; choose which stat cards they see below</span>
                         </span>
                     </div>
 
@@ -1096,7 +1080,7 @@ $(function () {
         'cashier': function () {
             $('input[name="permissions[]"]').prop('checked', false);
             var perms = [
-                'dashboard.view', 'dashboard.stat-sales', 'dashboard.stat-cash', 'dashboard.stat-receivable',
+                'dashboard.stat-sales', 'dashboard.stat-cash', 'dashboard.stat-receivable',
                 'sales.view', 'sales.create', 'sales.print',
                 'quick-sale.view', 'quick-sale.create',
                 'customers.view', 'customers.create', 'customers.payment',
@@ -1112,7 +1096,7 @@ $(function () {
         'inventory': function () {
             $('input[name="permissions[]"]').prop('checked', false);
             var perms = [
-                'dashboard.view', 'dashboard.stat-purchase', 'dashboard.stat-stock-qty', 'dashboard.stat-stock-value',
+                'dashboard.stat-purchase', 'dashboard.stat-stock-qty', 'dashboard.stat-stock-value',
                 'products.view', 'products.create', 'products.edit',
                 'stock.view', 'stock.create', 'stock.edit', 'stock.adjust', 'stock.transfer',
                 'purchase.view', 'purchase.create', 'purchase.edit', 'purchase.receive', 'purchase.return', 'purchase.print',
@@ -1127,7 +1111,7 @@ $(function () {
         'accountant': function () {
             $('input[name="permissions[]"]').prop('checked', false);
             var perms = [
-                'dashboard.view', 'dashboard.stat-balance', 'dashboard.stat-sales', 'dashboard.stat-purchase',
+                'dashboard.stat-balance', 'dashboard.stat-sales', 'dashboard.stat-purchase',
                 'dashboard.stat-expense', 'dashboard.stat-product-profit', 'dashboard.stat-total-profit',
                 'dashboard.stat-receivable', 'dashboard.stat-payable', 'dashboard.stat-cash', 'dashboard.stat-bank', 'dashboard.stat-mfs',
                 'income.view', 'income.create', 'income.edit',

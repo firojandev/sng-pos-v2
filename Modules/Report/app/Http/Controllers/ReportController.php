@@ -8,6 +8,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Modules\Core\Support\Features;
+use Modules\Core\Support\TenantContext;
 use Modules\Customer\Models\Customer;
 use Modules\Finance\Models\Account;
 use Modules\Finance\Models\AccountTransaction;
@@ -376,7 +377,7 @@ class ReportController extends Controller
                 'products.sku',
                 'products.purchase_price',
                 DB::raw('SUM(batches.quantity) as qty_on_hand'),
-                DB::raw('SUM(batches.quantity * products.purchase_price) as stock_value'),
+                DB::raw('SUM(batches.quantity * COALESCE(batches.unit_cost, products.purchase_price)) as stock_value'),
             ])
             ->orderBy('products.name')
             ->get();
@@ -484,8 +485,12 @@ class ReportController extends Controller
 
             $conversionFactor = $item->unitConversionFactor();
             $baseQty = (float) $item->quantity * $conversionFactor;
-            $purchasePriceUnit = (float) ($product->purchase_price ?? 0);
-            $purchaseCost = round($baseQty * $purchasePriceUnit, 2);
+            // The cost recorded when the line was sold (from its batch);
+            // older lines without one fall back to the product's price.
+            $purchaseCost = $item->cost_total !== null
+                ? round((float) $item->cost_total, 2)
+                : round($baseQty * (float) ($product->purchase_price ?? 0), 2);
+            $purchasePriceUnit = $baseQty > 0 ? round($purchaseCost / $baseQty, 4) : 0.0;
             $saleRevenue = (float) $item->total;
             $profit = round($saleRevenue - $purchaseCost, 2);
 
@@ -752,13 +757,17 @@ class ReportController extends Controller
         if ($asOf->isToday()) {
             return (float) Batch::query()
                 ->join('products', 'batches.product_id', '=', 'products.id')
-                ->sum(DB::raw('batches.quantity * products.purchase_price'));
+                ->sum(DB::raw('batches.quantity * COALESCE(batches.unit_cost, products.purchase_price)'));
         }
 
         $currentByProduct = Batch::query()
             ->join('products', 'batches.product_id', '=', 'products.id')
-            ->groupBy('products.id', 'products.purchase_price')
-            ->select(['products.id', 'products.purchase_price', DB::raw('SUM(batches.quantity) as qty')])
+            ->groupBy('products.id')
+            ->select([
+                'products.id',
+                DB::raw('SUM(batches.quantity) as qty'),
+                DB::raw('SUM(batches.quantity * COALESCE(batches.unit_cost, products.purchase_price)) as value'),
+            ])
             ->get()
             ->keyBy('id');
 
@@ -772,7 +781,9 @@ class ReportController extends Controller
         $total = 0.0;
         foreach ($currentByProduct as $productId => $row) {
             $historicalQty = (float) $row->qty - (float) ($futureChangeByProduct[$productId]->change_qty ?? 0);
-            $total += max($historicalQty, 0) * (float) $row->purchase_price;
+            // Value the historical quantity at the product's current average batch cost.
+            $averageCost = (float) $row->qty > 0 ? (float) $row->value / (float) $row->qty : 0.0;
+            $total += max($historicalQty, 0) * $averageCost;
         }
 
         return $total;
@@ -786,7 +797,7 @@ class ReportController extends Controller
      */
     private function customerReceivable(Carbon $asOf): float
     {
-        return (float) Customer::sum('opening_due')
+        return (float) Customer::createdAtShop(app(TenantContext::class)->shopId())->sum('opening_due')
             + (float) Sale::where('sale_date', '<=', $asOf)->sum('due_amount');
     }
 
@@ -797,7 +808,7 @@ class ReportController extends Controller
      */
     private function supplierPayable(Carbon $asOf): float
     {
-        return (float) Supplier::sum('opening_due')
+        return (float) Supplier::createdAtShop(app(TenantContext::class)->shopId())->sum('opening_due')
             + (float) Purchase::where('purchase_date', '<=', $asOf)->sum('due_amount');
     }
 

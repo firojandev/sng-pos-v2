@@ -23,9 +23,9 @@ class CustomerController extends Controller
     public function getMetrics(): array
     {
         $openingDueSum = (float) Customer::sum('opening_due');
-        $salesDueSum = (float) Sale::whereNotNull('customer_id')->sum('due_amount');
-        $totalSalesAmount = round((float) Sale::whereNotNull('customer_id')->sum('total'), 2);
-        $totalSalesCount = Sale::whereNotNull('customer_id')->count();
+        $salesDueSum = (float) Sale::withoutGlobalScope('shop')->whereIn('customer_id', Customer::query()->select('id'))->sum('due_amount');
+        $totalSalesAmount = round((float) Sale::withoutGlobalScope('shop')->whereIn('customer_id', Customer::query()->select('id'))->sum('total'), 2);
+        $totalSalesCount = Sale::withoutGlobalScope('shop')->whereIn('customer_id', Customer::query()->select('id'))->count();
         $totalDue = round($openingDueSum + $salesDueSum, 2);
         $paidTotal = max(0, round($totalSalesAmount - $salesDueSum, 2));
 

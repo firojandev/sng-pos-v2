@@ -49,6 +49,7 @@ class ProductSubscriptionPlanLimitTest extends TestCase
         $user = User::create([
             'name' => 'Shop Owner',
             'email' => 'owner-'.uniqid().'@test.com',
+            'email_verified_at' => now(),
             'password' => bcrypt('password'),
             'shop_id' => $shop->id,
         ]);

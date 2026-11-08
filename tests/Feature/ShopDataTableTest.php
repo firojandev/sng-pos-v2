@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Modules\Company\Models\Company;
 use Modules\Shop\Database\Seeders\SubscriptionifySeeder;
 use Modules\Shop\DataTables\ShopsDataTable;
 use Modules\Shop\Models\Plan;
@@ -105,6 +106,8 @@ class ShopDataTableTest extends TestCase
         Role::firstOrCreate(['name' => 'Shop Owner', 'guard_name' => 'web']);
 
         $response = $this->actingAs($user)->post(route('shops.store'), [
+            'company_mode' => 'new',
+            'new_company_name' => 'Test Company 108',
             'name' => 'Grand Market',
             'slug' => 'grand-market',
             'phone' => '01888999000',
@@ -136,6 +139,8 @@ class ShopDataTableTest extends TestCase
         $superAdmin = $this->createSuperAdmin();
 
         $response = $this->actingAs($superAdmin)->post(route('shops.store'), [
+            'company_mode' => 'new',
+            'new_company_name' => 'Test Company 139',
             'name' => 'Phone Only Store',
             'slug' => 'phone-only-store',
             'phone' => '01711223344',
@@ -170,6 +175,8 @@ class ShopDataTableTest extends TestCase
         $superAdmin = $this->createSuperAdmin();
 
         $response = $this->from(route('shops.create'))->actingAs($superAdmin)->post(route('shops.store'), [
+            'company_mode' => 'new',
+            'new_company_name' => 'Test Company 173',
             'name' => 'No Phone Shop',
             'slug' => 'no-phone-shop',
             'phone' => '',
@@ -292,8 +299,8 @@ class ShopDataTableTest extends TestCase
 
         $response->assertRedirect(route('shops.edit', $shop));
         $this->assertDatabaseHas('subscriptions', [
-            'subscribable_type' => Shop::class,
-            'subscribable_id' => $shop->id,
+            'subscribable_type' => Company::class,
+            'subscribable_id' => $shop->company_id,
             'plan_id' => $plan->id,
             'status' => 'active',
         ]);
@@ -305,6 +312,8 @@ class ShopDataTableTest extends TestCase
         Role::firstOrCreate(['name' => 'Owner', 'guard_name' => 'web']);
 
         $response = $this->actingAs($user)->post(route('shops.store'), [
+            'company_mode' => 'new',
+            'new_company_name' => 'Test Company 308',
             'name' => 'Bismillah Store',
             'slug' => 'bismillah-store',
             'store_code' => 'BISMILLAH-01',
@@ -377,6 +386,8 @@ class ShopDataTableTest extends TestCase
 
         // Trying to create duplicate store_code
         $response = $this->actingAs($user)->post(route('shops.store'), [
+            'company_mode' => 'new',
+            'new_company_name' => 'Test Company 380',
             'name' => 'Shop Two',
             'slug' => 'shop-two',
             'store_code' => 'CODE-100',
@@ -500,6 +511,8 @@ class ShopDataTableTest extends TestCase
         Role::firstOrCreate(['name' => 'Shop Owner', 'guard_name' => 'web']);
 
         $response = $this->actingAs($user)->post(route('shops.store'), [
+            'company_mode' => 'new',
+            'new_company_name' => 'Test Company 503',
             'name' => 'Auto Cash Shop',
             'slug' => 'auto-cash-shop',
             'phone' => '01711223344',
@@ -540,6 +553,8 @@ class ShopDataTableTest extends TestCase
         Role::firstOrCreate(['name' => 'Shop Owner', 'guard_name' => 'web']);
 
         $response = $this->actingAs($user)->post(route('shops.store'), [
+            'company_mode' => 'new',
+            'new_company_name' => 'Test Company 543',
             'name' => 'Custom Cash Shop',
             'slug' => 'custom-cash-shop',
             'phone' => '01755667788',

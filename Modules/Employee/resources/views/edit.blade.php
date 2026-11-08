@@ -21,7 +21,7 @@
             </div>
         </div>
 
-        <form method="POST" action="{{ route('employees.update', $employee) }}">
+        <form method="POST" action="{{ route('employees.update', $employee) }}" data-employee-form>
             @csrf
             @method('PUT')
             @include('employee::_form')

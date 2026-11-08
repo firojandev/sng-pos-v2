@@ -143,6 +143,7 @@ class AuthLoginTest extends TestCase
         $user = User::create([
             'name' => 'Auto Support Pin User',
             'email' => 'autopin@example.com',
+            'email_verified_at' => now(),
             'password' => 'password123',
         ]);
 
@@ -156,6 +157,7 @@ class AuthLoginTest extends TestCase
         $user = User::create([
             'name' => 'Dual Pin User',
             'email' => 'dualpin@example.com',
+            'email_verified_at' => now(),
             'password' => 'password123',
             'pin' => '1234',
             'support_pin' => '654321',
