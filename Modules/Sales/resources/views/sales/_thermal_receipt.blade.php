@@ -300,9 +300,11 @@
         </div>
     @endif
 
-    {{-- Bottom Greeting --}}
-    <div style="text-align:center; margin-top:3px; break-inside:avoid; padding-bottom:2mm; font-size:{{ $isCompact58 ? '9.5px' : '11px' }};">
-        <div>*** ধন্যবাদ, আবার আসবেন ***</div>
-        <div class="thermal-print-time" style="font-size:{{ $isCompact58 ? '10.5px' : '12px' }}; color:inherit; font-weight:400; line-height:1.35; margin-top:1px;">{{ $printTime }}</div>
+    {{-- Print Time & Credit --}}
+    <div style="margin-top:3px; break-inside:avoid; padding-bottom:2mm;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:4px; font-size:{{ $isCompact58 ? '7.5px' : '8.5px' }}; font-weight:400; line-height:1.3; color:inherit;">
+            <span class="thermal-print-time" style="text-align:left; white-space:nowrap;">{{ $printTime }}</span>
+            <span style="text-align:right; white-space:nowrap;">Developed by Soft N Gear</span>
+        </div>
     </div>
 </div>
