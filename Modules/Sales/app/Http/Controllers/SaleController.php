@@ -408,7 +408,9 @@ class SaleController extends Controller
 
             $submittedPayments = $data['payments'] ?? [];
             $totalSubmittedPaid = round(collect($submittedPayments)->sum(fn ($p) => (float) ($p['amount'] ?? 0)), 2);
-            $maxPayable = round($total + $customerPreviousDue, 2);
+            // Old due is only collected when the cashier ticks "collect previous due".
+            $collectPreviousDue = (bool) ($data['collect_previous_due'] ?? true);
+            $maxPayable = round($total + ($collectPreviousDue ? $customerPreviousDue : 0), 2);
 
             if ($customer && round($totalSubmittedPaid - $maxPayable, 2) > 0.01) {
                 throw ValidationException::withMessages([
@@ -431,6 +433,7 @@ class SaleController extends Controller
             $salePaid = min($totalSubmittedPaid, $total);
             $saleDue = round(max($total - $salePaid, 0), 2);
             $saleStatus = $saleDue <= 0 ? 'paid' : ($salePaid <= 0 ? 'due' : 'partial');
+            [$receivedAmount, $changeAmount] = $this->resolveReceivedAndChange($submittedPayments, $totalSubmittedPaid, $data['received_amount'] ?? null);
 
             $sale = Sale::create([
                 'customer_id' => $customerId,
@@ -447,6 +450,8 @@ class SaleController extends Controller
                 'total' => $total,
                 'paid_amount' => $salePaid,
                 'due_amount' => $saleDue,
+                'received_amount' => $receivedAmount,
+                'change_amount' => $changeAmount,
                 'profit' => 0,
                 'payment_status' => $saleStatus,
                 'note' => $data['note'] ?? null,
@@ -519,7 +524,9 @@ class SaleController extends Controller
 
             $submittedPayments = $data['payments'] ?? [];
             $totalSubmittedPaid = round(collect($submittedPayments)->sum(fn ($p) => (float) ($p['amount'] ?? 0)), 2);
-            $maxPayable = round($total + $customerPreviousDue, 2);
+            // Old due is only collected when the cashier ticks "collect previous due".
+            $collectPreviousDue = (bool) ($data['collect_previous_due'] ?? true);
+            $maxPayable = round($total + ($collectPreviousDue ? $customerPreviousDue : 0), 2);
 
             if ($customer && round($totalSubmittedPaid - $maxPayable, 2) > 0.01) {
                 throw ValidationException::withMessages([
@@ -542,6 +549,7 @@ class SaleController extends Controller
             $salePaid = min($totalSubmittedPaid, $total);
             $saleDue = round(max($total - $salePaid, 0), 2);
             $saleStatus = $saleDue <= 0 ? 'paid' : ($salePaid <= 0 ? 'due' : 'partial');
+            [$receivedAmount, $changeAmount] = $this->resolveReceivedAndChange($submittedPayments, $totalSubmittedPaid, $data['received_amount'] ?? null);
 
             $sale->update([
                 'customer_id' => $customerId,
@@ -558,6 +566,8 @@ class SaleController extends Controller
                 'total' => $total,
                 'paid_amount' => $salePaid,
                 'due_amount' => $saleDue,
+                'received_amount' => $receivedAmount,
+                'change_amount' => $changeAmount,
                 'profit' => 0,
                 'payment_status' => $saleStatus,
                 'note' => $data['note'] ?? null,
@@ -596,6 +606,27 @@ class SaleController extends Controller
         });
 
         return redirect()->route('sales.index')->with('status', 'বিক্রয় বাতিল করা হয়েছে');
+    }
+
+    /**
+     * Work out the cash the customer handed over and the change returned.
+     * Change only comes back from a cash payment, never a bank or mobile transfer.
+     *
+     * @param  array<int, array{method?: string, amount?: mixed}>  $payments
+     * @return array{0: float, 1: float}
+     */
+    private function resolveReceivedAndChange(array $payments, float $totalPaid, mixed $receivedAmount): array
+    {
+        $hasCashPayment = collect($payments)->contains(
+            fn (array $payment): bool => ($payment['method'] ?? null) === 'cash' && (float) ($payment['amount'] ?? 0) > 0
+        );
+
+        $received = round((float) ($receivedAmount ?? $totalPaid), 2);
+        if (! $hasCashPayment || $received < $totalPaid) {
+            $received = $totalPaid;
+        }
+
+        return [$received, round($received - $totalPaid, 2)];
     }
 
     /**

@@ -578,6 +578,14 @@
                 <b style="color:var(--red-600);">৳<span id="total_previous_due_display">0.00</span></b>
                 <input type="hidden" id="total_previous_due" value="0">
             </div>
+            <div id="collect-previous-due-row" style="display:none; margin-bottom:8px;">
+                <x-core::checkbox
+                    id="collect-previous-due-toggle"
+                    size="sm"
+                    label="পূর্বের বকেয়াও এই বিলের সাথে পরিশোধ নিন"
+                    label-en="Collect previous due with this bill"
+                />
+            </div>
             <div
                 style="border-top:2px dashed var(--border); margin-top:8px; padding-top:10px; display:flex; justify-content:space-between; align-items:center; font-size:16px; font-weight:700; color:var(--ink-900);">
                 <span class="bn">সর্বমোট</span>
@@ -657,6 +665,14 @@
                     <strong style="color: var(--red-600);">৳<span id="drawer-both-remaining-due">0.00</span></strong>
                 </span>
             </div>
+        </div>
+
+        <div id="drawer-change-box"
+             style="display:none; justify-content:space-between; align-items:center; margin-bottom:14px; padding:10px 12px; background:var(--green-100); border:1px solid var(--green-ic-bg); border-radius:8px; color:var(--green-ink);">
+            <span style="font-size:13px; font-weight:600;">
+                <span class="bn">গ্রাহককে ফেরত দিন</span><span class="en" style="display:none;">Change to Return</span>
+            </span>
+            <b style="font-size:18px;">৳<span id="drawer-change-amount">0.00</span></b>
         </div>
 
         <div style="margin-top:20px;">
@@ -1172,9 +1188,43 @@
         const tax = totalTax();
         const deliveryCharge = parseFloat($('#delivery-charge-input').val()) || 0;
         const adjustment = parseFloat($('#adjustment-input').val()) || 0;
-        const prevDueVal = parseFloat($('#total_previous_due').val()) || 0;
         const beforePoints = sub - discount + tax + deliveryCharge + adjustment;
-        return Math.max(0, beforePoints - loyaltyDiscount(beforePoints) + prevDueVal);
+        return Math.max(0, beforePoints - loyaltyDiscount(beforePoints) + collectedPreviousDue());
+    }
+
+    /**
+     * Previous due is part of the payable amount only when the cashier ticks
+     * "collect previous due".
+     */
+    function collectedPreviousDue() {
+        if (!$('#collect-previous-due-toggle').is(':checked')) {
+            return 0;
+        }
+        return parseFloat($('#total_previous_due').val()) || 0;
+    }
+
+    /**
+     * Split what the customer hands over into the amount recorded as paid and
+     * the change returned. Change only comes back from cash; a bank or mobile
+     * payment can never be more than the payable amount.
+     */
+    function paymentBreakdown(paymentType, total, cashVal, bankVal) {
+        const round2 = (n) => Math.round(n * 100) / 100;
+        if (paymentType === 'bank') {
+            return { received: bankVal, paid: bankVal, change: 0, cashPaid: 0, bankPaid: bankVal, isOverpaid: round2(bankVal - total) > 0.01 };
+        }
+        if (paymentType === 'both') {
+            const change = Math.max(0, round2(cashVal + bankVal - total));
+            const cashPaid = Math.max(0, round2(cashVal - change));
+            return { received: cashVal + bankVal, paid: cashPaid + bankVal, change, cashPaid, bankPaid: bankVal, isOverpaid: round2(bankVal - total) > 0.01 };
+        }
+        const change = Math.max(0, round2(cashVal - total));
+        return { received: cashVal, paid: round2(cashVal - change), change, cashPaid: round2(cashVal - change), bankPaid: 0, isOverpaid: false };
+    }
+
+    function showChange(change) {
+        $('#drawer-change-amount').text(fmt(change));
+        $('#drawer-change-box').css('display', change > 0.009 ? 'flex' : 'none');
     }
 
     let drawerMode = 'cash';
@@ -1212,9 +1262,8 @@
         return (!customerId || customerId === '__create_new__') && phone === '' && name === '';
     }
 
-    function checkOverpaymentWarning(totalPaid, maxTotal) {
+    function checkOverpaymentWarning(isOver, maxTotal) {
         const $overWarning = $('#drawer-overpayment-warning');
-        const isOver = (totalPaid - maxTotal) > 0.01;
         if (isOver) {
             $('#overpayment-max-display').text(fmt(maxTotal));
             $('#overpayment-max-display-en').text(fmt(maxTotal));
@@ -1249,27 +1298,33 @@
         const total = calcGrandTotalCost();
         const cashVal = parseFloat($('#drawer-cash-amount-input').val()) || 0;
         const bankVal = parseFloat($('#drawer-bank-amount-input').val()) || 0;
-        const totalPaid = cashVal + bankVal;
-        const remainingDue = Math.max(0, total - totalPaid);
+        const breakdown = paymentBreakdown('both', total, cashVal, bankVal);
+        const remainingDue = Math.max(0, total - breakdown.paid);
 
-        $('#drawer-both-total-paid').text(fmt(totalPaid));
+        $('#drawer-both-total-paid').text(fmt(breakdown.paid));
         $('#drawer-both-remaining-due').text(fmt(remainingDue));
+        showChange(breakdown.change);
 
         const isWalkinDue = checkWalkinDueWarning(remainingDue);
-        const isOverpaid = checkOverpaymentWarning(totalPaid, total);
+        const isOverpaid = checkOverpaymentWarning(breakdown.isOverpaid, total);
         syncSaveButtonState(isWalkinDue, isOverpaid);
     }
 
     function updateSingleAmountSummary() {
         const total = calcGrandTotalCost();
-        const paidVal = parseFloat($('#drawer-amount-input').val()) || 0;
-        const remainingDue = Math.max(0, total - paidVal);
+        const paymentType = $('#drawer-payment-type-select').val() || 'cash';
+        const enteredVal = parseFloat($('#drawer-amount-input').val()) || 0;
+        const breakdown = paymentType === 'bank'
+            ? paymentBreakdown('bank', total, 0, enteredVal)
+            : paymentBreakdown('cash', total, enteredVal, 0);
+        const remainingDue = Math.max(0, total - breakdown.paid);
 
-        $('#drawer-single-total-paid').text(fmt(paidVal));
+        $('#drawer-single-total-paid').text(fmt(breakdown.paid));
         $('#drawer-single-remaining-due').text(fmt(remainingDue));
+        showChange(breakdown.change);
 
         const isWalkinDue = checkWalkinDueWarning(remainingDue);
-        const isOverpaid = checkOverpaymentWarning(paidVal, total);
+        const isOverpaid = checkOverpaymentWarning(breakdown.isOverpaid, total);
         syncSaveButtonState(isWalkinDue, isOverpaid);
     }
 
@@ -1307,8 +1362,13 @@
             }
         }
 
-        updateBothAmountsSummary();
-        updateSingleAmountSummary();
+        if (($('#drawer-payment-type-select').val() || 'cash') === 'both') {
+            updateSingleAmountSummary();
+            updateBothAmountsSummary();
+        } else {
+            updateBothAmountsSummary();
+            updateSingleAmountSummary();
+        }
     }
 
     function recalcGrand() {
@@ -1567,6 +1627,10 @@
     });
 
     $(document).on('input change', '#discount-raw-input, #discount-type-select, #delivery-charge-input, #adjustment-input, #loyalty-points-input, #total_previous_due', function () {
+        recalcGrand();
+    });
+
+    $(document).on('change', '#collect-previous-due-toggle', function () {
         recalcGrand();
     });
 
@@ -1878,8 +1942,16 @@
     function updateCustomerDueNotice(customerId) {
         const $alertEl = $('#customer-due-alert');
         const cid = parseInt(customerId, 10);
+        const $collectRow = $('#collect-previous-due-row');
+        const previousCustomerId = $alertEl.data('customerId');
+        $alertEl.data('customerId', cid || null);
+        if (previousCustomerId !== (cid || null)) {
+            $('#collect-previous-due-toggle').prop('checked', false);
+        }
+
         if (!cid) {
             $alertEl.hide();
+            $collectRow.hide();
             $('#total_previous_due').val('0');
             $('#total_previous_due_display').text('0.00');
             updateGrandTotalCostDisplay();
@@ -1903,8 +1975,11 @@
 
         if (due > 0) {
             $alertEl.css('display', 'flex');
+            $collectRow.show();
         } else {
             $alertEl.hide();
+            $collectRow.hide();
+            $('#collect-previous-due-toggle').prop('checked', false);
         }
 
         updateGrandTotalCostDisplay();
@@ -2058,22 +2133,28 @@
 
         let paymentsToSubmit = [];
         let enteredTotalPayment = 0;
+        let receivedAmount = 0;
+        let changeAmount = 0;
 
         if (paymentType === 'cash') {
             let amount = parseFloat($('#drawer-amount-input').val()) || 0;
             if (drawerMode === 'cash' && amount <= 0 && !amountManuallyEdited) amount = total;
-            enteredTotalPayment = amount;
-            if (amount > 0) {
+            const breakdown = paymentBreakdown('cash', total, Math.max(0, amount), 0);
+            enteredTotalPayment = breakdown.paid;
+            receivedAmount = breakdown.received;
+            changeAmount = breakdown.change;
+            if (breakdown.cashPaid > 0) {
                 paymentsToSubmit.push({
                     account_id: defaultCashAccountId || '',
                     method: 'cash',
-                    amount: fmt(amount),
+                    amount: fmt(breakdown.cashPaid),
                 });
             }
         } else if (paymentType === 'bank') {
             let amount = parseFloat($('#drawer-amount-input').val()) || 0;
             if (drawerMode === 'cash' && amount <= 0 && !amountManuallyEdited) amount = total;
             enteredTotalPayment = amount;
+            receivedAmount = amount;
             if (amount > 0) {
                 paymentsToSubmit.push({
                     account_id: selectedBankAccountId || '',
@@ -2086,13 +2167,16 @@
             let bankAmount = parseFloat($('#drawer-bank-amount-input').val()) || 0;
             cashAmount = Math.max(0, cashAmount);
             bankAmount = Math.max(0, bankAmount);
-            enteredTotalPayment = cashAmount + bankAmount;
+            const breakdown = paymentBreakdown('both', total, cashAmount, bankAmount);
+            enteredTotalPayment = breakdown.paid;
+            receivedAmount = breakdown.received;
+            changeAmount = breakdown.change;
 
-            if (cashAmount > 0) {
+            if (breakdown.cashPaid > 0) {
                 paymentsToSubmit.push({
                     account_id: defaultCashAccountId || '',
                     method: 'cash',
-                    amount: fmt(cashAmount),
+                    amount: fmt(breakdown.cashPaid),
                 });
             }
             if (bankAmount > 0) {
@@ -2104,11 +2188,11 @@
             }
         }
 
-        return { total, enteredTotalPayment, paymentsToSubmit };
+        return { total, enteredTotalPayment, paymentsToSubmit, receivedAmount, changeAmount };
     }
 
     function renderSaleInvoicePreview() {
-        const { total, paymentsToSubmit } = buildSalePaymentsToSubmit();
+        const { total, paymentsToSubmit, receivedAmount, changeAmount } = buildSalePaymentsToSubmit();
         const totalPaid = paymentsToSubmit.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
         const sub = subtotal();
         const disc = discountAmount();
@@ -2117,8 +2201,9 @@
         const delCharge = parseFloat($('#delivery-charge-input').val()) || 0;
         const adj = parseFloat($('#adjustment-input').val()) || 0;
         const prevDue = parseFloat($('#total_previous_due').val()) || 0;
-        const curDue = Math.max(0, total - totalPaid);
-        const totalCustomerDue = prevDue + curDue;
+        const billTotal = total - collectedPreviousDue();
+        const curDue = Math.max(0, billTotal - totalPaid);
+        const totalCustomerDue = Math.max(0, prevDue + billTotal - totalPaid);
 
         const customerId = $('#customer-id-select').val();
         const custName = $('#customer-name-input').val() ? $('#customer-name-input').val().trim() : '';
@@ -2218,6 +2303,9 @@
 
         $('#sale-preview-grand-total').text('৳' + toBn(fmt(total)));
         $('#sale-preview-paid').text('৳' + toBn(fmt(totalPaid)));
+        $('#sale-preview-received').text('৳' + toBn(fmt(receivedAmount)));
+        $('#sale-preview-change').text('৳' + toBn(fmt(changeAmount)));
+        $('.sale-preview-change-tr').toggle(changeAmount > 0);
         $('#sale-preview-due').text('৳' + toBn(fmt(curDue)));
         if (curDue > 0) {
             $('#sale-preview-due').css('color', '#dc2626');
@@ -2310,6 +2398,9 @@
 
         $('#sale-thermal-preview-grand-total').text('৳' + toBn(fmt(total)));
         $('#sale-thermal-preview-paid').text('৳' + toBn(fmt(totalPaid)));
+        $('#sale-thermal-preview-received').text('৳' + toBn(fmt(receivedAmount)));
+        $('#sale-thermal-preview-change').text('৳' + toBn(fmt(changeAmount)));
+        $('.sale-preview-change-row').css('display', changeAmount > 0 ? 'flex' : 'none');
         $('#sale-thermal-preview-due').text('৳' + toBn(fmt(curDue)));
 
         if (customerId && customerId !== '__create_new__') {
@@ -2360,9 +2451,11 @@
         const $btn = $(this);
         $btn.prop('disabled', true).css('opacity', '0.7');
 
-        const { paymentsToSubmit } = buildSalePaymentsToSubmit();
+        const { paymentsToSubmit, receivedAmount } = buildSalePaymentsToSubmit();
         const $hiddenPayments = $('#hidden-payments-container');
         $hiddenPayments.empty();
+        $hiddenPayments.append(`<input type="hidden" name="collect_previous_due" value="${$('#collect-previous-due-toggle').is(':checked') ? 1 : 0}">`);
+        $hiddenPayments.append(`<input type="hidden" name="received_amount" value="${fmt(receivedAmount)}">`);
 
         paymentsToSubmit.forEach((p, idx) => {
             if (p.account_id) {

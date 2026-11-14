@@ -261,6 +261,17 @@
             <span>৳ {{ BanglaNumber::toBnMoney($sale->paid_amount) }}</span>
         </div>
 
+        @if ((float) $sale->change_amount > 0)
+            <div style="display:flex; justify-content:space-between; margin-bottom:1px;">
+                <span>গ্রহণ:</span>
+                <span>৳ {{ BanglaNumber::toBnMoney($sale->received_amount) }}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-weight:700; margin-bottom:1px;">
+                <span>ফেরত:</span>
+                <span>৳ {{ BanglaNumber::toBnMoney($sale->change_amount) }}</span>
+            </div>
+        @endif
+
         <div style="display:flex; justify-content:space-between; font-weight:700; color:var(--thermal-ink);">
             <span>বর্তমান বাকি:</span>
             <span>৳ {{ BanglaNumber::toBnMoney($sale->due_amount) }}</span>

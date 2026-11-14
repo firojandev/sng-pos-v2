@@ -31,7 +31,7 @@ class Sale extends Model
 
     protected $fillable = [
         'shop_id', 'warehouse_id', 'customer_id', 'invoice_no', 'public_token', 'sale_date',
-        'subtotal', 'discount', 'loyalty_points_redeemed', 'loyalty_discount', 'product_discount', 'tax', 'delivery_charge', 'adjustment', 'total', 'paid_amount', 'due_amount', 'profit',
+        'subtotal', 'discount', 'loyalty_points_redeemed', 'loyalty_discount', 'product_discount', 'tax', 'delivery_charge', 'adjustment', 'total', 'paid_amount', 'due_amount', 'received_amount', 'change_amount', 'profit',
         'payment_status', 'payment_method', 'note', 'employee_name', 'employee_phone',
     ];
 
@@ -48,6 +48,8 @@ class Sale extends Model
         'loyalty_discount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
         'due_amount' => 'decimal:2',
+        'received_amount' => 'decimal:2',
+        'change_amount' => 'decimal:2',
         'profit' => 'decimal:2',
     ];
 

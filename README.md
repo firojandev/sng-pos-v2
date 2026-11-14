@@ -61,3 +61,16 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+
+14/11/2026
+-- 1. Add the two columns
+ALTER TABLE `sales`
+    ADD `received_amount` DECIMAL(12, 2) NOT NULL DEFAULT 0.00 AFTER `due_amount`,
+    ADD `change_amount`   DECIMAL(12, 2) NOT NULL DEFAULT 0.00 AFTER `received_amount`;
+
+-- 2. Mark the migration as done so `php artisan migrate` won't try to add them again
+INSERT INTO `migrations` (`migration`, `batch`)
+SELECT '2026_11_14_225346_add_received_and_change_amount_to_sales_table',
+       COALESCE(MAX(`batch`), 0) + 1
+FROM `migrations`;

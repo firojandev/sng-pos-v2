@@ -394,4 +394,127 @@ class SalePreviousDuePaymentFeatureTest extends TestCase
 
         $response->assertSessionHasErrors(['payments']);
     }
+
+    public function test_cash_change_is_saved_without_collecting_previous_due(): void
+    {
+        // Bill 300, previous due 500 left untouched, customer hands over 500.
+        $response = $this->actingAs($this->user)->post(route('sales.store'), $this->salePayload([
+            'collect_previous_due' => 0,
+            'received_amount' => 500.00,
+            'payments' => [
+                ['account_id' => $this->cashAccount->id, 'method' => 'cash', 'amount' => 300.00],
+            ],
+        ]));
+
+        $response->assertRedirect(route('sales.index'));
+
+        $sale = Sale::latest('id')->first();
+        $this->assertEquals(300.00, (float) $sale->paid_amount);
+        $this->assertEquals(0.00, (float) $sale->due_amount);
+        $this->assertEquals(500.00, (float) $sale->received_amount);
+        $this->assertEquals(200.00, (float) $sale->change_amount);
+
+        $this->customer->refresh();
+        $this->assertEquals(500.00, (float) $this->customer->opening_due);
+
+        // Only the bill reaches the cash account, never the change.
+        $this->cashAccount->refresh();
+        $this->assertEquals(20300.00, (float) $this->cashAccount->current_balance);
+    }
+
+    public function test_payment_above_bill_is_rejected_when_previous_due_is_not_collected(): void
+    {
+        $response = $this->actingAs($this->user)->post(route('sales.store'), $this->salePayload([
+            'collect_previous_due' => 0,
+            'payments' => [
+                ['account_id' => $this->cashAccount->id, 'method' => 'cash', 'amount' => 600.00],
+            ],
+        ]));
+
+        $response->assertSessionHasErrors(['payments']);
+        $this->assertSame(0, Sale::count());
+    }
+
+    public function test_collecting_previous_due_settles_it_and_returns_change(): void
+    {
+        // Bill 300 + previous due 500 = 800 payable, customer hands over 1000.
+        $response = $this->actingAs($this->user)->post(route('sales.store'), $this->salePayload([
+            'collect_previous_due' => 1,
+            'received_amount' => 1000.00,
+            'payments' => [
+                ['account_id' => $this->cashAccount->id, 'method' => 'cash', 'amount' => 800.00],
+            ],
+        ]));
+
+        $response->assertRedirect(route('sales.index'));
+
+        $sale = Sale::latest('id')->first();
+        $this->assertEquals(300.00, (float) $sale->paid_amount);
+        $this->assertEquals(1000.00, (float) $sale->received_amount);
+        $this->assertEquals(200.00, (float) $sale->change_amount);
+
+        $this->customer->refresh();
+        $this->assertEquals(0.00, (float) $this->customer->opening_due);
+
+        $this->cashAccount->refresh();
+        $this->assertEquals(20800.00, (float) $this->cashAccount->current_balance);
+    }
+
+    public function test_walk_in_cash_sale_saves_change(): void
+    {
+        $response = $this->actingAs($this->user)->post(route('sales.store'), $this->salePayload([
+            'customer_id' => null,
+            'received_amount' => 500.00,
+            'payments' => [
+                ['account_id' => $this->cashAccount->id, 'method' => 'cash', 'amount' => 300.00],
+            ],
+        ]));
+
+        $response->assertRedirect(route('sales.index'));
+
+        $sale = Sale::latest('id')->first();
+        $this->assertNull($sale->customer_id);
+        $this->assertEquals(500.00, (float) $sale->received_amount);
+        $this->assertEquals(200.00, (float) $sale->change_amount);
+    }
+
+    public function test_bank_payment_never_produces_change(): void
+    {
+        $response = $this->actingAs($this->user)->post(route('sales.store'), $this->salePayload([
+            'collect_previous_due' => 0,
+            'received_amount' => 500.00,
+            'payments' => [
+                ['account_id' => $this->bankAccount->id, 'method' => 'bank', 'amount' => 300.00],
+            ],
+        ]));
+
+        $response->assertRedirect(route('sales.index'));
+
+        $sale = Sale::latest('id')->first();
+        $this->assertEquals(300.00, (float) $sale->received_amount);
+        $this->assertEquals(0.00, (float) $sale->change_amount);
+    }
+
+    /**
+     * A 300 bill (2 x 150) for the test customer, merged with the given overrides.
+     *
+     * @param  array<string, mixed>  $overrides
+     * @return array<string, mixed>
+     */
+    private function salePayload(array $overrides = []): array
+    {
+        return array_merge([
+            'warehouse_id' => $this->warehouse->id,
+            'customer_id' => $this->customer->id,
+            'sale_date' => now()->toDateString(),
+            'items' => [
+                [
+                    'product_id' => $this->product->id,
+                    'quantity' => 2,
+                    'unit_price' => 150.00,
+                    'discount' => 0,
+                ],
+            ],
+        ], $overrides);
+    }
 }
