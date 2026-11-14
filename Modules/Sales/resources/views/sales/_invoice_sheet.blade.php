@@ -306,6 +306,16 @@
                         <td style="padding:2px 0; text-align:left; color:#334155;">পরিশোধিত</td>
                         <td style="padding:2px 0; text-align:right; font-weight:600; white-space:nowrap;">৳{{ BanglaNumber::toBn(number_format((float) $sale->paid_amount, 2)) }}</td>
                     </tr>
+                    @if ((float) $sale->change_amount > 0)
+                        <tr>
+                            <td style="padding:2px 0; text-align:left; color:#334155;">গ্রহণকৃত</td>
+                            <td style="padding:2px 0; text-align:right; font-weight:600; white-space:nowrap;">৳{{ BanglaNumber::toBn(number_format((float) $sale->received_amount, 2)) }}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:2px 0; text-align:left; color:#334155;">ফেরত</td>
+                            <td style="padding:2px 0; text-align:right; font-weight:700; white-space:nowrap;">৳{{ BanglaNumber::toBn(number_format((float) $sale->change_amount, 2)) }}</td>
+                        </tr>
+                    @endif
                     <tr>
                         <td style="padding:2px 0; text-align:left; color:#334155;">বাকি আছে</td>
                         <td style="padding:2px 0; text-align:right; font-weight:600; {{ (float)$sale->due_amount > 0 ? 'color:#dc2626;' : '' }} white-space:nowrap;">

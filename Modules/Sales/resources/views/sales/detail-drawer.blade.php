@@ -135,6 +135,16 @@
             @endif
         </span>
     </div>
+    @if ((float) $sale->change_amount > 0)
+        <div class="tx-row">
+            <span class="lbl bn">গ্রহণকৃত টাকা</span><span class="lbl en" style="display:none;">Cash Received</span>
+            <span class="val" style="font-family:var(--font-mono, monospace);">৳{{ number_format((float) $sale->received_amount, 2) }}</span>
+        </div>
+        <div class="tx-row">
+            <span class="lbl bn">ফেরত</span><span class="lbl en" style="display:none;">Change Returned</span>
+            <span class="val" style="font-weight:700; color:var(--teal-800); font-family:var(--font-mono, monospace);">৳{{ number_format((float) $sale->change_amount, 2) }}</span>
+        </div>
+    @endif
     @if (isset($settledPreviousDue) && $settledPreviousDue > 0)
         <div class="tx-row">
             <span class="lbl bn">পূর্ববর্তী বকেয়া সমন্বয়</span><span class="lbl en" style="display:none;">Previous Due Paid</span>

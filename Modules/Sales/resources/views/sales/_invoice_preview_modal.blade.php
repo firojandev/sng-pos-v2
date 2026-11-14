@@ -128,6 +128,14 @@
                             <span>পরিশোধ:</span>
                             <span id="sale-thermal-preview-paid">৳০.০০</span>
                         </div>
+                        <div class="sale-preview-change-row" style="display:none; justify-content:space-between;">
+                            <span>গ্রহণ:</span>
+                            <span id="sale-thermal-preview-received">৳০.০০</span>
+                        </div>
+                        <div class="sale-preview-change-row" style="display:none; justify-content:space-between; font-weight:700;">
+                            <span>ফেরত:</span>
+                            <span id="sale-thermal-preview-change">৳০.০০</span>
+                        </div>
                         <div style="display:flex; justify-content:space-between; font-weight:600;">
                             <span>বর্তমান বাকি:</span>
                             <span id="sale-thermal-preview-due">৳০.০০</span>
@@ -330,6 +338,14 @@
                                     <tr>
                                         <td style="padding:2px 0; text-align:left; color:#334155;">পরিশোধিত</td>
                                         <td style="padding:2px 0; text-align:right; font-weight:600; white-space:nowrap;" id="sale-preview-paid">৳০.০০</td>
+                                    </tr>
+                                    <tr class="sale-preview-change-tr" style="display:none;">
+                                        <td style="padding:2px 0; text-align:left; color:#334155;">গ্রহণকৃত</td>
+                                        <td style="padding:2px 0; text-align:right; font-weight:600; white-space:nowrap;" id="sale-preview-received">৳০.০০</td>
+                                    </tr>
+                                    <tr class="sale-preview-change-tr" style="display:none;">
+                                        <td style="padding:2px 0; text-align:left; color:#334155;">ফেরত</td>
+                                        <td style="padding:2px 0; text-align:right; font-weight:700; white-space:nowrap;" id="sale-preview-change">৳০.০০</td>
                                     </tr>
                                     <tr>
                                         <td style="padding:2px 0; text-align:left; color:#334155;">বাকি আছে</td>

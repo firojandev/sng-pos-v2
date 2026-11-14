@@ -30,6 +30,8 @@ class UpdateSaleRequest extends FormRequest
             'adjustment' => ['nullable', 'numeric'],
             'employee_name' => ['nullable', 'string', 'max:255'],
             'employee_phone' => ['nullable', 'string', 'max:30'],
+            'collect_previous_due' => ['nullable', 'boolean'],
+            'received_amount' => ['nullable', 'numeric', 'min:0'],
             'payments' => ['nullable', 'array'],
             'payments.*.account_id' => ['nullable', 'exists:accounts,id'],
             'payments.*.method' => ['required', 'in:'.implode(',', PaymentMethods::keys())],
