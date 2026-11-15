@@ -269,6 +269,22 @@
     #sale-date-wrapper .form-group, #drawer-payment-type-group .form-group {
         margin-top: 0 !important;
     }
+
+    #drawer-amount-input,
+    #drawer-cash-amount-input,
+    #drawer-bank-amount-input {
+        -moz-appearance: textfield;
+        appearance: textfield;
+    }
+    #drawer-amount-input::-webkit-inner-spin-button,
+    #drawer-amount-input::-webkit-outer-spin-button,
+    #drawer-cash-amount-input::-webkit-inner-spin-button,
+    #drawer-cash-amount-input::-webkit-outer-spin-button,
+    #drawer-bank-amount-input::-webkit-inner-spin-button,
+    #drawer-bank-amount-input::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
 </style>
 
 <div class="drawer-backdrop" id="confirmPaymentDrawer">
@@ -602,8 +618,8 @@
                 step="0.01"
                 min="0"
                 id="drawer-amount-input"
-                label="টাকার পরিমান"
-                label-en="Amount"
+                label="গৃহীত অর্থ"
+                label-en="Received Amount"
                 size="sm"
                 style="text-align: right;"
                 value="{{ $initialPaymentType === 'bank' ? $initialBankAmount : ($initialPaymentType === 'cash' ? $initialCashAmount : $initialAmount) }}"
@@ -1632,6 +1648,14 @@
 
     $(document).on('change', '#collect-previous-due-toggle', function () {
         recalcGrand();
+    });
+
+    $('#drawer-amount-input, #drawer-cash-amount-input, #drawer-bank-amount-input').each(function () {
+        this.addEventListener('wheel', function (e) {
+            if (document.activeElement === this) {
+                e.preventDefault();
+            }
+        }, { passive: false });
     });
 
     $(document).on('input', '#drawer-amount-input', function () {
