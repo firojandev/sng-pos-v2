@@ -362,7 +362,8 @@
         </div>
 
         <div style="margin-bottom:14px;">
-            <x-core::textarea
+            <x-core::input
+                type="text"
                 name="note"
                 id="drawer-note-input"
                 label="মন্তব্য লিখুন"
@@ -370,8 +371,7 @@
                 size="sm"
                 placeholder="ঐচ্ছিক নোট"
                 placeholder-en="Optional note"
-                :rows="2"
-                value="{{ $initialNote }}"
+                :value="$initialNote"
             />
         </div>
 
