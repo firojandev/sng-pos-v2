@@ -196,7 +196,7 @@ class TaskManagementTest extends TestCase
         $this->post(route('tasks.store'), ['title' => 'Do my work', 'assigned_to' => $this->karim->id])->assertForbidden();
         $this->assertSame(1, Task::count());
 
-        $this->get(route('dashboard'))->assertOk()->assertSee('My Tasks');
+        $this->get(route('dashboard'))->assertOk()->assertSee('My Tasks')->assertSee('id="my-tasks-toggle"', false);
     }
 
     public function test_employees_only_see_their_own_tasks_and_managers_see_all(): void

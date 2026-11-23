@@ -80,6 +80,7 @@ class Permissions
             'printer-settings' => ['view', 'edit'],
             'whatsapp-settings' => ['view', 'edit'],
             'cashbox' => ['view', 'cash-in', 'cash-out'],
+            'cash-reconciliation' => ['view', 'open', 'close'],
             'backup' => ['view', 'create', 'download', 'delete'],
         ];
     }
@@ -108,6 +109,8 @@ class Permissions
             'manage' => ['bn' => 'সবার কাজ দেখা ও পরিচালনা', 'en' => 'See & Manage All'],
             'cash-in' => ['bn' => 'ক্যাশ ইন', 'en' => 'Cash In'],
             'cash-out' => ['bn' => 'ক্যাশ আউট', 'en' => 'Cash Out'],
+            'open' => ['bn' => 'সেশন চালু', 'en' => 'Open Session'],
+            'close' => ['bn' => 'সেশন বন্ধ', 'en' => 'Close Session'],
             'stat-balance' => ['bn' => 'মোট ব্যালেন্স', 'en' => 'Total Balance'],
             'stat-sales' => ['bn' => 'বিক্রি', 'en' => 'Sale'],
             'stat-purchase' => ['bn' => 'ক্রয়', 'en' => 'Purchase'],

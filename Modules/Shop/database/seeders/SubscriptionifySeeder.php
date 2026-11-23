@@ -53,6 +53,7 @@ class SubscriptionifySeeder extends Seeder
             'sales' => ['name' => 'বিক্রয় (Sales)', 'sort_order' => 10],
             'purchase' => ['name' => 'ক্রয় (Purchase)', 'sort_order' => 11],
             'cashbox' => ['name' => 'ক্যাশবক্স (Cashbox)', 'sort_order' => 12],
+            'cash-reconciliation' => ['name' => 'ক্যাশ মিলানো (Cash Reconciliation)', 'sort_order' => 12],
             'quick-sale' => ['name' => 'দ্রুত বেচা (Quick Sale POS)', 'sort_order' => 13],
             'stock' => ['name' => 'স্টক ট্র্যাকিং (Stock Tracking)', 'sort_order' => 14],
             'products' => ['name' => 'পণ্য ব্যবস্থাপনা (Product Management)', 'sort_order' => 15],
@@ -200,7 +201,7 @@ class SubscriptionifySeeder extends Seeder
 
         // The ERP modules (HR, payroll, accounting, loyalty, tasks) come with
         // every plan; the super admin can take them off a plan later.
-        $erpModules = ['employees', 'attendance', 'leave', 'hr-setup', 'payroll', 'payroll-setup', 'accounting', 'loyalty', 'tasks'];
+        $erpModules = ['employees', 'attendance', 'leave', 'hr-setup', 'payroll', 'payroll-setup', 'accounting', 'loyalty', 'tasks', 'cash-reconciliation'];
 
         foreach ($plans as $planData) {
             $limits = $planData['limits'];
