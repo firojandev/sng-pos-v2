@@ -8,6 +8,7 @@
     @php
         $rangeLabels = [
             'today' => ['bn' => 'আজকের', 'en' => "Today's"],
+            'yesterday' => ['bn' => 'গতকালের', 'en' => "Yesterday's"],
             'week' => ['bn' => 'এই সপ্তাহের', 'en' => "This week's"],
             'month' => ['bn' => 'এই মাসের', 'en' => "This month's"],
             'year' => ['bn' => 'এই বছরের', 'en' => "This year's"],
@@ -205,4 +206,101 @@
             />
         @endif
     </div>
+
+    @if ($canViewSales)
+        <div class="panel" style="margin-top:20px;">
+            <div class="panel-head">
+                <div>
+                    <div class="panel-title">
+                        <span class="bn">সর্বাধিক বিক্রিত ১০টি পণ্য</span>
+                        <span class="en" style="display:none;">Top 10 Selling Products</span>
+                    </div>
+                    <div style="font-size:12px; color:var(--ink-400); margin-top:2px;">
+                        <span class="bn">{{ $rangeLabel['bn'] }} বিক্রির পরিমাণ অনুযায়ী</span>
+                        <span class="en" style="display:none;">By sales amount — {{ $rangeLabel['en'] }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="panel-body" style="padding:16px 20px 18px;">
+                @if (count($topSellingProducts) > 0)
+                    <div style="position:relative; width:100%; height:{{ max(180, count($topSellingProducts) * 34 + 40) }}px;">
+                        <canvas id="topSellingProductsChart"></canvas>
+                    </div>
+                @else
+                    <x-core::table.empty
+                        icon="bar-chart-2"
+                        title="এই সময়ে কোনো বিক্রি নেই"
+                        title-en="No sales in this period"
+                    />
+                @endif
+            </div>
+        </div>
+    @endif
+
+    @if ($canViewSales && count($topSellingProducts) > 0)
+        @push('scripts')
+            <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+            <script>
+                $(function () {
+                    const chartCanvas = document.getElementById('topSellingProductsChart');
+                    if (! chartCanvas || typeof Chart === 'undefined') {
+                        return;
+                    }
+
+                    const isDark = $('html').attr('data-theme') === 'dark';
+                    const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)';
+                    const textColor = isDark ? '#94a3b8' : '#64748b';
+                    const products = @json($topSellingProducts);
+                    const fontFamily = "'Noto Sans Bengali', 'SolaimanLipi', 'Hind Siliguri', 'Plus Jakarta Sans', 'Inter', sans-serif";
+
+                    new Chart(chartCanvas, {
+                        type: 'bar',
+                        data: {
+                            labels: products.map(p => p.name.length > 28 ? p.name.slice(0, 27) + '…' : p.name),
+                            datasets: [{
+                                data: products.map(p => p.amount),
+                                backgroundColor: 'rgba(13, 148, 136, 0.75)',
+                                hoverBackgroundColor: 'rgba(13, 148, 136, 0.95)',
+                                borderRadius: 4,
+                                maxBarThickness: 22,
+                            }]
+                        },
+                        options: {
+                            indexAxis: 'y',
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    backgroundColor: isDark ? '#1e293b' : '#0f172a',
+                                    titleColor: '#ffffff',
+                                    bodyColor: '#e2e8f0',
+                                    padding: 10,
+                                    callbacks: {
+                                        title: ctx => products[ctx[0].dataIndex].name,
+                                        label: ctx => ' ৳' + Number(ctx.raw).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    grid: { color: gridColor },
+                                    ticks: {
+                                        color: textColor,
+                                        font: { family: fontFamily, size: 10.5 },
+                                        callback: val => '৳' + Number(val).toLocaleString('en-US'),
+                                    }
+                                },
+                                y: {
+                                    grid: { display: false },
+                                    ticks: { color: textColor, font: { family: fontFamily, size: 11.5 } }
+                                }
+                            }
+                        }
+                    });
+                });
+            </script>
+        @endpush
+    @endif
 </x-core::layout>

@@ -19,6 +19,7 @@ use Modules\Finance\Models\Income;
 use Modules\Product\Models\Batch;
 use Modules\Purchase\Models\Purchase;
 use Modules\Sales\Models\Sale;
+use Modules\Sales\Services\TopSellingProducts;
 use Modules\Shop\Models\Plan;
 use Modules\Shop\Models\Shop;
 use Modules\Shop\Models\Subscription;
@@ -62,7 +63,7 @@ class PageController extends Controller
         $canViewMfs = $can('dashboard.stat-mfs');
 
         $range = $request->query('range', 'today');
-        $range = in_array($range, ['today', 'week', 'month', 'year', 'all'], true) ? $range : 'today';
+        $range = array_key_exists($range, TopSellingProducts::RANGES) ? $range : 'today';
 
         [$from, $to] = $this->rangeBounds($range);
 
@@ -73,6 +74,8 @@ class PageController extends Controller
                 ->when($to, fn ($q) => $q->whereDate('sale_date', '<=', $to))
                 ->sum('total');
         }
+
+        $topSellingProducts = $canViewSales ? app(TopSellingProducts::class)->between($from, $to) : [];
 
         $purchaseTotal = 0.0;
         if ($canViewPurchase) {
@@ -172,6 +175,7 @@ class PageController extends Controller
             'range' => $range,
             'balance' => $balance,
             'saleTotal' => $saleTotal,
+            'topSellingProducts' => $topSellingProducts,
             'purchaseTotal' => $purchaseTotal,
             'expenseTotal' => $expenseTotal,
             'productProfit' => $productProfit,
@@ -206,13 +210,7 @@ class PageController extends Controller
      */
     private function rangeBounds(string $range): array
     {
-        return match ($range) {
-            'today' => [now()->toDateString(), now()->toDateString()],
-            'week' => [now()->startOfWeek()->toDateString(), now()->toDateString()],
-            'month' => [now()->startOfMonth()->toDateString(), now()->toDateString()],
-            'year' => [now()->startOfYear()->toDateString(), now()->toDateString()],
-            default => [null, null],
-        };
+        return TopSellingProducts::rangeBounds($range);
     }
 
     public function sales(): View

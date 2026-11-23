@@ -121,6 +121,14 @@
                         '<rect x="2.5" y="6" width="19" height="13" rx="2" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12.5" r="3" stroke="currentColor" stroke-width="1.6"/><path d="M2.5 9.5h3M18.5 15.5h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
                 ],
                 [
+                    'key' => 'cash-reconciliation',
+                    'route' => 'cash-reconciliation.index',
+                    'bn' => 'ক্যাশ মিলানো',
+                    'en' => 'Cash Reconciliation',
+                    'icon' =>
+                        '<rect x="2.5" y="6" width="19" height="13" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M8.5 12.5l2.4 2.4 4.6-4.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
+                ],
+                [
                     'key' => 'sales-ledger',
                     'permission' => 'sales',
                     'route' => 'sales.ledger',

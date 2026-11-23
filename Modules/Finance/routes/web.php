@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Finance\Http\Controllers\AccountController;
 use Modules\Finance\Http\Controllers\AccountTransferController;
+use Modules\Finance\Http\Controllers\CashReconciliationController;
 use Modules\Finance\Http\Controllers\ExpenseCategoryController;
 use Modules\Finance\Http\Controllers\ExpenseController;
 use Modules\Finance\Http\Controllers\ExpenseSubCategoryController;
@@ -63,4 +64,12 @@ Route::middleware(['auth', 'feature:account-transfers'])->group(function () {
         ->middlewareFor(['index'], 'permission:account-transfers.view')
         ->middlewareFor(['create', 'store'], 'permission:account-transfers.create')
         ->middlewareFor(['destroy'], 'permission:account-transfers.delete');
+});
+
+Route::middleware(['auth', 'feature:cash-reconciliation'])->prefix('cash-reconciliation')->name('cash-reconciliation.')->group(function () {
+    Route::get('/', [CashReconciliationController::class, 'index'])->name('index')->middleware('permission:cash-reconciliation.view');
+    Route::get('accounts/{account}/open', [CashReconciliationController::class, 'create'])->name('create')->middleware('permission:cash-reconciliation.open');
+    Route::post('accounts/{account}/open', [CashReconciliationController::class, 'store'])->name('store')->middleware('permission:cash-reconciliation.open');
+    Route::get('sessions/{cashSession}', [CashReconciliationController::class, 'show'])->name('show')->middleware('permission:cash-reconciliation.view');
+    Route::post('sessions/{cashSession}/close', [CashReconciliationController::class, 'close'])->name('close')->middleware('permission:cash-reconciliation.close');
 });

@@ -1,13 +1,27 @@
 @php $labels = \Modules\Task\Models\Task::statusLabels(); @endphp
 
-<div class="panel" style="margin-top:16px;">
+<div class="panel" id="my-tasks-panel" style="margin-top:16px; margin-bottom:20px;">
     <div class="panel-head" style="display:flex; justify-content:space-between; align-items:center;">
         <div class="panel-title"><span class="bn">আমার টাস্ক</span><span class="en" style="display:none;">My Tasks</span>
             <span style="font-size:12px; font-weight:500; color:var(--ink-500);">· {{ $myTasks['open'] }} <span class="bn">চলমান</span><span class="en" style="display:none;">open</span>{{ $myTasks['overdue'] ? ' · ' : '' }}@if ($myTasks['overdue'])<span style="color:var(--red-600);">{{ $myTasks['overdue'] }} <span class="bn">সময় পেরিয়েছে</span><span class="en" style="display:none;">overdue</span></span>@endif</span>
         </div>
-        <x-core::button as="a" href="{{ route('tasks.index') }}" size="sm" variant="secondary" icon="list"><span class="bn">সব টাস্ক</span><span class="en" style="display:none;">All Tasks</span></x-core::button>
+        <div style="display:flex; align-items:center; gap:8px;">
+            <x-core::button as="a" href="{{ route('tasks.index') }}" size="sm" variant="secondary" icon="list"><span class="bn">সব টাস্ক</span><span class="en" style="display:none;">All Tasks</span></x-core::button>
+            <x-core::button
+                type="button"
+                size="sm"
+                variant="secondary"
+                id="my-tasks-toggle"
+                aria-controls="my-tasks-body"
+                aria-expanded="true"
+                title="দেখান / লুকান — Show / Hide"
+            >
+                <span class="my-tasks-toggle-hide"><x-core::icon name="eye-off" size="14" /> <span class="bn">লুকান</span><span class="en" style="display:none;">Hide</span></span>
+                <span class="my-tasks-toggle-show" style="display:none;"><x-core::icon name="eye" size="14" /> <span class="bn">দেখান</span><span class="en" style="display:none;">Show</span></span>
+            </x-core::button>
+        </div>
     </div>
-    <div class="table-responsive">
+    <div class="table-responsive" id="my-tasks-body">
         <table class="app-table">
             <tbody>
                 @forelse ($myTasks['tasks'] as $task)
@@ -31,3 +45,30 @@
         </table>
     </div>
 </div>
+
+<script>
+    (function ($) {
+        var storageKey = 'dashboard.myTasks.hidden';
+
+        function setMyTasksHidden(isHidden) {
+            $('#my-tasks-body').toggle(! isHidden);
+            $('#my-tasks-toggle').attr('aria-expanded', isHidden ? 'false' : 'true');
+            $('#my-tasks-toggle .my-tasks-toggle-hide').toggle(! isHidden);
+            $('#my-tasks-toggle .my-tasks-toggle-show').toggle(isHidden);
+        }
+
+        var isHidden = false;
+        try {
+            isHidden = localStorage.getItem(storageKey) === '1';
+        } catch (e) {}
+        setMyTasksHidden(isHidden);
+
+        $(document).on('click', '#my-tasks-toggle', function () {
+            isHidden = ! isHidden;
+            setMyTasksHidden(isHidden);
+            try {
+                localStorage.setItem(storageKey, isHidden ? '1' : '0');
+            } catch (e) {}
+        });
+    })(jQuery);
+</script>
