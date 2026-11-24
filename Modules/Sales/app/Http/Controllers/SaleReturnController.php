@@ -25,22 +25,37 @@ class SaleReturnController extends Controller
         $search = trim((string) $request->query('q', ''));
 
         $returns = SaleReturn::with(['sale.customer', 'items.product', 'creator'])
-            ->when($search !== '', fn ($q) => $q->whereHas('sale', fn ($s) => $s->where('invoice_no', 'like', "%{$search}%")))
+            ->when($search !== '', function ($q) use ($search) {
+                $q->where('return_no', 'like', "%{$search}%")
+                    ->orWhereHas('sale', function ($s) use ($search) {
+                        $s->where('invoice_no', 'like', "%{$search}%")
+                            ->orWhereHas('customer', function ($c) use ($search) {
+                                $c->where('name', 'like', "%{$search}%")
+                                    ->orWhere('phone', 'like', "%{$search}%");
+                            });
+                    });
+            })
             ->latest()
             ->paginate(15)
             ->withQueryString();
 
-        return view('sales::sale-returns.index', compact('returns', 'search'));
+        $totalReturnsCount = SaleReturn::count();
+        $totalRefundAmount = (float) SaleReturn::sum('refund_amount');
+        $totalReturnSubtotal = (float) (SaleReturn::where('total', '>', 0)->sum('total') ?: SaleReturn::sum('subtotal'));
+        $totalReturnDiscount = (float) (SaleReturn::sum('product_discount') + SaleReturn::sum('discount'));
+
+        return view('sales::sale-returns.index', compact('returns', 'search', 'totalReturnsCount', 'totalRefundAmount', 'totalReturnSubtotal', 'totalReturnDiscount'));
     }
 
     public function create(Sale $sale): View
     {
-        $sale->load(['items.product', 'customer']);
+        $sale->load(['items.product.units', 'items.unit', 'customer']);
 
         $returnedByItem = SaleReturnItem::whereIn('sale_item_id', $sale->items->pluck('id'))
-            ->selectRaw('sale_item_id, SUM(quantity) as returned')
+            ->selectRaw('sale_item_id, SUM(quantity) as returned, SUM(discount) as returned_discount')
             ->groupBy('sale_item_id')
-            ->pluck('returned', 'sale_item_id');
+            ->get()
+            ->keyBy('sale_item_id');
 
         return view('sales::sale-returns.create', compact('sale', 'returnedByItem'));
     }
@@ -55,8 +70,11 @@ class SaleReturnController extends Controller
         }
 
         DB::transaction(function () use ($sale, $data, $requestedItems) {
-            $subtotal = 0;
+            $grossSubtotal = 0;
+            $returnedProductDiscountTotal = 0;
+            $returnedLinesSubtotal = 0;
             $lines = [];
+            $returnedCostTotal = 0;
 
             foreach ($requestedItems as $row) {
                 $saleItem = SaleItem::findOrFail($row['sale_item_id']);
@@ -66,24 +84,98 @@ class SaleReturnController extends Controller
                 }
 
                 $alreadyReturned = (float) SaleReturnItem::where('sale_item_id', $saleItem->id)->sum('quantity');
+                $alreadyReturnedDiscount = (float) SaleReturnItem::where('sale_item_id', $saleItem->id)->sum('discount');
 
                 if ((float) $saleItem->quantity < $row['quantity'] + $alreadyReturned) {
                     throw ValidationException::withMessages(['items' => "'{$saleItem->product->name}' এর অনুমোদিত পরিমাণের বেশি ফেরত দেওয়া যাবে না"]);
                 }
 
-                $lineTotal = $row['quantity'] * $saleItem->unit_price;
-                $subtotal += $lineTotal;
-                $lines[] = ['saleItem' => $saleItem, 'quantity' => $row['quantity'], 'total' => $lineTotal];
+                $qty = (float) $row['quantity'];
+                $soldQty = (float) $saleItem->quantity;
+                $unitPrice = (float) $saleItem->unit_price;
+                $lineGross = round($qty * $unitPrice, 2);
+
+                $remainingQty = max(0, $soldQty - $alreadyReturned);
+                $remainingDiscount = max(0, (float) $saleItem->discount - $alreadyReturnedDiscount);
+
+                if ($qty >= $remainingQty) {
+                    $lineDiscount = round($remainingDiscount, 2);
+                } else {
+                    $unitDiscount = $soldQty > 0 ? (float) $saleItem->discount / $soldQty : 0;
+                    $lineDiscount = round($qty * $unitDiscount, 2);
+                }
+
+                $lineNet = round(max(0, $lineGross - $lineDiscount), 2);
+
+                $grossSubtotal += $lineGross;
+                $returnedProductDiscountTotal += $lineDiscount;
+                $returnedLinesSubtotal += $lineNet;
+
+                $soldCost = (float) ($saleItem->cost_total ?? 0);
+                if ($soldCost <= 0 && $saleItem->product) {
+                    $soldCost = (float) ($saleItem->product->purchase_price ?? 0) * $soldQty;
+                }
+                $unitCost = $soldQty > 0 ? $soldCost / $soldQty : 0;
+                $lineCost = round($qty * $unitCost, 2);
+                $returnedCostTotal += $lineCost;
+
+                $lines[] = [
+                    'saleItem' => $saleItem,
+                    'quantity' => $qty,
+                    'unit_price' => $unitPrice,
+                    'discount' => $lineDiscount,
+                    'total' => $lineNet,
+                    'cost' => $lineCost,
+                ];
             }
 
+            // Determine if all remaining returnable items of the invoice are returned
+            $totalRemainingReturnable = 0;
+            foreach ($sale->items as $it) {
+                $retQty = (float) SaleReturnItem::where('sale_item_id', $it->id)->sum('quantity');
+                $totalRemainingReturnable += max(0, (float) $it->quantity - $retQty);
+            }
+            $currentReturnQty = (float) collect($lines)->sum('quantity');
+            $isFullRemainingReturn = $currentReturnQty >= round($totalRemainingReturnable, 4);
+
+            // Prorate invoice-level discount and adjustment
+            $remainingSaleSubtotal = (float) $sale->subtotal;
+            $invoiceDiscount = (float) ($sale->discount ?? 0);
+            $adjustment = (float) ($sale->adjustment ?? 0);
+
+            if ($isFullRemainingReturn) {
+                $returnedInvoiceDiscount = $invoiceDiscount;
+                $returnedAdjustment = $adjustment;
+            } elseif ($remainingSaleSubtotal > 0) {
+                $subtotalRatio = min(1, $returnedLinesSubtotal / $remainingSaleSubtotal);
+                $returnedInvoiceDiscount = round($invoiceDiscount * $subtotalRatio, 2);
+                $returnedAdjustment = round($adjustment * $subtotalRatio, 2);
+            } else {
+                $returnedInvoiceDiscount = 0.0;
+                $returnedAdjustment = 0.0;
+            }
+
+            // Net refundable amount for this return
+            $netTotal = round(max(0, $returnedLinesSubtotal - $returnedInvoiceDiscount + $returnedAdjustment), 2);
+            $totalReturnedDiscount = round($returnedProductDiscountTotal + $returnedInvoiceDiscount, 2);
+
+            // Profit adjustment
+            $grossProfitReturned = $returnedLinesSubtotal - $returnedCostTotal;
+            $returnedProfit = round($grossProfitReturned - $returnedInvoiceDiscount, 2);
+
             $due = (float) $sale->due_amount;
-            $reduceDue = min($due, $subtotal);
-            $refund = round($subtotal - $reduceDue, 2);
+            $reduceDue = min($due, $netTotal);
+            $refund = round($netTotal - $reduceDue, 2);
 
             $saleReturn = SaleReturn::create([
+                'shop_id' => $sale->shop_id,
                 'sale_id' => $sale->id,
                 'return_date' => $data['return_date'],
-                'subtotal' => $subtotal,
+                'subtotal' => $grossSubtotal,
+                'product_discount' => $returnedProductDiscountTotal,
+                'discount' => $returnedInvoiceDiscount,
+                'adjustment' => $returnedAdjustment,
+                'total' => $netTotal,
                 'refund_amount' => $refund,
                 'note' => $data['note'] ?? null,
                 'created_by' => Auth::id(),
@@ -98,9 +190,12 @@ class SaleReturnController extends Controller
                     'sale_item_id' => $saleItem->id,
                     'product_id' => $saleItem->product_id,
                     'batch_id' => $saleItem->batch_id,
+                    'unit_id' => $saleItem->unit_id,
                     'quantity' => $line['quantity'],
-                    'unit_price' => $saleItem->unit_price,
+                    'unit_price' => $line['unit_price'],
+                    'discount' => $line['discount'],
                     'total' => $line['total'],
+                    'cost_total' => $line['cost'],
                 ]);
 
                 if ($saleItem->batch_id) {
@@ -127,9 +222,41 @@ class SaleReturnController extends Controller
                 }
             }
 
-            $newDue = max($due - $reduceDue, 0);
-            $status = $newDue <= 0 ? 'paid' : ($sale->paid_amount <= 0 ? 'due' : 'partial');
-            $sale->update(['due_amount' => $newDue, 'payment_status' => $status]);
+            $newDue = max(0, round($due - $reduceDue, 2));
+            $newPaid = max(0, round((float) $sale->paid_amount - $refund, 2));
+            $newSubtotal = max(0, round((float) $sale->subtotal - $returnedLinesSubtotal, 2));
+            $newProductDiscount = max(0, round((float) ($sale->product_discount ?? 0) - $returnedProductDiscountTotal, 2));
+            $newDiscount = max(0, round((float) ($sale->discount ?? 0) - $returnedInvoiceDiscount, 2));
+            $newAdjustment = round((float) ($sale->adjustment ?? 0) - $returnedAdjustment, 2);
+            $newTotal = max(0, round((float) $sale->total - $netTotal, 2));
+            $newProfit = $sale->profit !== null ? round((float) $sale->profit - $returnedProfit, 2) : null;
+
+            if ($isFullRemainingReturn || $newSubtotal <= 0 || $newTotal <= 0) {
+                $newSubtotal = 0;
+                $newTotal = 0;
+                $newPaid = 0;
+                $newDue = 0;
+                $newProductDiscount = 0;
+                $newDiscount = 0;
+                $newAdjustment = 0;
+                if ($sale->profit !== null) {
+                    $newProfit = 0.0;
+                }
+            }
+
+            $status = $newDue <= 0 ? 'paid' : ($newPaid <= 0 ? 'due' : 'partial');
+
+            $sale->update([
+                'subtotal' => $newSubtotal,
+                'product_discount' => $newProductDiscount,
+                'discount' => $newDiscount,
+                'adjustment' => $newAdjustment,
+                'total' => $newTotal,
+                'paid_amount' => $newPaid,
+                'due_amount' => $newDue,
+                'profit' => $newProfit,
+                'payment_status' => $status,
+            ]);
             app(LoyaltyService::class)->syncSale($sale);
         });
 

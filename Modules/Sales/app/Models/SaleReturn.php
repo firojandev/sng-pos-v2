@@ -20,12 +20,16 @@ class SaleReturn extends Model
     }
 
     protected $fillable = [
-        'shop_id', 'sale_id', 'return_no', 'return_date', 'subtotal', 'refund_amount', 'note', 'created_by',
+        'shop_id', 'sale_id', 'return_no', 'return_date', 'subtotal', 'product_discount', 'discount', 'adjustment', 'total', 'refund_amount', 'note', 'created_by',
     ];
 
     protected $casts = [
         'return_date' => 'date',
         'subtotal' => 'decimal:2',
+        'product_discount' => 'decimal:2',
+        'discount' => 'decimal:2',
+        'adjustment' => 'decimal:2',
+        'total' => 'decimal:2',
         'refund_amount' => 'decimal:2',
     ];
 
@@ -42,5 +46,10 @@ class SaleReturn extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function getTotalDiscountAttribute(): float
+    {
+        return round((float) ($this->product_discount ?? 0) + (float) ($this->discount ?? 0), 2);
     }
 }

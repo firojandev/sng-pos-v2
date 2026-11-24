@@ -214,7 +214,16 @@
                         <div style="font-size:11.5px; color:var(--ink-500);">{{ optional($ret->return_date)->format('d M, Y') }}</div>
                     </div>
                     <div style="text-align:right; color:var(--red-600); font-weight:700; font-family:var(--font-mono, monospace);">
-                        -৳{{ number_format((float) $ret->refund_amount, 2) }}
+                        -৳{{ number_format((float) ($ret->total ?: $ret->subtotal), 2) }}
+                        @php
+                            $retDiscountTotal = (float) ($ret->product_discount ?? 0) + (float) ($ret->discount ?? 0);
+                        @endphp
+                        @if ($retDiscountTotal > 0)
+                            <div style="font-size:11px; color:var(--red-600); font-weight:normal;">(ছাড় সমন্বয়: -৳{{ number_format($retDiscountTotal, 2) }})</div>
+                        @endif
+                        @if ((float) $ret->refund_amount > 0 && (float) $ret->refund_amount != (float) ($ret->total ?: $ret->subtotal))
+                            <div style="font-size:11px; color:var(--ink-500); font-weight:normal;">(ক্যাশ ফেরত: ৳{{ number_format((float) $ret->refund_amount, 2) }})</div>
+                        @endif
                     </div>
                 </div>
             </div>

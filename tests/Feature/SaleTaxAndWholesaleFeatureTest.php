@@ -370,4 +370,13 @@ class SaleTaxAndWholesaleFeatureTest extends TestCase
         $this->assertEquals(100.00, (float) $item->discount);
         $this->assertEquals(900.00, (float) $item->total);
     }
+
+    public function test_sales_create_page_has_empty_discount_by_default(): void
+    {
+        $response = $this->actingAs($this->user)->get(route('sales.create'));
+
+        $response->assertOk();
+        $response->assertSee('id="discount-raw-input" value=""', false);
+        $response->assertDontSee('id="discount-raw-input" value="0"', false);
+    }
 }

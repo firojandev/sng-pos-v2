@@ -288,7 +288,16 @@ class LoyaltyService
         }
 
         $returned = (float) $sale->returns()->sum('subtotal');
-        $earnable = (float) $sale->total - (float) $sale->delivery_charge - $returned;
+        if ($returned > 0) {
+            $itemsTotal = (float) $sale->items()->sum('total');
+            if ($itemsTotal > 0 && (float) $sale->total <= round($itemsTotal - $returned, 2)) {
+                $earnable = max(0, (float) $sale->total - (float) $sale->delivery_charge);
+            } else {
+                $earnable = max(0, (float) $sale->total - (float) $sale->delivery_charge - $returned);
+            }
+        } else {
+            $earnable = max(0, (float) $sale->total - (float) $sale->delivery_charge);
+        }
 
         return $program->pointsFor($earnable);
     }

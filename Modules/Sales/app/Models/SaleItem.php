@@ -4,6 +4,7 @@ namespace Modules\Sales\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Product\Models\Batch;
 use Modules\Product\Models\Product;
@@ -45,6 +46,11 @@ class SaleItem extends Model
     public function unit(): BelongsTo
     {
         return $this->belongsTo(Unit::class);
+    }
+
+    public function returnItems(): HasMany
+    {
+        return $this->hasMany(SaleReturnItem::class);
     }
 
     public function unitConversionFactor(): float
