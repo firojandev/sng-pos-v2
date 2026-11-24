@@ -21,6 +21,16 @@
                     <span class="bn">প্রিন্ট / PDF রিপোর্ট</span><span class="en" style="display:none;">Print / PDF Report</span>
                 </x-core::button>
             @endcan
+            @can('sales.view')
+                <x-core::button
+                    size="sm"
+                    variant="secondary"
+                    icon="rotate-ccw"
+                    :href="route('sale-returns.index')"
+                >
+                    <span class="bn">বিক্রয় ফেরত</span><span class="en" style="display:none;">Sale Returns</span>
+                </x-core::button>
+            @endcan
             @can('sales.create')
                 <x-core::button
                     size="sm"

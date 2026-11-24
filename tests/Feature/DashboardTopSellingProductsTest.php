@@ -84,6 +84,40 @@ class DashboardTopSellingProductsTest extends TestCase
         $this->assertSame('Product 9', $topSellingProducts[9]['name']);
     }
 
+    public function test_dashboard_ranks_products_by_quantity_separately_from_price(): void
+    {
+        // Expensive product: 1 qty @ 2000 tk (amount: 2000, qty: 1)
+        $expensive = $this->createProduct('Expensive Watch');
+        $this->createSale($this->shop, $expensive, 2000, now()->toDateString(), 1);
+
+        // Bulk product: 50 qty @ 20 tk (amount: 1000, qty: 50)
+        $bulk = $this->createProduct('Pen');
+        $this->createSale($this->shop, $bulk, 1000, now()->toDateString(), 50);
+
+        $response = $this->actingAs($this->owner)->get(route('dashboard', ['range' => 'today']));
+        $response->assertOk();
+
+        // 1. By price/amount: Expensive Watch ranks #1
+        $byAmount = $response->viewData('topSellingProducts');
+        $this->assertSame('Expensive Watch', $byAmount[0]['name']);
+        $this->assertEquals(2000.0, $byAmount[0]['amount']);
+        $this->assertSame('Pen', $byAmount[1]['name']);
+        $this->assertEquals(1000.0, $byAmount[1]['amount']);
+
+        // 2. By quantity: Pen ranks #1
+        $byQty = $response->viewData('topSellingProductsByQty');
+        $this->assertSame('Pen', $byQty[0]['name']);
+        $this->assertEquals(50.0, $byQty[0]['quantity']);
+        $this->assertSame('Expensive Watch', $byQty[1]['name']);
+        $this->assertEquals(1.0, $byQty[1]['quantity']);
+
+        // Both canvas elements exist in view
+        $response->assertSee('topSellingProductsChart');
+        $response->assertSee('topSellingProductsByQtyChart');
+        $response->assertSee('সর্বাধিক বিক্রিত ১০টি পণ্য (মূল্য)');
+        $response->assertSee('সর্বাধিক বিক্রিত ১০টি পণ্য (পরিমাণ)');
+    }
+
     public function test_top_selling_products_exclude_other_shops_deleted_sales_and_sales_outside_the_range(): void
     {
         $visibleProduct = $this->createProduct('Visible Product');
@@ -174,7 +208,7 @@ class DashboardTopSellingProductsTest extends TestCase
         ]);
     }
 
-    private function createSale(Shop $shop, Product $product, float $amount, string $saleDate): Sale
+    private function createSale(Shop $shop, Product $product, float $amount, string $saleDate, float $quantity = 1): Sale
     {
         $this->invoiceCounter++;
 
@@ -194,8 +228,8 @@ class DashboardTopSellingProductsTest extends TestCase
         SaleItem::create([
             'sale_id' => $sale->id,
             'product_id' => $product->id,
-            'quantity' => 1,
-            'unit_price' => $amount,
+            'quantity' => $quantity,
+            'unit_price' => $quantity > 0 ? $amount / $quantity : $amount,
             'discount' => 0,
             'total' => $amount,
         ]);

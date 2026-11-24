@@ -223,9 +223,11 @@ class AutoPosting
             return $sold && (float) $sold->quantity > 0 ? (float) $sold->cost_total * (float) $returned->quantity / (float) $sold->quantity : 0;
         });
 
+        $returnAmount = (float) ($saleReturn->total ?: $saleReturn->subtotal);
+
         return $this->entry($companyId, $saleReturn->return_date, $sale->shop_id, 'Sale return '.$saleReturn->return_no, $saleReturn->return_no, [
-            $this->debit($companyId, 'sales_returns', (float) $saleReturn->subtotal),
-            $this->credit($companyId, 'accounts_receivable', (float) $saleReturn->subtotal, $customer),
+            $this->debit($companyId, 'sales_returns', $returnAmount),
+            $this->credit($companyId, 'accounts_receivable', $returnAmount, $customer),
             $this->debit($companyId, 'inventory', $cost),
             $this->credit($companyId, 'cogs', $cost),
         ]);

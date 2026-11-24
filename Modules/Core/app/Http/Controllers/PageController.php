@@ -75,7 +75,8 @@ class PageController extends Controller
                 ->sum('total');
         }
 
-        $topSellingProducts = $canViewSales ? app(TopSellingProducts::class)->between($from, $to) : [];
+        $topSellingProducts = $canViewSales ? app(TopSellingProducts::class)->byAmount($from, $to) : [];
+        $topSellingProductsByQty = $canViewSales ? app(TopSellingProducts::class)->byQuantity($from, $to) : [];
 
         $purchaseTotal = 0.0;
         if ($canViewPurchase) {
@@ -176,6 +177,7 @@ class PageController extends Controller
             'balance' => $balance,
             'saleTotal' => $saleTotal,
             'topSellingProducts' => $topSellingProducts,
+            'topSellingProductsByQty' => $topSellingProductsByQty,
             'purchaseTotal' => $purchaseTotal,
             'expenseTotal' => $expenseTotal,
             'productProfit' => $productProfit,

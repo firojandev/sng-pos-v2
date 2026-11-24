@@ -208,97 +208,200 @@
     </div>
 
     @if ($canViewSales)
-        <div class="panel" style="margin-top:20px;">
-            <div class="panel-head">
-                <div>
-                    <div class="panel-title">
-                        <span class="bn">সর্বাধিক বিক্রিত ১০টি পণ্য</span>
-                        <span class="en" style="display:none;">Top 10 Selling Products</span>
-                    </div>
-                    <div style="font-size:12px; color:var(--ink-400); margin-top:2px;">
-                        <span class="bn">{{ $rangeLabel['bn'] }} বিক্রির পরিমাণ অনুযায়ী</span>
-                        <span class="en" style="display:none;">By sales amount — {{ $rangeLabel['en'] }}</span>
+        @php
+            $maxCount = max(count($topSellingProducts), count($topSellingProductsByQty ?? []));
+            $chartHeight = max(180, $maxCount * 34 + 40);
+        @endphp
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:20px; margin-top:20px;">
+            {{-- Part 1: Top Selling by Price / Sales Amount --}}
+            <div class="panel">
+                <div class="panel-head">
+                    <div>
+                        <div class="panel-title">
+                            <span class="bn">সর্বাধিক বিক্রিত ১০টি পণ্য (মূল্য)</span>
+                            <span class="en" style="display:none;">Top 10 Selling Products (By Price)</span>
+                        </div>
+                        <div style="font-size:12px; color:var(--ink-400); margin-top:2px;">
+                            <span class="bn">{{ $rangeLabel['bn'] }} বিক্রির মোট মূল্য অনুযায়ী</span>
+                            <span class="en" style="display:none;">By sales amount — {{ $rangeLabel['en'] }}</span>
+                        </div>
                     </div>
                 </div>
+                <div class="panel-body" style="padding:16px 20px 18px;">
+                    @if (count($topSellingProducts) > 0)
+                        <div style="position:relative; width:100%; height:{{ $chartHeight }}px;">
+                            <canvas id="topSellingProductsChart"></canvas>
+                        </div>
+                    @else
+                        <x-core::table.empty
+                            icon="bar-chart-2"
+                            title="এই সময়ে কোনো বিক্রি নেই"
+                            title-en="No sales in this period"
+                        />
+                    @endif
+                </div>
             </div>
-            <div class="panel-body" style="padding:16px 20px 18px;">
-                @if (count($topSellingProducts) > 0)
-                    <div style="position:relative; width:100%; height:{{ max(180, count($topSellingProducts) * 34 + 40) }}px;">
-                        <canvas id="topSellingProductsChart"></canvas>
+
+            {{-- Part 2: Top Selling by Quantity --}}
+            <div class="panel">
+                <div class="panel-head">
+                    <div>
+                        <div class="panel-title">
+                            <span class="bn">সর্বাধিক বিক্রিত ১০টি পণ্য (পরিমাণ)</span>
+                            <span class="en" style="display:none;">Top 10 Selling Products (By Quantity)</span>
+                        </div>
+                        <div style="font-size:12px; color:var(--ink-400); margin-top:2px;">
+                            <span class="bn">{{ $rangeLabel['bn'] }} বিক্রির পরিমাণ/সংখ্যা অনুযায়ী</span>
+                            <span class="en" style="display:none;">By quantity sold — {{ $rangeLabel['en'] }}</span>
+                        </div>
                     </div>
-                @else
-                    <x-core::table.empty
-                        icon="bar-chart-2"
-                        title="এই সময়ে কোনো বিক্রি নেই"
-                        title-en="No sales in this period"
-                    />
-                @endif
+                </div>
+                <div class="panel-body" style="padding:16px 20px 18px;">
+                    @if (! empty($topSellingProductsByQty) && count($topSellingProductsByQty) > 0)
+                        <div style="position:relative; width:100%; height:{{ $chartHeight }}px;">
+                            <canvas id="topSellingProductsByQtyChart"></canvas>
+                        </div>
+                    @else
+                        <x-core::table.empty
+                            icon="bar-chart-2"
+                            title="এই সময়ে কোনো বিক্রি নেই"
+                            title-en="No sales in this period"
+                        />
+                    @endif
+                </div>
             </div>
         </div>
     @endif
 
-    @if ($canViewSales && count($topSellingProducts) > 0)
+    @if ($canViewSales && (count($topSellingProducts) > 0 || (! empty($topSellingProductsByQty) && count($topSellingProductsByQty) > 0)))
         @push('scripts')
             <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
             <script>
                 $(function () {
-                    const chartCanvas = document.getElementById('topSellingProductsChart');
-                    if (! chartCanvas || typeof Chart === 'undefined') {
+                    if (typeof Chart === 'undefined') {
                         return;
                     }
 
                     const isDark = $('html').attr('data-theme') === 'dark';
                     const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)';
                     const textColor = isDark ? '#94a3b8' : '#64748b';
-                    const products = @json($topSellingProducts);
                     const fontFamily = "'Noto Sans Bengali', 'SolaimanLipi', 'Hind Siliguri', 'Plus Jakarta Sans', 'Inter', sans-serif";
 
-                    new Chart(chartCanvas, {
-                        type: 'bar',
-                        data: {
-                            labels: products.map(p => p.name.length > 28 ? p.name.slice(0, 27) + '…' : p.name),
-                            datasets: [{
-                                data: products.map(p => p.amount),
-                                backgroundColor: 'rgba(13, 148, 136, 0.75)',
-                                hoverBackgroundColor: 'rgba(13, 148, 136, 0.95)',
-                                borderRadius: 4,
-                                maxBarThickness: 22,
-                            }]
-                        },
-                        options: {
-                            indexAxis: 'y',
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: {
-                                    backgroundColor: isDark ? '#1e293b' : '#0f172a',
-                                    titleColor: '#ffffff',
-                                    bodyColor: '#e2e8f0',
-                                    padding: 10,
-                                    callbacks: {
-                                        title: ctx => products[ctx[0].dataIndex].name,
-                                        label: ctx => ' ৳' + Number(ctx.raw).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-                                    }
-                                }
+                    // 1. Chart by Sales Amount / Price
+                    const amountCanvas = document.getElementById('topSellingProductsChart');
+                    const productsByAmount = @json($topSellingProducts);
+
+                    if (amountCanvas && productsByAmount && productsByAmount.length > 0) {
+                        new Chart(amountCanvas, {
+                            type: 'bar',
+                            data: {
+                                labels: productsByAmount.map(p => p.name.length > 24 ? p.name.slice(0, 23) + '…' : p.name),
+                                datasets: [{
+                                    data: productsByAmount.map(p => p.amount),
+                                    backgroundColor: 'rgba(13, 148, 136, 0.75)',
+                                    hoverBackgroundColor: 'rgba(13, 148, 136, 0.95)',
+                                    borderRadius: 4,
+                                    maxBarThickness: 22,
+                                }]
                             },
-                            scales: {
-                                x: {
-                                    beginAtZero: true,
-                                    grid: { color: gridColor },
-                                    ticks: {
-                                        color: textColor,
-                                        font: { family: fontFamily, size: 10.5 },
-                                        callback: val => '৳' + Number(val).toLocaleString('en-US'),
+                            options: {
+                                indexAxis: 'y',
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { display: false },
+                                    tooltip: {
+                                        backgroundColor: isDark ? '#1e293b' : '#0f172a',
+                                        titleColor: '#ffffff',
+                                        bodyColor: '#e2e8f0',
+                                        padding: 10,
+                                        callbacks: {
+                                            title: ctx => productsByAmount[ctx[0].dataIndex].name,
+                                            label: ctx => {
+                                                const p = productsByAmount[ctx.dataIndex];
+                                                const amt = '৳' + Number(p.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                                const unitStr = p.unit ? ' ' + p.unit : '';
+                                                return ` মূল্য: ${amt} (পরিমাণ: ${p.quantity}${unitStr})`;
+                                            }
+                                        }
                                     }
                                 },
-                                y: {
-                                    grid: { display: false },
-                                    ticks: { color: textColor, font: { family: fontFamily, size: 11.5 } }
+                                scales: {
+                                    x: {
+                                        beginAtZero: true,
+                                        grid: { color: gridColor },
+                                        ticks: {
+                                            color: textColor,
+                                            font: { family: fontFamily, size: 10.5 },
+                                            callback: val => '৳' + Number(val).toLocaleString('en-US'),
+                                        }
+                                    },
+                                    y: {
+                                        grid: { display: false },
+                                        ticks: { color: textColor, font: { family: fontFamily, size: 11.5 } }
+                                    }
                                 }
                             }
-                        }
-                    });
+                        });
+                    }
+
+                    // 2. Chart by Quantity
+                    const qtyCanvas = document.getElementById('topSellingProductsByQtyChart');
+                    const productsByQty = @json($topSellingProductsByQty ?? []);
+
+                    if (qtyCanvas && productsByQty && productsByQty.length > 0) {
+                        new Chart(qtyCanvas, {
+                            type: 'bar',
+                            data: {
+                                labels: productsByQty.map(p => p.name.length > 24 ? p.name.slice(0, 23) + '…' : p.name),
+                                datasets: [{
+                                    data: productsByQty.map(p => p.quantity),
+                                    backgroundColor: 'rgba(99, 102, 241, 0.75)',
+                                    hoverBackgroundColor: 'rgba(99, 102, 241, 0.95)',
+                                    borderRadius: 4,
+                                    maxBarThickness: 22,
+                                }]
+                            },
+                            options: {
+                                indexAxis: 'y',
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { display: false },
+                                    tooltip: {
+                                        backgroundColor: isDark ? '#1e293b' : '#0f172a',
+                                        titleColor: '#ffffff',
+                                        bodyColor: '#e2e8f0',
+                                        padding: 10,
+                                        callbacks: {
+                                            title: ctx => productsByQty[ctx[0].dataIndex].name,
+                                            label: ctx => {
+                                                const p = productsByQty[ctx.dataIndex];
+                                                const unitStr = p.unit ? ' ' + p.unit : '';
+                                                const amt = '৳' + Number(p.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                                return ` পরিমাণ: ${p.quantity}${unitStr} (মূল্য: ${amt})`;
+                                            }
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    x: {
+                                        beginAtZero: true,
+                                        grid: { color: gridColor },
+                                        ticks: {
+                                            color: textColor,
+                                            font: { family: fontFamily, size: 10.5 },
+                                            callback: val => Number(val).toLocaleString('en-US'),
+                                        }
+                                    },
+                                    y: {
+                                        grid: { display: false },
+                                        ticks: { color: textColor, font: { family: fontFamily, size: 11.5 } }
+                                    }
+                                }
+                            }
+                        });
+                    }
                 });
             </script>
         @endpush

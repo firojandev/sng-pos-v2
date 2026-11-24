@@ -200,7 +200,7 @@ class ReportController extends Controller
 
         // 4. Process Sales Return VAT Details
         $returnDetails = [];
-        $salesReturnTotal = (float) $returns->sum('subtotal');
+        $salesReturnTotal = (float) $returns->sum(fn ($r) => (float) ($r->total ?: $r->subtotal));
         $returnTaxableSales = 0.0;
         $returnOutputVat = 0.0;
         $returnRateTotals = [];
@@ -467,6 +467,7 @@ class ReportController extends Controller
                 'product:id,name,sku,purchase_price,sale_price',
                 'batch:id,batch_no,mfg_date,expiry_date',
                 'unit',
+                'returnItems',
             ])
             ->get();
 
@@ -492,7 +493,20 @@ class ReportController extends Controller
                 : round($baseQty * (float) ($product->purchase_price ?? 0), 2);
             $purchasePriceUnit = $baseQty > 0 ? round($purchaseCost / $baseQty, 4) : 0.0;
             $saleRevenue = (float) $item->total;
-            $profit = round($saleRevenue - $purchaseCost, 2);
+
+            $returnedQty = (float) $item->returnItems->sum('quantity');
+            $returnedBaseQty = $returnedQty * $conversionFactor;
+            $returnedRevenue = (float) $item->returnItems->sum('total');
+            $returnedCost = $baseQty > 0 ? round($purchaseCost * ($returnedBaseQty / $baseQty), 2) : 0.0;
+
+            $netBaseQty = max(0, $baseQty - $returnedBaseQty);
+            $netRevenue = max(0, round($saleRevenue - $returnedRevenue, 2));
+            $netPurchaseCost = max(0, round($purchaseCost - $returnedCost, 2));
+            $profit = round($netRevenue - $netPurchaseCost, 2);
+
+            if ($netBaseQty <= 0 && $netRevenue <= 0) {
+                continue;
+            }
 
             if (! isset($grouped[$productId])) {
                 $grouped[$productId] = [
@@ -520,14 +534,14 @@ class ReportController extends Controller
                 ];
             }
 
-            $grouped[$productId]['batches'][$batchId]['qty'] += $baseQty;
-            $grouped[$productId]['batches'][$batchId]['purchase_cost'] += $purchaseCost;
-            $grouped[$productId]['batches'][$batchId]['sale_revenue'] += $saleRevenue;
+            $grouped[$productId]['batches'][$batchId]['qty'] += $netBaseQty;
+            $grouped[$productId]['batches'][$batchId]['purchase_cost'] += $netPurchaseCost;
+            $grouped[$productId]['batches'][$batchId]['sale_revenue'] += $netRevenue;
             $grouped[$productId]['batches'][$batchId]['profit'] += $profit;
 
-            $grouped[$productId]['total_qty'] += $baseQty;
-            $grouped[$productId]['total_purchase_cost'] += $purchaseCost;
-            $grouped[$productId]['total_sale_revenue'] += $saleRevenue;
+            $grouped[$productId]['total_qty'] += $netBaseQty;
+            $grouped[$productId]['total_purchase_cost'] += $netPurchaseCost;
+            $grouped[$productId]['total_sale_revenue'] += $netRevenue;
             $grouped[$productId]['total_profit'] += $profit;
         }
 
