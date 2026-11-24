@@ -1212,6 +1212,44 @@ function initEnglishNumberInputBehaviors() {
             }
         }
     });
+
+    // 10. Disable keyboard Up/Down arrow keys on number inputs
+    $(document).on('keydown', function (e) {
+        if (!isNumberInput(e.target)) return;
+
+        if (
+            e.key === 'ArrowUp' ||
+            e.key === 'ArrowDown' ||
+            e.key === 'PageUp' ||
+            e.key === 'PageDown' ||
+            e.keyCode === 38 ||
+            e.keyCode === 40 ||
+            e.keyCode === 33 ||
+            e.keyCode === 34
+        ) {
+            e.preventDefault();
+        }
+    });
+
+    // 11. Disable mouse scroll wheel changes on number inputs
+    $(document).on('wheel', function (e) {
+        if (isNumberInput(e.target) && $(e.target).is(':focus')) {
+            $(e.target).trigger('blur');
+        }
+    });
+
+    $(document).on('focus', 'input', function () {
+        if (isNumberInput(this)) {
+            $(this).on('wheel.preventNumberScroll', function (e) {
+                e.preventDefault();
+                $(this).trigger('blur');
+            });
+        }
+    }).on('blur', 'input', function () {
+        if (isNumberInput(this)) {
+            $(this).off('wheel.preventNumberScroll');
+        }
+    });
 }
 
 /* ---------------- Modern Number Input Stepper ---------------- */

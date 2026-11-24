@@ -3428,7 +3428,9 @@ body.lang-en .ci-head-popovers .item-popover label.en{display:inline !important;
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none !important;
+  appearance: none !important;
   margin: 0 !important;
+  display: none !important;
 }
 input[type="number"] {
   -moz-appearance: textfield !important;

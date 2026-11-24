@@ -65,7 +65,7 @@
         : []
     );
 
-    $initialDiscount = old('discount', $sale->discount ?? 0);
+    $initialDiscount = old('discount', ($sale->exists && (float) $sale->discount > 0) ? $sale->discount : null);
     $initialTax = old('tax', $sale->tax ?? 0);
     $initialDeliveryCharge = old('delivery_charge', $sale->delivery_charge ?? 0);
     $initialAdjustment = old('adjustment', $sale->adjustment ?? 0);
@@ -541,7 +541,7 @@
                 <span class="bn" style="color:var(--ink-700);">ডিস্কাউন্ট</span>
                 <span class="en" style="color:var(--ink-700); display:none;">Discount</span>
                 <div class="disc-row" style="display:inline-flex; align-items:center; border:1px solid var(--border); border-radius:6px; background:var(--card); overflow:hidden;">
-                    <input type="number" step="0.01" min="0" id="discount-raw-input" value="{{ is_numeric($initialDiscount) ? rtrim(rtrim(number_format($initialDiscount, 2, '.', ''), '0'), '.') : 0 }}"
+                    <input type="number" step="0.01" min="0" id="discount-raw-input" value="{{ (is_numeric($initialDiscount) && (float) $initialDiscount > 0) ? rtrim(rtrim(number_format($initialDiscount, 2, '.', ''), '0'), '.') : '' }}"
                            style="width:75px; text-align:right; border:none; background:transparent; color:var(--ink-900); padding:4px 8px; font-size:13px; font-family:'Noto Sans Bengali','SolaimanLipi',sans-serif; outline:none;">
                     <select id="discount-type-select" style="border:none; border-left:1px solid var(--border); background:var(--paper); color:var(--ink-700); padding:4px 8px; font-size:12px; outline:none; cursor:pointer;">
                         <option value="flat">৳</option>
@@ -1080,7 +1080,7 @@
                     '<div class="ci-price-field"></div>' +
                     '<div><label class="bn">ছাড়</label><label class="en" style="display:none;">Discount</label>' +
                         '<div class="disc-row ci-disc-row">' +
-                            '<input type="number" step="0.01" min="0" class="ci-discount-raw" value="' + item.discountRaw + '">' +
+                            '<input type="number" step="0.01" min="0" class="ci-discount-raw" value="' + (item.discountRaw > 0 ? item.discountRaw : '') + '">' +
                             '<select class="ci-discount-type"><option value="flat"' + (item.discountType === 'flat' ? ' selected' : '') + '>৳</option><option value="percent"' + (item.discountType === 'percent' || item.discountType === 'percentage' ? ' selected' : '') + '>%</option></select>' +
                         '</div>' +
                     '</div>' +
@@ -1107,7 +1107,7 @@
         const validPrice = setLineAmount(item, parseFloat($(this).val()) || 0);
         $row.find('.ci-price-error').prop('hidden', validPrice);
         $row.find('.ci-qty').val(item.qty);
-        $row.find('.ci-discount-raw').val(item.discountRaw);
+        $row.find('.ci-discount-raw').val(item.discountRaw > 0 ? item.discountRaw : '');
         $row.find('.ci-item-tax-amt').text(fmt(lineTaxAmount(item)));
         renderHiddenFields();
         recalcGrand();
@@ -1593,7 +1593,7 @@
                 const factor = unitFactor(p, item.unitId);
                 item.discountRaw = Math.round(p.discountValue * factor * item.qty * 100) / 100;
                 const discInput = row.querySelector('.ci-discount-raw');
-                if (discInput) discInput.value = item.discountRaw;
+                if (discInput) discInput.value = item.discountRaw > 0 ? item.discountRaw : '';
             }
         }
         if (e.target.classList.contains('ci-price')) {
@@ -1614,7 +1614,9 @@
             item.manuallyDiscounted = true;
             syncEntry(item);
         }
-        $(row).find('.ci-discount-raw').val(item.discountRaw);
+        if (!e.target.classList.contains('ci-discount-raw')) {
+            $(row).find('.ci-discount-raw').val(item.discountRaw > 0 ? item.discountRaw : '');
+        }
         if (e.target.classList.contains('ci-barcode-input')) {
             item.barcode = e.target.value;
             const btn = row.querySelector('.barcode-toggle-btn');

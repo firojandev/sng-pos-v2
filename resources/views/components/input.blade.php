@@ -18,7 +18,7 @@
     'addonRight' => null,
     'clearable' => false,
     'passwordToggle' => false,
-    'stepper' => true,
+    'stepper' => false,
     'required' => false,
     'disabled' => false,
     'readonly' => false,
